@@ -1,0 +1,38 @@
+{
+  "env": {
+    "node": true,
+    "commonjs": true,
+    "es2021": true
+  },
+  
+  "plugins": ["sonarjs"],
+
+  "extends": [
+    "eslint:recommended",
+    "standard",
+    "plugin:sonarjs/recommended",
+    "prettier"
+  ],
+
+  "parserOptions": {
+    "sourceType": "module",
+    "ecmaVersion": "latest"
+  },
+
+  "rules": {
+    "camelcase": "off",
+    "no-unused-vars": "warn",
+    "quotes": ["error", "double"],
+    "semi": ["error", "always"],
+    "sonarjs/cognitive-complexity": ["warn", 25],
+
+    "indent": [
+      "error",
+      2,
+      {
+        "SwitchCase": 1,
+        "ignoredNodes": ["ConditionalExpression"]
+      }
+    ]
+  }
+}

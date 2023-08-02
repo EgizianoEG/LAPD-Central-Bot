@@ -1,0 +1,12 @@
+{
+  "json.schemaDownload.enable": true,
+  "editor.tabSize": 2,
+  "editor.defaultFormatter": null,
+  "[javascript]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
+}
