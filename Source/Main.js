@@ -2,7 +2,6 @@ const { Client, Collection, GatewayIntentBits, IntentsBitField } = require("disc
 const {
   Discord: { BotToken },
   Roblox: { Cookie },
-  OpenWeather,
 } = require("./Json/Secrets.json");
 
 const Chalk = require("chalk");
