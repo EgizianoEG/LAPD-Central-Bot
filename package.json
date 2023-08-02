@@ -7,6 +7,11 @@
   "main": "Source/Main.js",
   "type": "commonjs",
   "private": true,
+
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/EgizianoEG/LAPD-Central-Bot"
+  },
   
   "keywords": [
     "Roblox",
