@@ -1,15 +1,67 @@
 name: Labeler
-on: [pull_request]
+
+on:
+  pull_request_target:
+    types: [opened]
 
 jobs:
-  label:
-
+  Label:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
+    permissions: write-all
 
     steps:
-    - uses: actions/labeler@v4
-      with:
-        repo-token: "${{ secrets.GITHUB_TOKEN }}"
+      - uses: actions/checkout@v3
+      - name: Label Source Changes
+        uses: actions/labeler@v4
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          configuration-path: ".github/configs/Labeler.yml"
+
+      - name: Label First Pull Request for Newcomers
+        uses: actions/github-script@v6
+        with:
+          retries: 3
+          script: |
+            // Get a list of all issues created by the PR opener
+            // See: https://octokit.github.io/rest.js/#pagination
+            const creator = context.payload.sender.login
+            const opts = github.rest.issues.listForRepo.endpoint.merge({
+              ...context.issue,
+              creator,
+              state: 'all'
+            })
+
+            const issues = await github.paginate(opts)
+            for (const issue of issues) {
+              if (issue.number === context.issue.number) {
+                continue
+              }
+
+              if (issue.pull_request) {
+                return // Creator is already a contributor.
+              }
+            }
+
+            await github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['👋 - First Pull Request']
+            })
+
+      - name: Assign Size Label for Changes Made
+        uses: codelytv/pr-size-labeler@v1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+          xs_label: "Size - XS"
+          s_label: "Size - S"
+          m_label: "Size - M"
+          l_label: "Size - L"
+          xl_label: "Size - XL"
+
+          message_if_xl: >
+            ### ⚠️ - Pull Request Size Exceeds Recommended Limit
+
+            This pull request exceeds the maximum recommended size of 1,000 lines.
+            Please consider breaking it down into smaller, focused PRs for easier review and collaboration.
