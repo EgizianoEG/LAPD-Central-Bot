@@ -1,6 +1,13 @@
 # Set the default behavior.
-* text=auto
+* text = auto
 
 # Denote all files that are truly binary and should not be modified.
-*.png binary
-*.jpg binary
+*.png       binary
+*.jpg       binary
+*.class     binary
+*.dll       binary
+*.ear       binary
+*.jar       binary
+*.so        binary
+*.war       binary
+*.jks       binary
