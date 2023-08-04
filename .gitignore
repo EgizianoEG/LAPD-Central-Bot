@@ -3,6 +3,7 @@
 
 # Confedential data
 Secrets.json
+!.vscode/JSON Schemas/*
 
 # Dependency directories
 node_modules
@@ -10,7 +11,8 @@ node_modules
 # Logs
 logs
 *.log
-npm-debug.log*
+npm-debug.log
+yarn-error.log
 
 # dotenv environment variable files
 .env
