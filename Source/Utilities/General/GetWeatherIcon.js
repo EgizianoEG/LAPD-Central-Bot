@@ -230,9 +230,10 @@ const IconMap = {
 /**
  * Returns the corresponding animated weather icon of the given weather code
  * @param {String} ConditionCode
+ * @param {Boolean} IsDaytime
  * @return {String} Animated weather icon link
  */
-module.exports = (ConditionCode) => {
-  const ConditionCodeDesc = IconMap[ConditionCode];
+module.exports = (ConditionCode, IsDaytime) => {
+  const ConditionCodeDesc = IsDaytime ? IconMap[ConditionCode].day : IconMap[ConditionCode].night;
   return AnimatedIcons.find((Link) => Link.match(new RegExp(`/${ConditionCodeDesc}.gif`)));
 };

@@ -1,27 +1,25 @@
-// eslint-disable-next-line no-unused-vars
+/* eslint-disable no-unused-vars */
 const {
-  Client,
-  ChatInputCommandInteraction,
-  SlashCommandBuilder,
-  EmbedBuilder,
-  formatEmoji,
   Colors,
+  Client,
+  EmbedBuilder,
+  SlashCommandBuilder,
+  ChatInputCommandInteraction,
 } = require("discord.js");
 
 const GetWeatherIcon = require("../../Utilities/General/GetWeatherIcon");
 const { default: Axios } = require("axios");
 const { convert: Convert } = require("convert");
-const { OpenWeatherAPI } = require("openweather-api-node");
 const { Icons } = require("../../Json/Shared.json");
 const {
-  OpenWeather: { API_Key, WeatherGeoCoordinates: Coor },
+  OpenWeather: { API_Key },
 } = require("../../Json/Secrets.json");
 
 const WeatherAPI = Axios.create({
   baseURL: "https://api.openweathermap.org/data/2.5/weather",
   params: {
-    lat: Coor.lat ?? 34.052235,
-    lon: Coor.lon ?? -118.243683,
+    lat: 34.052235,
+    lon: -118.243683,
     appid: API_Key,
   },
 });
@@ -33,28 +31,37 @@ const WeatherAPI = Axios.create({
  */
 async function Callback(Client, Interaction) {
   const Units = Interaction.options.getString("units") ?? "imperial";
-
-  const WeatherData = await WeatherAPI.request({
+  const { data: WeatherData } = await WeatherAPI.request({
     params: {
       units: Units,
     },
-  }).then((Res) => Res.data);
+  });
 
   const DegreeUnit = Units === "metric" ? " °C" : " °F";
   const SpeedUnit = Units === "metric" ? " m/s" : " mph";
   const DistanceUnit = Units === "metric" ? "km" : "mi";
   const VisibilityDistance = Convert(WeatherData.visibility, "m").to(DistanceUnit);
-  console.log(WeatherData);
+  const LocalDateTime = new Date().toLocaleString(["en-US"], {
+    timeZone: "America/Los_Angeles",
+    dateStyle: "full",
+    timeStyle: "short",
+  });
 
   const WeatherEmbed = new EmbedBuilder()
     .setURL("https://openweathermap.org/city/5368361")
     .setTitle("<:losangeles:1134606469828984873> Weather")
     .setColor(Colors.Greyple)
-    .setDescription("Current weather in city of Los Angeles, California\n" + "Local Time: " + "")
+    .setDescription("Current weather in city of Los Angeles, California\n")
     .setFooter({ text: "Powered by OpenWeather", iconURL: Icons.OpenWeather })
-    .setThumbnail(GetWeatherIcon(WeatherData.weather[0].id))
+    .setThumbnail(
+      GetWeatherIcon(WeatherData.weather[0].id, WeatherData.weather[0].icon.includes("d"))
+    )
     .setTimestamp()
     .setFields(
+      {
+        name: "Date and Time",
+        value: LocalDateTime,
+      },
       {
         name: "Condition",
         value: WeatherData.weather[0].main,

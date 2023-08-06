@@ -26,6 +26,10 @@
     "semi": ["error", "always"],
     "sonarjs/cognitive-complexity": ["warn", 25],
 
+    "no-extra-parens": ["warn", "all", {
+      "nestedBinaryExpressions": false
+    }],
+
     "indent": [
       "error",
       2,

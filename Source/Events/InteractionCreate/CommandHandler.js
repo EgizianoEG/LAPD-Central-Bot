@@ -64,7 +64,11 @@ module.exports = async (Client, Interaction) => {
       if (!Interaction.replied) {
         Interaction.reply({
           ephemeral: true,
-          embeds: [new InfoEmbed("Seems like this command is still under development.")],
+          embeds: [
+            new InfoEmbed("Seems like this command is still under development.").setTitle(
+              "Hold up!"
+            ),
+          ],
         });
       }
     } else {
@@ -101,6 +105,7 @@ module.exports = async (Client, Interaction) => {
 async function HandleCooldowns(Client, Interaction, CommandObject) {
   const Now = Date.now();
   const Cooldowns = Client.cooldowns;
+  const CommandID = Interaction.commandId;
   const CommandName = Interaction.commandName;
   const Timestamps = Cooldowns.get(CommandName);
   const CooldownAmount = (CommandObject.cooldown ?? DefaultCmdCooldownDuration) * 1000;
@@ -113,7 +118,7 @@ async function HandleCooldowns(Client, Interaction, CommandObject) {
         ephemeral: true,
         embeds: [
           new WarnEmbed(
-            `Please wait. You are currently on a cooldown for \`${CommandName}\` command.\nYou can use it again in: <t:${ExpiredTimestamp}:R>.`
+            `Please wait. You are currently on a cooldown for </${CommandName}:${CommandID}> slash command.\nYou may use it again approximately: <t:${ExpiredTimestamp}:R>.`
           ).setTitle("Cooldown"),
         ],
       });
