@@ -14,6 +14,7 @@ const { Icons } = require("../../Json/Shared.json");
 const {
   OpenWeather: { API_Key },
 } = require("../../Json/Secrets.json");
+// -------------------------------------------------------------------------------
 
 const WeatherAPI = Axios.create({
   baseURL: "https://api.openweathermap.org/data/2.5/weather",
@@ -23,7 +24,6 @@ const WeatherAPI = Axios.create({
     appid: API_Key,
   },
 });
-// -------------------------------------------------------------------------------
 
 /**
  * @param {Client} Client
@@ -37,8 +37,8 @@ async function Callback(Client, Interaction) {
     },
   });
 
-  const DegreeUnit = Units === "metric" ? " °C" : " °F";
   const SpeedUnit = Units === "metric" ? " m/s" : " mph";
+  const DegreeUnit = Units === "metric" ? " °C" : " °F";
   const DistanceUnit = Units === "metric" ? "km" : "mi";
   const VisibilityDistance = Convert(WeatherData.visibility, "m").to(DistanceUnit);
   const LocalDateTime = new Date().toLocaleString(["en-US"], {

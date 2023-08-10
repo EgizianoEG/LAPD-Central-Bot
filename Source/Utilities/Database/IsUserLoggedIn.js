@@ -1,38 +1,27 @@
-const Guild = require("../../Models/Guild.js");
-const { CommandInteraction } = require("discord.js");
+// eslint-disable-next-line no-unused-vars
+const { ChatInputCommandInteraction } = require("discord.js");
+const GuildModel = require("../../Models/Guild.js");
 
 /**
  * Checks if a given user is already logged in using the bot.
- * @param {CommandInteraction} CmdInteraction
- * @returns {(false|String)} Logged username string if user is already logged in and false if not.
+ * @param {ChatInputCommandInteraction} CmdInteraction
+ * @returns {Promise<(false|String)>} Logged in Roblox user id if found or false if not.
  */
 async function IsLoggedIn(CmdInteraction) {
-  //
-  const InterGuild = await Guild.findOne({ guild_id: CmdInteraction.guildId });
-  console.log(InterGuild);
-  if (!InterGuild) {
-    const GuildMembers = await CmdInteraction.client.guilds.cache
-      .find((v) => v.id === CmdInteraction.guildId)
-      .members.fetch();
-    const NewEntry = await Guild.create({
-      guild_id: CmdInteraction.guildId,
-      members: [
-        {
-          user_id: CmdInteraction.user.id,
-        },
-      ],
+  const GuildFound = await GuildModel.findOne({ guild_id: CmdInteraction.guildId });
+  const MemberFound = GuildFound.members.find(
+    (Member) => Member.user_id === CmdInteraction.member.id
+  );
+
+  if (MemberFound) {
+    return MemberFound.linked_user.roblox_user_id ?? false;
+  } else {
+    GuildFound.members.addToSet({
+      user_id: CmdInteraction.member.id,
     });
+    GuildFound.save();
   }
-  // const NewGuild = await Guild.create({
-  //   guild_id: CmdInteraction.guildId,
-  //   guild_settings: {
-  //     logging_channels: {
-  //       citations: "1098161246202765402",
-  //       arrests: "1096809341161578650",
-  //     },
-  //   },
-  // });
-  // DiscordUser.id
+  return false;
 }
 
 module.exports = IsLoggedIn;

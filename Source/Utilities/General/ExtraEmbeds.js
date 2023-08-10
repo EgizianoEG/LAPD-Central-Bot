@@ -1,7 +1,9 @@
+const { format } = require("util");
 const { EmbedBuilder } = require("discord.js");
 const {
   Embeds: { Colors: EmbedColors, Thumbs: EmbedThumbs },
 } = require("../../Json/Shared.json");
+// ----------------------------------------------------------------
 
 class InfoEmbed extends EmbedBuilder {
   constructor(description = "Information") {
@@ -9,7 +11,16 @@ class InfoEmbed extends EmbedBuilder {
     this.setColor(parseInt(EmbedColors.Info, 16))
       .setThumbnail(EmbedThumbs.Info)
       .setTitle("Information")
-      .setDescription(description);
+      .setDescription(format(description));
+  }
+
+  /**
+   * Sets the description of this embed.
+   * @param {any} description The description to use (will be formatted with `util.format`)
+   * @returns
+   */
+  setDescription() {
+    return super.setDescription(format(...arguments));
   }
 }
 
@@ -19,7 +30,16 @@ class WarnEmbed extends EmbedBuilder {
     this.setColor(parseInt(EmbedColors.Warning, 16))
       .setThumbnail(EmbedThumbs.Warning)
       .setTitle("Warning")
-      .setDescription(description);
+      .setDescription(format(description));
+  }
+
+  /**
+   * Sets the description of this embed.
+   * @param {any} description The description to use (will be formatted with `util.format`)
+   * @returns
+   */
+  setDescription() {
+    return super.setDescription(format(...arguments));
   }
 }
 
@@ -29,7 +49,16 @@ class ErrorEmbed extends EmbedBuilder {
     this.setColor(parseInt(EmbedColors.Error, 16))
       .setThumbnail(EmbedThumbs.Error)
       .setTitle("Error")
-      .setDescription(description);
+      .setDescription(format(description));
+  }
+
+  /**
+   * Sets the description of this embed.
+   * @param {any} description The description to use (will be formatted with `util.format`)
+   * @returns
+   */
+  setDescription() {
+    return super.setDescription(format(...arguments));
   }
 }
 
@@ -39,7 +68,16 @@ class SuccessEmbed extends EmbedBuilder {
     this.setColor(parseInt(EmbedColors.Success, 16))
       .setThumbnail(EmbedThumbs.Success)
       .setTitle("Success")
-      .setDescription(description);
+      .setDescription(format(description));
+  }
+
+  /**
+   * Sets the description of this embed.
+   * @param {any} description The description to use (will be formatted with `util.format`)
+   * @returns
+   */
+  setDescription() {
+    return super.setDescription(format(...arguments));
   }
 }
 
@@ -49,10 +87,20 @@ class UnauthorizedEmbed extends EmbedBuilder {
     this.setColor(parseInt(EmbedColors.Error, 16))
       .setThumbnail(EmbedThumbs.Unauthorized)
       .setTitle("Unauthorized")
-      .setDescription(description);
+      .setDescription(format(description));
+  }
+
+  /**
+   * Sets the description of this embed.
+   * @param {any} description The description to use (will be formatted with `util.format`)
+   * @returns
+   */
+  setDescription() {
+    return super.setDescription(format(...arguments));
   }
 }
 
+// ----------------------------------------------------------------
 module.exports = {
   InfoEmbed,
   WarnEmbed,

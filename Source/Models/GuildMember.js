@@ -1,4 +1,4 @@
-const { Schema } = require("mongoose");
+const { Schema, Types } = require("mongoose");
 const ShiftSchema = require("./MemberShift");
 
 const SnowflakeID_Validation = [
@@ -16,8 +16,7 @@ const MemberSchema = new Schema({
   // The roblox user of which guild member has verified with
   linked_user: {
     roblox_user_id: {
-      type: String,
-      match: [/^\d+$/, "Invalid Roblox user ID provided; ensure it is matching the regex"],
+      type: Number,
       default: null,
     },
   },

@@ -1,3 +1,4 @@
+const { default: Axios } = require("axios");
 const {
   APICache: { IdByUsername },
 } = require("../General/Cache");
@@ -6,9 +7,10 @@ const {
 /**
  * Returns the user id of the input username string
  * @param {(String|Array.<String>)} Usernames - The username to get its id from
- * @return {(Promise.<Number>)} The user id of the input username or undefined if input is invailed or the http response was corrupted
+ * @param {(Boolean|undefined)} [ExcludeBanned=true] - Whether to exclude banned users from the response
+ * @return {(Promise.<(Number|Null)>)} The user id of the input username or null if input is invailed, user is banned (optional), or the http response was corrupted
  */
-async function GetIdFromUsername(Usernames) {
+async function GetIdFromUsername(Usernames, ExcludeBanned = true) {
   Usernames = Array.isArray(Usernames) ? Usernames : [Usernames];
   const Stringified = Usernames.toString();
 
@@ -16,25 +18,13 @@ async function GetIdFromUsername(Usernames) {
     return IdByUsername.get(Stringified);
   }
 
-  return fetch("https://users.roblox.com/v1/usernames/users", {
-    method: "POST",
-    body: JSON.stringify({
-      usernames: Usernames,
-      excludeBannedUsers: false,
-    }),
+  return await Axios.post("https://users.roblox.com/v1/usernames/users", {
+    usernames: Usernames,
+    excludeBannedUsers: ExcludeBanned,
   })
-    .then((Response) => {
-      if (Response.ok) {
-        return Response.json();
-      } else {
-        throw new Error(
-          `Could not fetch user id from ${Usernames}. Exited with status text: "${Response.statusText}".`
-        );
-      }
-    })
-    .then((Json) => {
+    .then((Res) => {
       let Results = Usernames.map((Username) => {
-        return Json.data.find((UserObject) => UserObject.requestedUsername === Username);
+        return Res.data.data.find((UserObject) => UserObject.requestedUsername === Username);
       }).map((UserObject) => {
         return UserObject?.id || null;
       });

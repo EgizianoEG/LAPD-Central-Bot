@@ -1,3 +1,4 @@
+const { IsValidRobloxUsername } = require("../Strings/Validator");
 const {
   APICache: { UsernameSearches },
 } = require("../General/Cache");
@@ -8,7 +9,7 @@ const {
  * @returns {Promise.<Array.<UserSearchResult>>} - A list of users representing search results
  */
 async function QueryUsername(Username) {
-  if (Username.length < 3) return [];
+  if (!IsValidRobloxUsername(Username)) return [];
   if (UsernameSearches.has(Username)) {
     return UsernameSearches.get(Username);
   }

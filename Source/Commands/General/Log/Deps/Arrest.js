@@ -30,7 +30,7 @@ const {
 const {
   Embeds: { Thumbs },
 } = require("../../../../Json/Shared.json");
-const { RandomString } = require("../../../../Utilities/Strings/RandomString.js");
+const { RandomString } = require("../../../../Utilities/Strings/Random.js");
 const Chalk = require("chalk");
 
 const ArrestAges = [

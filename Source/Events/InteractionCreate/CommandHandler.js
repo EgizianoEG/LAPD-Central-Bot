@@ -75,14 +75,21 @@ module.exports = async (Client, Interaction) => {
       throw new ReferenceError(`❎ - '${CommandName}' callback function has not been found.`);
     }
   } catch (Err) {
-    Interaction.reply({
+    const ReplyOptions = {
       ephemeral: true,
       embeds: [
         new ErrorEmbed(
           "Apologies, a server/application error occurred while executing this command. Please attempt again at a later time."
         ),
       ],
-    });
+    };
+
+    if (!Interaction.replied) {
+      Interaction.reply(ReplyOptions);
+    } else {
+      Interaction.followUp(ReplyOptions);
+    }
+
     console.log(
       "%s:%s - An error occurred;\n",
       Chalk.yellow("InteractionCreate"),
@@ -136,6 +143,7 @@ async function HandleCooldowns(Client, Interaction, CommandObject) {
  * @returns
  */
 function HandleDevOnlyCommands(CommandObject, Interaction) {
+  if (Interaction.replied) return;
   if (CommandObject.devOnly && !BotDevs.includes(Interaction.member.id)) {
     return Interaction.reply({
       ephemeral: true,
@@ -151,6 +159,7 @@ function HandleDevOnlyCommands(CommandObject, Interaction) {
  * @returns
  */
 function HandleUserPermissions(CommandObject, Interaction) {
+  if (Interaction.replied) return;
   if (CommandObject.userPerms?.length) {
     const MissingPerms = [];
     for (const Permission of CommandObject.userPerms) {
@@ -185,6 +194,7 @@ function HandleUserPermissions(CommandObject, Interaction) {
  * @returns
  */
 function HandleBotPermissions(CommandObject, Interaction) {
+  if (Interaction.replied) return;
   if (CommandObject.botPerms?.length) {
     const BotInGuild = Interaction.guild.members.me;
     const MissingPerms = [];

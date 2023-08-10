@@ -13,8 +13,8 @@ async function Callback(Client, Interaction) {
   const ClientPing = Reply.createdTimestamp - Interaction.createdTimestamp;
   const AppUptime = Humanizer(Client.uptime, {
     conjunction: " and ",
-    round: true,
     largest: 3,
+    round: true,
   });
 
   const Response = new SuccessEmbed()

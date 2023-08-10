@@ -1,8 +1,11 @@
 /* eslint-disable sonarjs/no-duplicate-string */
+// Credits for icons goes to Meteocons, Bas Milius, https://github.com/basmilius/weather-icons
+
 const {
-  Weather: { AnimatedIcons },
+  Icons: {
+    Weather: { Animated },
+  },
 } = require("../../Json/Shared.json");
-// ---------------------------------------
 
 const IconMap = {
   200: {
@@ -235,5 +238,5 @@ const IconMap = {
  */
 module.exports = (ConditionCode, IsDaytime) => {
   const ConditionCodeDesc = IsDaytime ? IconMap[ConditionCode].day : IconMap[ConditionCode].night;
-  return AnimatedIcons.find((Link) => Link.match(new RegExp(`/${ConditionCodeDesc}.gif`)));
+  return Animated.find((Link) => Link.match(new RegExp(`/${ConditionCodeDesc}.gif`)));
 };

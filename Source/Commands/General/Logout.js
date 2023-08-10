@@ -1,0 +1,139 @@
+/* eslint-disable no-unused-vars */
+
+const {
+  Client,
+  Colors,
+  EmbedBuilder,
+  ComponentType,
+  ChatInputCommandInteraction,
+  SlashCommandBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+} = require("discord.js");
+
+const GetPlayerInfo = require("../../Utilities/Roblox/GetPlayerInfo");
+const IsUserLoggedIn = require("../../Utilities/Database/IsUserLoggedIn");
+const UpdateLinkedRobloxUser = require("../../Utilities/Database/UpdateLinkedUser");
+const { ErrorEmbed, InfoEmbed, SuccessEmbed } = require("../../Utilities/General/ExtraEmbeds");
+
+// ------------------------------------------------------------------------------------
+// Functions:
+// -----------
+/**
+ * Handles the case where the command runner is not logged in
+ * @param {ChatInputCommandInteraction} Interaction
+ * @returns {Promise<(InteractionResponse|undefined)>}
+ */
+async function HandleLoggedInUser(Interaction, IsLoggedIn) {
+  if (!IsLoggedIn) {
+    return Interaction.reply({
+      ephemeral: true,
+      embeds: [
+        new ErrorEmbed()
+          .setTitle("Hold on!")
+          .setDescription(
+            "To log out of the application, you must be logged in and have linked your Roblox account already."
+          ),
+      ],
+    });
+  }
+}
+
+/**
+ * Handles command execution
+ * @param {Client} Client
+ * @param {ChatInputCommandInteraction} Interaction
+ */
+async function Callback(Client, Interaction) {
+  const UserLoggedIn = await IsUserLoggedIn(Interaction);
+
+  await HandleLoggedInUser(Interaction, UserLoggedIn);
+  if (Interaction.replied) return;
+
+  const RobloxUsername = (await GetPlayerInfo(UserLoggedIn)).name;
+  const ButtonsActionRow = new ActionRowBuilder().setComponents(
+    new ButtonBuilder()
+      .setLabel("Confirm and Log Out")
+      .setCustomId("confirm-logout")
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setLabel("Cancel")
+      .setCustomId("cancel-logout")
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  const PromptEmbed = new EmbedBuilder()
+    .setTitle("Logout Process")
+    .setColor(Colors.Aqua)
+    .setDescription(
+      `Are you sure that you want to log out and unlink your Roblox account, \`${RobloxUsername}\`, from the application?\n` +
+        "- To confirm your log out, press the `Confirm and Log Out` button\n" +
+        "- To cancel the logout, press the `Cancel` button\n" +
+        "*This prompt will automatically cancel after 5 minutes of inactivity.*"
+    );
+
+  const PromptReply = await Interaction.reply({
+    ephemeral: true,
+    embeds: [PromptEmbed],
+    components: [ButtonsActionRow],
+  });
+
+  const DisablePrompt = (Cancelled) => {
+    ButtonsActionRow.components.forEach((Button) => Button.setDisabled(true));
+    if (Cancelled) PromptEmbed.setTitle("Logout Process - [Cancelled]");
+    return PromptReply.edit({
+      embeds: [PromptEmbed],
+      components: [ButtonsActionRow],
+    });
+  };
+
+  return PromptReply.awaitMessageComponent({
+    componentType: ComponentType.Button,
+    time: 5 * 60_000,
+  })
+    .then(async (ButtonAction) => {
+      if (ButtonAction.customId === "confirm-logout") {
+        await UpdateLinkedRobloxUser(Interaction, 0);
+        await DisablePrompt();
+        return ButtonAction.reply({
+          ephemeral: true,
+          embeds: [
+            new SuccessEmbed().setDescription(
+              "Successfully unlinked Roblox account and logged out of the application for user `%s`.",
+              RobloxUsername
+            ),
+          ],
+        });
+      } else {
+        await DisablePrompt(true);
+        return ButtonAction.reply({
+          ephemeral: true,
+          embeds: [
+            new InfoEmbed("Logout process has been cancelled.").setTitle("Process Cancellation"),
+          ],
+        });
+      }
+    })
+    .catch(async (Err) => {
+      if (Err.message.match(/reason: (.+)/)?.[1].match(/time/i)) {
+        return DisablePrompt(true);
+      } else {
+        throw Err;
+      }
+    });
+}
+
+// ---------------------------------------------------------------------------------------
+// Command structure:
+// ------------------
+const CommandObject = {
+  cooldown: 30,
+  data: new SlashCommandBuilder()
+    .setName("log-out")
+    .setDescription("Log out and unlink the associated Roblox account from the application."),
+  callback: Callback,
+};
+
+// ----------------------------
+module.exports = CommandObject;
