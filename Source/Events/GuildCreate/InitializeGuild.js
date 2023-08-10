@@ -7,7 +7,7 @@ const GuildModel = require("../../Models/Guild");
  * @param {Client} Client
  * @param {Guild} CreatedGuild
  */
-async function InitializeGuildDatabase(Client, CreatedGuild) {
+async function InitializeGuild(Client, CreatedGuild) {
   const GuildFound = await GuildModel.findOne({ guild_id: CreatedGuild.id });
   if (!GuildFound) {
     GuildModel.create({
@@ -16,4 +16,4 @@ async function InitializeGuildDatabase(Client, CreatedGuild) {
   }
 }
 
-module.exports = InitializeGuildDatabase;
+module.exports = InitializeGuild;
