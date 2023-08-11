@@ -1,3 +1,5 @@
+const { default: Axios } = require("axios");
+
 /**
  * Checks the presence of specific user(s).
  * @param {(String|Number|Array.<Number>)} UserIDs - The User IDs to get presence information
@@ -14,22 +16,13 @@ async function GetPresence(UserIDs) {
   const Payload = { userIds: UserIDs };
   const RequestURL = "https://presence.roblox.com/v1/presence/users";
 
-  return fetch(RequestURL, { method: "POST", body: JSON.stringify(Payload) })
-    .then(async (Response) => {
-      if (!Response.ok) throw new Error(Response.statusText);
-      return Response.json();
-    })
-    .then((Json) => {
-      const Results = UserIDs.map((UserID) => {
-        return Json.userPresences.find((UserObject) => UserObject.userId === UserID);
-      });
-
-      return UserIDs.length > 1 ? Results : Results[0];
-    })
-    .catch((Error) => {
-      console.log(`GetPresence - Could not fetch presense. Error: ${Error}.`);
-      return null;
+  return Axios.post(RequestURL, Payload).then((Res) => {
+    const Results = UserIDs.map((UserID) => {
+      return Res.data.userPresences.find((UserObject) => UserObject.userId === UserID);
     });
+
+    return UserIDs.length > 1 ? Results : Results[0];
+  });
 }
 
 // --------------------------

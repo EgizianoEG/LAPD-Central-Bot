@@ -15,6 +15,7 @@ const {
   AutocompleteInteraction,
   ComponentType,
 } = require("discord.js");
+const GetPresence = require("../../Utilities/Roblox/GetPresence");
 /* eslint-enable */
 
 /**
@@ -24,21 +25,7 @@ const {
 module.exports = async (Client) => {
   console.time();
 
-  const ButtonsActionRow = new ActionRowBuilder().setComponents(
-    new ButtonBuilder()
-      .setLabel("Verify and Login")
-      .setCustomId("confirm-login")
-      .setStyle(ButtonStyle.Success),
-    new ButtonBuilder()
-      .setLabel("Cancel Login")
-      .setCustomId("cancel-login")
-      .setStyle(ButtonStyle.Secondary)
-  );
-
-  ButtonsActionRow.disable = function disable() {
-    ButtonsActionRow.components.forEach((Button) => Button.setDisabled(true));
-    return this;
-  };
+  // console.log(await GetPresence(3745880103));
 
   // console.log(ButtonsActionRow.toJSON());
   // console.log(ButtonsActionRow.disable().toJSON());
