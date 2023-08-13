@@ -18,7 +18,6 @@
     "Dispatch"
   ],
   "scripts": {
-    "install": "node-gyp rebuild",
     "start": "node ./Source/Main.js",
     "lint": "eslint ./Source",
     "lint:fix": "eslint ./Source --fix",

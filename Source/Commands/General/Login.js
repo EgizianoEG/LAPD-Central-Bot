@@ -32,9 +32,9 @@ const { DummyText } = require("../../Utilities/Strings/Random");
 // -----------
 /**
  * Sends an error embed with a specific title and description.
- * @param {*} Interaction
- * @param {String} Title
- * @param {Any} Description
+ * @param {ChatInputCommandInteraction} Interaction - The interaction object.
+ * @param {String} Title - The title of the error embed.
+ * @param {Any} Description - The description of the error embed.
  * @returns {Promise<void>}
  */
 function SendErrorEmbed(Interaction, Title, ...Description) {
@@ -46,7 +46,8 @@ function SendErrorEmbed(Interaction, Title, ...Description) {
 
 /**
  * Validates entered username before continuing
- * @param {ChatInputCommandInteraction} Interaction
+ * @param {ChatInputCommandInteraction} Interaction - The interaction object.
+ * @param {String} RobloxUsername - The Roblox username to be validated.
  * @returns {Promise<(InteractionResponse|undefined)>}
  */
 async function HandleInvalidUsername(Interaction, RobloxUsername) {
@@ -71,13 +72,12 @@ async function HandleInvalidUsername(Interaction, RobloxUsername) {
 
 /**
  * Checks whether or not the command runner is already logged into the application and if so, halts any furthur execution
- * @param {ChatInputCommandInteraction} Interaction
+ * @param {ChatInputCommandInteraction} Interaction - The interaction object.
  * @returns {Promise<(InteractionResponse|undefined)>}
  */
-async function HandleLoggedInUser(Interaction) {
+async function HandleUserLoginStatus(Interaction) {
   const UserLoggedIn = await IsUserLoggedIn(Interaction);
-  if (Interaction.replied) return;
-  if (UserLoggedIn) {
+  if (UserLoggedIn && !Interaction.replied) {
     const LoggedUsername = (await GetPlayerInfo(UserLoggedIn)).name;
     return SendErrorEmbed(
       Interaction,
@@ -90,13 +90,13 @@ async function HandleLoggedInUser(Interaction) {
 
 /**
  * Handles command execution logic
- * @param {Client} Client
- * @param {ChatInputCommandInteraction} Interaction
+ * @param {Client} Client - The Discord.js client object.
+ * @param {ChatInputCommandInteraction} Interaction - The interaction object.
  */
 async function Callback(Client, Interaction) {
   const RobloxUsername = Interaction.options.getString("username", true);
 
-  await HandleLoggedInUser(Interaction);
+  await HandleUserLoginStatus(Interaction);
   await HandleInvalidUsername(Interaction, RobloxUsername);
   if (Interaction.replied) return;
 
