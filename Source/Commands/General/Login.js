@@ -1,7 +1,9 @@
 /* eslint-disable no-extra-parens */
 /* eslint-disable no-unused-vars */
-// TODO: add verification by following or by joining a game
-// Requires:
+// TODO: add verification by following user or by joining a game.
+// -------------
+// Dependencies:
+// ------------------------------------------------------------------------------------
 
 const {
   Client,
@@ -29,13 +31,14 @@ const { DummyText } = require("../../Utilities/Strings/Random");
 
 // ------------------------------------------------------------------------------------
 // Functions:
-// -----------
+// ----------
 /**
- * Sends an error embed with a specific title and description.
+ * Replies to the command interaction with an error embed containing a specific title and description.
  * @param {ChatInputCommandInteraction} Interaction - The interaction object.
  * @param {String} Title - The title of the error embed.
- * @param {Any} Description - The description of the error embed.
+ * @param {...Any} Description - The description of the error embed.
  * @returns {Promise<void>}
+ * @requires `Utilities/General/ExtraEmbeds.ErrorEmbed`
  */
 function SendErrorEmbed(Interaction, Title, ...Description) {
   return Interaction.reply({
@@ -45,10 +48,11 @@ function SendErrorEmbed(Interaction, Title, ...Description) {
 }
 
 /**
- * Validates entered username before continuing
+ * Validates the entered Roblox username before continuing
  * @param {ChatInputCommandInteraction} Interaction - The interaction object.
  * @param {String} RobloxUsername - The Roblox username to be validated.
  * @returns {Promise<(InteractionResponse|undefined)>}
+ * @requires `Utilities/Strings/Validator.IsValidRobloxUsername`
  */
 async function HandleInvalidUsername(Interaction, RobloxUsername) {
   if (Interaction.replied) return;
@@ -74,6 +78,8 @@ async function HandleInvalidUsername(Interaction, RobloxUsername) {
  * Checks whether or not the command runner is already logged into the application and if so, halts any furthur execution
  * @param {ChatInputCommandInteraction} Interaction - The interaction object.
  * @returns {Promise<(InteractionResponse|undefined)>}
+ * @requires `Utilities/Database/IsUserLoggedIn`
+ * @requires `Utilities/Roblox/GetPlayerInfo`
  */
 async function HandleUserLoginStatus(Interaction) {
   const UserLoggedIn = await IsUserLoggedIn(Interaction);
@@ -92,6 +98,21 @@ async function HandleUserLoginStatus(Interaction) {
  * Handles command execution logic
  * @param {Client} Client - The Discord.js client object.
  * @param {ChatInputCommandInteraction} Interaction - The interaction object.
+ * @returns {Promise<void>}
+ * ---
+ * This function executes the following steps:
+ * 1. Retrieve the provided Roblox username from the interaction options.
+ * 2. Check if the user is already logged in; if so, inform the user and return.
+ * 3. Validate the provided Roblox username for correctness.
+ * 4. If any validation responded the interaction, return early.
+ * 5. Construct an embed to guide the user through the login process.
+ * 6. Create buttons for "Verify and Login" and "Cancel Login".
+ * 7. Send the embed and buttons to the user as a reply.
+ * 8. Await button interaction within a time limit of five minutes (converted into milleseconds).
+ * 9. Based on button interaction received:
+ *    - If "Verify and Login" is clicked, validate the profile description.
+ *    - If "Cancel Login" is clicked, provide a cancellation message.
+ * 10. Handle errors and timeouts with appropriate responses.
  */
 async function Callback(Client, Interaction) {
   const RobloxUsername = Interaction.options.getString("username", true);
@@ -197,8 +218,9 @@ async function Callback(Client, Interaction) {
 }
 
 /**
- * Autocompletion for the command option(s)
+ * Autocompletion for the Roblox username required command option
  * @param {AutocompleteInteraction} Interaction
+ * @returns {Promise<void>}
  */
 async function Autocomplete(Interaction) {
   const { name, value } = Interaction.options.getFocused(true);

@@ -1,4 +1,7 @@
 /* eslint-disable no-unused-vars */
+// -------------
+// Dependencies:
+// ------------------------------------------------------------------------------------
 
 const {
   Client,
@@ -41,9 +44,21 @@ async function HandleLoggedInUser(Interaction, IsLoggedIn) {
 }
 
 /**
- * Handles command execution
+ * Handles the logic for the command interaction to log out and unlink a Roblox account.
  * @param {Client} Client
  * @param {ChatInputCommandInteraction} Interaction
+ * @returns {Promise<void>}
+ * ---
+ * This function executes the following steps:
+ * 1. Check if the command runner is already logged in; if not, provide an error message.
+ * 2. Retrieve the logged-in user's Roblox username.
+ * 3. Create buttons for "Confirm and Log Out" and "Cancel".
+ * 4. Send a prompt embed along with the buttons to the user.
+ * 5. Await a button interaction within a time limit.
+ * 6. Based on the button interaction:
+ *    - If "Confirm and Log Out" is clicked, update linked Roblox user data, disable the prompt, and reply with a success message.
+ *    - If "Cancel" is clicked, disable the prompt and reply with a cancellation message.
+ * 7. Handle errors, including timeouts, with appropriate responses.
  */
 async function Callback(Client, Interaction) {
   const UserLoggedIn = await IsUserLoggedIn(Interaction);

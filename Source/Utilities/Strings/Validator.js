@@ -4,7 +4,7 @@
  * @return {Boolean} Indication whether the provided string can be a valid Roblox username
  */
 function IsValidRobloxUsername(Str) {
-  return Str.match(/^(?=^[^_\n]+_?[^_\n]+$)\w{3,20}$/);
+  return Str.match(/^(?=^[^_\n]+_?[^_\n]+$)\w{3,20}$/) ?? false;
 }
 
 module.exports = {
