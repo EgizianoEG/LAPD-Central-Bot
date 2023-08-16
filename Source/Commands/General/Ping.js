@@ -1,11 +1,14 @@
-// eslint-disable-next-line no-unused-vars
-const { SlashCommandBuilder, Client, ChatInputCommandInteraction } = require("discord.js");
-const { SuccessEmbed } = require("../../Utilities/General/ExtraEmbeds");
+/* eslint-disable no-unused-vars */
+// Dependencies:
 const Humanizer = require("humanize-duration");
+const { SuccessEmbed } = require("../../Utilities/General/ExtraEmbeds");
+const { SlashCommandBuilder, Client, ChatInputCommandInteraction } = require("discord.js");
 // ---------------------------------------------------------------------------------------
+
 /**
  * @param {Client} Client
  * @param {ChatInputCommandInteraction} Interaction
+ * @returns {Promise<InteractionResponse<boolean>>}
  */
 async function Callback(Client, Interaction) {
   await Interaction.deferReply({ ephemeral: true });
@@ -31,6 +34,9 @@ async function Callback(Client, Interaction) {
   return Interaction.editReply({ embeds: [Response] });
 }
 
+// ---------------------------------------------------------------------------------------
+// Command structure:
+// ------------------
 const CommandObject = {
   callback: Callback,
   data: new SlashCommandBuilder()

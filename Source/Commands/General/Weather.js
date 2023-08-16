@@ -1,4 +1,8 @@
 /* eslint-disable no-unused-vars */
+// -------------
+// Dependencies:
+// -------------------------------------------------------------------------------
+
 const {
   Colors,
   Client,
@@ -8,54 +12,34 @@ const {
 } = require("discord.js");
 
 const GetWeatherIcon = require("../../Utilities/General/GetWeatherIcon");
-const { default: Axios } = require("axios");
-const { convert: Convert } = require("convert");
+const { GetCurrentWeather } = require("../../Utilities/General/WeatherData");
 const { Icons } = require("../../Json/Shared.json");
-const {
-  OpenWeather: { API_Key },
-} = require("../../Json/Secrets.json");
-// -------------------------------------------------------------------------------
 
-const WeatherAPI = Axios.create({
-  baseURL: "https://api.openweathermap.org/data/2.5/weather",
-  params: {
-    lat: 34.052235,
-    lon: -118.243683,
-    appid: API_Key,
-  },
-});
+// -------------------------------------------------------------------------------
 
 /**
  * @param {Client} Client
  * @param {ChatInputCommandInteraction} Interaction
+ * @returns {Promise<InteractionResponse<boolean>>}
  */
 async function Callback(Client, Interaction) {
   const Units = Interaction.options.getString("units") ?? "imperial";
-  const { data: WeatherData } = await WeatherAPI.request({
-    params: {
-      units: Units,
-    },
-  });
-
-  const SpeedUnit = Units === "metric" ? " m/s" : " mph";
-  const DegreeUnit = Units === "metric" ? " °C" : " °F";
-  const DistanceUnit = Units === "metric" ? "km" : "mi";
-  const VisibilityDistance = Convert(WeatherData.visibility, "m").to(DistanceUnit);
+  const WeatherData = await GetCurrentWeather({ Formatted: true, Units });
   const LocalDateTime = new Date().toLocaleString(["en-US"], {
     timeZone: "America/Los_Angeles",
     dateStyle: "full",
     timeStyle: "short",
   });
 
+  console.log(WeatherData);
+
   const WeatherEmbed = new EmbedBuilder()
-    .setURL("https://openweathermap.org/city/5368361")
+    .setURL(WeatherData.forecast_link)
     .setTitle("<:losangeles:1134606469828984873> Weather")
     .setColor(Colors.Greyple)
     .setDescription("Current weather in city of Los Angeles, California\n")
     .setFooter({ text: "Powered by OpenWeather", iconURL: Icons.OpenWeather })
-    .setThumbnail(
-      GetWeatherIcon(WeatherData.weather[0].id, WeatherData.weather[0].icon.includes("d"))
-    )
+    .setThumbnail(GetWeatherIcon(WeatherData.weather.id, WeatherData.is_day))
     .setTimestamp()
     .setFields(
       {
@@ -64,32 +48,32 @@ async function Callback(Client, Interaction) {
       },
       {
         name: "Condition",
-        value: WeatherData.weather[0].main,
+        value: WeatherData.weather.main,
         inline: true,
       },
       {
         name: "Temperature",
-        value: Math.round(WeatherData.main.temp) + DegreeUnit,
+        value: WeatherData.temp.current,
         inline: true,
       },
       {
         name: "Feels Like",
-        value: Math.round(WeatherData.main.feels_like) + DegreeUnit,
+        value: WeatherData.temp.feels_like,
         inline: true,
       },
       {
         name: "Humidity",
-        value: WeatherData.main.humidity + "%",
+        value: WeatherData.humidity,
         inline: true,
       },
       {
         name: "Wind Speed",
-        value: WeatherData.wind.speed + SpeedUnit,
+        value: WeatherData.wind.speed,
         inline: true,
       },
       {
         name: "Visibility",
-        value: `~${parseFloat(VisibilityDistance.toFixed(1))} ${DistanceUnit}`,
+        value: `~${WeatherData.visibility}`,
         inline: true,
       }
     );
@@ -97,6 +81,9 @@ async function Callback(Client, Interaction) {
   return Interaction.reply({ embeds: [WeatherEmbed] });
 }
 
+// ---------------------------------------------------------------------------------------
+// Command structure:
+// ------------------
 const CommandObject = {
   callback: Callback,
   cooldown: 30,
@@ -104,9 +91,16 @@ const CommandObject = {
     .setName("weather")
     .setDescription("Check the current weather in the city of Los Angeles.")
     .addStringOption((Option) =>
-      Option.setName("units")
-        .setDescription("Units of measurement.")
-        .addChoices({ name: "metric", value: "metric" }, { name: "imperial", value: "imperial" })
+      Option.setName("units").setDescription("Units of measurement.").addChoices(
+        {
+          name: "metric",
+          value: "metric",
+        },
+        {
+          name: "imperial",
+          value: "imperial",
+        }
+      )
     ),
 };
 

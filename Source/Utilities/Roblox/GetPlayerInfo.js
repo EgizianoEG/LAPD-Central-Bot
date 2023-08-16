@@ -1,8 +1,11 @@
 const { default: Axios } = require("axios");
+const {
+  APICache: { PlayerInfo },
+} = require("../General/Cache");
 
 /**
  * Returns the profile details
- * @param {*} UserId
+ * @param {(Number|String)} UserId
  * @returns {Promise<UserProfileDetails>} User profile details
  */
 function GetPlayerInfo(UserId) {

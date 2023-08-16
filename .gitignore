@@ -2,11 +2,16 @@
 .vscode-test
 
 # Confedential data
-Secrets.json
+[Ss]ecrets.json
 !.vscode/JSON Schemas/*
 
 # Dependency directories
 node_modules
+
+# Distribution
+[Bb]uild/
+[Dd]ist/
+env/
 
 # Logs
 logs
