@@ -1,6 +1,5 @@
 // eslint-disable-next-line no-unused-vars
 const { Client, ChatInputCommandInteraction, SlashCommandBuilder } = require("discord.js");
-const { InfoEmbed } = require("../../../Utilities/General/ExtraEmbeds.js");
 const AutocompleteHeight = require("../../../Utilities/Autocompletion/Height.js");
 const AutocompleteUsername = require("../../../Utilities/Autocompletion/Username.js");
 const AutocompleteWeight = require("../../../Utilities/Autocompletion/Weight.js");

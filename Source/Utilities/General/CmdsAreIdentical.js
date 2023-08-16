@@ -1,4 +1,4 @@
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line
 const { ApplicationCommand } = require("discord.js");
 
 /**

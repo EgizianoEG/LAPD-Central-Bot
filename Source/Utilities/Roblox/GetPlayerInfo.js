@@ -1,7 +1,4 @@
 const { default: Axios } = require("axios");
-const {
-  APICache: { PlayerInfo },
-} = require("../General/Cache");
 
 /**
  * Returns the profile details

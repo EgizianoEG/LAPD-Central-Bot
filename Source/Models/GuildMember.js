@@ -1,4 +1,4 @@
-const { Schema, Types } = require("mongoose");
+const { Schema } = require("mongoose");
 const ShiftSchema = require("./MemberShift");
 
 const SnowflakeID_Validation = [
