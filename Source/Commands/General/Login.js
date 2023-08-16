@@ -115,12 +115,13 @@ async function HandleUserLoginStatus(Interaction) {
  * 10. Handle errors and timeouts with appropriate responses.
  */
 async function Callback(Client, Interaction) {
-  const RobloxUsername = Interaction.options.getString("username", true);
+  const InputUsername = Interaction.options.getString("username", true);
 
   await HandleUserLoginStatus(Interaction);
-  await HandleInvalidUsername(Interaction, RobloxUsername);
+  await HandleInvalidUsername(Interaction, InputUsername);
   if (Interaction.replied) return;
 
+  const [RobloxUserId, RobloxUsername] = await GetIdFromUsername(InputUsername);
   const SampleText = DummyText();
   const ProcessEmbed = new EmbedBuilder()
     .setTitle("Login Process - " + escapeMarkdown(RobloxUsername))
@@ -153,7 +154,6 @@ async function Callback(Client, Interaction) {
   const DisablePrompt = () => {
     ButtonsActionRow.components.forEach((Button) => Button.setDisabled(true));
     return ProcessPrompt.edit({
-      embeds: [ProcessEmbed],
       components: [ButtonsActionRow],
     });
   };
@@ -165,7 +165,6 @@ async function Callback(Client, Interaction) {
     });
 
     if (ReceivedButtonAction.customId === "confirm-login") {
-      const RobloxUserId = await GetIdFromUsername(RobloxUsername);
       const CurrentAbout = (await GetPlayerInfo(RobloxUserId)).description;
 
       if (CurrentAbout.includes(SampleText)) {

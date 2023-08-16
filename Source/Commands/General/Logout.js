@@ -96,9 +96,9 @@ async function Callback(Client, Interaction) {
 
   const DisablePrompt = (Cancelled) => {
     ButtonsActionRow.components.forEach((Button) => Button.setDisabled(true));
-    if (Cancelled) PromptEmbed.setTitle("Logout Process - [Cancelled]");
+    // if (Cancelled) PromptEmbed.setTitle("Logout Process - [Cancelled]");
     return PromptReply.edit({
-      embeds: [PromptEmbed],
+      // embeds: [PromptEmbed],
       components: [ButtonsActionRow],
     });
   };

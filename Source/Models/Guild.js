@@ -1,5 +1,8 @@
 const { Schema, model } = require("mongoose");
-const MemberSchema = require("./GuildMember");
+const MemberSchema = require("./Schemas/GuildMember");
+const CallsignSchema = require("./Schemas/Callsign");
+const CiationSchema = require("./Schemas/Citation");
+const ArrestSchema = require("./Schemas/Arrest");
 
 const SnowflakeID_Validation = [
   /^\d{15,22}$/,
@@ -24,6 +27,13 @@ const GuildSchema = new Schema({
     login_restrictions: {
       type: Boolean,
       default: true,
+    },
+
+    // Logged guild scoped data
+    logs: {
+      citations: [CiationSchema],
+      arrests: [ArrestSchema],
+      callsigns: [CallsignSchema],
     },
 
     // The channel IDs of which to log specific actions and data
