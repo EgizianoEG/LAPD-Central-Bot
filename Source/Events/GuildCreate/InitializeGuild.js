@@ -8,10 +8,10 @@ const GuildModel = require("../../Models/Guild");
  * @param {Guild} CreatedGuild
  */
 async function InitializeGuild(Client, CreatedGuild) {
-  const GuildFound = await GuildModel.findOne({ guild_id: CreatedGuild.id });
+  const GuildFound = await GuildModel.findOne({ id: CreatedGuild.id });
   if (!GuildFound) {
     GuildModel.create({
-      guild_id: CreatedGuild.id,
+      id: CreatedGuild.id,
     });
   }
 }

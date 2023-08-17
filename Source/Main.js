@@ -32,9 +32,13 @@ App.login(BotToken)
     console.error("❎ - %s", Chalk.red("Failed to run the application. Details:\n"), Err)
   );
 
-Noblox.setCookie(Cookie).catch((Err) => {
-  console.log("❎ - %s Could not log into Roblox. Details:\n", Chalk.red("ERROR"), Err);
-});
+Noblox.setCookie(Cookie)
+  .then((UserData) => {
+    console.log("✅ - Logged into Roblox as %s.", Chalk.cyanBright.bold(UserData.UserName));
+  })
+  .catch((Err) => {
+    console.log("❎ - %s Could not log into Roblox. Details:\n", Chalk.red("ERROR"), Err);
+  });
 
 EventHandler(App);
 MongoDBHandler();

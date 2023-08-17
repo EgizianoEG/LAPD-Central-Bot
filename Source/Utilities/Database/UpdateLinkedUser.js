@@ -10,16 +10,16 @@ const GuildModel = require("../../Models/Guild.js");
  * @returns {Promise<(false|String)>} Logged in Roblox user id if found or false if not.
  */
 async function UpdateLinkedRobloxUser(CmdInteraction, RobloxUserId) {
-  const GuildFound = await GuildModel.findOne({ guild_id: CmdInteraction.guildId });
-  const MemberIndex = GuildFound.members.findIndex(
+  const GuildData = await GuildModel.findOne({ id: CmdInteraction.guildId });
+  const MemberIndex = GuildData.members.findIndex(
     (Member) => Member.user_id === CmdInteraction.member.id
   );
 
-  GuildFound.members[MemberIndex].linked_user = {
+  GuildData.members[MemberIndex].linked_user = {
     roblox_user_id: Number(RobloxUserId),
   };
 
-  return GuildFound.save();
+  return GuildData.save();
 }
 
 module.exports = UpdateLinkedRobloxUser;

@@ -16,13 +16,13 @@ const RPerms_Validator = {
 };
 
 const GuildSchema = new Schema({
-  guild_id: {
+  id: {
     type: String,
     required: true,
     match: SnowflakeID_Validation,
   },
 
-  guild_settings: {
+  settings: {
     // Restricts usage of certain commands in a server to the user who verified using the application
     login_restrictions: {
       type: Boolean,
@@ -101,6 +101,10 @@ const GuildSchema = new Schema({
         type: Number,
         default: 0,
         min: 0,
+      },
+
+      shift_types: {
+        type: [String],
       },
 
       shift_max_duration: {

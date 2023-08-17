@@ -7,7 +7,7 @@ const Chalk = require("chalk");
  * @param {Client} Client
  * @param {AutocompleteInteraction} Interaction
  */
-module.exports = async (Client, Interaction) => {
+module.exports = (Client, Interaction) => {
   if (!Interaction.isAutocomplete()) return;
   const CommandName = Interaction.commandName;
   const CommandObj = Client.commands.get(CommandName);

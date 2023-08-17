@@ -9,10 +9,10 @@ const GuildModel = require("../../Models/Guild");
 async function VerifyDatabase(Client) {
   const Guilds = Client.guilds.cache.values();
   for (const JoinedGuild of Guilds) {
-    const GuildFound = await GuildModel.findOne({ guild_id: JoinedGuild.id });
+    const GuildFound = await GuildModel.findOne({ id: JoinedGuild.id });
     if (!GuildFound) {
       GuildModel.create({
-        guild_id: JoinedGuild.id,
+        id: JoinedGuild.id,
       });
     }
   }
