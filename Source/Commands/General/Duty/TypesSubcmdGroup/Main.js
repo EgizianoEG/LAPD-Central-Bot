@@ -39,7 +39,7 @@ const SubcommandGroupObject = {
 };
 
 for (const Subcommand of Subcommands) {
-  SubcommandGroupObject.data.addSubcommand(Subcommand);
+  SubcommandGroupObject.data.addSubcommand(Subcommand.data);
 }
 
 // ---------------------------------------------------------------------------------------
