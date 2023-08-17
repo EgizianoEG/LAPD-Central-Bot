@@ -14,7 +14,7 @@ const Subcommands = [
   require("./Subcommands/WipeAll"),
 ];
 
-const DutyTypesCommandGroup = require("./TypesSubcmdGroup/Main");
+const DutyTypesSubcommandGroup = require("./TypesSubcmdGroup/Main");
 const AutocompleteDutyType = require("../../../Utilities/Autocompletion/DutyType");
 
 // ---------------------------------------------------------------------------------------
@@ -38,8 +38,8 @@ async function Callback(Client, Interaction) {
     }
   }
 
-  if (SubCommandGroupName === "types" && typeof DutyTypesCommandGroup.callback === "function") {
-    return DutyTypesCommandGroup.callback(Client, Interaction);
+  if (SubCommandGroupName === "types" && typeof DutyTypesSubcommandGroup.callback === "function") {
+    return DutyTypesSubcommandGroup.callback(Client, Interaction);
   }
 }
 
@@ -74,7 +74,7 @@ const CommandObject = {
   data: new SlashCommandBuilder()
     .setName("duty")
     .setDescription("Duty related actions.")
-    .addSubcommandGroup(DutyTypesCommandGroup.data),
+    .addSubcommandGroup(DutyTypesSubcommandGroup.data),
 
   callback: Callback,
   autocomplete: Autocomplete,
