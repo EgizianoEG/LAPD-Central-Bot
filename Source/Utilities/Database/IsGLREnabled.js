@@ -10,4 +10,5 @@ async function IsOptionEnabled(GuildId) {
   return !!GuildData.settings.login_restrictions;
 }
 
+// ------------------------------
 module.exports = IsOptionEnabled;

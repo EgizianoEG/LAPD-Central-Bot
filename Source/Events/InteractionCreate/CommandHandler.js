@@ -1,37 +1,40 @@
 /* eslint-disable no-unused-vars */
-const DefaultCmdCooldownDuration = 3;
-const Chalk = require("chalk");
-const { UnorderedList } = require("../../Utilities/Strings/Formatter");
-const { PascalToNormal } = require("../../Utilities/Strings/Converter");
-const {
-  ErrorEmbed,
-  UnauthorizedEmbed,
-  WarnEmbed,
-  InfoEmbed,
-} = require("../../Utilities/General/ExtraEmbeds");
+// --------------------------------
+// Dependencies:
+// ------------------------------------------------------------------------------------------
 
 const {
   Client,
   Collection,
+  PermissionFlagsBits,
   SlashCommandBuilder,
   ChatInputCommandInteraction,
-  PermissionFlagsBits,
 } = require("discord.js");
+
+const {
+  ErrorEmbed,
+  WarnEmbed,
+  InfoEmbed,
+  UnauthorizedEmbed,
+} = require("../../Utilities/General/ExtraEmbeds");
 
 const {
   Discord: { BotDevs },
 } = require("../../Json/Secrets.json");
+
+const { UnorderedList } = require("../../Utilities/Strings/Formatter");
+const { PascalToNormal } = require("../../Utilities/Strings/Converter");
+const Chalk = require("chalk");
+const DefaultCmdCooldownDuration = 3;
 
 // ------------------------------------------------------------------------------------------
 /**
  * The function that handles command executions
  * @param {Client} Client The bot user object
  * @param {ChatInputCommandInteraction} Interaction The command interaction
- * @returns
  */
 module.exports = async (Client, Interaction) => {
   if (!Interaction.isChatInputCommand()) return;
-  const Cooldowns = Client.cooldowns;
   const CommandName = Interaction.commandName;
   const CommandObject = Client.commands.get(CommandName);
 
@@ -48,10 +51,6 @@ module.exports = async (Client, Interaction) => {
       });
     }
 
-    if (!Cooldowns.has(CommandName)) {
-      Cooldowns.set(CommandName, new Collection());
-    }
-
     await HandleCooldowns(Client, Interaction, CommandObject);
     await HandleDevOnlyCommands(CommandObject, Interaction);
     await HandleUserPermissions(CommandObject, Interaction);
@@ -65,9 +64,9 @@ module.exports = async (Client, Interaction) => {
         Interaction.reply({
           ephemeral: true,
           embeds: [
-            new InfoEmbed("Seems like this command is still under development.").setTitle(
-              "Hold up!"
-            ),
+            new InfoEmbed()
+              .setTitle("Hold up!")
+              .setDescription("Seems like this command is still under development."),
           ],
         });
       }
@@ -84,18 +83,16 @@ module.exports = async (Client, Interaction) => {
       ],
     };
 
-    if (!Interaction.replied) {
-      Interaction.reply(ReplyOptions);
-    } else {
-      Interaction.followUp(ReplyOptions);
-    }
-
     console.log(
       "%s:%s - An error occurred;\n",
       Chalk.yellow("InteractionCreate"),
       Chalk.red("CommandHandler"),
       Err
     );
+
+    return !Interaction.replied
+      ? Interaction.reply(ReplyOptions)
+      : Interaction.followUp(ReplyOptions);
   }
 };
 
@@ -107,40 +104,47 @@ module.exports = async (Client, Interaction) => {
  * @param {Client} Client
  * @param {ChatInputCommandInteraction} Interaction
  * @param {CommandObject} CommandObject
- * @returns
  */
 async function HandleCooldowns(Client, Interaction, CommandObject) {
-  const Now = Date.now();
+  const CurrentTS = Date.now();
   const Cooldowns = Client.cooldowns;
   const CommandID = Interaction.commandId;
   const CommandName = Interaction.commandName;
+
+  if (!Cooldowns.has(CommandName)) {
+    Cooldowns.set(CommandName, new Collection());
+  }
+
   const Timestamps = Cooldowns.get(CommandName);
-  const CooldownAmount = (CommandObject.cooldown ?? DefaultCmdCooldownDuration) * 1000;
+  const CooldownDuration = (CommandObject.cooldown ?? DefaultCmdCooldownDuration) * 1000;
 
   if (Timestamps.has(Interaction.user.id)) {
-    const ExpirationTime = Timestamps.get(Interaction.user.id) + CooldownAmount;
-    if (Now < ExpirationTime) {
-      const ExpiredTimestamp = Math.round(ExpirationTime / 1000);
+    const ExpTimestamp = Timestamps.get(Interaction.user.id) + CooldownDuration;
+    if (CurrentTS < ExpTimestamp) {
       return Interaction.reply({
         ephemeral: true,
         embeds: [
-          new WarnEmbed(
-            `Please wait. You are currently on a cooldown for </${CommandName}:${CommandID}> slash command.\nYou may use it again approximately: <t:${ExpiredTimestamp}:R>.`
-          ).setTitle("Cooldown"),
+          new WarnEmbed()
+            .setTitle("Cooldown")
+            .setDescription(
+              "Please wait. You are currently on a cooldown for </%s:%s> slash command.\nYou may use it again approximately <t:%s:R>.",
+              CommandName,
+              CommandID,
+              Math.round(ExpTimestamp / 1000)
+            ),
         ],
       });
     }
   }
 
-  Timestamps.set(Interaction.user.id, Now);
-  setTimeout(() => Timestamps.delete(Interaction.user.id), CooldownAmount);
+  Timestamps.set(Interaction.user.id, CurrentTS);
+  setTimeout(() => Timestamps.delete(Interaction.user.id), CooldownDuration);
 }
 
 /**
  * Checks if the command is allowed to public use or not
  * @param {CommandObject} CommandObject
  * @param {ChatInputCommandInteraction} Interaction
- * @returns
  */
 function HandleDevOnlyCommands(CommandObject, Interaction) {
   if (Interaction.replied) return;
@@ -156,7 +160,6 @@ function HandleDevOnlyCommands(CommandObject, Interaction) {
  * Checks if the user has the necessary permissions to run the command
  * @param {CommandObject} CommandObject
  * @param {ChatInputCommandInteraction} Interaction
- * @returns
  */
 function HandleUserPermissions(CommandObject, Interaction) {
   if (Interaction.replied) return;
@@ -176,10 +179,11 @@ function HandleUserPermissions(CommandObject, Interaction) {
       return Interaction.reply({
         ephemeral: true,
         embeds: [
-          new UnauthorizedEmbed(
-            `Missing permission${Plural}.\nYou do not have the following permission${Plural} to run this command:\n ${UnorderedList(
-              MissingPerms
-            )}`
+          new UnauthorizedEmbed().setDescription(
+            "Missing permission%s.\nYou do not have the following permission%s to run this command:\n%s",
+            Plural,
+            Plural,
+            UnorderedList(MissingPerms)
           ),
         ],
       });
@@ -191,7 +195,6 @@ function HandleUserPermissions(CommandObject, Interaction) {
  * Checks if the bot has the required permission(s) to execute the required command properly
  * @param {CommandObject} CommandObject
  * @param {ChatInputCommandInteraction} Interaction
- * @returns
  */
 function HandleBotPermissions(CommandObject, Interaction) {
   if (Interaction.replied) return;
@@ -212,10 +215,10 @@ function HandleBotPermissions(CommandObject, Interaction) {
       return Interaction.reply({
         ephemeral: true,
         embeds: [
-          new ErrorEmbed(
-            `The bot lacks the following necessary permission${Plural} to perform the command:\n ${UnorderedList(
-              MissingPerms
-            )}`
+          new ErrorEmbed().setDescription(
+            "The bot lacks the following necessary permission%s to perform the command:\n%s",
+            Plural,
+            UnorderedList(MissingPerms)
           ),
         ],
       });

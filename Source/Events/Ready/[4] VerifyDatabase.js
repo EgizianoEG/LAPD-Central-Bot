@@ -8,13 +8,17 @@ const GuildModel = require("../../Models/Guild");
  */
 async function VerifyDatabase(Client) {
   const Guilds = Client.guilds.cache.values();
+  const NewGuilds = [];
+
   for (const JoinedGuild of Guilds) {
     const GuildFound = await GuildModel.findOne({ id: JoinedGuild.id });
     if (!GuildFound) {
-      GuildModel.create({
-        id: JoinedGuild.id,
-      });
+      NewGuilds.push({ id: JoinedGuild.id });
     }
+  }
+
+  if (NewGuilds.length > 0) {
+    GuildModel.insertMany(NewGuilds);
   }
 }
 

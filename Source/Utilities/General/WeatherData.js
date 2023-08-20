@@ -78,8 +78,8 @@ async function GetCurrentWeather(Options = { Units: "imperial" }) {
     WeatherData.humidity += "%";
     WeatherData.visibility += Units.Distance;
 
-    for (const [Key, Value] of Object.entries(WeatherData.temp)) {
-      WeatherData.temp[Key] = Value + Units.Degree;
+    for (const Key in WeatherData.temp) {
+      WeatherData.temp[Key] += Units.Degree;
     }
 
     if (Options.Units === "metric") {

@@ -14,7 +14,7 @@ const Subcommands = [require("./Deps/View"), require("./Deps/Create"), require("
  * @param {Client} Client
  * @param {ChatInputCommandInteraction} Interaction
  */
-async function Callback(Client, Interaction) {
+function Callback(Client, Interaction) {
   const SubcommandName = Interaction.options.getSubcommand();
   for (const Subcommand of Subcommands) {
     if (Subcommand.data.name === SubcommandName) {

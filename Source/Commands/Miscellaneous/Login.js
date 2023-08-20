@@ -124,8 +124,8 @@ async function Callback(Client, Interaction) {
   const [RobloxUserId, RobloxUsername] = await GetIdFromUsername(InputUsername);
   const SampleText = DummyText();
   const ProcessEmbed = new EmbedBuilder()
-    .setTitle("Login Process - " + escapeMarkdown(RobloxUsername))
     .setColor(Colors.Aqua)
+    .setTitle("Login Process - " + escapeMarkdown(RobloxUsername))
     .setDescription(
       "To verify your login, kindly modify the About/Description section of your Roblox Profile to include the provided sample text below.\n" +
         "- When finished, press the `Verify and Login` button\n" +

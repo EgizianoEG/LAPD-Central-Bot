@@ -15,7 +15,7 @@ const Subcommands = [
 ];
 
 const DutyTypesSubcommandGroup = require("./TypesSubcmdGroup/Main");
-const AutocompleteDutyType = require("../../../Utilities/Autocompletion/DutyType");
+const AutocompleteShiftType = require("../../../Utilities/Autocompletion/ShiftType");
 
 // ---------------------------------------------------------------------------------------
 // Functions:
@@ -24,7 +24,7 @@ const AutocompleteDutyType = require("../../../Utilities/Autocompletion/DutyType
  * @param {Client} Client
  * @param {ChatInputCommandInteraction} Interaction
  */
-async function Callback(Client, Interaction) {
+function Callback(Client, Interaction) {
   const SubCommandName = Interaction.options.getSubcommand();
   const SubCommandGroupName = Interaction.options.getSubcommandGroup();
 
@@ -55,9 +55,9 @@ async function Autocomplete(Interaction) {
   let Suggestions;
 
   if (name === "type") {
-    Suggestions = await AutocompleteDutyType(value, Interaction);
+    Suggestions = await AutocompleteShiftType(value, Interaction.guildId);
   } else if (name === "name" && SubcommandGroup === "types" && SubcommandName === "delete") {
-    Suggestions = await AutocompleteDutyType(value, Interaction);
+    Suggestions = await AutocompleteShiftType(value, Interaction.guildId);
   } else {
     Suggestions = [];
   }
@@ -69,7 +69,6 @@ async function Autocomplete(Interaction) {
 // Command structure:
 // ------------------
 const CommandObject = {
-  // strictUpdate: true,
   cooldown: 5,
   data: new SlashCommandBuilder()
     .setName("duty")

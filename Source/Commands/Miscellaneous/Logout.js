@@ -94,11 +94,9 @@ async function Callback(Client, Interaction) {
     components: [ButtonsActionRow],
   });
 
-  const DisablePrompt = (Cancelled) => {
+  const DisablePrompt = () => {
     ButtonsActionRow.components.forEach((Button) => Button.setDisabled(true));
-    // if (Cancelled) PromptEmbed.setTitle("Logout Process - [Cancelled]");
     return PromptReply.edit({
-      // embeds: [PromptEmbed],
       components: [ButtonsActionRow],
     });
   };
@@ -121,7 +119,7 @@ async function Callback(Client, Interaction) {
           ],
         });
       } else {
-        await DisablePrompt(true);
+        await DisablePrompt();
         return ButtonAction.reply({
           ephemeral: true,
           embeds: [
@@ -132,7 +130,7 @@ async function Callback(Client, Interaction) {
     })
     .catch(async (Err) => {
       if (Err.message.match(/reason: (.+)/)?.[1].match(/time/i)) {
-        return DisablePrompt(true);
+        return DisablePrompt();
       } else {
         throw Err;
       }

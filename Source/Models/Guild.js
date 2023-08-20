@@ -18,8 +18,17 @@ const RPerms_Validator = {
 const GuildSchema = new Schema({
   id: {
     type: String,
+    index: true,
+    unique: true,
     required: true,
     match: SnowflakeID_Validation,
+  },
+
+  // Logged guild scoped data
+  logs: {
+    arrests: [ArrestSchema],
+    citations: [CiationSchema],
+    callsigns: [CallsignSchema],
   },
 
   settings: {
@@ -29,31 +38,21 @@ const GuildSchema = new Schema({
       default: true,
     },
 
-    // Logged guild scoped data
-    logs: {
-      citations: [CiationSchema],
-      arrests: [ArrestSchema],
-      callsigns: [CallsignSchema],
-    },
-
     // The channel IDs of which to log specific actions and data
     logging_channels: {
       citations: {
         type: String,
         default: null,
-        required: false,
         match: SnowflakeID_Validation,
       },
       arrests: {
         type: String,
         default: null,
-        required: false,
         match: SnowflakeID_Validation,
       },
       shift_actions: {
         type: String,
         default: null,
-        required: false,
         match: SnowflakeID_Validation,
       },
     },
@@ -62,12 +61,10 @@ const GuildSchema = new Schema({
     role_permissions: {
       staff: {
         type: [String],
-        required: false,
         validate: RPerms_Validator,
       },
       management: {
         type: [String],
-        required: false,
         validate: RPerms_Validator,
       },
     },
@@ -78,6 +75,7 @@ const GuildSchema = new Schema({
         | on_duty  -> The role ID given to a user with an on-duty shift status
         | on_break -> The role ID given to a user with an on-break shift status
 
+      shift_types  -> An array of shift type objects that contain the name (name) of the shift and roles (permissible_roles) of which holders can use this type
       shift_quota  -> The required duration of time (in milliseconds) for each member to be on-shift; defaults: 0 seconds
       shift_max_duration -> The maximum shift duration (in milliseconds); defaults to one day; minimum: 15 minutes
     */
@@ -86,13 +84,11 @@ const GuildSchema = new Schema({
         on_duty: {
           type: String,
           default: null,
-          required: false,
           match: SnowflakeID_Validation,
         },
         on_break: {
           type: String,
           default: null,
-          required: false,
           match: SnowflakeID_Validation,
         },
       },
@@ -104,7 +100,22 @@ const GuildSchema = new Schema({
       },
 
       shift_types: {
-        type: [String],
+        type: [
+          {
+            name: {
+              type: String,
+              required: true,
+              minLength: 3,
+              maxLength: 20,
+            },
+            permissible_roles: [
+              {
+                type: String,
+                match: SnowflakeID_Validation,
+              },
+            ],
+          },
+        ],
       },
 
       shift_max_duration: {
@@ -118,7 +129,6 @@ const GuildSchema = new Schema({
   // Guild members array which will include members who have verified before in the application
   members: {
     type: [MemberSchema],
-    default: [],
   },
 });
 

@@ -1,6 +1,7 @@
 // eslint-disable-next-line no-unused-vars
 const { ChatInputCommandInteraction } = require("discord.js");
 const GuildModel = require("../../Models/Guild.js");
+// ----------------------------------------------------------------
 
 /**
  * Updates the linked Roblox user id and puts the given one instead
@@ -22,4 +23,5 @@ async function UpdateLinkedRobloxUser(CmdInteraction, RobloxUserId) {
   return GuildData.save();
 }
 
+// -------------------------------------
 module.exports = UpdateLinkedRobloxUser;
