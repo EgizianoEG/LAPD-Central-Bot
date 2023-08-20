@@ -24,6 +24,7 @@ const {
 
 const { UnorderedList } = require("../../Utilities/Strings/Formatter");
 const { PascalToNormal } = require("../../Utilities/Strings/Converter");
+const { SendErrorReply } = require("../../Utilities/General/SendReply");
 const Chalk = require("chalk");
 const DefaultCmdCooldownDuration = 3;
 
@@ -74,14 +75,10 @@ module.exports = async (Client, Interaction) => {
       throw new ReferenceError(`❎ - '${CommandName}' callback function has not been found.`);
     }
   } catch (Err) {
-    const ReplyOptions = {
-      ephemeral: true,
-      embeds: [
-        new ErrorEmbed(
-          "Apologies, a server/application error occurred while executing this command. Please attempt again at a later time."
-        ),
-      ],
-    };
+    SendErrorReply({
+      Ephemeral: true,
+      Template: "AppError",
+    });
 
     console.log(
       "%s:%s - An error occurred;\n",
@@ -89,10 +86,6 @@ module.exports = async (Client, Interaction) => {
       Chalk.red("CommandHandler"),
       Err
     );
-
-    return !Interaction.replied
-      ? Interaction.reply(ReplyOptions)
-      : Interaction.followUp(ReplyOptions);
   }
 };
 

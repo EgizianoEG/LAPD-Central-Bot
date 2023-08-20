@@ -17,10 +17,6 @@ const ReplyTemplates = {
  * @returns {Promise<InteractionResponse|undefined>}
  */
 function SendErrorReply(Options) {
-  if (Options.Interact.isRepliable()) {
-    throw new Error("Cannot reply to the given interaction.");
-  }
-
   if (Options.Template) {
     Options.Title = ReplyTemplates[Options.Template]?.Title ?? Options.Title;
     Options.Message = ReplyTemplates[Options.Template]?.Message ?? Options.Message;
@@ -29,9 +25,11 @@ function SendErrorReply(Options) {
   const ReplyMethod = !Options.Interact.replied ? "reply" : "followUp";
   return Options.Interact[ReplyMethod]({
     ephemeral: Options.Ephemeral,
-    embeds: new ErrorEmbed()
-      .setTitle(Options.Title ?? "Error")
-      .setDescription(Options.Message ?? "An unknown error occurred."),
+    embeds: [
+      new ErrorEmbed()
+        .setTitle(Options.Title ?? "Error")
+        .setDescription(Options.Message ?? "An unknown error occurred."),
+    ],
   });
 }
 

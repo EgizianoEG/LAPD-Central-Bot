@@ -19,21 +19,24 @@ async function CreateShiftType(Data) {
     { id: Data.guild_id },
     "settings.shift_settings.shift_types"
   );
+
   const ShiftTypeExists = GuildDoc.settings.shift_settings.shift_types.find(
     (ShiftType) => ShiftType.name === Data.name
   );
 
-  if (GuildDoc.settings.shift_settings.shift_types.length > 9) {
-    return new AppError(
-      "Maximum Shift Types Reached",
-      "The limit of ten shift types has been reached, and you cannot create further."
-    );
-  } else if (!ShiftTypeExists) {
-    GuildDoc.settings.shift_settings.shift_types.push({
-      name: Data.name,
-      permissible_roles: Data.permissible_roles,
-    });
-    return GuildDoc.save();
+  if (!ShiftTypeExists) {
+    if (GuildDoc.settings.shift_settings.shift_types.length > 9) {
+      return new AppError(
+        "Maximum Shift Types Reached",
+        "The limit of ten shift types has been reached, and you cannot create further."
+      );
+    } else {
+      GuildDoc.settings.shift_settings.shift_types.push({
+        name: Data.name,
+        permissible_roles: Data.permissible_roles,
+      });
+      return GuildDoc.save();
+    }
   } else {
     return new AppError(
       "Shift Type Already Exists",

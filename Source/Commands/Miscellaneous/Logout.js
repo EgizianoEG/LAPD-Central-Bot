@@ -48,7 +48,7 @@ async function HandleLoggedInUser(Interaction, IsLoggedIn) {
  * @param {Client} Client
  * @param {ChatInputCommandInteraction} Interaction
  * @returns {Promise<void>}
- * ---
+ * @execution
  * This function executes the following steps:
  * 1. Check if the command runner is already logged in; if not, provide an error message.
  * 2. Retrieve the logged-in user's Roblox username.

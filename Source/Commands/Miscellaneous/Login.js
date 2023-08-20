@@ -99,7 +99,7 @@ async function HandleUserLoginStatus(Interaction) {
  * @param {Client} Client - The Discord.js client object.
  * @param {ChatInputCommandInteraction} Interaction - The interaction object.
  * @returns {Promise<void>}
- * ---
+ * @execution
  * This function executes the following steps:
  * 1. Retrieve the provided Roblox username from the interaction options.
  * 2. Check if the user is already logged in; if so, inform the user and return.
