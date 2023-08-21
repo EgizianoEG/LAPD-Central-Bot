@@ -6,9 +6,8 @@
 const {
   SlashCommandSubcommandBuilder,
   ChatInputCommandInteraction,
-  RoleSelectMenuInteraction,
+  MessageComponentInteraction,
   RoleSelectMenuBuilder,
-  ButtonInteraction,
   ActionRowBuilder,
   escapeMarkdown,
   ButtonBuilder,
@@ -61,7 +60,7 @@ function HandleNameValidation(Interaction, ShiftTypeName) {
 /**
  * A helper function that filters the component collector interactions to ensure authorization.
  * @param {ChatInputCommandInteraction} OriginalInteract - The user command interaction
- * @param {RoleSelectMenuInteraction|ButtonInteraction} ReceivedInteract - The received interaction from the collector
+ * @param {MessageComponentInteraction} ReceivedInteract - The received interaction from the collector
  * @returns {Boolean} A boolean indicating if the interaction is authorized
  */
 function HandleCollectorFiltering(OriginalInteract, ReceivedInteract) {
@@ -102,6 +101,9 @@ function HandleCollectorFiltering(OriginalInteract, ReceivedInteract) {
  * 7. Create a collector to listen for button and role menu interactions.
  * 8. Handle "collect" events by responding to button and role menu interactions.
  * 9. Handle the "end" event to process the results of the interaction.
+ *    - Remove all event listeners
+ *    - If the end reason is related to deletion of the prompt (e.g. guildDelete, channelDelete),
+ *      - Return and halt the execution
  *    - If the end reason is "confirmation":
  *      - Attempt to create the new shift type in the database using `CreateShiftType` helper function.
  *      - Respond with a success embed or an error message.
@@ -156,17 +158,17 @@ async function Callback(_, Interaction) {
   const DisablePrompt = () => {
     PromptComponents[1].components.forEach((Button) => Button.setDisabled(true));
     PromptComponents[0].components[0].setDisabled(true);
-    return PromptReply.edit({
+    return Prompt.edit({
       components: PromptComponents,
     });
   };
 
-  const PromptReply = await Interaction.reply({
+  const Prompt = await Interaction.reply({
     embeds: [PromptEmbed],
     components: PromptComponents,
   });
 
-  const CompCollector = PromptReply.createMessageComponentCollector({
+  const CompCollector = Prompt.createMessageComponentCollector({
     filter: (Collected) => HandleCollectorFiltering(Interaction, Collected),
     idle: 5 * 60_000,
     time: 15 * 60_000,
@@ -188,6 +190,9 @@ async function Callback(_, Interaction) {
 
   CompCollector.once("end", async (CollectedInt, EndReason) => {
     const LastInteraction = CollectedInt.last();
+    CompCollector.removeAllListeners();
+    if (EndReason.match(/\w+Delete/)) return;
+
     try {
       await DisablePrompt();
       if (EndReason === "confirmation") {
@@ -222,7 +227,7 @@ async function Callback(_, Interaction) {
           ],
         });
       } else if (EndReason === "idle") {
-        PromptReply.followUp({
+        Prompt.followUp({
           embeds: [
             new InfoEmbed()
               .setTitle("Process Timed Out")
@@ -230,7 +235,7 @@ async function Callback(_, Interaction) {
           ],
         });
       } else if (EndReason === "time") {
-        PromptReply.followUp({
+        Prompt.followUp({
           embeds: [
             new InfoEmbed()
               .setTitle("Process Timed Out")
@@ -241,7 +246,7 @@ async function Callback(_, Interaction) {
         });
       }
     } catch (Err) {
-      SendErrorReply({ Interact: LastInteraction, Template: "AppError" });
+      SendErrorReply({ Interact: LastInteraction ?? Prompt, Template: "AppError" });
       console.log(
         "%s:%s - An error occurred;\n",
         Chalk.yellow("InteractionCreate"),

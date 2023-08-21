@@ -12,6 +12,7 @@ const { SlashCommandBuilder, Client, ChatInputCommandInteraction } = require("di
  */
 async function Callback(Client, Interaction) {
   await Interaction.deferReply({ ephemeral: true });
+
   const Reply = await Interaction.fetchReply();
   const ClientPing = Reply.createdTimestamp - Interaction.createdTimestamp;
   const AppUptime = Humanizer(Client.uptime, {

@@ -17,6 +17,7 @@ const ReplyTemplates = {
  * @returns {Promise<InteractionResponse|undefined>}
  */
 function SendErrorReply(Options) {
+  if (!Options.Interact) return;
   if (Options.Template) {
     Options.Title = ReplyTemplates[Options.Template]?.Title ?? Options.Title;
     Options.Message = ReplyTemplates[Options.Template]?.Message ?? Options.Message;
