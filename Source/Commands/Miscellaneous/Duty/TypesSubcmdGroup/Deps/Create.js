@@ -98,6 +98,24 @@ function HandleCollectorFiltering(OriginalInteract, ReceivedInteract) {
 }
 
 /**
+ * Formats the given array of role ids for displaying
+ * @param {Array<String>} RoleIds
+ * @returns {String}
+ */
+function FormatPermissibleRoles(RoleIds) {
+  if (RoleIds.length) {
+    return RoleIds.map((Id, Index) => {
+      return (
+        `<@&${Id}>` +
+        (Index === RoleIds.length - 2 ? ", and " : Index + 1 !== RoleIds.length ? ", " : "")
+      );
+    }).join("");
+  } else {
+    return "Usable by All Members";
+  }
+}
+
+/**
  * Handles the command execution process for creating a new duty shift type.
  * @param {Client} _ - The Discord.js client instance (not used in this function)
  * @param {ChatInputCommandInteraction} Interaction - The user command interaction
@@ -220,10 +238,13 @@ async function Callback(_, Interaction) {
         if (!(Response instanceof Error)) {
           LastInteraction.reply({
             embeds: [
-              new SuccessEmbed().setDescription(
-                "Successfuly created a new Shift type with the name `%s`.",
-                ShiftTypeName
-              ),
+              new SuccessEmbed()
+                .setTitle("Shift Type Created")
+                .setDescription(
+                  `**Shift Type Name:** \`${ShiftTypeName}\`\n`,
+                  "**Permissible Roles:**\n",
+                  FormatPermissibleRoles(ShiftTypePermittedRoles)
+                ),
             ],
           });
         } else {

@@ -552,6 +552,26 @@ function FormatUsername(UserData, IncludeID) {
   return null;
 }
 
+/**
+ * Joins the elements of a given array with extra options
+ * @param {Array<String>} Array - The array to join its elements together
+ * @param {Object} Options
+ * @property {String} Options.delimiter - The delimiter to use when joining the elements; defaults to comma (", ")
+ * @property {String} Options.conjunction - String to include after the last delimiter; defaults to "and "
+ */
+function JoinArrayElements(Array, Options = { delimiter: ", ", conjunction: "and " }) {
+  return Array.map((Element, Index) => {
+    return (
+      Element +
+      (Index === Array.length - 2
+        ? Options.delimiter + Options.conjunction
+        : Index + 1 !== Array.length
+        ? Options.delimiter
+        : "")
+    );
+  }).join("");
+}
+
 module.exports = {
   UnorderedList,
   FormatCharges,
@@ -559,4 +579,5 @@ module.exports = {
   FormatHeight,
   FormatAge,
   FormatUsername,
+  JoinArrayElements,
 };

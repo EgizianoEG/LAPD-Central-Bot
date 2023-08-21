@@ -92,6 +92,7 @@ function HandleCollectorFiltering(OriginalInteract, ReceivedInteract) {
  * @description
  * Handles the entire process of deleting a duty shift type. Validates the provided shift type name,
  * displays a confirmation prompt, waits for user interaction, and performs the deletion or cancellation.
+ *
  * @execution
  * 1. Retrieve the provided shift type name from the interaction options.
  * 2. Validate the shift type name using the HandleNameValidation function.
