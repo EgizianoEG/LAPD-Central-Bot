@@ -106,9 +106,9 @@ async function Callback(Client, Interaction) {
     time: 5 * 60_000,
   })
     .then(async (ButtonAction) => {
+      await DisablePrompt();
       if (ButtonAction.customId === "confirm-logout") {
-        await UpdateLinkedRobloxUser(Interaction, 0);
-        await DisablePrompt();
+        await UpdateLinkedRobloxUser(Interaction);
         return ButtonAction.reply({
           ephemeral: true,
           embeds: [
@@ -119,7 +119,6 @@ async function Callback(Client, Interaction) {
           ],
         });
       } else {
-        await DisablePrompt();
         return ButtonAction.reply({
           ephemeral: true,
           embeds: [
@@ -129,8 +128,10 @@ async function Callback(Client, Interaction) {
       }
     })
     .catch(async (Err) => {
-      if (Err.message.match(/reason: (.+)/)?.[1].match(/time/i)) {
+      if (Err.message.match(/reason: time/)) {
         return DisablePrompt();
+      } else if (Err.message.match(/reason: \w+Delete/)) {
+        /* ignore message/channel/guild deletion */
       } else {
         throw Err;
       }

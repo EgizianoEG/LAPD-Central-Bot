@@ -26,6 +26,7 @@ const {
 const { IsValidShiftTypeName } = require("../../../../../Utilities/Strings/Validator");
 const { SendErrorReply } = require("../../../../../Utilities/General/SendReply");
 const CreateShiftType = require("../../../../../Utilities/Database/CreateShiftType");
+const GetShiftTypes = require("../../../../../Utilities/Database/GetShiftTypes");
 const Chalk = require("chalk");
 
 // ---------------------------------------------------------------------------------------
@@ -37,7 +38,7 @@ const Chalk = require("chalk");
  * @param {String} ShiftTypeName - The provided name from the user
  * @returns {Promise<InteractionResponse|undefined>} The interaction reply (an error reply) if validation failed; otherwise `undefined`
  */
-function HandleNameValidation(Interaction, ShiftTypeName) {
+async function HandleNameValidation(Interaction, ShiftTypeName) {
   if (!IsValidShiftTypeName(ShiftTypeName)) {
     return SendErrorReply({
       Ephemeral: true,
@@ -54,6 +55,20 @@ function HandleNameValidation(Interaction, ShiftTypeName) {
       Message:
         "The name of the `Default` shift type is preserved and cannot be overridden, deleted, or created.",
     });
+  } else {
+    const Exists = await GetShiftTypes(Interaction.guildId).then((ShiftTypes) => {
+      for (const ShiftType of ShiftTypes) {
+        if (ShiftType.name === ShiftTypeName) return true;
+      }
+      return false;
+    });
+    if (Exists)
+      return SendErrorReply({
+        Ephemeral: true,
+        Interact: Interaction,
+        Title: "Shift Type Already Exists",
+        Message: `There is already a shift type named \`${ShiftTypeName}\`. Please make sure you're creating a distinct shift type.`,
+      });
   }
 }
 
@@ -154,25 +169,25 @@ async function Callback(_, Interaction) {
     ),
   ];
 
-  // Disables the prompt and prevents any further interaction with its components
-  const DisablePrompt = () => {
-    PromptComponents[1].components.forEach((Button) => Button.setDisabled(true));
-    PromptComponents[0].components[0].setDisabled(true);
-    return Prompt.edit({
-      components: PromptComponents,
-    });
-  };
-
-  const Prompt = await Interaction.reply({
+  const PromptMessage = await Interaction.reply({
     embeds: [PromptEmbed],
     components: PromptComponents,
   });
 
-  const CompCollector = Prompt.createMessageComponentCollector({
+  const CompCollector = PromptMessage.createMessageComponentCollector({
     filter: (Collected) => HandleCollectorFiltering(Interaction, Collected),
     idle: 5 * 60_000,
     time: 15 * 60_000,
   });
+
+  // Disables the prompt and prevents any further interaction with its components
+  const DisablePrompt = () => {
+    PromptComponents[1].components.forEach((Button) => Button.setDisabled(true));
+    PromptComponents[0].components[0].setDisabled(true);
+    return PromptMessage.edit({
+      components: PromptComponents,
+    });
+  };
 
   CompCollector.on("collect", async (CollectInteraction) => {
     if (CollectInteraction.isButton()) {
@@ -196,13 +211,13 @@ async function Callback(_, Interaction) {
     try {
       await DisablePrompt();
       if (EndReason === "confirmation") {
-        const Res = await CreateShiftType({
+        const Response = await CreateShiftType({
           guild_id: Interaction.guildId,
           name: ShiftTypeName,
           permissible_roles: ShiftTypePermittedRoles,
         });
 
-        if (!(Res instanceof Error)) {
+        if (!(Response instanceof Error)) {
           LastInteraction.reply({
             embeds: [
               new SuccessEmbed().setDescription(
@@ -213,8 +228,8 @@ async function Callback(_, Interaction) {
           });
         } else {
           SendErrorReply({
-            Title: Res.title,
-            Message: Res.message,
+            Title: Response.title,
+            Message: Response.message,
             Interact: LastInteraction,
           });
         }
@@ -227,7 +242,7 @@ async function Callback(_, Interaction) {
           ],
         });
       } else if (EndReason === "idle") {
-        Prompt.followUp({
+        PromptMessage.followUp({
           embeds: [
             new InfoEmbed()
               .setTitle("Process Timed Out")
@@ -235,7 +250,7 @@ async function Callback(_, Interaction) {
           ],
         });
       } else if (EndReason === "time") {
-        Prompt.followUp({
+        PromptMessage.followUp({
           embeds: [
             new InfoEmbed()
               .setTitle("Process Timed Out")
@@ -246,7 +261,7 @@ async function Callback(_, Interaction) {
         });
       }
     } catch (Err) {
-      SendErrorReply({ Interact: LastInteraction ?? Prompt, Template: "AppError" });
+      SendErrorReply({ Interact: LastInteraction ?? PromptMessage, Template: "AppError" });
       console.log(
         "%s:%s - An error occurred;\n",
         Chalk.yellow("InteractionCreate"),

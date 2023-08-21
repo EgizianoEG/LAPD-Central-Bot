@@ -31,8 +31,6 @@ async function Callback(Client, Interaction) {
     timeStyle: "short",
   });
 
-  console.log(WeatherData);
-
   const WeatherEmbed = new EmbedBuilder()
     .setURL(WeatherData.forecast_link)
     .setTitle("<:losangeles:1134606469828984873> Weather")

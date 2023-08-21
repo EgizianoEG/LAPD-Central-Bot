@@ -7,17 +7,17 @@ const GuildModel = require("../../Models/Guild.js");
  * Updates the linked Roblox user id and puts the given one instead
  * This function is runs knowing that the user and their guild are recorded in the database already
  * @param {ChatInputCommandInteraction} CmdInteraction Orginal command interaction
- * @param {(String|Number)} RobloxUserId The user Id to record and put into the database
+ * @param {(String|Number|Null)} [RobloxUserId] The user Id to record and put into the database (`null` by default)
  * @returns {Promise<(false|String)>} Logged in Roblox user id if found or false if not.
  */
-async function UpdateLinkedRobloxUser(CmdInteraction, RobloxUserId) {
+async function UpdateLinkedRobloxUser(CmdInteraction, RobloxUserId = null) {
   const GuildData = await GuildModel.findOne({ id: CmdInteraction.guildId });
   const MemberIndex = GuildData.members.findIndex(
     (Member) => Member.user_id === CmdInteraction.member.id
   );
 
   GuildData.members[MemberIndex].linked_user = {
-    roblox_user_id: Number(RobloxUserId),
+    roblox_user_id: RobloxUserId,
   };
 
   return GuildData.save();

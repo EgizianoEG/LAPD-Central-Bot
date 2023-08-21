@@ -82,8 +82,9 @@ async function HandleInvalidUsername(Interaction, RobloxUsername) {
  * @requires `Utilities/Roblox/GetPlayerInfo`
  */
 async function HandleUserLoginStatus(Interaction) {
+  if (Interaction.replied) return;
   const UserLoggedIn = await IsUserLoggedIn(Interaction);
-  if (UserLoggedIn && !Interaction.replied) {
+  if (UserLoggedIn) {
     const LoggedUsername = (await GetPlayerInfo(UserLoggedIn)).name;
     return SendErrorEmbed(
       Interaction,
@@ -158,62 +159,60 @@ async function Callback(Client, Interaction) {
     });
   };
 
-  try {
-    const ReceivedButtonAction = await ProcessPrompt.awaitMessageComponent({
-      componentType: ComponentType.Button,
-      time: 5 * 60_000,
-    });
-
-    if (ReceivedButtonAction.customId === "confirm-login") {
-      const CurrentAbout = (await GetPlayerInfo(RobloxUserId)).description;
-
-      if (CurrentAbout.includes(SampleText)) {
-        await DisablePrompt();
-        await UpdateLinkedRobloxUser(Interaction, RobloxUserId);
-        return ReceivedButtonAction.reply({
-          ephemeral: true,
-          embeds: [
-            new SuccessEmbed().setDescription(
-              "Successfully verified and logged in as `%s`.",
-              RobloxUsername
-            ),
-          ],
-        });
-      } else {
-        await DisablePrompt();
-        return SendErrorEmbed(
-          ReceivedButtonAction,
-          "Verification Failed",
-          "Login verification as `%s` failed.\nPlease rerun the command and ensure you follow the appropriate instructions.",
-          RobloxUsername
-        );
-      }
-    } else {
+  const HandleCollectorExceptions = async (Err) => {
+    if (Err.message.match(/reason: time/)) {
       await DisablePrompt();
-      return ReceivedButtonAction.reply({
-        ephemeral: true,
-        embeds: [
-          new InfoEmbed("The login process has been canceled.").setTitle("Process Cancellation"),
-        ],
+      return SendErrorEmbed({
+        Interact: ProcessPrompt,
+        Title: "Process Cancelled",
+        Message:
+          "The login process has been terminated due to no response being received within five minutes.",
       });
-    }
-  } catch (Err) {
-    if (Err.message.match(/reason: (.+)/)?.[1].match(/time/i)) {
-      await DisablePrompt();
-      return Interaction.followUp({
-        ephemeral: true,
-        embeds: [
-          new ErrorEmbed()
-            .setTitle("Process Cancelled")
-            .setDescription(
-              "The login process has been terminated due to no response being received within five minutes."
-            ),
-        ],
-      });
+    } else if (Err.message.match(/reason: \w+Delete/)) {
+      /* ignore message/channel/guild deletion */
     } else {
       throw Err;
     }
-  }
+  };
+
+  await ProcessPrompt.awaitMessageComponent({
+    componentType: ComponentType.Button,
+    time: 5 * 60_000,
+  })
+    .then(async (ButtonInteract) => {
+      await DisablePrompt();
+      if (ButtonInteract.customId === "confirm-login") {
+        const CurrentAbout = (await GetPlayerInfo(RobloxUserId)).description;
+
+        if (CurrentAbout.includes(SampleText)) {
+          await UpdateLinkedRobloxUser(Interaction, RobloxUserId);
+          return ButtonInteract.reply({
+            ephemeral: true,
+            embeds: [
+              new SuccessEmbed().setDescription(
+                "Successfully verified and logged in as `%s`.",
+                RobloxUsername
+              ),
+            ],
+          });
+        } else {
+          return SendErrorEmbed(
+            ButtonInteract,
+            "Verification Failed",
+            "Login verification as `%s` failed.\nPlease rerun the command and ensure you follow the appropriate instructions.",
+            RobloxUsername
+          );
+        }
+      } else {
+        return ButtonInteract.reply({
+          ephemeral: true,
+          embeds: [
+            new InfoEmbed("The login process has been canceled.").setTitle("Process Cancellation"),
+          ],
+        });
+      }
+    })
+    .catch(HandleCollectorExceptions);
 }
 
 /**
