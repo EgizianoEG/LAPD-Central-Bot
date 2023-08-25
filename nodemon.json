@@ -1,0 +1,9 @@
+{
+  "ext": "js,ts,json",
+  "ignore": ["node_modules", "Build"],
+  "watch": ["./Source/"],
+  "execMap": {
+    "ts": "ts-node",
+    "js": "node"
+  }
+}
