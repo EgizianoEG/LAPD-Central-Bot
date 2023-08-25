@@ -1,12 +1,10 @@
-// eslint-disable-next-line no-unused-vars
-const { Client, ChatInputCommandInteraction, SlashCommandBuilder } = require("discord.js");
-const { InfoEmbed } = require("../../../Utilities/General/ExtraEmbeds");
+const { SlashCommandBuilder } = require("discord.js");
 const SubCommands = [require("./Deps/Embed"), require("./Deps/ArrestReport")];
-
 // ---------------------------------------------------------------------------------------
+
 /**
- * @param {Client} Client
- * @param {ChatInputCommandInteraction} Interaction
+ * @param {DiscordClient} Client
+ * @param {SlashCommandInteraction} Interaction
  */
 async function Callback(Client, Interaction) {
   for (const SubCommand of SubCommands) {
@@ -18,18 +16,16 @@ async function Callback(Client, Interaction) {
       }
     }
   }
-
-  const InformationEmbed = new InfoEmbed("This command is currently under development.");
-  Interaction.reply({ embeds: [InformationEmbed] });
 }
 
 // ---------------------------------------------------------------------------------------
 // Command structure:
 // ------------------
 const CommandObject = {
-  // deleted: true,
-  devOnly: true,
   callback: Callback,
+  options: {
+    devOnly: true,
+  },
   data: new SlashCommandBuilder()
     .setName("send")
     .setDescription("Sends a specific information.")

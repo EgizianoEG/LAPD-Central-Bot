@@ -1,4 +1,4 @@
-const { SlashCommandSubcommandBuilder, ApplicationCommandOptionType } = require("discord.js");
+const { SlashCommandSubcommandBuilder } = require("discord.js");
 
 const CommandObject = {
   data: new SlashCommandSubcommandBuilder()
@@ -38,8 +38,6 @@ const CommandObject = {
         .setRequired(true)
     ),
 };
-
-CommandObject.data.type = ApplicationCommandOptionType.Subcommand;
 
 // ----------------------------------------------------------------
 module.exports = CommandObject;

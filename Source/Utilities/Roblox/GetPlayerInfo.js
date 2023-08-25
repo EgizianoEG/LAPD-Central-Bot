@@ -1,25 +1,15 @@
 const { default: Axios } = require("axios");
+// ----------------------------------------------------------------
 
 /**
  * Returns the profile details
  * @param {(Number|String)} UserId
- * @returns {Promise<UserProfileDetails>} User profile details
+ * @returns {Promise<RobloxUserProfileDetails>} User profile details
  */
-function GetPlayerInfo(UserId) {
-  return Axios.get(`https://users.roblox.com/v1/users/${UserId}`).then((Res) => Res.data);
+async function GetPlayerInfo(UserId) {
+  const Res = await Axios.get(`https://users.roblox.com/v1/users/${UserId}`);
+  return Res.data;
 }
 
+// ----------------------------------------------------------------
 module.exports = GetPlayerInfo;
-
-/**
- * Represents a user profile.
- * @typedef {Object} UserProfileDetails
- * @property {string} description - The about/description of the user.
- * @property {string} created - The timestamp when the user profile was created (RFC 3339).
- * @property {boolean} isBanned - Indicates whether the user is banned or not.
- * @property {?string} externalAppDisplayName - The display name in an external app, if available.
- * @property {boolean} hasVerifiedBadge - Indicates if the user has a verified badge.
- * @property {number} id - The unique identifier for the user.
- * @property {string} name - The username of the user.
- * @property {string} displayName - The display name of the user.
- */

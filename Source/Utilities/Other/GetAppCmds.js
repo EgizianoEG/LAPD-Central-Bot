@@ -1,9 +1,7 @@
-// eslint-disable-next-line
-const { Client } = require("discord.js");
-
 /**
  * Returns the registered application commands
- * @param {Client} Client
+ * @param {import("discord.js").Client} Client
+ * @param {String} [GuildId] If provided, returns the application commands registered on it
  */
 module.exports = async (Client, GuildId) => {
   let AppCommands;
@@ -11,10 +9,11 @@ module.exports = async (Client, GuildId) => {
   if (GuildId) {
     const Guild = await Client.guilds.fetch(GuildId);
     AppCommands = Guild.commands;
+    await AppCommands.fetch(GuildId);
   } else {
     AppCommands = Client.application.commands;
+    await AppCommands.fetch();
   }
 
-  await AppCommands.fetch();
   return AppCommands;
 };

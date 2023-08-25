@@ -1,24 +1,17 @@
-/* eslint-disable no-unused-vars */
-const {
-  GuildApplicationCommandManager,
-  ApplicationCommandManager,
-  ApplicationCommand,
-  Client,
-} = require("discord.js");
-/* eslint-enable no-unused-vars */
 const Chalk = require("chalk");
-const GetAppCommands = require("../../Utilities/General/GetAppCmds");
-const GetLocalCommands = require("../../Utilities/General/GetLocalCmds");
-const CmdsAreIdentical = require("../../Utilities/General/CmdsAreIdentical");
+const GetAppCommands = require("../../Utilities/Other/GetAppCmds");
+const GetLocalCommands = require("../../Utilities/Other/GetLocalCmds");
+const CmdsAreIdentical = require("../../Utilities/Other/CmdsAreIdentical");
+const { ApplicationCommandManager } = require("discord.js");
 const { format: Format } = require("util");
 const {
   Discord: { Test_Guild_ID },
-} = require("../../Json/Secrets.json");
+} = require("../../Config/Secrets.json");
 // -----------------------------------------------------------------------------
 
 /**
  * Handles command registration, deployment, and updates
- * @param {Client} Client
+ * @param {DiscordClient} Client
  */
 module.exports = async (Client) => {
   try {
@@ -38,12 +31,12 @@ module.exports = async (Client) => {
       if (APIExistingCmd) {
         await HandleExistingCommand(Client, LocalCommand, APIExistingCmd, AppCommands);
       } else {
-        if (!LocalCommand.devOnly && LocalCommand.deleted) {
+        if (!LocalCommand.options?.devOnly && LocalCommand.options?.deleted) {
           console.log(DeletedCmdLog);
           continue;
         }
 
-        if (LocalCommand.devOnly) {
+        if (LocalCommand.options?.devOnly) {
           const Guild = Client.guilds.cache.get(Test_Guild_ID);
           const GuildCommands = await Guild.commands.fetch();
           const GuildExistingCmd = GuildCommands.find((Cmd) => Cmd.name === CmdName);
@@ -51,7 +44,7 @@ module.exports = async (Client) => {
           if (GuildExistingCmd) {
             await HandleExistingCommand(Client, LocalCommand, GuildExistingCmd, Guild.commands);
           } else {
-            if (LocalCommand.deleted) {
+            if (LocalCommand.options.deleted) {
               console.log(DeletedCmdLog);
               continue;
             }
@@ -95,13 +88,13 @@ module.exports = async (Client) => {
 
 /**
  * Handles the existence of an API application command
- * @param {Client} Client
- * @param {Object} LocalCmd
- * @param {ApplicationCommand} ExistingCmd
- * @param {(GuildApplicationCommandManager|ApplicationCommandManager)} CmdManager
+ * @param {DiscordClient} Client
+ * @param {CommandObject} LocalCmd
+ * @param {import("discord.js").ApplicationCommand} ExistingCmd
+ * @param {import("discord.js").GuildApplicationCommandManager | import("discord.js").ApplicationCommandManager} CmdManager
  */
 async function HandleExistingCommand(Client, LocalCmd, ExistingCmd, CmdManager) {
-  if (LocalCmd.deleted) {
+  if (LocalCmd.options?.deleted) {
     return CmdManager.delete(ExistingCmd.id)
       .then((Cmd) => {
         console.log(
@@ -122,7 +115,7 @@ async function HandleExistingCommand(Client, LocalCmd, ExistingCmd, CmdManager) 
       });
   }
 
-  if (LocalCmd.forceUpdate || !CmdsAreIdentical(ExistingCmd, LocalCmd)) {
+  if (LocalCmd.options?.forceUpdate || !CmdsAreIdentical(ExistingCmd, LocalCmd)) {
     await CmdManager.edit(ExistingCmd.id, LocalCmd.data)
       .then((Cmd) => {
         console.log(

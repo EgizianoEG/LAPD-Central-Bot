@@ -1,6 +1,12 @@
 const Path = require("path");
 const FileSystem = require("fs");
 
+/**
+ *
+ * @param {String} Directory
+ * @param {Boolean} FoldersOnly
+ * @returns
+ */
 module.exports = (Directory, FoldersOnly = false) => {
   const Files = FileSystem.readdirSync(Directory, { withFileTypes: true });
   const Paths = [];

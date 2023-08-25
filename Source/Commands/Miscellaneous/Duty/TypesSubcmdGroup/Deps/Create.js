@@ -1,19 +1,18 @@
-/* eslint-disable no-unused-vars */
+/* eslint-disable no-extra-parens */
+// @ts-nocheck
+// TODO: Authorize uer command execution before continuing.
 // -------------
 // Dependencies:
 // ------------------------------------------------------------------------------------
 
 const {
   SlashCommandSubcommandBuilder,
-  ChatInputCommandInteraction,
-  MessageComponentInteraction,
   RoleSelectMenuBuilder,
   ActionRowBuilder,
   escapeMarkdown,
   ButtonBuilder,
   EmbedBuilder,
   ButtonStyle,
-  Client,
   Colors,
 } = require("discord.js");
 
@@ -21,10 +20,10 @@ const {
   InfoEmbed,
   SuccessEmbed,
   UnauthorizedEmbed,
-} = require("../../../../../Utilities/General/ExtraEmbeds");
+} = require("../../../../../Utilities/Classes/ExtraEmbeds");
 
 const { IsValidShiftTypeName } = require("../../../../../Utilities/Strings/Validator");
-const { SendErrorReply } = require("../../../../../Utilities/General/SendReply");
+const { SendErrorReply } = require("../../../../../Utilities/Other/SendReply");
 const CreateShiftType = require("../../../../../Utilities/Database/CreateShiftType");
 const GetShiftTypes = require("../../../../../Utilities/Database/GetShiftTypes");
 const Chalk = require("chalk");
@@ -34,9 +33,9 @@ const Chalk = require("chalk");
 // ----------
 /**
  * Handles validation of the `name` interaction option (Shift Type Name).
- * @param {ChatInputCommandInteraction} Interaction - The user command interaction
+ * @param {SlashCommandInteraction} Interaction - The user command interaction
  * @param {String} ShiftTypeName - The provided name from the user
- * @returns {Promise<InteractionResponse|undefined>} The interaction reply (an error reply) if validation failed; otherwise `undefined`
+ * @returns {Promise<(import("discord.js").Message<boolean>) | (import("discord.js").InteractionResponse<boolean>) | undefined>} The interaction reply (an error reply) if validation failed; otherwise `undefined`
  */
 async function HandleNameValidation(Interaction, ShiftTypeName) {
   if (!IsValidShiftTypeName(ShiftTypeName)) {
@@ -74,8 +73,8 @@ async function HandleNameValidation(Interaction, ShiftTypeName) {
 
 /**
  * A helper function that filters the component collector interactions to ensure authorization.
- * @param {ChatInputCommandInteraction} OriginalInteract - The user command interaction
- * @param {MessageComponentInteraction} ReceivedInteract - The received interaction from the collector
+ * @param {SlashCommandInteraction} OriginalInteract - The user command interaction
+ * @param {import("discord.js").MessageComponentInteraction} ReceivedInteract - The received interaction from the collector
  * @returns {Boolean} A boolean indicating if the interaction is authorized
  */
 function HandleCollectorFiltering(OriginalInteract, ReceivedInteract) {
@@ -105,20 +104,22 @@ function HandleCollectorFiltering(OriginalInteract, ReceivedInteract) {
 function FormatPermissibleRoles(RoleIds) {
   if (RoleIds.length) {
     return RoleIds.map((Id, Index) => {
-      return (
-        `<@&${Id}>` +
-        (Index === RoleIds.length - 2 ? ", and " : Index + 1 !== RoleIds.length ? ", " : "")
-      );
+      let SubStr = "";
+
+      if (Index === RoleIds.length - 2) SubStr = ", and ";
+      else if (Index + 1 !== RoleIds.length) SubStr = ", ";
+
+      return `<@&${Id}>` + SubStr;
     }).join("");
   } else {
-    return "Usable by All Members";
+    return "*Usable by All Staff Tagged Members*";
   }
 }
 
 /**
  * Handles the command execution process for creating a new duty shift type.
- * @param {Client} _ - The Discord.js client instance (not used in this function)
- * @param {ChatInputCommandInteraction} Interaction - The user command interaction
+ * @param {DiscordClient} _ - The Discord.js client instance (not used in this function)
+ * @param {SlashCommandInteraction} Interaction - The user command interaction
  * @description
  * This function guides the user through the process of creating a new duty shift type
  * by providing a prompt with instructions and components for role selection and confirmation.
@@ -168,14 +169,16 @@ async function Callback(_, Interaction) {
     );
 
   const PromptComponents = [
-    new ActionRowBuilder().addComponents(
+    /** @type {ActionRowBuilder<RoleSelectMenuBuilder>} */
+    (new ActionRowBuilder()).addComponents(
       new RoleSelectMenuBuilder()
         .setCustomId("permissible-roles")
         .setPlaceholder("Specify which roles may utilize this shift type")
         .setMinValues(0)
         .setMaxValues(15)
     ),
-    new ActionRowBuilder().addComponents(
+    /** @type {ActionRowBuilder<ButtonBuilder>} */
+    (new ActionRowBuilder()).addComponents(
       new ButtonBuilder()
         .setCustomId("confirm-creation")
         .setLabel("Confirm and Create")
@@ -189,12 +192,12 @@ async function Callback(_, Interaction) {
 
   const PromptMessage = await Interaction.reply({
     embeds: [PromptEmbed],
-    components: PromptComponents,
+    components: [PromptComponents],
   });
 
   const CompCollector = PromptMessage.createMessageComponentCollector({
     filter: (Collected) => HandleCollectorFiltering(Interaction, Collected),
-    idle: 5 * 60_000,
+    idle: 0.1 * 60_000,
     time: 15 * 60_000,
   });
 
@@ -263,7 +266,7 @@ async function Callback(_, Interaction) {
           ],
         });
       } else if (EndReason === "idle") {
-        PromptMessage.followUp({
+        Interaction.followUp({
           embeds: [
             new InfoEmbed()
               .setTitle("Process Timed Out")
@@ -271,7 +274,7 @@ async function Callback(_, Interaction) {
           ],
         });
       } else if (EndReason === "time") {
-        PromptMessage.followUp({
+        Interaction.followUp({
           embeds: [
             new InfoEmbed()
               .setTitle("Process Timed Out")
@@ -282,13 +285,17 @@ async function Callback(_, Interaction) {
         });
       }
     } catch (Err) {
-      SendErrorReply({ Interact: LastInteraction ?? PromptMessage, Template: "AppError" });
       console.log(
         "%s:%s - An error occurred;\n",
         Chalk.yellow("InteractionCreate"),
         Chalk.red("CommandHandler"),
         Err
       );
+
+      SendErrorReply({
+        Interact: LastInteraction ?? Interaction,
+        Template: "AppError",
+      });
     }
   });
 }

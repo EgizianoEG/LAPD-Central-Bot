@@ -1,14 +1,12 @@
-/* eslint-disable no-unused-vars */
 // Dependencies:
 const Humanizer = require("humanize-duration");
-const { SuccessEmbed } = require("../../Utilities/General/ExtraEmbeds");
-const { SlashCommandBuilder, Client, ChatInputCommandInteraction } = require("discord.js");
+const { SuccessEmbed } = require("../../Utilities/Classes/ExtraEmbeds");
+const { SlashCommandBuilder } = require("discord.js");
 // ---------------------------------------------------------------------------------------
 
 /**
- * @param {Client} Client
- * @param {ChatInputCommandInteraction} Interaction
- * @returns {Promise<InteractionResponse<boolean>>}
+ * @param {DiscordClient} Client
+ * @param {SlashCommandInteraction} Interaction
  */
 async function Callback(Client, Interaction) {
   await Interaction.deferReply({ ephemeral: true });
@@ -22,15 +20,15 @@ async function Callback(Client, Interaction) {
   });
 
   const Response = new SuccessEmbed()
+    .setTimestamp()
+    .setFooter({
+      text: "Developed by @egiziano",
+    })
     .setDescription(
       `Client Ping: \`${ClientPing} ms\`\nWebsocket: \`${
         Client.ws.ping >= 0 ? Client.ws.ping : 0
       } ms\`\nApplication Uptime: \`${AppUptime}\``
-    )
-    .setFooter({
-      text: "Developed by @egiziano",
-    })
-    .setTimestamp();
+    );
 
   return Interaction.editReply({ embeds: [Response] });
 }

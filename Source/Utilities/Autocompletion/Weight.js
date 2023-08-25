@@ -12,7 +12,7 @@ Cache.Default = WeightOptions.filter((Element) => {
 /**
  * Autocompletes an input weight
  * @param {String} TypedValue The input weight
- * @returns {Array.<{name, value}>} An array of weight suggestions
+ * @returns {Array<{name: string, value: string}>} - An array of weight suggestions
  */
 function AutocompleteWeight(TypedValue) {
   let Suggestions;

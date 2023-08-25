@@ -1,18 +1,22 @@
-// eslint-disable-next-line
-const { Client, Routes } = require("discord.js");
+// Dependencies:
+// --------------------------------------------------------------------
+
+const { Routes } = require("discord.js");
 const {
   Discord: { Test_Guild_ID, Client_ID },
-} = require("../../Json/Secrets.json");
-const GetAppCommands = require("../../Utilities/General/GetAppCmds");
+} = require("../../Config/Secrets.json");
+const GetAppCommands = require("../../Utilities/Other/GetAppCmds");
 const Chalk = require("chalk");
-// --------------------------------------------------------------------
+
 const Enabled = false;
 const AllGuildCommands = false;
 const GlobalCommandsToDelete = [""]; // The names of all commands to delete
 
+// --------------------------------------------------------------------
+
 /**
  * Removes specified commands from the application
- * @param {Client} Client
+ * @param {DiscordClient} Client
  */
 module.exports = async function RemoveCommands(Client) {
   if (!Enabled) return;

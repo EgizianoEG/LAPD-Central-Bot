@@ -1,12 +1,14 @@
-/* eslint-disable no-unused-vars */
+// @ts-nocheck
+// -------------
+// Dependencies:
+// ------------------------------------------------------------------------------------
+
 const {
-  Client,
   ButtonStyle,
   EmbedBuilder,
   ButtonBuilder,
   ComponentType,
   ActionRowBuilder,
-  ChatInputCommandInteraction,
   SlashCommandSubcommandBuilder,
   Colors,
 } = require("discord.js");
@@ -15,9 +17,9 @@ const {
   InfoEmbed,
   SuccessEmbed,
   UnauthorizedEmbed,
-} = require("../../../../../Utilities/General/ExtraEmbeds");
+} = require("../../../../../Utilities/Classes/ExtraEmbeds");
 const { IsValidShiftTypeName } = require("../../../../../Utilities/Strings/Validator");
-const { SendErrorReply } = require("../../../../../Utilities/General/SendReply");
+const { SendErrorReply } = require("../../../../../Utilities/Other/SendReply");
 const DeleteShiftType = require("../../../../../Utilities/Database/DeleteShiftType");
 const GetShiftTypes = require("../../../../../Utilities/Database/GetShiftTypes");
 
@@ -26,9 +28,9 @@ const GetShiftTypes = require("../../../../../Utilities/Database/GetShiftTypes")
 // ----------
 /**
  * Handles validation of the `name` interaction option (Shift Type Name).
- * @param {ChatInputCommandInteraction} Interaction - The user command interaction
+ * @param {SlashCommandInteraction} Interaction - The user command interaction
  * @param {String} ShiftTypeName - The provided name from the user
- * @returns {Promise<InteractionResponse|undefined>} The interaction reply (an error reply) if validation failed; otherwise `undefined`
+ * @returns {Promise<(import("discord.js").Message<boolean>) | (import("discord.js").InteractionResponse<boolean>) | undefined>} The interaction reply (an error reply) if validation failed; otherwise `undefined`
  */
 async function HandleNameValidation(Interaction, ShiftTypeName) {
   if (!IsValidShiftTypeName(ShiftTypeName)) {
@@ -65,8 +67,8 @@ async function HandleNameValidation(Interaction, ShiftTypeName) {
 
 /**
  * A helper function that filters the component collector interactions to ensure authorization.
- * @param {ChatInputCommandInteraction} OriginalInteract - The user command interaction
- * @param {MessageComponentInteraction} ReceivedInteract - The received interaction from the collector
+ * @param {SlashCommandInteraction} OriginalInteract - The user command interaction
+ * @param {import("discord.js").MessageComponentInteraction} ReceivedInteract - The received interaction from the collector
  * @returns {Boolean} A boolean indicating if the interaction is authorized
  */
 function HandleCollectorFiltering(OriginalInteract, ReceivedInteract) {
@@ -87,8 +89,8 @@ function HandleCollectorFiltering(OriginalInteract, ReceivedInteract) {
 
 /**
  * Handles the command execution process for deleting a duty shift type.
- * @param {Client} _ - The Discord.js client instance (not used in this function)
- * @param {ChatInputCommandInteraction} Interaction - The user command interaction
+ * @param {DiscordClient} _ - The Discord.js client instance (not used in this function)
+ * @param {SlashCommandInteraction} Interaction - The user command interaction
  * @description
  * Handles the entire process of deleting a duty shift type. Validates the provided shift type name,
  * displays a confirmation prompt, waits for user interaction, and performs the deletion or cancellation.

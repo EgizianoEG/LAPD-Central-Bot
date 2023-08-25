@@ -2,8 +2,8 @@
 const { ApplicationCommand } = require("discord.js");
 
 /**
- * @param {ApplicationCommand} Cmd_1
- * @param {Object} Cmd_2
+ * @param {ApplicationCommand & any} Cmd_1
+ * @param {CommandObject["data"]} Cmd_2
  * @returns {Boolean}
  */
 function Equals(Cmd_1, Cmd_2) {

@@ -4,15 +4,10 @@
     "commonjs": true,
     "es2021": true
   },
-  
-  "plugins": ["sonarjs"],
 
-  "extends": [
-    "eslint:recommended",
-    "standard",
-    "plugin:sonarjs/recommended",
-    "prettier"
-  ],
+  "ignorePatterns": ["Build/**/*"],
+  "plugins": ["sonarjs"],
+  "extends": ["eslint:recommended", "standard", "plugin:sonarjs/recommended", "prettier"],
 
   "parserOptions": {
     "sourceType": "module",
@@ -26,9 +21,13 @@
     "semi": ["error", "always"],
     "sonarjs/cognitive-complexity": ["warn", 25],
 
-    "no-extra-parens": ["warn", "all", {
-      "nestedBinaryExpressions": false
-    }],
+    "no-extra-parens": [
+      "warn",
+      "all",
+      {
+        "nestedBinaryExpressions": false
+      }
+    ],
 
     "indent": [
       "error",

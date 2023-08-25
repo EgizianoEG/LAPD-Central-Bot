@@ -1,8 +1,8 @@
-const { Client, Collection, GatewayIntentBits, IntentsBitField } = require("discord.js");
+const { Client, Collection, GatewayIntentBits } = require("discord.js");
 const {
   Discord: { BotToken },
   Roblox: { Cookie },
-} = require("./Json/Secrets.json");
+} = require("./Config/Secrets.json");
 
 const Chalk = require("chalk");
 const Noblox = require("noblox.js");
@@ -15,9 +15,8 @@ console.log(Chalk.grey("================================================"));
 const App = new Client({
   intents: [
     GatewayIntentBits.Guilds,
-    IntentsBitField.Flags.GuildMembers,
-    IntentsBitField.Flags.GuildMessages,
-    IntentsBitField.Flags.MessageContent,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMessages,
   ],
 });
 
@@ -26,6 +25,7 @@ App.cooldowns = new Collection();
 
 App.login(BotToken)
   .then(() => {
+    if (!App.user) throw new Error("`App.user` is not accessible.");
     console.info("✅ - %s bot is online.", Chalk.cyanBright.bold(App.user.username));
   })
   .catch((Err) =>

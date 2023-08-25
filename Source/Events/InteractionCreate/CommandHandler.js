@@ -1,38 +1,29 @@
-/* eslint-disable no-unused-vars */
-// --------------------------------
 // Dependencies:
-// ------------------------------------------------------------------------------------------
-
-const {
-  Client,
-  Collection,
-  PermissionFlagsBits,
-  SlashCommandBuilder,
-  ChatInputCommandInteraction,
-} = require("discord.js");
+// -------------
 
 const {
   ErrorEmbed,
   WarnEmbed,
   InfoEmbed,
   UnauthorizedEmbed,
-} = require("../../Utilities/General/ExtraEmbeds");
+} = require("../../Utilities/Classes/ExtraEmbeds");
 
 const {
   Discord: { BotDevs },
-} = require("../../Json/Secrets.json");
+} = require("../../Config/Secrets.json");
 
+const { Collection, PermissionFlagsBits, PermissionsBitField } = require("discord.js");
 const { UnorderedList } = require("../../Utilities/Strings/Formatter");
 const { PascalToNormal } = require("../../Utilities/Strings/Converter");
-const { SendErrorReply } = require("../../Utilities/General/SendReply");
+const { SendErrorReply } = require("../../Utilities/Other/SendReply");
 const Chalk = require("chalk");
 const DefaultCmdCooldownDuration = 3;
 
 // ------------------------------------------------------------------------------------------
 /**
  * The function that handles command executions
- * @param {Client} Client The bot user object
- * @param {ChatInputCommandInteraction} Interaction The command interaction
+ * @param {DiscordClient} Client The bot user object
+ * @param {SlashCommandInteraction} Interaction The command interaction
  */
 module.exports = async (Client, Interaction) => {
   if (!Interaction.isChatInputCommand()) return;
@@ -41,15 +32,15 @@ module.exports = async (Client, Interaction) => {
 
   try {
     if (!CommandObject) {
-      return Interaction.reply({
-        ephemeral: true,
-        embeds: [new ErrorEmbed("Attempt execution of a non-existent command on the application.")],
-      }).then(() => {
-        console.log(
-          "⚠️  - Could not find command object of command '%s'; skipping execution.",
-          Chalk.bold(Interaction.commandName)
-        );
-      });
+      return new ErrorEmbed()
+        .setDescription("Attempt execution of a non-existent command on the application.")
+        .replyToInteract(Interaction, true)
+        .then(() => {
+          console.log(
+            "⚠️  - Could not find command object of command '%s'; skipping execution.",
+            Chalk.bold(Interaction.commandName)
+          );
+        });
     }
 
     await HandleCooldowns(Client, Interaction, CommandObject);
@@ -76,6 +67,7 @@ module.exports = async (Client, Interaction) => {
     }
   } catch (Err) {
     SendErrorReply({
+      Interact: Interaction,
       Ephemeral: true,
       Template: "AppError",
     });
@@ -94,8 +86,8 @@ module.exports = async (Client, Interaction) => {
 // -----------
 /**
  * Command cooldowns for users
- * @param {Client} Client
- * @param {ChatInputCommandInteraction} Interaction
+ * @param {DiscordClient} Client
+ * @param {SlashCommandInteraction} Interaction
  * @param {CommandObject} CommandObject
  */
 async function HandleCooldowns(Client, Interaction, CommandObject) {
@@ -109,7 +101,7 @@ async function HandleCooldowns(Client, Interaction, CommandObject) {
   }
 
   const Timestamps = Cooldowns.get(CommandName);
-  const CooldownDuration = (CommandObject.cooldown ?? DefaultCmdCooldownDuration) * 1000;
+  const CooldownDuration = (CommandObject.options?.cooldown ?? DefaultCmdCooldownDuration) * 1000;
 
   if (Timestamps.has(Interaction.user.id)) {
     const ExpTimestamp = Timestamps.get(Interaction.user.id) + CooldownDuration;
@@ -137,29 +129,31 @@ async function HandleCooldowns(Client, Interaction, CommandObject) {
 /**
  * Checks if the command is allowed to public use or not
  * @param {CommandObject} CommandObject
- * @param {ChatInputCommandInteraction} Interaction
+ * @param {SlashCommandInteraction} Interaction
  */
 function HandleDevOnlyCommands(CommandObject, Interaction) {
   if (Interaction.replied) return;
-  if (CommandObject.devOnly && !BotDevs.includes(Interaction.member.id)) {
-    return Interaction.reply({
-      ephemeral: true,
-      embeds: [new UnauthorizedEmbed("Only developers of this bot can run this command.")],
-    });
+  if (CommandObject.options?.devOnly && !BotDevs.includes(Interaction.member.user.id)) {
+    return new UnauthorizedEmbed()
+      .setDescription("Only developers of this bot can run this command.")
+      .replyToInteract(Interaction, true);
   }
 }
 
 /**
  * Checks if the user has the necessary permissions to run the command
  * @param {CommandObject} CommandObject
- * @param {ChatInputCommandInteraction} Interaction
+ * @param {SlashCommandInteraction} Interaction
  */
 function HandleUserPermissions(CommandObject, Interaction) {
   if (Interaction.replied) return;
-  if (CommandObject.userPerms?.length) {
+  if (CommandObject.options?.userPerms?.length) {
     const MissingPerms = [];
-    for (const Permission of CommandObject.userPerms) {
-      if (!Interaction.member.permissions.has(Permission)) {
+    for (const Permission of CommandObject.options.userPerms) {
+      if (
+        Interaction.member.permissions instanceof PermissionsBitField &&
+        !Interaction.member.permissions.has(Permission)
+      ) {
         const LiteralPerm = Object.keys(PermissionFlagsBits).find(
           (Key) => PermissionFlagsBits[Key] === Permission
         );
@@ -173,7 +167,7 @@ function HandleUserPermissions(CommandObject, Interaction) {
         ephemeral: true,
         embeds: [
           new UnauthorizedEmbed().setDescription(
-            "Missing permission%s.\nYou do not have the following permission%s to run this command:\n%s",
+            "Missing user permission%s.\nYou do not have the following permission%s to run this command:\n%s",
             Plural,
             Plural,
             UnorderedList(MissingPerms)
@@ -187,15 +181,18 @@ function HandleUserPermissions(CommandObject, Interaction) {
 /**
  * Checks if the bot has the required permission(s) to execute the required command properly
  * @param {CommandObject} CommandObject
- * @param {ChatInputCommandInteraction} Interaction
+ * @param {SlashCommandInteraction} Interaction
  */
 function HandleBotPermissions(CommandObject, Interaction) {
   if (Interaction.replied) return;
-  if (CommandObject.botPerms?.length) {
+  if (CommandObject.options?.botPerms?.length) {
     const BotInGuild = Interaction.guild.members.me;
     const MissingPerms = [];
-    for (const Permission of CommandObject.botPerms) {
-      if (!BotInGuild.permissions.has(Permission)) {
+    for (const Permission of CommandObject.options.botPerms) {
+      if (
+        BotInGuild.permissions instanceof PermissionsBitField &&
+        !BotInGuild.permissions.has(Permission)
+      ) {
         const LiteralPerm = Object.keys(PermissionFlagsBits).find(
           (Key) => PermissionFlagsBits[Key] === Permission
         );
@@ -218,19 +215,3 @@ function HandleBotPermissions(CommandObject, Interaction) {
     }
   }
 }
-
-// ----------------------------------------------------------------
-// Types:
-// ------
-/**
- * @typedef {Object} CommandObject
- * @property {SlashCommandBuilder} data - The data for the command
- * @property {boolean?} deleted - Indicates if the command should be deleted
- * @property {boolean?} forceUpdate - Indicates if the command needs to be forcefully updated
- * @property {boolean?} devOnly - Indicates if the command is restricted to developers only
- * @property {number?} cooldown - The cooldown duration for the command
- * @property {Array.<BigInt>?} userPerms - The required user permissions to execute the command
- * @property {Array.<BigInt>?} botPerms - The required bot permissions to execute the command
- * @property {function?} callback - The callback function for executing the command
- * @property {function?} autocomplete - The autocomplete function for providing command option suggestions
- */

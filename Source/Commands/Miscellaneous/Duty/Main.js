@@ -69,6 +69,15 @@ async function Autocomplete(Interaction) {
 // Command structure:
 // ------------------
 const CommandObject = {
+  userPerms: {
+    types: {
+      management: {
+        bot: true,
+        guild: true,
+        type: "any",
+      },
+    },
+  },
   cooldown: 5,
   data: new SlashCommandBuilder()
     .setName("duty")

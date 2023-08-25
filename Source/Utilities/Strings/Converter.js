@@ -71,7 +71,7 @@ function TitleCase(Str, Strict = true) {
     for (const Lower of Lowers) {
       const Regex = new RegExp("\\b" + Lower + "\\b", "gi");
       Modified = Modified.replace(Regex, (Cap) => {
-        if (Modified.indexOf(Cap) === 0) {
+        if (Modified.startsWith(Cap)) {
           return Cap;
         } else {
           return Lower;

@@ -11,7 +11,7 @@ for (let i = 0; i <= 7; i++) {
 /**
  * Autocompletes an input height value
  * @param {String} TypedValue - The input height
- * @returns {Array.<{name, value}>} - An array of height suggestions
+ * @returns {Array<{name: string, value: string}>} - An array of height suggestions
  */
 function AutocompleteHeight(TypedValue) {
   let Suggestions;

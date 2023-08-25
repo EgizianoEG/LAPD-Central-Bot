@@ -5,7 +5,7 @@ const {
   Icons: {
     Weather: { Animated },
   },
-} = require("../../Json/Shared.json");
+} = require("../../Config/Shared.json");
 
 const IconMap = {
   200: {
@@ -232,11 +232,15 @@ const IconMap = {
 
 /**
  * Returns the corresponding animated weather icon of the given weather code
- * @param {String} ConditionCode
- * @param {Boolean} IsDaytime
- * @return {String} Animated weather icon link
+ * @param {String|Number} ConditionCode - The condition code to return its corresponding animated weather icon
+ * @param {Boolean} IsDaytime - Whether the current time is daytime
+ * @return {String} Animated weather icon link if the corresponding condition found; otherwise, N/A static icon link
  */
 module.exports = (ConditionCode, IsDaytime) => {
   const ConditionCodeDesc = IsDaytime ? IconMap[ConditionCode].day : IconMap[ConditionCode].night;
-  return Animated.find((Link) => Link.match(new RegExp(`/${ConditionCodeDesc}.gif`)));
+  return (
+    Animated.find((IconLink) => {
+      return new RegExp(`/${ConditionCodeDesc}.gif`).exec(IconLink);
+    }) ?? "https://i.ibb.co/HrCdjmK/not-available.png"
+  );
 };

@@ -1,7 +1,7 @@
 const { default: Axios } = require("axios");
 const {
   APICache: { IdByUsername },
-} = require("../General/Cache");
+} = require("../Other/Cache");
 // --------------------------------------
 
 /**
@@ -23,20 +23,23 @@ async function GetIdFromUsername(Usernames, ExcludeBanned = true) {
     excludeBannedUsers: ExcludeBanned,
   })
     .then((Res) => {
-      let Results = Usernames.map((Username) => {
-        return Res.data.data.find((UserObject) => UserObject.requestedUsername === Username);
-      }).map((UserObject) => {
-        if (!UserObject?.id) return null;
-        return [UserObject?.id, UserObject?.name];
-      });
+      // eslint-disable-next-line
+      let Results = /** @type {Array<String>} */ (Usernames)
+        .map((Username) => {
+          return Res.data.data.find((UserObject) => UserObject.requestedUsername === Username);
+        })
+        .map((UserObject) => {
+          if (!UserObject?.id) return null;
+          return [UserObject?.id, UserObject?.name];
+        });
 
       Results = Usernames.length > 1 ? Results : Results[0];
       IdByUsername.set(Stringified, Results);
 
       return Results;
     })
-    .catch((Error) => {
-      console.log("GetIdFromUsername - Error Occurred: ", Error);
+    .catch((Err) => {
+      console.log("GetIdFromUsername - Error Occurred: ", Err);
       return null;
     });
 }

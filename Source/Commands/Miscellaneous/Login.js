@@ -6,7 +6,6 @@
 // ------------------------------------------------------------------------------------
 
 const {
-  Client,
   Colors,
   ButtonStyle,
   EmbedBuilder,
@@ -15,7 +14,6 @@ const {
   escapeMarkdown,
   ActionRowBuilder,
   SlashCommandBuilder,
-  InteractionResponse,
   AutocompleteInteraction,
   ChatInputCommandInteraction,
 } = require("discord.js");
@@ -25,59 +23,51 @@ const IsUserLoggedIn = require("../../Utilities/Database/IsUserLoggedIn");
 const GetIdFromUsername = require("../../Utilities/Roblox/UserIdByUsername");
 const AutocompleteUsername = require("../../Utilities/Autocompletion/Username");
 const UpdateLinkedRobloxUser = require("../../Utilities/Database/UpdateLinkedUser");
-const { ErrorEmbed, InfoEmbed, SuccessEmbed } = require("../../Utilities/General/ExtraEmbeds");
+const { ErrorEmbed, InfoEmbed, SuccessEmbed } = require("../../Utilities/Classes/ExtraEmbeds");
 const { IsValidRobloxUsername } = require("../../Utilities/Strings/Validator");
 const { DummyText } = require("../../Utilities/Strings/Random");
+const { SendErrorReply } = require("../../Utilities/Other/SendReply");
+const { format } = require("util");
 
 // ------------------------------------------------------------------------------------
 // Functions:
 // ----------
 /**
- * Replies to the command interaction with an error embed containing a specific title and description.
- * @param {ChatInputCommandInteraction} Interaction - The interaction object.
- * @param {String} Title - The title of the error embed.
- * @param {...Any} Description - The description of the error embed.
- * @returns {Promise<void>}
- * @requires `Utilities/General/ExtraEmbeds.ErrorEmbed`
- */
-function SendErrorEmbed(Interaction, Title, ...Description) {
-  return Interaction.reply({
-    ephemeral: true,
-    embeds: [new ErrorEmbed().setTitle(Title).setDescription(...Description)],
-  });
-}
-
-/**
  * Validates the entered Roblox username before continuing
  * @param {ChatInputCommandInteraction} Interaction - The interaction object.
  * @param {String} RobloxUsername - The Roblox username to be validated.
- * @returns {Promise<(InteractionResponse|undefined)>}
+ * @returns {Promise<(import("discord.js").Message<boolean>) | (import("discord.js").InteractionResponse<boolean>) | undefined>} The interaction reply (an error reply) if validation failed; otherwise `undefined`
  * @requires `Utilities/Strings/Validator.IsValidRobloxUsername`
  */
 async function HandleInvalidUsername(Interaction, RobloxUsername) {
   if (Interaction.replied) return;
   if (!IsValidRobloxUsername(RobloxUsername)) {
-    return SendErrorEmbed(
-      Interaction,
-      "Malformed Username",
-      "The provided username, `%s`, is malformed.\n",
-      RobloxUsername,
-      "The username can be 3 to 20 characters long and can only contain letters, digits, and one underscore character in between."
-    );
+    return SendErrorReply({
+      Ephemeral: true,
+      Interact: Interaction,
+      Title: "Malformed Username",
+      Message: format(
+        "The provided username, `%s`, is malformed.\n",
+        RobloxUsername,
+        "The username can be 3 to 20 characters long and can only contain letters, digits, and one underscore character in between."
+      ),
+    });
   } else if ((await GetIdFromUsername(RobloxUsername)) === null) {
-    return SendErrorEmbed(
-      Interaction,
-      "Hold up!",
-      "Cannot find the input user, `%s`, on Roblox. Please ensure that the username is valid and try again.",
-      RobloxUsername
-    );
+    return SendErrorReply({
+      Ephemeral: true,
+      Interact: Interaction,
+      Title: "Hold up!",
+      Message: format(
+        "Cannot find the input user, `%s`, on Roblox. Please ensure that the username is valid and try again.",
+        RobloxUsername
+      ),
+    });
   }
 }
 
 /**
  * Checks whether or not the command runner is already logged into the application and if so, halts any furthur execution
  * @param {ChatInputCommandInteraction} Interaction - The interaction object.
- * @returns {Promise<(InteractionResponse|undefined)>}
  * @requires `Utilities/Database/IsUserLoggedIn`
  * @requires `Utilities/Roblox/GetPlayerInfo`
  */
@@ -86,20 +76,22 @@ async function HandleUserLoginStatus(Interaction) {
   const UserLoggedIn = await IsUserLoggedIn(Interaction);
   if (UserLoggedIn) {
     const LoggedUsername = (await GetPlayerInfo(UserLoggedIn)).name;
-    return SendErrorEmbed(
-      Interaction,
-      "Hold up!",
-      "You are already logged in as `%s`.\nDid you mean to log out instead?",
-      LoggedUsername
-    );
+    return SendErrorReply({
+      Ephemeral: true,
+      Interact: Interaction,
+      Title: "Hold up!",
+      Message: format(
+        "You are already logged in as `%s`.\nDid you mean to log out instead?",
+        LoggedUsername
+      ),
+    });
   }
 }
 
 /**
  * Handles command execution logic
- * @param {Client} Client - The Discord.js client object.
- * @param {ChatInputCommandInteraction} Interaction - The interaction object.
- * @returns {Promise<void>}
+ * @param {DiscordClient} _ - The Discord.js client object.
+ * @param {SlashCommandInteraction} Interaction - The interaction object.
  * @execution
  * This function executes the following steps:
  * 1. Retrieve the provided Roblox username from the interaction options.
@@ -115,7 +107,7 @@ async function HandleUserLoginStatus(Interaction) {
  *    - If "Cancel Login" is clicked, provide a cancellation message.
  * 10. Handle errors and timeouts with appropriate responses.
  */
-async function Callback(Client, Interaction) {
+async function Callback(_, Interaction) {
   const InputUsername = Interaction.options.getString("username", true);
 
   await HandleUserLoginStatus(Interaction);
@@ -162,8 +154,9 @@ async function Callback(Client, Interaction) {
   const HandleCollectorExceptions = async (Err) => {
     if (Err.message.match(/reason: time/)) {
       await DisablePrompt();
-      return SendErrorEmbed({
-        Interact: ProcessPrompt,
+      return SendErrorReply({
+        Ephemeral: true,
+        Interact: Interaction,
         Title: "Process Cancelled",
         Message:
           "The login process has been terminated due to no response being received within five minutes.",
@@ -186,30 +179,25 @@ async function Callback(Client, Interaction) {
 
         if (CurrentAbout.includes(SampleText)) {
           await UpdateLinkedRobloxUser(Interaction, RobloxUserId);
-          return ButtonInteract.reply({
-            ephemeral: true,
-            embeds: [
-              new SuccessEmbed().setDescription(
-                "Successfully verified and logged in as `%s`.",
-                RobloxUsername
-              ),
-            ],
-          });
+          return new SuccessEmbed()
+            .setDescription("Successfully verified and logged in as `%s`.", RobloxUsername)
+            .replyToInteract(ButtonInteract, true);
         } else {
-          return SendErrorEmbed(
-            ButtonInteract,
-            "Verification Failed",
-            "Login verification as `%s` failed.\nPlease rerun the command and ensure you follow the appropriate instructions.",
-            RobloxUsername
-          );
+          return SendErrorReply({
+            Ephemeral: true,
+            Interact: ButtonInteract,
+            Title: "Verification Failed",
+            Message: format(
+              "Login verification as `%s` failed.\nPlease rerun the command and ensure you follow the appropriate instructions.",
+              RobloxUsername
+            ),
+          });
         }
       } else {
-        return ButtonInteract.reply({
-          ephemeral: true,
-          embeds: [
-            new InfoEmbed("The login process has been canceled.").setTitle("Process Cancellation"),
-          ],
-        });
+        return new InfoEmbed()
+          .setTitle("Process Cancellation")
+          .setDescription("The login process has been canceled due to user request.")
+          .replyToInteract(ButtonInteract, true);
       }
     })
     .catch(HandleCollectorExceptions);

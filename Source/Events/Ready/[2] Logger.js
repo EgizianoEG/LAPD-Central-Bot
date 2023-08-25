@@ -24,10 +24,4 @@ const GetPresence = require("../../Utilities/Roblox/GetPresence");
  */
 module.exports = async (Client) => {
   console.time();
-
-  // console.log(await GetPresence(3745880103));
-
-  // console.log(ButtonsActionRow.toJSON());
-  // console.log(ButtonsActionRow.disable().toJSON());
-  // console.log(ButtonsActionRow.toJSON());
 };

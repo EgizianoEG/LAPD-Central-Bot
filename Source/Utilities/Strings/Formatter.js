@@ -1,13 +1,16 @@
+/* eslint-disable sonarjs/cognitive-complexity */
 const { TitleCase } = require("./Converter.js");
 // ---------------------------------------------
 /**
  * Formats a given string of charges into a properly formated numbered list.
  * @param {String} Input - The string to list.
  * @param {Boolean} [RAsArray=false] - If the returned value should be as an array.
- * @return {(Array.<string>|String)} - The list of charges either a string or an array.
+ * @return {Array<String>|String|any} - The list of charges either a string or an array.
  */
 function ListCharges(Input, RAsArray) {
-  let Charges = Input.match(/([^\n\r]+)/g);
+  /** @type {(any)[]} */
+  let Charges;
+  Charges = Input.match(/([^\n\r]+)/g);
 
   if (!Charges || Charges.length === 0) {
     return RAsArray ? [] : Input;
@@ -25,7 +28,7 @@ function ListCharges(Input, RAsArray) {
   }
 
   Charges = Charges.filter((Charge) => {
-    return !Charge.match(/^\s*(?:-|\*|#) Statute/i);
+    return !Charge.match(/^\s*[-*#] Statute/i);
   }).map((Charge, Index) => {
     Charge = Charge.trim()
       .replace(/\s+/g, " ")
@@ -38,8 +41,8 @@ function ListCharges(Input, RAsArray) {
 
 /**
  * Adds statutes (law codes) that should apply to every listed charge.
- * @param {Array.<string>} Charges - The input array of charges.
- * @return {Array.<string>} - The list of charges after adding statutes.
+ * @param {Array<string|any>} Charges - The input array of charges.
+ * @return {Array<string>} - The list of charges after adding statutes.
  */
 function AddStatutes(Charges) {
   if (!Array.isArray(Charges)) return Charges;
@@ -48,6 +51,7 @@ function AddStatutes(Charges) {
     return Charges;
   }
 
+  const LEORegexString = /(?:Officer|Peace Officer|Police|\\bLEO\\b|\\bPO\\b)s?/.source;
   const DefaultFlags = "i";
   const Regexes = {
     Battery: /Batt[ea]ry/i,
@@ -64,7 +68,7 @@ function AddStatutes(Charges) {
     Evasion: new RegExp(
       "(?:Evasion|Evading)|" +
         "Vehicle (?:Fleeing|Eluding|Evasion)|" +
-        "(?:Running from|Elud(?:e|ing)|Evade) (?:an |a )?(?:Officer|Peace Officer|Police|\\bLEO\\b|\\bPO\\b)s?",
+        "(?:Running from|Elud(?:e|ing)|Evade) (?:an |a )?",
       DefaultFlags
     ),
 
@@ -72,8 +76,8 @@ function AddStatutes(Charges) {
       "Fail(?:ing|ure)? to Comply|" +
         "Resist(?:ing)? (?:an |a )?Arrest|" +
         "Obstruct(?:ing|ion)(?: of)? Justice|" +
-        "Not (?:Listening|Complying) (?:to|with) (?:an |a )?(?:Officer|Peace Officer|Police|\\bLEO\\b|\\bPO\\b)s?|" +
-        "(?:Resist(?:ing)?|Defy(?:ing)?|Obstruct(?:ing|ion)?|Interfer(?:e|ing)? with) (?:an |a )?(?:Officer|Peace Officer|Police|\\bLEO\\b|\\bPO\\b)s?",
+        `Not (?:Listening|Complying) (?:to|with) (?:an |a )?${LEORegexString}|` +
+        `(?:Resist(?:ing)?|Defy(?:ing)?|Obstruct(?:ing|ion)?|Interfer(?:e|ing)? with) (?:an |a )?${LEORegexString}`,
       DefaultFlags
     ),
 
@@ -463,7 +467,7 @@ function FormatCharges(ChargesText) {
  */
 function FormatHeight(Input) {
   if (typeof Input !== "string") return Input;
-  if (!Input.match(/^[1-7]'([0-9]|1[01])"$/)) {
+  if (!Input.match(/^[1-7]'(\d|1[01])"$/)) {
     if (Input.match(/^\d+$/)) {
       return Input + "'0\"";
     }
@@ -554,21 +558,19 @@ function FormatUsername(UserData, IncludeID) {
 
 /**
  * Joins the elements of a given array with extra options
- * @param {Array<String>} Array - The array to join its elements together
+ * @param {Array<String>} InputArray - The array to join its elements together
  * @param {Object} Options
  * @property {String} Options.delimiter - The delimiter to use when joining the elements; defaults to comma (", ")
  * @property {String} Options.conjunction - String to include after the last delimiter; defaults to "and "
  */
-function JoinArrayElements(Array, Options = { delimiter: ", ", conjunction: "and " }) {
-  return Array.map((Element, Index) => {
-    return (
-      Element +
-      (Index === Array.length - 2
-        ? Options.delimiter + Options.conjunction
-        : Index + 1 !== Array.length
-        ? Options.delimiter
-        : "")
-    );
+function JoinArrayElements(InputArray, Options = { delimiter: ", ", conjunction: "and " }) {
+  return InputArray.map((Element, Index) => {
+    let SubStr = "";
+
+    if (Index === Array.length - 2) SubStr = Options.delimiter + Options.conjunction;
+    else if (Index + 1 !== Array.length) SubStr = Options.delimiter;
+
+    return Element + SubStr;
   }).join("");
 }
 

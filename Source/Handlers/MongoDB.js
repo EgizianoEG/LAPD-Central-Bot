@@ -2,7 +2,7 @@ const Chalk = require("chalk");
 const Mongoose = require("mongoose");
 const {
   MongoDB: { URI, Username, UserPass, DBName },
-} = require("../Json/Secrets.json");
+} = require("../Config/Secrets.json");
 // ---------------------------------------------------------------------
 
 module.exports = async () => {

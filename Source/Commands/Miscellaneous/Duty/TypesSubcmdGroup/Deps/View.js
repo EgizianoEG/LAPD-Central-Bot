@@ -1,18 +1,20 @@
-/* eslint-disable no-unused-vars */
-const {
-  Client,
-  ChatInputCommandInteraction,
-  SlashCommandSubcommandBuilder,
-} = require("discord.js");
+// - @ts-nocheck
+// -------------
+// Dependencies:
+// ------------------------------------------------------------------------------------
+const { SlashCommandSubcommandBuilder } = require("discord.js");
 
 // ---------------------------------------------------------------------------------------
 // Functions:
 // ----------
 /**
- * @param {Client} Client
- * @param {ChatInputCommandInteraction} Interaction
+ * Handles the command execution process for displaying all available duty shift types.
+ * @param {DiscordClient} _ - The Discord.js client instance (not used in this function)
+ * @param {SlashCommandInteraction} Interaction - The user command interaction
+ * @description
+ * @execution
  */
-async function Callback(Client, Interaction) {}
+async function Callback(_, Interaction) {}
 
 // ---------------------------------------------------------------------------------------
 // Command structure:

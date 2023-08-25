@@ -12,7 +12,7 @@ const {
   ErrorEmbed,
   UnauthorizedEmbed,
   SuccessEmbed,
-} = require("../../../../Utilities/General/ExtraEmbeds.js");
+} = require("../../../../Utilities/Classes/ExtraEmbeds.js");
 
 // ---------------------------------------------------------------------------------------
 /**
@@ -25,22 +25,24 @@ async function Callback(Client, Interaction) {
 
   switch (EmbedType) {
     case 1:
-      Embed = new InfoEmbed("This is the default information embed of this bot.");
+      Embed = new InfoEmbed().setDescription("This is the default information embed of this bot.");
       break;
     case 2:
-      Embed = new WarnEmbed("This is the default warning embed of this bot.");
+      Embed = new WarnEmbed().setDescription("This is the default warning embed of this bot.");
       break;
     case 3:
-      Embed = new ErrorEmbed("This is the default error embed of this bot.");
+      Embed = new ErrorEmbed().setDescription("This is the default error embed of this bot.");
       break;
     case 4:
-      Embed = new UnauthorizedEmbed("This is the default unauthorized embed of this bot.");
+      Embed = new UnauthorizedEmbed().setDescription(
+        "This is the default unauthorized embed of this bot."
+      );
       break;
     case 5:
-      Embed = new SuccessEmbed("This is the default success embed of this bot.");
+      Embed = new SuccessEmbed().setDescription("This is the default success embed of this bot.");
       break;
     default:
-      Embed = new ErrorEmbed("Type option is not provided.");
+      Embed = new ErrorEmbed().setDescription("Type option is not provided.");
   }
 
   await Interaction.reply({ embeds: [Embed] });
@@ -65,8 +67,6 @@ const CommandObject = {
 
   callback: Callback,
 };
-
-CommandObject.data.type = ApplicationCommandOptionType.Subcommand;
 
 // ---------------------------------------------------------------------------------------
 module.exports = CommandObject;

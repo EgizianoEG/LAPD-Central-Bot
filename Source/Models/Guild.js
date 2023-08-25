@@ -4,6 +4,7 @@ const CallsignSchema = require("./Schemas/Callsign");
 const CiationSchema = require("./Schemas/Citation");
 const ArrestSchema = require("./Schemas/Arrest");
 
+/** @type {[RegExp, string]} */
 const SnowflakeID_Validation = [
   /^\d{15,22}$/,
   "Invalid role ID; ensure it is a valid Snowflake ID.",

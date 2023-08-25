@@ -1,7 +1,6 @@
-const DummyTexts = require("../../Json/DummyTexts.json");
+const DummyTexts = require("../../Resources/DummyTexts.json");
 const Cache = { ".": [] };
 // ----------------------------------------------------------------
-
 // Initialization
 for (let Character = 0; Character <= 255; Character++) {
   Cache["."].push(String.fromCharCode(Character));
@@ -9,8 +8,8 @@ for (let Character = 0; Character <= 255; Character++) {
 
 /**
  * Returns a requested character set
- * @param {(String|RegExp)} CharSet
- * @returns {Array.<String>} The requested character set
+ * @param {String|RegExp} CharSet
+ * @returns {Array<String>} The requested character set
  */
 function CharactersFromSet(CharSet) {
   const Characters = [];
@@ -25,18 +24,18 @@ function CharactersFromSet(CharSet) {
     }
   }
 
-  Cache[CharSet.source] = Characters;
+  Cache[String(CharSet)] = Characters;
   return Characters;
 }
 
 /**
  * Returns a randomly generated string
  * @param {Number} [Length=10] - The desired lengthe of the generated string
- * @param {(String|RegExp)} [CharSet=/\w/] - The desired range of generated characters
+ * @param {String|RegExp} [CharSet=/\w/] - The desired range of generated characters
  * @returns {String} The generated string
  */
 function RandomString(Length = 10, CharSet = /\w/) {
-  const CharPattern = Cache[CharSet.source] || CharactersFromSet(CharSet);
+  const CharPattern = Cache[String(CharSet)] ?? CharactersFromSet(CharSet);
   const MaxRange = CharPattern.length;
   const Randomized = [];
 

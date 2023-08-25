@@ -1,5 +1,5 @@
 const GuildModel = require("../../Models/Guild.js");
-const AppError = require("../General/AppError.js");
+const AppError = require("../Classes/AppError.js");
 // ----------------------------------------------------------------
 
 /**
@@ -7,7 +7,7 @@ const AppError = require("../General/AppError.js");
  *
  * @param {String} Name - The name of the shift type to delete.
  * @param {String} GuildId - The ID of the guild where the shift type is to be deleted.
- * @returns {Promise<Document|AppError>} - Returns the saved guild document after deletion if succeeded or an `AppError` if the shift type does not exist.
+ * @returns {Promise<import("mongoose").Document|AppError>} - Returns the saved guild document after deletion if succeeded or an `AppError` if the shift type does not exist.
  *
  * @example
  * // Example usage:
@@ -23,7 +23,11 @@ const AppError = require("../General/AppError.js");
  * }
  */
 async function DeleteShiftType(Name, GuildId) {
-  const GuildDoc = await GuildModel.findOne({ id: GuildId }, "settings.shift_settings.shift_types");
+  const GuildDoc = await GuildModel.findOne(
+    { id: GuildId },
+    "settings.shift_settings.shift_types"
+  ).exec();
+
   const ShiftTypeIndex = GuildDoc.settings.shift_settings.shift_types.findIndex(
     (ShiftType) => ShiftType.name === Name
   );

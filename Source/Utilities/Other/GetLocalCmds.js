@@ -1,13 +1,11 @@
-// eslint-disable-next-line no-unused-vars
-const { SlashCommandBuilder } = require("discord.js");
 const GetFiles = require("./GetFiles");
 const Path = require("path");
 // ----------------------------------------------------------------
 
 /**
  * Collects all the local commands and returns them as an array of command objects
- * @param {Array.<String>} [Exceptions=[]] The names of commands and exceptions which to ignore when collecting local commands
- * @returns {Array.<CommandObject>} An array of command objects
+ * @param {Array<String>} [Exceptions=[]] The names of commands and exceptions which to ignore when collecting local commands
+ * @returns {Array<CommandObject>} An array of command objects
  */
 module.exports = (Exceptions = []) => {
   const LocalCommands = [];
@@ -50,19 +48,3 @@ module.exports = (Exceptions = []) => {
 
   return LocalCommands;
 };
-
-// ----------------------------------------------------------------
-// Types:
-// ------
-/**
- * @typedef {Object} CommandObject
- * @property {SlashCommandBuilder} data - The data for the command
- * @property {boolean?} deleted - Indicates if the command should be deleted
- * @property {boolean?} forceUpdate - Indicates if the command needs to be forcefully updated
- * @property {boolean?} devOnly - Indicates if the command is restricted to developers only
- * @property {number?} cooldown - The cooldown duration for the command
- * @property {Array.<BigInt>?} userPerms - The required user permissions to execute the command
- * @property {Array.<BigInt>?} botPerms - The required bot permissions to execute the command
- * @property {function?} callback - The callback function for executing the command
- * @property {function?} autocomplete - The autocomplete function for providing command option suggestions
- */

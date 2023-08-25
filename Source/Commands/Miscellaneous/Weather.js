@@ -1,28 +1,16 @@
-/* eslint-disable no-unused-vars */
-// -------------
 // Dependencies:
-// -------------------------------------------------------------------------------
-
-const {
-  Colors,
-  Client,
-  EmbedBuilder,
-  SlashCommandBuilder,
-  ChatInputCommandInteraction,
-} = require("discord.js");
-
-const GetWeatherIcon = require("../../Utilities/General/GetWeatherIcon");
-const { GetCurrentWeather } = require("../../Utilities/General/WeatherData");
-const { Icons } = require("../../Json/Shared.json");
-
+// -------------
+const GetWeatherIcon = require("../../Utilities/Other/GetWeatherIcon");
+const { Colors, EmbedBuilder, SlashCommandBuilder } = require("discord.js");
+const { GetCurrentWeather } = require("../../Utilities/Other/WeatherData.js");
+const { Icons } = require("../../Config/Shared.json");
 // -------------------------------------------------------------------------------
 
 /**
- * @param {Client} Client
- * @param {ChatInputCommandInteraction} Interaction
- * @returns {Promise<InteractionResponse<boolean>>}
+ * @param {DiscordClient} _
+ * @param {SlashCommandInteraction} Interaction
  */
-async function Callback(Client, Interaction) {
+async function Callback(_, Interaction) {
   const Units = Interaction.options.getString("units") ?? "imperial";
   const WeatherData = await GetCurrentWeather({ Formatted: true, Units });
   const LocalDateTime = new Date().toLocaleString(["en-US"], {

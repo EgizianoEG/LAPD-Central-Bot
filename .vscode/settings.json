@@ -1,14 +1,24 @@
 {
+  "js/ts.implicitProjectConfig.checkJs": true,
   "json.schemaDownload.enable": true,
   "editor.tabSize": 2,
   "editor.defaultFormatter": null,
-  
+  "typescript.implementationsCodeLens.enabled": false,
+  "typescript.referencesCodeLens.enabled": false,
+
+  // "[typescript]": {
+  //   "editor.codeLens": true
+  // },
+
   "[javascript]": {
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
 
   "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[jsonc]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   }
 }

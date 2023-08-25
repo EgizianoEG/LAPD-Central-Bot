@@ -1,0 +1,55 @@
+{
+  /* Visit https://aka.ms/tsconfig to read more about this file */
+  "$schema": "http://json.schemastore.org/tsconfig",
+  "extends": "@tsconfig/node20/tsconfig.json",
+
+  "exclude": ["node_modules/**/*", "Build", "Build/**/*"],
+  "include": ["Source/**/*"],
+
+  "watchOptions": {
+    "watchFile": "useFsEvents",
+    "watchDirectory": "usefsevents",
+    "excludeDirectories": ["node_modules/**/*"]
+  },
+
+  "compilerOptions": {
+    /* Projects */
+    /* Language and Environment */
+    "target": "ESNext",
+
+    /* Modules */
+    "module": "NodeNext",
+    "rootDir": "Source",
+    "baseUrl": "Source",
+    "moduleResolution": "NodeNext",
+    "resolveJsonModule": true,
+    "typeRoots": ["./Source/Types/**", "./node_modules/@types/**", "../node_modules/@types/**"],
+    "paths": {
+      "@Utilities/*": ["Utilities/*"]
+    },
+
+    /* JavaScript Support */
+    "allowJs": true,
+    "checkJs": true,
+
+    /* Emit */
+    "outDir": "Build",
+    "sourceMap": true,
+    // "removeComments": true,
+    // "noEmitOnError": true,
+
+    /* Interop Constraints */
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+
+    /* Type Checking */
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "strictFunctionTypes": true,
+    "allowUnreachableCode": false,
+
+    /* Completeness */
+    "skipLibCheck": true
+  }
+}

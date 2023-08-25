@@ -1,26 +1,26 @@
-/* eslint-disable */
+// @ts-nocheck
+/* eslint-disable no-unused-vars */
+// -------------
+// Dependencies:
+// ---------------------------------------------------------------------------------------
+
 const {
-  // Colors,
   ButtonStyle,
-  // EmbedBuilder,
   ButtonBuilder,
   TextInputBuilder,
   TextInputStyle,
   ActionRowBuilder,
   ModalSubmitInteraction,
   ChatInputCommandInteraction,
-  ApplicationCommandOptionType,
   SlashCommandSubcommandBuilder,
   ModalBuilder,
   EmbedBuilder,
-  codeBlock,
   Colors,
   // StringSelectMenuBuilder,
   // StringSelectMenuOptionBuilder,
 } = require("discord.js");
-/* eslint-enable */
 
-const { ErrorEmbed } = require("../../../../Utilities/General/ExtraEmbeds.js");
+const { ErrorEmbed } = require("../../../../Utilities/Classes/ExtraEmbeds.js");
 const { getPlayerThumbnail, getIdFromUsername, getPlayerInfo } = require("noblox.js");
 const {
   FormatCharges,
@@ -29,7 +29,7 @@ const {
 } = require("../../../../Utilities/Strings/Formatter.js");
 const {
   Embeds: { Thumbs },
-} = require("../../../../Json/Shared.json");
+} = require("../../../../Config/Shared.json");
 const { RandomString } = require("../../../../Utilities/Strings/Random.js");
 const Chalk = require("chalk");
 
@@ -67,13 +67,7 @@ async function FollowUp(CmdInteraction, ModalInteraction) {
     .setTitle("Arrest Report - Confirmation")
     .setDescription("Please review the arrest report information before submittng it.")
     .setColor(Colors.Gold)
-    .setThumbnail(
-      Thumb?.[0]?.imageUrl
-        ? Thumb[0].imageUrl
-        : Options.Gender === 1
-        ? Thumbs.Avatar.Male
-        : Thumbs.Avatar.Female
-    )
+    .setThumbnail(Thumb?.[0]?.imageUrl ? Thumb[0].imageUrl : Thumbs.Avatar[Options.Gender])
     .setFields([
       {
         name: "Defendant Name",
@@ -135,8 +129,8 @@ async function FollowUp(CmdInteraction, ModalInteraction) {
 
 /**
  * @async
- * @param {Client} Client
- * @param {ChatInputCommandInteraction} Interaction
+ * @param {DiscordClient} Client
+ * @param {SlashCommandInteraction} Interaction
  */
 async function Callback(Client, Interaction) {
   const Modal = new ModalBuilder()
@@ -175,7 +169,9 @@ async function Callback(Client, Interaction) {
     .catch(async (Err) => {
       if (!Err.message.match(/reason: (.+)/)?.[1].match(/time/i)) {
         await Interaction.followUp({
-          embeds: [new ErrorEmbed("Something went wrong while executing this command.")],
+          embeds: [
+            new ErrorEmbed().setDescription("Something went wrong while executing this command."),
+          ],
           ephemeral: true,
         });
 
@@ -236,8 +232,6 @@ const CommandObject = {
 
   callback: Callback,
 };
-
-CommandObject.data.type = ApplicationCommandOptionType.Subcommand;
 
 // ---------------------------------------------------------------------------------------
 module.exports = CommandObject;

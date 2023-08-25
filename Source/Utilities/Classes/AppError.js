@@ -2,7 +2,7 @@ module.exports = class AppError extends Error {
   /**
    * @param {String} Title Title of the error message
    * @param {String} Message
-   * @param {String} [Code=0] Error code. 0: Normal, 1: Warning Manner, 2: Unauthorized.
+   * @param {Number} [Code=0] Error code. 0: Normal, 1: Warning Manner, 2: Unauthorized.
    */
   constructor(Title, Message, Code = 0) {
     super(Message);

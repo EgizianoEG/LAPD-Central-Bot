@@ -18,7 +18,7 @@ const {
 const GetPlayerInfo = require("../../Utilities/Roblox/GetPlayerInfo");
 const IsUserLoggedIn = require("../../Utilities/Database/IsUserLoggedIn");
 const UpdateLinkedRobloxUser = require("../../Utilities/Database/UpdateLinkedUser");
-const { ErrorEmbed, InfoEmbed, SuccessEmbed } = require("../../Utilities/General/ExtraEmbeds");
+const { ErrorEmbed, InfoEmbed, SuccessEmbed } = require("../../Utilities/Classes/ExtraEmbeds");
 
 // ------------------------------------------------------------------------------------
 // Functions:
@@ -26,7 +26,6 @@ const { ErrorEmbed, InfoEmbed, SuccessEmbed } = require("../../Utilities/General
 /**
  * Handles the case where the command runner is not logged in
  * @param {ChatInputCommandInteraction} Interaction
- * @returns {Promise<(InteractionResponse|undefined)>}
  */
 async function HandleLoggedInUser(Interaction, IsLoggedIn) {
   if (!IsLoggedIn) {
@@ -47,7 +46,6 @@ async function HandleLoggedInUser(Interaction, IsLoggedIn) {
  * Handles the logic for the command interaction to log out and unlink a Roblox account.
  * @param {Client} Client
  * @param {ChatInputCommandInteraction} Interaction
- * @returns {Promise<void>}
  * @execution
  * This function executes the following steps:
  * 1. Check if the command runner is already logged in; if not, provide an error message.
@@ -122,7 +120,9 @@ async function Callback(Client, Interaction) {
         return ButtonAction.reply({
           ephemeral: true,
           embeds: [
-            new InfoEmbed("Logout process has been cancelled.").setTitle("Process Cancellation"),
+            new InfoEmbed()
+              .setTitle("Process Cancellation")
+              .setDescription("Logout process has been cancelled."),
           ],
         });
       }

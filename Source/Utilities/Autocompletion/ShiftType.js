@@ -5,7 +5,7 @@ const GuildModel = require("../../Models/Guild");
  * Autocompletes an input weight
  * @param {String} TypedValue The input string
  * @param {String} GuildId The interaction guild Id
- * @returns {Promise<Array.<{name, value}>>} An array of suggestions
+ * @returns {Promise<Array<{name: string, value: string}>>} An array of suggestions
  */
 async function AutocompleteShiftType(TypedValue, GuildId) {
   let Suggestions;

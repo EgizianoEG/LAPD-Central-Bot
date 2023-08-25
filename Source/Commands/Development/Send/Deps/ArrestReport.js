@@ -13,7 +13,7 @@ const {
   Embeds: { Thumbs },
   Images,
   Icons,
-} = require("../../../../Json/Shared.json");
+} = require("../../../../Config/Shared.json");
 
 // ---------------------------------------------------------------------------------------
 /**
@@ -86,8 +86,6 @@ const CommandObject = {
 
   callback: Callback,
 };
-
-CommandObject.data.type = ApplicationCommandOptionType.Subcommand;
 
 // ---------------------------------------------------------------------------------------
 module.exports = CommandObject;
