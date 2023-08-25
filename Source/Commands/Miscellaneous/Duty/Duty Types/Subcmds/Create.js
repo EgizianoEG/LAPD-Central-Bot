@@ -192,12 +192,12 @@ async function Callback(_, Interaction) {
 
   const PromptMessage = await Interaction.reply({
     embeds: [PromptEmbed],
-    components: [PromptComponents],
+    components: PromptComponents,
   });
 
   const CompCollector = PromptMessage.createMessageComponentCollector({
     filter: (Collected) => HandleCollectorFiltering(Interaction, Collected),
-    idle: 0.1 * 60_000,
+    idle: 5 * 60_000,
     time: 15 * 60_000,
   });
 

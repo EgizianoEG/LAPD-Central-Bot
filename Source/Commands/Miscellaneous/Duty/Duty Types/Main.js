@@ -5,7 +5,11 @@ const {
   SlashCommandSubcommandGroupBuilder,
 } = require("discord.js");
 
-const Subcommands = [require("./Deps/View"), require("./Deps/Create"), require("./Deps/Delete")];
+const Subcommands = [
+  require("./Subcmds/View"),
+  require("./Subcmds/Create"),
+  require("./Subcmds/Delete"),
+];
 
 // ---------------------------------------------------------------------------------------
 // Functions:

@@ -7,14 +7,14 @@ const {
 } = require("discord.js");
 
 const Subcommands = [
-  require("./Subcommands/Active"),
-  require("./Subcommands/Admin"),
-  require("./Subcommands/Leaderboard"),
-  require("./Subcommands/Manage"),
-  require("./Subcommands/WipeAll"),
+  require("./Subcmds/Active"),
+  require("./Subcmds/Admin"),
+  require("./Subcmds/Leaderboard"),
+  require("./Subcmds/Manage"),
+  require("./Subcmds/WipeAll"),
 ];
 
-const DutyTypesSubcommandGroup = require("./TypesSubcmdGroup/Main");
+const DutyTypesSubcommandGroup = require("./Duty Types/Main");
 const AutocompleteShiftType = require("../../../Utilities/Autocompletion/ShiftType");
 
 // ---------------------------------------------------------------------------------------
@@ -69,15 +69,6 @@ async function Autocomplete(Interaction) {
 // Command structure:
 // ------------------
 const CommandObject = {
-  userPerms: {
-    types: {
-      management: {
-        bot: true,
-        guild: true,
-        type: "any",
-      },
-    },
-  },
   cooldown: 5,
   data: new SlashCommandBuilder()
     .setName("duty")
