@@ -11,7 +11,7 @@ const ReplyTemplates = {
 
 /**
  * Replies to the given interaction with an error embed containing a specified title and description.
- * @param {ErrorReplyOptions} Options
+ * @param {UTilities.ErrorReplyOptions} Options
  */
 function SendErrorReply(Options) {
   if (!Options.Interact) return;

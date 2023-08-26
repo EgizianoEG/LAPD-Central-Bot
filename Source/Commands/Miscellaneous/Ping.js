@@ -22,12 +22,13 @@ async function Callback(Client, Interaction) {
   const Response = new SuccessEmbed()
     .setTimestamp()
     .setFooter({
-      text: "Developed by @egiziano",
+      text: "Application Developed by @egiziano",
     })
     .setDescription(
-      `Client Ping: \`${ClientPing} ms\`\nWebsocket: \`${
-        Client.ws.ping >= 0 ? Client.ws.ping : 0
-      } ms\`\nApplication Uptime: \`${AppUptime}\``
+      "Client Ping: `%s`ms\nWebsocket: `%s`ms\nApplication Uptime: `%s`",
+      ClientPing,
+      Client.ws.ping >= 0 ? Client.ws.ping : 0,
+      AppUptime
     );
 
   return Interaction.editReply({ embeds: [Response] });

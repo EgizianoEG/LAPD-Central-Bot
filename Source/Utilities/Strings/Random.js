@@ -1,4 +1,4 @@
-const DummyTexts = require("../../Resources/DummyTexts.json");
+const DummyTexts = require("../../Resources/SampleTexts.js");
 const Cache = { ".": [] };
 // ----------------------------------------------------------------
 // Initialization

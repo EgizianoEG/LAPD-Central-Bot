@@ -114,7 +114,7 @@ async function Callback(_, Interaction) {
   if (Interaction.replied) return;
 
   const PromptEmbed = new EmbedBuilder()
-    .setColor(Colors.DarkRed)
+    .setColor(Colors.Orange)
     .setTitle("Shift Type Deletion")
     .setDescription(
       `**Are you sure you want to delete the shift type named \`${ShiftTypeName}\`?**\n` +

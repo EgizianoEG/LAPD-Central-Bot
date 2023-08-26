@@ -1,4 +1,7 @@
-[
+/**
+ * Array of sample strings between 7 and 12 words for each string used for verifications
+ */
+module.exports = [
   "funny cat dog game red green funny",
   "deadly bah beam lest rest if before camp",
   "pizza plane quality general manager staff",
@@ -198,5 +201,5 @@
   "decentralise perpetrate tight although whether aware croak because pumpernickel pish wasabi lopsided",
   "huzzah objection anthropology across iron off extemporize reflecting coconut deconstruct ack inasmuch",
   "furiously pace revascularisation circa pfft meanwhile simplistic draft where unconscious angrily quarter",
-  "indeed well internal always demotivate down garbage courageously enlightened trustworthy overrate mishear"
-]
+  "indeed well internal always demotivate down garbage courageously enlightened trustworthy overrate mishear",
+];

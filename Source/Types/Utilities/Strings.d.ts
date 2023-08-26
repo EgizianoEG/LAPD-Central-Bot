@@ -6,5 +6,3 @@
 declare function ListCharges(Input: string, RAsArray?: false): string;
 
 declare function ListCharges(Input: string, RAsArray: true): [string[], boolean];
-
-export = ListCharges;

@@ -1,5 +1,6 @@
 /* eslint-disable no-extra-parens */
 /* eslint-disable no-unused-vars */
+// @ts-nocheck
 // TODO: add verification by following user or by joining a game.
 // -------------
 // Dependencies:

@@ -4,7 +4,7 @@ const { default: Axios } = require("axios");
 /**
  * Returns the profile details
  * @param {(Number|String)} UserId
- * @returns {Promise<RobloxUserProfileDetails>} User profile details
+ * @returns {Promise<Utilities.Roblox.UserProfileDetails>} User profile details
  */
 async function GetPlayerInfo(UserId) {
   const Res = await Axios.get(`https://users.roblox.com/v1/users/${UserId}`);
