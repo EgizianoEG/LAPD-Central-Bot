@@ -1,15 +1,11 @@
-/* eslint-disable no-unused-vars */
-// @ts-nocheck
-// -------------
+/* eslint-disable no-extra-parens */
 // Dependencies:
 // ------------------------------------------------------------------------------------
 
 const {
-  Client,
   Colors,
   EmbedBuilder,
   ComponentType,
-  ChatInputCommandInteraction,
   SlashCommandBuilder,
   ActionRowBuilder,
   ButtonBuilder,
@@ -26,7 +22,7 @@ const { ErrorEmbed, InfoEmbed, SuccessEmbed } = require("../../Utilities/Classes
 // -----------
 /**
  * Handles the case where the command runner is not logged in
- * @param {ChatInputCommandInteraction} Interaction
+ * @param {SlashCommandInteraction} Interaction
  */
 async function HandleLoggedInUser(Interaction, IsLoggedIn) {
   if (!IsLoggedIn) {
@@ -45,8 +41,8 @@ async function HandleLoggedInUser(Interaction, IsLoggedIn) {
 
 /**
  * Handles the logic for the command interaction to log out and unlink a Roblox account.
- * @param {Client} Client
- * @param {ChatInputCommandInteraction} Interaction
+ * @param {DiscordClient} _
+ * @param {SlashCommandInteraction} Interaction
  * @execution
  * This function executes the following steps:
  * 1. Check if the command runner is already logged in; if not, provide an error message.
@@ -59,23 +55,31 @@ async function HandleLoggedInUser(Interaction, IsLoggedIn) {
  *    - If "Cancel" is clicked, disable the prompt and reply with a cancellation message.
  * 7. Handle errors, including timeouts, with appropriate responses.
  */
-async function Callback(Client, Interaction) {
+async function Callback(_, Interaction) {
   const UserLoggedIn = await IsUserLoggedIn(Interaction);
 
   await HandleLoggedInUser(Interaction, UserLoggedIn);
   if (Interaction.replied) return;
 
-  const RobloxUsername = (await GetPlayerInfo(UserLoggedIn)).name;
-  const ButtonsActionRow = new ActionRowBuilder().setComponents(
-    new ButtonBuilder()
-      .setLabel("Confirm and Log Out")
-      .setCustomId("confirm-logout")
-      .setStyle(ButtonStyle.Success),
-    new ButtonBuilder()
-      .setLabel("Cancel")
-      .setCustomId("cancel-logout")
-      .setStyle(ButtonStyle.Secondary)
-  );
+  const RobloxUsername = (
+    await GetPlayerInfo(
+      /** @type {Number} */
+      (UserLoggedIn)
+    )
+  ).name;
+
+  const ButtonsActionRow =
+    /** @type {ActionRowBuilder<ButtonBuilder>} */
+    (new ActionRowBuilder()).setComponents(
+      new ButtonBuilder()
+        .setLabel("Confirm and Log Out")
+        .setCustomId("confirm-logout")
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setLabel("Cancel")
+        .setCustomId("cancel-logout")
+        .setStyle(ButtonStyle.Secondary)
+    );
 
   const PromptEmbed = new EmbedBuilder()
     .setTitle("Logout Process")

@@ -1,5 +1,4 @@
 /* eslint-disable no-extra-parens */
-// @ts-nocheck
 // TODO: Authorize uer command execution before continuing.
 // -------------
 // Dependencies:

@@ -1,6 +1,4 @@
 /* eslint-disable no-extra-parens */
-/* eslint-disable no-unused-vars */
-// @ts-nocheck
 // TODO: add verification by following user or by joining a game.
 // -------------
 // Dependencies:
@@ -15,8 +13,6 @@ const {
   escapeMarkdown,
   ActionRowBuilder,
   SlashCommandBuilder,
-  AutocompleteInteraction,
-  ChatInputCommandInteraction,
 } = require("discord.js");
 
 const GetPlayerInfo = require("../../Utilities/Roblox/GetPlayerInfo");
@@ -24,7 +20,7 @@ const IsUserLoggedIn = require("../../Utilities/Database/IsUserLoggedIn");
 const GetIdFromUsername = require("../../Utilities/Roblox/UserIdByUsername");
 const AutocompleteUsername = require("../../Utilities/Autocompletion/Username");
 const UpdateLinkedRobloxUser = require("../../Utilities/Database/UpdateLinkedUser");
-const { ErrorEmbed, InfoEmbed, SuccessEmbed } = require("../../Utilities/Classes/ExtraEmbeds");
+const { InfoEmbed, SuccessEmbed } = require("../../Utilities/Classes/ExtraEmbeds");
 const { IsValidRobloxUsername } = require("../../Utilities/Strings/Validator");
 const { DummyText } = require("../../Utilities/Strings/Random");
 const { SendErrorReply } = require("../../Utilities/Other/SendReply");
@@ -35,7 +31,7 @@ const { format } = require("util");
 // ----------
 /**
  * Validates the entered Roblox username before continuing
- * @param {ChatInputCommandInteraction} Interaction - The interaction object.
+ * @param {SlashCommandInteraction} Interaction - The interaction object.
  * @param {String} RobloxUsername - The Roblox username to be validated.
  * @returns {Promise<(import("discord.js").Message<boolean>) | (import("discord.js").InteractionResponse<boolean>) | undefined>} The interaction reply (an error reply) if validation failed; otherwise `undefined`
  * @requires `Utilities/Strings/Validator.IsValidRobloxUsername`
@@ -68,7 +64,7 @@ async function HandleInvalidUsername(Interaction, RobloxUsername) {
 
 /**
  * Checks whether or not the command runner is already logged into the application and if so, halts any furthur execution
- * @param {ChatInputCommandInteraction} Interaction - The interaction object.
+ * @param {SlashCommandInteraction} Interaction - The interaction object.
  * @requires `Utilities/Database/IsUserLoggedIn`
  * @requires `Utilities/Roblox/GetPlayerInfo`
  */
@@ -128,16 +124,18 @@ async function Callback(_, Interaction) {
         `\`\`\`fix\n${SampleText}\n\`\`\``
     );
 
-  const ButtonsActionRow = new ActionRowBuilder().setComponents(
-    new ButtonBuilder()
-      .setLabel("Verify and Login")
-      .setCustomId("confirm-login")
-      .setStyle(ButtonStyle.Success),
-    new ButtonBuilder()
-      .setLabel("Cancel Login")
-      .setCustomId("cancel-login")
-      .setStyle(ButtonStyle.Secondary)
-  );
+  const ButtonsActionRow =
+    /** @type {ActionRowBuilder<ButtonBuilder>} */
+    (new ActionRowBuilder()).setComponents(
+      new ButtonBuilder()
+        .setLabel("Verify and Login")
+        .setCustomId("confirm-login")
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setLabel("Cancel Login")
+        .setCustomId("cancel-login")
+        .setStyle(ButtonStyle.Secondary)
+    );
 
   const ProcessPrompt = await Interaction.reply({
     ephemeral: true,
@@ -206,7 +204,7 @@ async function Callback(_, Interaction) {
 
 /**
  * Autocompletion for the Roblox username required command option
- * @param {AutocompleteInteraction} Interaction
+ * @param {import("discord.js").AutocompleteInteraction} Interaction
  * @returns {Promise<void>}
  */
 async function Autocomplete(Interaction) {

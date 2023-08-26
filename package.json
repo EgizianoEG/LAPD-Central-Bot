@@ -20,7 +20,6 @@
   "scripts": {
     "start": "node ./Source/Main.js",
     "lint": "eslint ./Source",
-    "lint:fix": "eslint ./Source --fix",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {

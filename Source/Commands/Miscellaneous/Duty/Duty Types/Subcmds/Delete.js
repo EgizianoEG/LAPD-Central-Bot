@@ -1,4 +1,4 @@
-// @ts-nocheck
+/* eslint-disable no-extra-parens */
 // -------------
 // Dependencies:
 // ------------------------------------------------------------------------------------
@@ -123,7 +123,8 @@ async function Callback(_, Interaction) {
     );
 
   const PromptComponents = [
-    new ActionRowBuilder().addComponents(
+    /** @type {ActionRowBuilder<ButtonBuilder>} */
+    (new ActionRowBuilder()).addComponents(
       new ButtonBuilder()
         .setCustomId("confirm-deletion")
         .setLabel("Confirm and Delete")
