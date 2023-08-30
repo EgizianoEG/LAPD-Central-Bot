@@ -2,10 +2,10 @@ const Path = require("path");
 const FileSystem = require("fs");
 
 /**
- *
+ * Returns child file/folder paths (files with `.js` extension) for a given directory
  * @param {String} Directory
  * @param {Boolean} FoldersOnly
- * @returns
+ * @returns {String[]}
  */
 module.exports = (Directory, FoldersOnly = false) => {
   const Files = FileSystem.readdirSync(Directory, { withFileTypes: true });
@@ -18,10 +18,8 @@ module.exports = (Directory, FoldersOnly = false) => {
       if (File.isDirectory()) {
         Paths.push(FilePath);
       }
-    } else {
-      if (File.isFile() && File.name.endsWith(".js")) {
-        Paths.push(FilePath);
-      }
+    } else if (File.isFile() && File.name.endsWith(".js")) {
+      Paths.push(FilePath);
     }
   }
 

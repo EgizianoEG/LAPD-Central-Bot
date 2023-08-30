@@ -59,6 +59,7 @@ const GuildSchema = new Schema({
     },
 
     // Role permissions which will be used to restrict the usage of certain commands and actions
+    // Staff are the ones allowed to utilize low-profile shift management commands and actions (all members if not specified by default)
     role_permissions: {
       staff: {
         type: [String],
@@ -109,6 +110,11 @@ const GuildSchema = new Schema({
               minLength: 3,
               maxLength: 20,
             },
+            is_default: {
+              type: Boolean,
+              required: false,
+              default: false,
+            },
             permissible_roles: [
               {
                 type: String,
@@ -122,7 +128,7 @@ const GuildSchema = new Schema({
       shift_max_duration: {
         type: Number,
         default: 86_400_000,
-        min: 900000,
+        min: 900_000,
       },
     },
   },

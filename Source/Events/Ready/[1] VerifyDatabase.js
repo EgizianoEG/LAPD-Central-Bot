@@ -5,7 +5,7 @@ const GuildModel = require("../../Models/Guild");
  * @param {DiscordClient} Client
  */
 async function VerifyDatabase(Client) {
-  const Guilds = Client.guilds.cache.values();
+  const Guilds = (await Client.guilds.fetch()).values();
   const NewGuilds = [];
 
   for (const JoinedGuild of Guilds) {

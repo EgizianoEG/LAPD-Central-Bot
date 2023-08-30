@@ -25,6 +25,44 @@ namespace Utilities.Roblox {
     displayName: string;
   }
 
+  interface UserSearchResult {
+    /** The id of the user. */
+    UserId: number;
+
+    /** The username of the user. */
+    Name: string;
+
+    /** The display name of the user. */
+    DisplayName: string;
+
+    /** A brief description of the user. */
+    Blurb: string;
+
+    /** A comma-separated list of the user's previous usernames. */
+    PreviousUserNamesCsv: string;
+
+    /** Whether the user is online. */
+    IsOnline: boolean;
+
+    /** The user's last known location. */
+    LastLocation?: string;
+
+    /** The URL of the user's profile page. */
+    UserProfilePageUrl: string;
+
+    /** The user's last seen date. */
+    LastSeenDate?: string;
+
+    /** The user's primary group. */
+    PrimaryGroup: string;
+
+    /** The URL of the user's primary group. */
+    PrimaryGroupUrl: string;
+
+    /** Whether the user has a verified badge. */
+    HasVerifiedBadge: boolean;
+  }
+
   interface UserPresence {
     /**
      * The user presence type. Possible values: 0 = Offline, 1 = Online, 2 = InGame, 3 = InStudio, 4 = Invisible.

@@ -5,7 +5,7 @@ const Path = require("path");
 /**
  * Collects all the local commands and returns them as an array of command objects
  * @param {Array<String>} [Exceptions=[]] The names of commands and exceptions which to ignore when collecting local commands
- * @returns {Array<CommandObject>} An array of command objects
+ * @returns {Array<SlashCommandObject>} An array of command objects
  */
 module.exports = (Exceptions = []) => {
   const LocalCommands = [];
@@ -16,11 +16,11 @@ module.exports = (Exceptions = []) => {
     const CommandGroups = GetFiles(CommandCat, true);
 
     for (const CommandGroup of CommandGroups) {
-      const CommandName = CommandGroup.match(/.+\\(.+)$/i)[1];
+      const MainFileName = CommandGroup.match(/\\?([^\\]+)\.\w+$/i)?.[1];
       const Commands = GetFiles(CommandGroup);
 
       for (const Command of Commands) {
-        if (Command.match(new RegExp(`(?:${CommandName}|Main).js$`))) {
+        if (Command.match(new RegExp(`(?:${MainFileName}|Main).js$`))) {
           const CommandObj = require(Command);
           if (
             CommandObj.data?.name &&

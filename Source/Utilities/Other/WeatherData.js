@@ -30,11 +30,11 @@ function ConvertVisibility(RawVisibility, DistanceUnit) {
 
 /**
  * Retrieves the current weather data for a specified latitude and longitude or for the default city, Los Angeles via OpenWeather API.
- * @param {CurrentWeatherOptions} Options Request and returned data options object
- * @returns {Promise<CurrentWeatherData>} The current weather data retreived from OpenWeather organized
+ * @param {WeatherData.CurrentWeatherOptions} Options Request and returned data options object
+ * @returns {Promise<WeatherData.CurrentWeatherData>} The current weather data retreived from OpenWeather organized
  */
 async function GetCurrentWeather(Options = { Units: "imperial" }) {
-  /** @type {RetrievedWeatherData} */
+  /** @type {WeatherData.RetrievedWeatherData} */
   const RetrievedData = await WeatherClient.request({
     params: {
       units: Options.Units,

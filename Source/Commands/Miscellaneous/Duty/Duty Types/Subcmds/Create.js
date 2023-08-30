@@ -1,5 +1,5 @@
 /* eslint-disable no-extra-parens */
-// TODO: Authorize uer command execution before continuing.
+// TODO: Authorize uer command execution before continuing, add the ability to specify the default shift types.
 // -------------
 // Dependencies:
 // ------------------------------------------------------------------------------------
@@ -25,6 +25,7 @@ const { IsValidShiftTypeName } = require("../../../../../Utilities/Strings/Valid
 const { SendErrorReply } = require("../../../../../Utilities/Other/SendReply");
 const CreateShiftType = require("../../../../../Utilities/Database/CreateShiftType");
 const GetShiftTypes = require("../../../../../Utilities/Database/GetShiftTypes");
+const ListFormatter = new Intl.ListFormat("en");
 const Chalk = require("chalk");
 
 // ---------------------------------------------------------------------------------------
@@ -32,7 +33,7 @@ const Chalk = require("chalk");
 // ----------
 /**
  * Handles validation of the `name` interaction option (Shift Type Name).
- * @param {SlashCommandInteraction} Interaction - The user command interaction
+ * @param {SlashCommandInteraction<"cached">} Interaction - The user command interaction
  * @param {String} ShiftTypeName - The provided name from the user
  * @returns {Promise<(import("discord.js").Message<boolean>) | (import("discord.js").InteractionResponse<boolean>) | undefined>} The interaction reply (an error reply) if validation failed; otherwise `undefined`
  */
@@ -72,7 +73,7 @@ async function HandleNameValidation(Interaction, ShiftTypeName) {
 
 /**
  * A helper function that filters the component collector interactions to ensure authorization.
- * @param {SlashCommandInteraction} OriginalInteract - The user command interaction
+ * @param {SlashCommandInteraction<"cached">} OriginalInteract - The user command interaction
  * @param {import("discord.js").MessageComponentInteraction} ReceivedInteract - The received interaction from the collector
  * @returns {Boolean} A boolean indicating if the interaction is authorized
  */
@@ -96,29 +97,9 @@ function HandleCollectorFiltering(OriginalInteract, ReceivedInteract) {
 }
 
 /**
- * Formats the given array of role ids for displaying
- * @param {Array<String>} RoleIds
- * @returns {String}
- */
-function FormatPermissibleRoles(RoleIds) {
-  if (RoleIds.length) {
-    return RoleIds.map((Id, Index) => {
-      let SubStr = "";
-
-      if (Index === RoleIds.length - 2) SubStr = ", and ";
-      else if (Index + 1 !== RoleIds.length) SubStr = ", ";
-
-      return `<@&${Id}>` + SubStr;
-    }).join("");
-  } else {
-    return "*Usable by All Staff Tagged Members*";
-  }
-}
-
-/**
  * Handles the command execution process for creating a new duty shift type.
  * @param {DiscordClient} _ - The Discord.js client instance (not used in this function)
- * @param {SlashCommandInteraction} Interaction - The user command interaction
+ * @param {SlashCommandInteraction<"cached">} Interaction - The user command interaction
  * @description
  * This function guides the user through the process of creating a new duty shift type
  * by providing a prompt with instructions and components for role selection and confirmation.
@@ -224,7 +205,7 @@ async function Callback(_, Interaction) {
   });
 
   CompCollector.once("end", async (CollectedInt, EndReason) => {
-    const LastInteraction = CollectedInt.last();
+    const LastInteraction = CollectedInt.last() ?? Interaction;
     CompCollector.removeAllListeners();
     if (EndReason.match(/\w+Delete/)) return;
 
@@ -237,7 +218,13 @@ async function Callback(_, Interaction) {
           permissible_roles: ShiftTypePermittedRoles,
         });
 
-        if (!(Response instanceof Error)) {
+        if (Response instanceof Error) {
+          SendErrorReply({
+            Title: Response.title,
+            Message: Response.message,
+            Interact: LastInteraction,
+          });
+        } else {
           LastInteraction.reply({
             embeds: [
               new SuccessEmbed()
@@ -245,15 +232,11 @@ async function Callback(_, Interaction) {
                 .setDescription(
                   `**Shift Type Name:** \`${ShiftTypeName}\`\n`,
                   "**Permissible Roles:**\n",
-                  FormatPermissibleRoles(ShiftTypePermittedRoles)
+                  ShiftTypePermittedRoles.length
+                    ? ListFormatter.format(ShiftTypePermittedRoles.map((Id) => `<@&${Id}>`))
+                    : "*Usable by All Staff Identified Members*"
                 ),
             ],
-          });
-        } else {
-          SendErrorReply({
-            Title: Response.title,
-            Message: Response.message,
-            Interact: LastInteraction,
           });
         }
       } else if (EndReason === "cancellation") {
@@ -292,7 +275,7 @@ async function Callback(_, Interaction) {
       );
 
       SendErrorReply({
-        Interact: LastInteraction ?? Interaction,
+        Interact: LastInteraction,
         Template: "AppError",
       });
     }

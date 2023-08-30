@@ -32,14 +32,14 @@ async function DeleteShiftType(Name, GuildId) {
     (ShiftType) => ShiftType.name === Name
   );
 
-  if (ShiftTypeIndex !== -1) {
-    GuildDoc.settings.shift_settings.shift_types.splice(ShiftTypeIndex, 1);
-    return GuildDoc.save();
-  } else {
+  if (ShiftTypeIndex === -1) {
     return new AppError(
       "Shift Type Not Found",
       `The shift type \`${Name}\` does not exist in the server and cannot be deleted.`
     );
+  } else {
+    GuildDoc.settings.shift_settings.shift_types.splice(ShiftTypeIndex, 1);
+    return GuildDoc.save();
   }
 }
 

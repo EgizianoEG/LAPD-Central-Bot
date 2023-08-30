@@ -1,6 +1,6 @@
 /**
  * Returns the registered application commands
- * @param {import("discord.js").Client} Client
+ * @param {DiscordClient} Client
  * @param {String} [GuildId] If provided, returns the application commands registered on it
  */
 module.exports = async (Client, GuildId) => {

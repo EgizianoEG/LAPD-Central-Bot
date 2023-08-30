@@ -1,9 +1,5 @@
 /* eslint-disable no-unused-vars */
-const {
-  Client,
-  ChatInputCommandInteraction,
-  SlashCommandSubcommandGroupBuilder,
-} = require("discord.js");
+const { SlashCommandSubcommandGroupBuilder } = require("discord.js");
 
 const Subcommands = [
   require("./Subcmds/View"),
@@ -15,8 +11,8 @@ const Subcommands = [
 // Functions:
 // ----------
 /**
- * @param {Client} Client
- * @param {ChatInputCommandInteraction} Interaction
+ * @param {DiscordClient} Client
+ * @param {SlashCommandInteraction<"cached">} Interaction
  */
 function Callback(Client, Interaction) {
   const SubcommandName = Interaction.options.getSubcommand();

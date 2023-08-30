@@ -8,9 +8,8 @@ const { TitleCase } = require("./Converter.js");
  * @return {Array<String>|String|any} - The list of charges either a string or an array.
  */
 function ListCharges(Input, RAsArray) {
-  /** @type {(any)[]} */
-  let Charges;
-  Charges = Input.match(/([^\n\r]+)/g);
+  /** @type {any} */
+  let Charges = Input.match(/([^\n\r]+)/g);
 
   if (!Charges || Charges.length === 0) {
     return RAsArray ? [] : Input;
@@ -467,27 +466,23 @@ function FormatCharges(ChargesText) {
  */
 function FormatHeight(Input) {
   if (typeof Input !== "string") return Input;
-  if (!Input.match(/^[1-7]'(\d|1[01])"$/)) {
-    if (Input.match(/^\d+$/)) {
-      return Input + "'0\"";
-    }
-    if (Input.match(/^\d'$/)) {
-      return `${Input}0"`;
-    }
-    if (Input.match(/^\d'\d+$/)) {
-      return `${Input}"`;
-    }
-    if (Input.match(/^\d[^\d]+\d+[^\d]*$/)) {
-      const Matches = Input.match(/^(\d)[^\d]+(\d+)[^\d]*$/);
-      const Feet = Matches[1];
-      const Inches = Matches[2];
-      return `${Feet}'${Inches}"`;
-    }
-  } else {
-    if (Input.match(/^[8-9]/)) {
-      return "7'0\"";
-    } else return Input;
+  if (Input.match(/^[1-7]'(\d|1[01])"$/)) {
+    return Input.match(/^[8-9]/) ? "7'0\"" : Input;
   }
+
+  if (Input.match(/^\d+$/)) {
+    return Input + "'0\"";
+  } else if (Input.match(/^\d'$/)) {
+    return `${Input}0"`;
+  } else if (Input.match(/^\d'\d+$/)) {
+    return `${Input}"`;
+  } else if (Input.match(/^\d[^\d]+\d+[^\d]*$/)) {
+    const Matches = Input.match(/^(\d)[^\d]+(\d+)[^\d]*$/);
+    const Feet = Matches?.[1];
+    const Inches = Matches?.[2];
+    return `${Feet}'${Inches}"`;
+  }
+
   return Input;
 }
 
@@ -556,24 +551,6 @@ function FormatUsername(UserData, IncludeID) {
   return null;
 }
 
-/**
- * Joins the elements of a given array with extra options
- * @param {Array<String>} InputArray - The array to join its elements together
- * @param {Object} Options
- * @property {String} Options.delimiter - The delimiter to use when joining the elements; defaults to comma (", ")
- * @property {String} Options.conjunction - String to include after the last delimiter; defaults to "and "
- */
-function JoinArrayElements(InputArray, Options = { delimiter: ", ", conjunction: "and " }) {
-  return InputArray.map((Element, Index) => {
-    let SubStr = "";
-
-    if (Index === Array.length - 2) SubStr = Options.delimiter + Options.conjunction;
-    else if (Index + 1 !== Array.length) SubStr = Options.delimiter;
-
-    return Element + SubStr;
-  }).join("");
-}
-
 module.exports = {
   UnorderedList,
   FormatCharges,
@@ -581,5 +558,4 @@ module.exports = {
   FormatHeight,
   FormatAge,
   FormatUsername,
-  JoinArrayElements,
 };

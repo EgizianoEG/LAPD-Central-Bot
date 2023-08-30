@@ -13,7 +13,7 @@ const {
   Embeds: { Thumbs },
   Images,
   Icons,
-} = require("../../../../Config/Shared.json");
+} = require("../../../../Config/Shared.js");
 
 // ---------------------------------------------------------------------------------------
 /**
@@ -26,7 +26,7 @@ async function Callback(Client, Interaction) {
     .setDescription(`Arrest Report Template Requested by <@${Interaction.user.id}>`)
     .setTimestamp(new Date())
     .setColor(Colors.DarkBlue)
-    .setThumbnail(Thumbs.Avatar.Male)
+    .setThumbnail(Thumbs.AvatarMale)
     .setImage(Images.LAPD_Header)
     .setFooter({
       text: "Report signed by: Unknown (@Unknown)",

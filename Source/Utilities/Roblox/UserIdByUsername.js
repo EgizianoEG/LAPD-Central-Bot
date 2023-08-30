@@ -1,3 +1,5 @@
+/* eslint-disable no-extra-parens */
+
 const { default: Axios } = require("axios");
 const {
   APICache: { IdByUsername },
@@ -6,16 +8,16 @@ const {
 
 /**
  * Returns the user id of the input username string
- * @param {(String|Array.<String>)} Usernames - The username to get its id from
+ * @param {(String|Array<String>)} Usernames - The username to get its id from
  * @param {(Boolean|undefined)} [ExcludeBanned=true] - Whether to exclude banned users from the response
- * @return {(Promise.<(Array|Null)>)} The user id of the input username as the first array item or null if input is invailed, user is banned (optional), or the http response was corrupted
+ * @return {(Promise<[Number, String][]|[Number, String]|Null>)} The user id of the input username as the first array item or null if input is invailed, user is banned (optional), or the http response was corrupted
  */
 async function GetIdFromUsername(Usernames, ExcludeBanned = true) {
   Usernames = Array.isArray(Usernames) ? Usernames : [Usernames];
   const Stringified = Usernames.toString();
 
   if (IdByUsername.has(Stringified)) {
-    return IdByUsername.get(Stringified);
+    return /** @type {any} */ (IdByUsername.get(Stringified));
   }
 
   return await Axios.post("https://users.roblox.com/v1/usernames/users", {
@@ -23,8 +25,7 @@ async function GetIdFromUsername(Usernames, ExcludeBanned = true) {
     excludeBannedUsers: ExcludeBanned,
   })
     .then((Res) => {
-      // eslint-disable-next-line
-      let Results = /** @type {Array<String>} */ (Usernames)
+      let Results = /** @type {any} */ (Usernames)
         .map((Username) => {
           return Res.data.data.find((UserObject) => UserObject.requestedUsername === Username);
         })

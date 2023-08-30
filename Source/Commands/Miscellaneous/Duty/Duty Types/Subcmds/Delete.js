@@ -28,7 +28,7 @@ const GetShiftTypes = require("../../../../../Utilities/Database/GetShiftTypes")
 // ----------
 /**
  * Handles validation of the `name` interaction option (Shift Type Name).
- * @param {SlashCommandInteraction} Interaction - The user command interaction
+ * @param {SlashCommandInteraction<"cached">} Interaction - The user command interaction
  * @param {String} ShiftTypeName - The provided name from the user
  * @returns {Promise<(import("discord.js").Message<boolean>) | (import("discord.js").InteractionResponse<boolean>) | undefined>} The interaction reply (an error reply) if validation failed; otherwise `undefined`
  */
@@ -90,7 +90,7 @@ function HandleCollectorFiltering(OriginalInteract, ReceivedInteract) {
 /**
  * Handles the command execution process for deleting a duty shift type.
  * @param {DiscordClient} _ - The Discord.js client instance (not used in this function)
- * @param {SlashCommandInteraction} Interaction - The user command interaction
+ * @param {SlashCommandInteraction<"cached">} Interaction - The user command interaction
  * @description
  * Handles the entire process of deleting a duty shift type. Validates the provided shift type name,
  * displays a confirmation prompt, waits for user interaction, and performs the deletion or cancellation.

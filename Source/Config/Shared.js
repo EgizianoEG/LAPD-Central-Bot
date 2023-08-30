@@ -1,37 +1,43 @@
-{
-  "Images": {
-    "LAPD_Logo": "https://i.ibb.co/HxqT7Xz/LAPD-Logo-2.png",
-    "LAPD_Header": "https://i.ibb.co/fXsLH03/LAPD-Header-500.jpg"
+const SharedData = {
+  Images: {
+    LAPD_Logo: "https://i.ibb.co/HxqT7Xz/LAPD-Logo-2.png",
+    LAPD_Header: "https://i.ibb.co/fXsLH03/LAPD-Header-500.jpg",
   },
 
-  "Embeds": {
-    "Colors": {
-      "Info": "3498DB",
-      "Success": "28a745",
-      "Warning": "E67E22",
-      "Error": "ED4245"
+  Embeds: {
+    Colors: {
+      Info: "#3498DB",
+      Success: "#28a745",
+      Warning: "#E67E22",
+      Error: "#ED4245",
     },
 
-    "Thumbs": {
-      "Info": "https://i.ibb.co/Fztk9dQ/Info-Icon-48.png",
-      "Warning": "https://i.ibb.co/D9ffPMx/Warning-Icon-48.png",
-      "Error": "https://i.ibb.co/tqk15t2/Error-Icon-48.png",
-      "Success": "https://i.ibb.co/TmYLkf4/Checkmark-Icon-48.png",
-      "Unauthorized": "https://i.ibb.co/DYM3Wcq/Blocked-Icon-48.png",
+    Thumbs: {
+      Info: "https://i.ibb.co/Fztk9dQ/Info-Icon-48.png",
+      Warning: "https://i.ibb.co/D9ffPMx/Warning-Icon-48.png",
+      Error: "https://i.ibb.co/tqk15t2/Error-Icon-48.png",
+      Success: "https://i.ibb.co/TmYLkf4/Checkmark-Icon-48.png",
+      Unauthorized: "https://i.ibb.co/DYM3Wcq/Blocked-Icon-48.png",
 
-      "Avatar": {
-        "Male": "https://i.ibb.co/m0fyKh1/Male-Avatar-Placeholder.png",
-        "Female": "https://i.ibb.co/Lr37RGx/Female-Avatar-Placeholder.png"
-      }
-    }
+      AvatarMale: "https://i.ibb.co/m0fyKh1/Male-Avatar-Placeholder.png",
+      AvatarFemale: "https://i.ibb.co/Lr37RGx/Female-Avatar-Placeholder.png",
+    },
   },
 
-  "Icons": {
-    "Signature": "https://i.ibb.co/LrjhMS6/Sign-Icon-50.png",
-    "OpenWeather": "https://i.ibb.co/CPPbHPL/Open-Weather-48.png",
+  Emojis: {
+    LosAngeles: "<:losangeles:1134606469828984873>",
+    NavNext: "<:ArrowForward:1146177481653624904>",
+    NavPrev: "<:ArrowBackward:1146177475945168997>",
+    NavFirst: "<:ArrowFirst:1146177479543881821>",
+    NavLast: "<:ArrowLast:1146177484702892082>",
+  },
 
-    "Weather": {
-      "Animated": [
+  Icons: {
+    Signature: "https://i.ibb.co/LrjhMS6/Sign-Icon-50.png",
+    OpenWeather: "https://i.ibb.co/CPPbHPL/Open-Weather-48.png",
+
+    Weather: {
+      Animated: [
         "https://i.ibb.co/HtXrGDW/mist.gif",
         "https://i.ibb.co/sQBk6KH/hail.gif",
         "https://i.ibb.co/FqrYXms/sleet.gif",
@@ -108,9 +114,10 @@
         "https://i.ibb.co/6Z7DqBN/thunderstorms-day-overcast-snow.gif",
         "https://i.ibb.co/5WCW2zc/thunderstorms-day-overcast-rain.gif",
         "https://i.ibb.co/9nTsPYD/thunderstorms-night-overcast-snow.gif",
-        "https://i.ibb.co/wLWG3cT/thunderstorms-night-overcast-rain.gif"
-      ]
-    }
-  }
-  
-}
+        "https://i.ibb.co/wLWG3cT/thunderstorms-night-overcast-rain.gif",
+      ],
+    },
+  },
+};
+
+module.exports = SharedData;

@@ -14,7 +14,9 @@ async function AutocompleteShiftType(TypedValue, GuildId) {
     "settings.shift_settings.shift_types"
   ).then((GuildData) => {
     if (!GuildData) return [];
-    return GuildData.settings.shift_settings.shift_types.map((ShiftType) => ShiftType.name);
+    return GuildData.settings.shift_settings.shift_types
+      .map((ShiftType) => ShiftType.name)
+      .sort((a, b) => a.localeCompare(b));
   });
 
   if (!ShiftTypes.length) {
@@ -23,16 +25,14 @@ async function AutocompleteShiftType(TypedValue, GuildId) {
     Suggestions = ShiftTypes;
   } else {
     Suggestions = ShiftTypes.filter((Element) => {
-      return Element.startsWith(TypedValue);
+      return Element.match(new RegExp(TypedValue, "i"));
     });
   }
 
-  Suggestions = Suggestions.slice(0, 25).map((Choice) => ({
+  return Suggestions.slice(0, 25).map((Choice) => ({
     name: Choice,
     value: Choice,
   }));
-
-  return Suggestions;
 }
 
 // ------------------------------------

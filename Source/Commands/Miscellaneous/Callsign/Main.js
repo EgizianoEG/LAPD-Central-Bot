@@ -1,18 +1,24 @@
-// eslint-disable-next-line no-unused-vars
-const { Client, ChatInputCommandInteraction, SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder } = require("discord.js");
 // -------------------------------------------------------------------------------
 
 /**
- * @param {Client} Client
- * @param {ChatInputCommandInteraction} Interaction
+ * @param {DiscordClient} Client
+ * @param {SlashCommandInteraction} Interaction
  */
 async function Callback(Client, Interaction) {}
 
+// ---------------------------------------------------------------------------------------
+// Command structure:
+// ------------------
+/** @type SlashCommandObject */
 const CommandObject = {
-  callback: Callback,
   data: new SlashCommandBuilder()
     .setName("callsign")
-    .setDescription("Callsign database of police officers."),
+    .setDescription("Callsign database of police officers.")
+    .setDMPermission(false),
+
+  callback: Callback,
+  options: {},
 };
 
 // ----------------------------

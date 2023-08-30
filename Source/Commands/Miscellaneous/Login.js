@@ -111,7 +111,10 @@ async function Callback(_, Interaction) {
   await HandleInvalidUsername(Interaction, InputUsername);
   if (Interaction.replied) return;
 
-  const [RobloxUserId, RobloxUsername] = await GetIdFromUsername(InputUsername);
+  const [RobloxUserId, RobloxUsername] = /** @type {[Number, String]} */ (
+    await GetIdFromUsername(InputUsername)
+  );
+
   const SampleText = DummyText();
   const ProcessEmbed = new EmbedBuilder()
     .setColor(Colors.Aqua)
@@ -223,11 +226,12 @@ async function Autocomplete(Interaction) {
 // ---------------------------------------------------------------------------------------
 // Command structure:
 // ------------------
+/** @type SlashCommandObject */
 const CommandObject = {
-  cooldown: 30,
   data: new SlashCommandBuilder()
     .setName("log-in")
     .setDescription("Log into the application and get access to restricted actions.")
+    .setDMPermission(false)
     .addStringOption((Option) =>
       Option.setName("username")
         .setDescription("The Roblox username to log in as.")
@@ -236,8 +240,12 @@ const CommandObject = {
         .setRequired(true)
         .setAutocomplete(true)
     ),
+
   callback: Callback,
   autocomplete: Autocomplete,
+  options: {
+    cooldown: 30,
+  },
 };
 
 // ---------------------------------------------------------------------------------------

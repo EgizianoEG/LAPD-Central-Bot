@@ -146,12 +146,17 @@ async function Callback(_, Interaction) {
 // ---------------------------------------------------------------------------------------
 // Command structure:
 // ------------------
+/** @type SlashCommandObject */
 const CommandObject = {
-  cooldown: 30,
   data: new SlashCommandBuilder()
     .setName("log-out")
-    .setDescription("Log out and unlink the associated Roblox account from the application."),
+    .setDescription("Log out and unlink the associated Roblox account from the application.")
+    .setDMPermission(false),
+
   callback: Callback,
+  options: {
+    cooldown: 30,
+  },
 };
 
 // ---------------------------------------------------------------------------------------

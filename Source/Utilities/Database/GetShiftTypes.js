@@ -3,7 +3,7 @@ const GuildModel = require("../../Models/Guild.js");
 /**
  * Returns all created shift types for a given guild id
  * @param {String} GuildId
- * @returns {Promise<GuildShiftType[]>}
+ * @returns {Promise<Utilities.Database.GuildShiftType[]>}
  */
 async function GetShiftTypes(GuildId) {
   return GuildModel.findOne({ id: GuildId }, "settings.shift_settings.shift_types").then(

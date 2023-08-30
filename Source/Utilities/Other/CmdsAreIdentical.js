@@ -1,9 +1,6 @@
-// eslint-disable-next-line
-const { ApplicationCommand } = require("discord.js");
-
 /**
- * @param {ApplicationCommand & any} Cmd_1
- * @param {CommandObject["data"]} Cmd_2
+ * @param {import("discord.js").ApplicationCommand & any} Cmd_1
+ * @param {SlashCommandObject["data"]} Cmd_2
  * @returns {Boolean}
  */
 function Equals(Cmd_1, Cmd_2) {

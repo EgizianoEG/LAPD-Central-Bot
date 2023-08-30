@@ -6,9 +6,7 @@
  * UpperFirst("heLLo!")  // returns "Hello!"
  */
 function UpperFirst(Str) {
-  const up = Str.at(0).toUpperCase() + Str.substring(1).toLowerCase();
-  console.log(up);
-  return Str.at(0).toUpperCase() + Str.substring(1).toLowerCase();
+  return Str.at(0)?.toUpperCase() + Str.substring(1).toLowerCase();
 }
 
 /**
@@ -59,11 +57,7 @@ function TitleCase(Str, Strict = true) {
 
   // Capitalize the first letter of each word except numbers starting with "x"
   let Modified = Str.replace(/[^\W]+[^\s-]* */g, (Cap) => {
-    if (Cap.match(/x\d+/)) {
-      return Cap.toLowerCase();
-    } else {
-      return UpperFirst(Cap);
-    }
+    return Cap.match(/x\d+/) ? Cap.toLowerCase() : UpperFirst(Cap);
   });
 
   // Preserve certain words in lower-case and some acronyms in upper-case.
@@ -71,11 +65,7 @@ function TitleCase(Str, Strict = true) {
     for (const Lower of Lowers) {
       const Regex = new RegExp("\\b" + Lower + "\\b", "gi");
       Modified = Modified.replace(Regex, (Cap) => {
-        if (Modified.startsWith(Cap)) {
-          return Cap;
-        } else {
-          return Lower;
-        }
+        return Modified.startsWith(Cap) ? Cap : Lower;
       });
     }
     for (const Acronym of Uppers) {

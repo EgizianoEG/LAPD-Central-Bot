@@ -5,7 +5,7 @@ const {
   Icons: {
     Weather: { Animated },
   },
-} = require("../../Config/Shared.json");
+} = require("../../Config/Shared.js");
 
 const IconMap = {
   200: {

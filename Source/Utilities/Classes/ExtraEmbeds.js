@@ -2,7 +2,7 @@ const { format } = require("util");
 const { EmbedBuilder } = require("discord.js");
 const {
   Embeds: { Colors: EmbedColors, Thumbs: EmbedThumbs },
-} = require("../../Config/Shared.json");
+} = require("../../Config/Shared.js");
 // ----------------------------------------------------------------
 
 class BaseEmbed extends EmbedBuilder {
@@ -22,7 +22,7 @@ class BaseEmbed extends EmbedBuilder {
    * @returns {Promise<import("discord.js").InteractionResponse<boolean>> | Promise<import("discord.js").Message<boolean>>}
    */
   replyToInteract(interaction, ephemeral) {
-    const ReplyMethod = !interaction.replied ? "reply" : "followUp";
+    const ReplyMethod = interaction.replied ? "followUp" : "reply";
     return interaction[ReplyMethod]({
       ephemeral,
       embeds: [this],
@@ -34,7 +34,7 @@ class InfoEmbed extends BaseEmbed {
   /** @param {import("discord.js").EmbedData} [data] */
   constructor(data) {
     super(data);
-    this.setColor(parseInt(EmbedColors.Info, 16)).setThumbnail(EmbedThumbs.Info);
+    this.setColor(EmbedColors.Info).setThumbnail(EmbedThumbs.Info);
     if (!this.data.description) {
       this.setDescription("[Information]");
     }
@@ -48,7 +48,7 @@ class WarnEmbed extends BaseEmbed {
   /** @param {import("discord.js").EmbedData} [data] */
   constructor(data) {
     super(data);
-    this.setColor(parseInt(EmbedColors.Warning, 16)).setThumbnail(EmbedThumbs.Warning);
+    this.setColor(EmbedColors.Warning).setThumbnail(EmbedThumbs.Warning);
     if (!this.data.description) {
       this.setDescription("[Warning]");
     }
@@ -62,7 +62,7 @@ class ErrorEmbed extends BaseEmbed {
   /** @param {import("discord.js").EmbedData} [data] */
   constructor(data) {
     super(data);
-    this.setColor(parseInt(EmbedColors.Error, 16)).setThumbnail(EmbedThumbs.Error);
+    this.setColor(EmbedColors.Error).setThumbnail(EmbedThumbs.Error);
     if (!this.data.description) {
       this.setDescription("[Error Occurred]");
     }
@@ -76,7 +76,7 @@ class SuccessEmbed extends BaseEmbed {
   /** @param {import("discord.js").EmbedData} [data] */
   constructor(data) {
     super(data);
-    this.setColor(parseInt(EmbedColors.Success, 16)).setThumbnail(EmbedThumbs.Success);
+    this.setColor(EmbedColors.Success).setThumbnail(EmbedThumbs.Success);
     if (!this.data.description) {
       this.setDescription("[Succeeded]");
     }
@@ -90,7 +90,7 @@ class UnauthorizedEmbed extends BaseEmbed {
   /** @param {import("discord.js").EmbedData} [data] */
   constructor(data) {
     super(data);
-    this.setColor(parseInt(EmbedColors.Error, 16)).setThumbnail(EmbedThumbs.Unauthorized);
+    this.setColor(EmbedColors.Error).setThumbnail(EmbedThumbs.Unauthorized);
     if (!this.data.description) {
       this.setDescription("[Unauthorized Action]");
     }

@@ -1,9 +1,9 @@
 const DummyTexts = require("../../Resources/SampleTexts.js");
-const Cache = { ".": [] };
+const Cache = { ".": [" "] };
 // ----------------------------------------------------------------
 // Initialization
-for (let Character = 0; Character <= 255; Character++) {
-  Cache["."].push(String.fromCharCode(Character));
+for (let CharCode = 0; CharCode <= 255; CharCode++) {
+  Cache["."].push(String.fromCharCode(CharCode));
 }
 
 /**
@@ -18,9 +18,7 @@ function CharactersFromSet(CharSet) {
     if (Character) {
       if (CharSet.constructor === RegExp) {
         if (Character.match(CharSet)) Characters.push(Character);
-      } else {
-        if (Character.match(new RegExp(CharSet))) Characters.push(Character);
-      }
+      } else if (Character.match(new RegExp(CharSet))) Characters.push(Character);
     }
   }
 

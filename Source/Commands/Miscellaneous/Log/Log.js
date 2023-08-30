@@ -49,18 +49,19 @@ async function Autocomplete(Interaction) {
 // ---------------------------------------------------------------------------------------
 // Command structure:
 // ------------------
+/** @type {SlashCommandObject} */
 const CommandObject = {
-  // strictUpdate: true,
-  cooldown: 5,
   data: new SlashCommandBuilder()
     .setName("log")
     .setDescription("Logs a particular information.")
+    .setDMPermission(false)
     .addSubcommand(Subcommands[0].data)
     .addSubcommand(Subcommands[1].data)
     .addSubcommand(Subcommands[2].data),
 
   callback: Callback,
   autocomplete: Autocomplete,
+  options: {},
 };
 
 // ---------------------------------------------------------------------------------------

@@ -1,11 +1,10 @@
-// eslint-disable-next-line no-unused-vars
-const { Client, AutocompleteInteraction } = require("discord.js");
 const Chalk = require("chalk");
+// ----------------------------------------------------------------
 
 /**
  * Handles autocompletion for command options
- * @param {Client} Client
- * @param {AutocompleteInteraction} Interaction
+ * @param {DiscordClient} Client
+ * @param {import("discord.js").AutocompleteInteraction} Interaction
  */
 module.exports = (Client, Interaction) => {
   if (!Interaction.isAutocomplete()) return;

@@ -15,17 +15,17 @@ async function UpdateLinkedRobloxUser(CmdInteraction, RobloxUserId = null) {
     (Member) => Member.user_id === CmdInteraction.user.id
   );
 
-  if (MemberIndex !== -1) {
-    GuildData.members[MemberIndex].linked_user = {
-      roblox_user_id: RobloxUserId,
-    };
-  } else {
+  if (MemberIndex === -1) {
     GuildData.members.addToSet({
       user_id: CmdInteraction.user.id,
       linked_user: {
         roblox_user_id: RobloxUserId,
       },
     });
+  } else {
+    GuildData.members[MemberIndex].linked_user = {
+      roblox_user_id: RobloxUserId,
+    };
   }
 
   return GuildData.save();

@@ -1,12 +1,17 @@
+// Dependencies:
+// -------------
+
 const Chalk = require("chalk");
 const GetAppCommands = require("../../Utilities/Other/GetAppCmds");
 const GetLocalCommands = require("../../Utilities/Other/GetLocalCmds");
+
 const CmdsAreIdentical = require("../../Utilities/Other/CmdsAreIdentical");
 const { ApplicationCommandManager } = require("discord.js");
 const { format: Format } = require("util");
 const {
   Discord: { Test_Guild_ID },
 } = require("../../Config/Secrets.json");
+
 // -----------------------------------------------------------------------------
 
 /**
@@ -38,8 +43,17 @@ module.exports = async (Client) => {
 
         if (LocalCommand.options?.devOnly) {
           const Guild = Client.guilds.cache.get(Test_Guild_ID);
-          const GuildCommands = await Guild.commands.fetch();
-          const GuildExistingCmd = GuildCommands.find((Cmd) => Cmd.name === CmdName);
+          const GuildCommands = await Guild?.commands?.fetch();
+          const GuildExistingCmd = GuildCommands?.find((Cmd) => Cmd.name === CmdName);
+
+          if (!Guild) {
+            console.log(
+              "%s - Registering '%s' command skipped; could not find the testing guild to register on.",
+              Chalk.bold.blue("🛈"),
+              Chalk.bold(CmdName)
+            );
+            continue;
+          }
 
           if (GuildExistingCmd) {
             await HandleExistingCommand(Client, LocalCommand, GuildExistingCmd, Guild.commands);
@@ -89,18 +103,18 @@ module.exports = async (Client) => {
 /**
  * Handles the existence of an API application command
  * @param {DiscordClient} Client
- * @param {CommandObject} LocalCmd
+ * @param {SlashCommandObject} LocalCmd
  * @param {import("discord.js").ApplicationCommand} ExistingCmd
  * @param {import("discord.js").GuildApplicationCommandManager | import("discord.js").ApplicationCommandManager} CmdManager
  */
 async function HandleExistingCommand(Client, LocalCmd, ExistingCmd, CmdManager) {
   if (LocalCmd.options?.deleted) {
     return CmdManager.delete(ExistingCmd.id)
-      .then((Cmd) => {
+      .then(() => {
         console.log(
           "%s - '%s' command has been deleted %sdue its set property 'deleted'",
           Chalk.bold.blue("🛈"),
-          Chalk.bold(Cmd.name),
+          Chalk.bold(ExistingCmd.name),
           CmdManager.constructor === ApplicationCommandManager ? "globally " : ""
         );
       })
@@ -121,7 +135,7 @@ async function HandleExistingCommand(Client, LocalCmd, ExistingCmd, CmdManager) 
         console.log(
           "%s - '%s' command has been updated.",
           Chalk.bold.blue("🛈"),
-          Chalk.bold(Cmd.name)
+          Chalk.bold(ExistingCmd.name)
         );
       })
       .catch((Err) => {

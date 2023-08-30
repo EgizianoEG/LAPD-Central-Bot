@@ -29,7 +29,7 @@ const {
 } = require("../../../../Utilities/Strings/Formatter.js");
 const {
   Embeds: { Thumbs },
-} = require("../../../../Config/Shared.json");
+} = require("../../../../Config/Shared.js");
 const { RandomString } = require("../../../../Utilities/Strings/Random.js");
 const Chalk = require("chalk");
 
@@ -67,7 +67,7 @@ async function FollowUp(CmdInteraction, ModalInteraction) {
     .setTitle("Arrest Report - Confirmation")
     .setDescription("Please review the arrest report information before submittng it.")
     .setColor(Colors.Gold)
-    .setThumbnail(Thumb?.[0]?.imageUrl ? Thumb[0].imageUrl : Thumbs.Avatar[Options.Gender])
+    .setThumbnail(Thumb?.[0]?.imageUrl ? Thumb[0].imageUrl : Thumbs["Avatar" + Options.Gender])
     .setFields([
       {
         name: "Defendant Name",

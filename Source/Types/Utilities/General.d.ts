@@ -1,4 +1,4 @@
-namespace UTilities {
+namespace Utilities {
   declare interface ErrorReplyOptions {
     /** The repliable interaction */
     Interact: RepliableInteraction;

@@ -8,7 +8,6 @@ const Chalk = require("chalk");
 const Noblox = require("noblox.js");
 const MongoDBHandler = require("./Handlers/MongoDB");
 const EventHandler = require("./Handlers/EventHandler");
-
 console.log(Chalk.grey("================================================"));
 // ----------------------------------------------------------------------------------
 

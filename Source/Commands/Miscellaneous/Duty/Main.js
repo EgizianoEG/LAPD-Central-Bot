@@ -1,10 +1,6 @@
-/* eslint-disable no-unused-vars */
-const {
-  Client,
-  ChatInputCommandInteraction,
-  SlashCommandBuilder,
-  AutocompleteInteraction,
-} = require("discord.js");
+const { SlashCommandBuilder } = require("discord.js");
+const DutyTypesSubcommandGroup = require("./Duty Types/Main");
+const AutocompleteShiftType = require("../../../Utilities/Autocompletion/ShiftType");
 
 const Subcommands = [
   require("./Subcmds/Active"),
@@ -14,15 +10,12 @@ const Subcommands = [
   require("./Subcmds/WipeAll"),
 ];
 
-const DutyTypesSubcommandGroup = require("./Duty Types/Main");
-const AutocompleteShiftType = require("../../../Utilities/Autocompletion/ShiftType");
-
 // ---------------------------------------------------------------------------------------
 // Functions:
 // ----------
 /**
- * @param {Client} Client
- * @param {ChatInputCommandInteraction} Interaction
+ * @param {DiscordClient} Client
+ * @param {SlashCommandInteraction<"cached">} Interaction
  */
 function Callback(Client, Interaction) {
   const SubCommandName = Interaction.options.getSubcommand();
@@ -45,7 +38,7 @@ function Callback(Client, Interaction) {
 
 /**
  * Autocompletion for the Roblox username required command option
- * @param {AutocompleteInteraction} Interaction
+ * @param {import("discord.js").AutocompleteInteraction<"cached">} Interaction
  * @returns {Promise<void>}
  */
 async function Autocomplete(Interaction) {
@@ -68,15 +61,19 @@ async function Autocomplete(Interaction) {
 // ---------------------------------------------------------------------------------------
 // Command structure:
 // ------------------
+/** @type SlashCommandObject */
 const CommandObject = {
-  cooldown: 5,
   data: new SlashCommandBuilder()
     .setName("duty")
     .setDescription("Duty related actions.")
-    .addSubcommandGroup(DutyTypesSubcommandGroup.data),
+    .addSubcommandGroup(DutyTypesSubcommandGroup.data)
+    .setDMPermission(false),
 
   callback: Callback,
   autocomplete: Autocomplete,
+  options: {
+    cooldown: 5,
+  },
 };
 
 // ---------------------------------------------------------------------------------------

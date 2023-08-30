@@ -3,7 +3,7 @@
 const GetWeatherIcon = require("../../Utilities/Other/GetWeatherIcon");
 const { Colors, EmbedBuilder, SlashCommandBuilder } = require("discord.js");
 const { GetCurrentWeather } = require("../../Utilities/Other/WeatherData.js");
-const { Icons } = require("../../Config/Shared.json");
+const { Icons, Emojis } = require("../../Config/Shared.js");
 // -------------------------------------------------------------------------------
 
 /**
@@ -21,7 +21,7 @@ async function Callback(_, Interaction) {
 
   const WeatherEmbed = new EmbedBuilder()
     .setURL(WeatherData.forecast_link)
-    .setTitle("<:losangeles:1134606469828984873> Weather")
+    .setTitle(Emojis.LosAngeles + " Weather")
     .setColor(Colors.Greyple)
     .setDescription("Current weather in city of Los Angeles, California\n")
     .setFooter({ text: "Powered by OpenWeather", iconURL: Icons.OpenWeather })

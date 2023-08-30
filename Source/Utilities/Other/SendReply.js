@@ -4,14 +4,14 @@ const { ErrorEmbed } = require("../Classes/ExtraEmbeds");
 const ReplyTemplates = {
   AppError: {
     Title: "Error",
-    Description:
+    Message:
       "Apologies, a server/application error occurred while executing this command. Please attempt again at a later time.",
   },
 };
 
 /**
  * Replies to the given interaction with an error embed containing a specified title and description.
- * @param {UTilities.ErrorReplyOptions} Options
+ * @param {Utilities.ErrorReplyOptions} Options
  */
 function SendErrorReply(Options) {
   if (!Options.Interact) return;
