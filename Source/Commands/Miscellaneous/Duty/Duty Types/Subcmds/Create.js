@@ -25,7 +25,9 @@ const { IsValidShiftTypeName } = require("../../../../../Utilities/Strings/Valid
 const { SendErrorReply } = require("../../../../../Utilities/Other/SendReply");
 const CreateShiftType = require("../../../../../Utilities/Database/CreateShiftType");
 const GetShiftTypes = require("../../../../../Utilities/Database/GetShiftTypes");
+
 const ListFormatter = new Intl.ListFormat("en");
+const Dedent = require("dedent").default;
 const Chalk = require("chalk");
 
 // ---------------------------------------------------------------------------------------
@@ -140,12 +142,15 @@ async function Callback(_, Interaction) {
     .setColor(Colors.DarkBlue)
     .setTitle("Shift Type Creation")
     .setDescription(
-      `**Name:** \`${escapeMarkdown(ShiftTypeName)}\`\n` +
-        "**Permissible Roles:**\n" +
-        "- To limit who may use this shift type, choose the appropriate roles from the drop-down menu below.\n" +
-        "- To make this shift type available and usable for all members, keep the drop-down menu empty.\n" +
-        "- Press the `Confirm and Create` button when finished to proceed.\n" +
-        "*This prompt will automatically cancel after five minutes of inactivity.*"
+      Dedent(`
+        - **Name:** \`${escapeMarkdown(ShiftTypeName)}\`
+        - **Permissible Roles:**
+          - To limit who may use this shift type, choose the appropriate roles from the drop-down menu below.
+          - To make this shift type available and usable for all members, keep the drop-down menu empty.
+          - Press the \`Confirm and Create\` button when finished to proceed.
+  
+        *This prompt will automatically cancel after five minutes of inactivity.*
+    `)
     );
 
   const PromptComponents = [

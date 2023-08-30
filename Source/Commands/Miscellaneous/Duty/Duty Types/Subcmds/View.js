@@ -17,6 +17,7 @@ const { Emojis, Embeds } = require("../../../../../Config/Shared.js");
 const { InfoEmbed, UnauthorizedEmbed } = require("../../../../../Utilities/Classes/ExtraEmbeds");
 
 const Chalk = require("chalk");
+const Dedent = require("dedent").default;
 const { format: FormatStr } = require("util");
 const GetShiftTypes = require("../../../../../Utilities/Database/GetShiftTypes");
 const Clamp = (Value, Min, Max) => Math.min(Math.max(Value, Min), Max);
@@ -35,8 +36,12 @@ const DisplayedShiftTypesPerPage = 3;
 function FormatEmbedDescription(ShiftTypeData) {
   const Formatted = [];
   for (const ShiftType of ShiftTypeData) {
-    const Template =
-      "**Name:** `%s`\n" + "**Default Type:** `%s`\n" + "**Permissible Roles:** \n> %s\n\n";
+    const Template = Dedent(`
+        **Name:** \`%s\`
+        **Default Type:** \`%s\`
+        **Permissible Roles:**
+        > %s
+    `);
 
     const ShiftTypeDesc = FormatStr(
       Template,

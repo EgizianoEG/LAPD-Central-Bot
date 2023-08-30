@@ -18,10 +18,12 @@ const {
   SuccessEmbed,
   UnauthorizedEmbed,
 } = require("../../../../../Utilities/Classes/ExtraEmbeds");
+
 const { IsValidShiftTypeName } = require("../../../../../Utilities/Strings/Validator");
 const { SendErrorReply } = require("../../../../../Utilities/Other/SendReply");
 const DeleteShiftType = require("../../../../../Utilities/Database/DeleteShiftType");
 const GetShiftTypes = require("../../../../../Utilities/Database/GetShiftTypes");
+const Dedent = require("dedent").default;
 
 // ---------------------------------------------------------------------------------------
 // Functions:
@@ -117,9 +119,12 @@ async function Callback(_, Interaction) {
     .setColor(Colors.Orange)
     .setTitle("Shift Type Deletion")
     .setDescription(
-      `**Are you sure you want to delete the shift type named \`${ShiftTypeName}\`?**\n` +
-        "**Note:** Deleting a shift type does not erase the logged shift data associated with it, and those records can still be recovered by re-creating it using the same name.\n\n" +
-        "*This prompt will automatically cancel after five minutes of inactivity.*"
+      Dedent(`
+        **Are you sure you want to delete the shift type named \`${ShiftTypeName}\`?**
+        **Note:** Deleting a shift type does not erase the logged shift data associated with it, and those records can still be recovered by re-creating it using the same name.
+        \u200b
+        *This prompt will automatically cancel after five minutes of inactivity.*
+      `)
     );
 
   const PromptComponents = [
