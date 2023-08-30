@@ -10,15 +10,15 @@ async function Callback(Client, Interaction) {}
 // ---------------------------------------------------------------------------------------
 // Command structure:
 // ------------------
-/** @type SlashCommandObject */
+/** @type {SlashCommandObject} */
 const CommandObject = {
+  options: {},
   data: new SlashCommandBuilder()
     .setName("config")
     .setDescription("Manage and view bot configuration on the server.")
     .setDMPermission(false),
 
   callback: Callback,
-  options: {},
 };
 
 // ----------------------------

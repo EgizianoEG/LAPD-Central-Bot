@@ -70,9 +70,10 @@ async function Callback(_, Interaction) {
 // ---------------------------------------------------------------------------------------
 // Command structure:
 // ------------------
+/** @type {SlashCommandObject} */
 const CommandObject = {
   callback: Callback,
-  cooldown: 30,
+  options: { cooldown: 30 },
   data: new SlashCommandBuilder()
     .setName("weather")
     .setDescription("Check the current weather in the city of Los Angeles.")

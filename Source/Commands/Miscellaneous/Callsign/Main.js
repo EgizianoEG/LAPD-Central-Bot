@@ -10,15 +10,15 @@ async function Callback(Client, Interaction) {}
 // ---------------------------------------------------------------------------------------
 // Command structure:
 // ------------------
-/** @type SlashCommandObject */
+/** @type {SlashCommandObject} */
 const CommandObject = {
+  options: {},
   data: new SlashCommandBuilder()
     .setName("callsign")
     .setDescription("Callsign database of police officers.")
     .setDMPermission(false),
 
   callback: Callback,
-  options: {},
 };
 
 // ----------------------------

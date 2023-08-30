@@ -61,8 +61,9 @@ async function Autocomplete(Interaction) {
 // ---------------------------------------------------------------------------------------
 // Command structure:
 // ------------------
-/** @type SlashCommandObject */
+/** @type {SlashCommandObject} */
 const CommandObject = {
+  options: { cooldown: 5 },
   data: new SlashCommandBuilder()
     .setName("duty")
     .setDescription("Duty related actions.")
@@ -71,9 +72,6 @@ const CommandObject = {
 
   callback: Callback,
   autocomplete: Autocomplete,
-  options: {
-    cooldown: 5,
-  },
 };
 
 // ---------------------------------------------------------------------------------------

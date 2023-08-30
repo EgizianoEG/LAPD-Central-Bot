@@ -146,7 +146,7 @@ async function Callback(_, Interaction) {
 // ---------------------------------------------------------------------------------------
 // Command structure:
 // ------------------
-/** @type SlashCommandObject */
+/** @type {SlashCommandObject} */
 const CommandObject = {
   data: new SlashCommandBuilder()
     .setName("log-out")

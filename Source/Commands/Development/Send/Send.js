@@ -21,11 +21,10 @@ async function Callback(Client, Interaction) {
 // ---------------------------------------------------------------------------------------
 // Command structure:
 // ------------------
+/** @type {SlashCommandObject} */
 const CommandObject = {
   callback: Callback,
-  options: {
-    devOnly: true,
-  },
+  options: { devOnly: true },
   data: new SlashCommandBuilder()
     .setName("send")
     .setDescription("Sends a specific information.")

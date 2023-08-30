@@ -37,6 +37,7 @@ async function Callback(Client, Interaction) {
 // ---------------------------------------------------------------------------------------
 // Command structure:
 // ------------------
+/** @type {SlashCommandObject} */
 const CommandObject = {
   callback: Callback,
   data: new SlashCommandBuilder()
