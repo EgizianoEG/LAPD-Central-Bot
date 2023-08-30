@@ -17,9 +17,9 @@ class BaseEmbed extends EmbedBuilder {
 
   /**
    * Replies to a given *repliable* interaction with the current properties set
-   * @param {import("discord.js").BaseInteraction & { replied: boolean }} interaction - The interaction to reply to
+   * @param {DiscordJS.BaseInteraction & { replied: boolean }} interaction - The interaction to reply to
    * @param {Boolean} [ephemeral]
-   * @returns {Promise<import("discord.js").InteractionResponse<boolean>> | Promise<import("discord.js").Message<boolean>>}
+   * @returns {Promise<DiscordJS.InteractionResponse<boolean>> | Promise<DiscordJS.Message<boolean>>}
    */
   replyToInteract(interaction, ephemeral) {
     const ReplyMethod = interaction.replied ? "followUp" : "reply";
@@ -31,7 +31,7 @@ class BaseEmbed extends EmbedBuilder {
 }
 
 class InfoEmbed extends BaseEmbed {
-  /** @param {import("discord.js").EmbedData} [data] */
+  /** @param {DiscordJS.EmbedData} [data] */
   constructor(data) {
     super(data);
     this.setColor(EmbedColors.Info).setThumbnail(EmbedThumbs.Info);
@@ -45,7 +45,7 @@ class InfoEmbed extends BaseEmbed {
 }
 
 class WarnEmbed extends BaseEmbed {
-  /** @param {import("discord.js").EmbedData} [data] */
+  /** @param {DiscordJS.EmbedData} [data] */
   constructor(data) {
     super(data);
     this.setColor(EmbedColors.Warning).setThumbnail(EmbedThumbs.Warning);
@@ -59,7 +59,7 @@ class WarnEmbed extends BaseEmbed {
 }
 
 class ErrorEmbed extends BaseEmbed {
-  /** @param {import("discord.js").EmbedData} [data] */
+  /** @param {DiscordJS.EmbedData} [data] */
   constructor(data) {
     super(data);
     this.setColor(EmbedColors.Error).setThumbnail(EmbedThumbs.Error);
@@ -73,7 +73,7 @@ class ErrorEmbed extends BaseEmbed {
 }
 
 class SuccessEmbed extends BaseEmbed {
-  /** @param {import("discord.js").EmbedData} [data] */
+  /** @param {DiscordJS.EmbedData} [data] */
   constructor(data) {
     super(data);
     this.setColor(EmbedColors.Success).setThumbnail(EmbedThumbs.Success);
@@ -87,7 +87,7 @@ class SuccessEmbed extends BaseEmbed {
 }
 
 class UnauthorizedEmbed extends BaseEmbed {
-  /** @param {import("discord.js").EmbedData} [data] */
+  /** @param {DiscordJS.EmbedData} [data] */
   constructor(data) {
     super(data);
     this.setColor(EmbedColors.Error).setThumbnail(EmbedThumbs.Unauthorized);

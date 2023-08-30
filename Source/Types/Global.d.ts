@@ -1,3 +1,4 @@
+import * as DiscordJSMask from "discord.js";
 import type {
   ChatInputCommandInteraction,
   InteractionReplyOptions,
@@ -8,6 +9,8 @@ import type {
 } from "discord.js";
 
 declare global {
+  export import DiscordJS = DiscordJSMask;
+
   type MessageReplyOptions = string | MessagePayload | InteractionReplyOptions;
   type RepliableInteraction =
     | ChatInputCommandInteraction

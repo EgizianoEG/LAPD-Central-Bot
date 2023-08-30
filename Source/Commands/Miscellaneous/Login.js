@@ -33,7 +33,7 @@ const { format } = require("util");
  * Validates the entered Roblox username before continuing
  * @param {SlashCommandInteraction} Interaction - The interaction object.
  * @param {String} RobloxUsername - The Roblox username to be validated.
- * @returns {Promise<(import("discord.js").Message<boolean>) | (import("discord.js").InteractionResponse<boolean>) | undefined>} The interaction reply (an error reply) if validation failed; otherwise `undefined`
+ * @returns {Promise<(DiscordJS.Message<boolean>) | (DiscordJS.InteractionResponse<boolean>) | undefined>} The interaction reply (an error reply) if validation failed; otherwise `undefined`
  * @requires `Utilities/Strings/Validator.IsValidRobloxUsername`
  */
 async function HandleInvalidUsername(Interaction, RobloxUsername) {
@@ -207,7 +207,7 @@ async function Callback(_, Interaction) {
 
 /**
  * Autocompletion for the Roblox username required command option
- * @param {import("discord.js").AutocompleteInteraction} Interaction
+ * @param {DiscordJS.AutocompleteInteraction} Interaction
  * @returns {Promise<void>}
  */
 async function Autocomplete(Interaction) {

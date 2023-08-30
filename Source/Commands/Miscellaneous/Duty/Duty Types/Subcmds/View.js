@@ -97,7 +97,7 @@ function CreateEmbedPages(ShiftTypesData, ShiftTypesPerPage) {
 /**
  * A helper function that filters the component collector interactions to ensure authorization.
  * @param {SlashCommandInteraction} OriginalInteract - The user command interaction
- * @param {import("discord.js").MessageComponentInteraction} ReceivedInteract - The received interaction from the collector
+ * @param {DiscordJS.MessageComponentInteraction} ReceivedInteract - The received interaction from the collector
  * @returns {Boolean} A boolean indicating if the interaction is authorized
  */
 function HandleCollectorFiltering(OriginalInteract, ReceivedInteract) {

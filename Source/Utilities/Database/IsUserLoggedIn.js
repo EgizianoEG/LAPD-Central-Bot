@@ -3,7 +3,7 @@ const GuildModel = require("../../Models/Guild.js");
 
 /**
  * Checks if a given user is already logged in using the bot.
- * @param {import("discord.js").ChatInputCommandInteraction} CmdInteraction
+ * @param {DiscordJS.ChatInputCommandInteraction} CmdInteraction
  * @returns {Promise<false|number>} Logged in Roblox user id if found or `false` if not.
  */
 async function IsLoggedIn(CmdInteraction) {

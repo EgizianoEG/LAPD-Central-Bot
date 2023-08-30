@@ -22,6 +22,17 @@ declare global {
       /** Application identified and known members in the guild */
       members: Member[];
     }
+
+    interface GuildShiftType {
+      /** The unique shift type name */
+      name: string;
+
+      /** Is this the default shift type? */
+      is_default: boolean;
+
+      /** All roles that can utilize this specific duty shift type */
+      permissible_roles: string[];
+    }
   }
 }
 
@@ -54,23 +65,12 @@ namespace GuilSchemaInterfaces {
     on_break: string;
   }
 
-  interface ShiftType {
-    /** The unique shift type name */
-    name: string;
-
-    /** Is this the default shift type? */
-    is_default: boolean;
-
-    /** All roles that can utilize this specific duty shift type */
-    permissible_roles: string[];
-  }
-
   interface ShiftSettings {
     /** The required weekly duration of time (in milliseconds) for each member to be on-shift; defaults: 0 seconds */
     shift_quota: number;
 
     /** An arrray of server-created duty shift types */
-    shift_types: ShiftType[];
+    shift_types: GuildShiftType[];
 
     /** The maximum shift duration (in milliseconds); defaults to one day; minimum: 15 minutes */
     shift_max_duration: number;

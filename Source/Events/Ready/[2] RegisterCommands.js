@@ -104,8 +104,8 @@ module.exports = async (Client) => {
  * Handles the existence of an API application command
  * @param {DiscordClient} Client
  * @param {SlashCommandObject} LocalCmd
- * @param {import("discord.js").ApplicationCommand} ExistingCmd
- * @param {import("discord.js").GuildApplicationCommandManager | import("discord.js").ApplicationCommandManager} CmdManager
+ * @param {DiscordJS.ApplicationCommand} ExistingCmd
+ * @param {DiscordJS.GuildApplicationCommandManager | DiscordJS.ApplicationCommandManager} CmdManager
  */
 async function HandleExistingCommand(Client, LocalCmd, ExistingCmd, CmdManager) {
   if (LocalCmd.options?.deleted) {

@@ -4,7 +4,7 @@ const Chalk = require("chalk");
 /**
  * Handles autocompletion for command options
  * @param {DiscordClient} Client
- * @param {import("discord.js").AutocompleteInteraction} Interaction
+ * @param {DiscordJS.AutocompleteInteraction} Interaction
  */
 module.exports = (Client, Interaction) => {
   if (!Interaction.isAutocomplete()) return;

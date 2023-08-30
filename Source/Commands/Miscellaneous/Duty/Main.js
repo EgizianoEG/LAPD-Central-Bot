@@ -38,7 +38,7 @@ function Callback(Client, Interaction) {
 
 /**
  * Autocompletion for the Roblox username required command option
- * @param {import("discord.js").AutocompleteInteraction<"cached">} Interaction
+ * @param {DiscordJS.AutocompleteInteraction<"cached">} Interaction
  * @returns {Promise<void>}
  */
 async function Autocomplete(Interaction) {

@@ -4,7 +4,7 @@ const GuildModel = require("../../Models/Guild.js");
 /**
  * Updates the linked Roblox user id and puts the given one instead
  * This function is runs knowing that the user and their guild are recorded in the database already
- * @param {import("discord.js").ChatInputCommandInteraction} CmdInteraction Orginal command interaction
+ * @param {DiscordJS.ChatInputCommandInteraction} CmdInteraction Orginal command interaction
  * @param {String|Number|Null} [RobloxUserId] The user Id to record and put into the database (`null` by default)
  * @returns {Promise<import("mongoose").Document>} The saved guild document if succeeded saving it
  */

@@ -1,5 +1,5 @@
 /**
- * @param {import("discord.js").ApplicationCommand & any} Cmd_1
+ * @param {DiscordJS.ApplicationCommand & any} Cmd_1
  * @param {SlashCommandObject["data"]} Cmd_2
  * @returns {Boolean}
  */

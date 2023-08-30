@@ -1,5 +1,5 @@
 /**
  * @param {DiscordClient} Client
- * @param {import("discord.js").ModalSubmitInteraction} Interaction
+ * @param {DiscordJS.ModalSubmitInteraction} Interaction
  */
 module.exports = async (Client, Interaction) => {};

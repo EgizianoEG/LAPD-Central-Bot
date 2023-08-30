@@ -32,7 +32,7 @@ const Dedent = require("dedent").default;
  * Handles validation of the `name` interaction option (Shift Type Name).
  * @param {SlashCommandInteraction<"cached">} Interaction - The user command interaction
  * @param {String} ShiftTypeName - The provided name from the user
- * @returns {Promise<(import("discord.js").Message<boolean>) | (import("discord.js").InteractionResponse<boolean>) | undefined>} The interaction reply (an error reply) if validation failed; otherwise `undefined`
+ * @returns {Promise<(DiscordJS.Message<boolean>) | (DiscordJS.InteractionResponse<boolean>) | undefined>} The interaction reply (an error reply) if validation failed; otherwise `undefined`
  */
 async function HandleNameValidation(Interaction, ShiftTypeName) {
   if (!IsValidShiftTypeName(ShiftTypeName)) {
@@ -70,7 +70,7 @@ async function HandleNameValidation(Interaction, ShiftTypeName) {
 /**
  * A helper function that filters the component collector interactions to ensure authorization.
  * @param {SlashCommandInteraction} OriginalInteract - The user command interaction
- * @param {import("discord.js").MessageComponentInteraction} ReceivedInteract - The received interaction from the collector
+ * @param {DiscordJS.MessageComponentInteraction} ReceivedInteract - The received interaction from the collector
  * @returns {Boolean} A boolean indicating if the interaction is authorized
  */
 function HandleCollectorFiltering(OriginalInteract, ReceivedInteract) {
