@@ -16,6 +16,7 @@ const RPerms_Validator = {
     "Invalid role ID found in the provided array; ensure that all roles are valid Snowflake IDs",
 };
 
+/** @typedef {Utilities.Database.GuildSchema} (To be used...) */
 const GuildSchema = new Schema({
   id: {
     type: String,

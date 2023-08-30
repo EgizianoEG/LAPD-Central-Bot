@@ -1,5 +1,5 @@
 namespace Utilities.Roblox {
-  declare interface UserProfileDetails {
+  interface UserProfileDetails {
     /** The about/description of the user. */
     description: string;
 

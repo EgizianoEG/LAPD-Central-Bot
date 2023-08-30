@@ -1,55 +1,58 @@
-declare interface SlashCommandObject {
-  /** The callback function or the `run` function which will be executed on command call */
-  callback: (arg0: DiscordClient, arg1: SlashCommandInteraction<Cached | undefined>) => any;
+import type {
+  ChatInputCommandInteraction,
+  InteractionReplyOptions,
+  PermissionResolvable,
+  MessagePayload,
+  CacheType,
+  Client,
+} from "discord.js";
 
-  /** The autocomplete function which will handle and process autocomplete interactions if applicable */
-  autocomplete?: (arg0: AutocompleteInteraction<Cached | undefined>) => any;
+declare global {
+  type MessageReplyOptions = string | MessagePayload | InteractionReplyOptions;
+  type RepliableInteraction =
+    | ChatInputCommandInteraction
+    | ((class | object) & {
+        replied: boolean;
+        followUp(options: MessageReplyOptions): any;
+      })
+    | ((class | object) & {
+        replied: boolean;
+        reply(options: MessageReplyOptions): any;
+      });
 
-  /** The slash command itself */
-  data: SlashCommandBuilder;
+  type DiscordClient = Client<true>;
+  type SlashCommandInteraction<Cached extends CacheType = CacheType> =
+    ChatInputCommandInteraction<Cached>;
 
-  /** Optional configurations */
-  options?: {
-    /** Whether or not this command will be removed if it already exists in the application or excluded from registration. */
-    deleted?: boolean;
+  interface SlashCommandObject {
+    /** The callback function or the `run` function which will be executed on command call */
+    callback: (arg0: DiscordClient, arg1: SlashCommandInteraction<Cached | undefined>) => any;
 
-    /** Should the command be updated regardless of whether it is altered or not? */
-    forceUpdate?: boolean;
+    /** The autocomplete function which will handle and process autocomplete interactions if applicable */
+    autocomplete?: (arg0: AutocompleteInteraction<Cached | undefined>) => any;
 
-    /**Should command execution be restricted to application developers only? */
-    devOnly?: boolean;
+    /** The slash command itself */
+    data: SlashCommandBuilder;
 
-    /** Cooldown period in *seconds* between each command execution (Check the `CommandHandler` file for the default cooldown value) */
-    cooldown?: number;
+    /** Optional configurations */
+    options?: {
+      /** Whether or not this command will be removed if it already exists in the application or excluded from registration. */
+      deleted?: boolean;
 
-    /** The required user permissions to run such a command */
-    userPerms?: DiscordPermissionResolvable[];
+      /** Should the command be updated regardless of whether it is altered or not? */
+      forceUpdate?: boolean;
 
-    /** Bot permissions that are required to run this command */
-    botPerms?: DiscordPermissionResolvable[];
-  };
+      /**Should command execution be restricted to application developers only? */
+      devOnly?: boolean;
+
+      /** Cooldown period in *seconds* between each command execution (Check the `CommandHandler` file for the default cooldown value) */
+      cooldown?: number;
+
+      /** The required user permissions to run such a command */
+      userPerms?: PermissionResolvable[];
+
+      /** Bot permissions that are required to run this command */
+      botPerms?: PermissionResolvable[];
+    };
+  }
 }
-
-type DiscordPermissionResolvable = import("discord.js").PermissionResolvable[];
-type DiscordCacheType = import("discord.js").CacheType;
-
-declare type SlashCommandInteraction<Cached extends DiscordCacheType = DiscordCacheType> =
-  import("discord.js").ChatInputCommandInteraction<Cached>;
-
-declare type DiscordClient = import("discord.js").Client<true>;
-
-type MessageReplyOptions =
-  | string
-  | import("discord.js").MessagePayload
-  | import("discord.js").InteractionReplyOptions;
-
-type RepliableInteraction =
-  | import("discord.js").ChatInputCommandInteraction
-  | ((class | object) & {
-      replied: boolean;
-      followUp(options: MessageReplyOptions): any;
-    })
-  | ((class | object) & {
-      replied: boolean;
-      reply(options: MessageReplyOptions): any;
-    });

@@ -78,82 +78,82 @@ declare namespace WeatherData {
     /** The response code. */
     cod: number;
   }
-
-  /**
-   * Represents temperature data.
-   */
-  interface TemperatureData {
-    min: string;
-    max: string;
-    current: string;
-    feels_like: string;
-  }
-
-  /**
-   * Represents wind data.
-   */
-  interface WindData {
-    speed: string;
-    deg: number;
-  }
-
-  /**
-   * Represents cloud data.
-   */
-  interface CloudData {
-    all: number;
-  }
-
-  /**
-   * Represents weather details.
-   */
-  interface Weather {
-    /** The weather condition ID. */
-    id: number;
-
-    /** The main weather category. */
-    main: string;
-
-    /** The description of the weather condition. */
-    description: string;
-
-    /** The weather icon ID. */
-    icon: string;
-  }
-
-  /**
-   * Represents main weather data.
-   */
-  interface MainData {
-    temp: string;
-    feels_like: string;
-    temp_min: string;
-    temp_max: string;
-    pressure: string;
-    humidity: string;
-  }
-
-  /**
-   * Represents geographical coordinates.
-   */
-  interface Coordinates {
-    lon: number;
-    lat: number;
-  }
-
-  /**
-   * Represents system-related data.
-   */
-  interface SystemData {
-    type: number;
-    id: number;
-    country: string;
-    sunrise: number;
-    sunset: number;
-  }
-
-  /**
-   * Represents available units for temperature measurement.
-   */
-  type TemperatureUnit = "metric" | "imperial" | string;
 }
+
+/**
+ * Represents temperature data.
+ */
+interface TemperatureData {
+  min: string;
+  max: string;
+  current: string;
+  feels_like: string;
+}
+
+/**
+ * Represents wind data.
+ */
+interface WindData {
+  speed: string;
+  deg: number;
+}
+
+/**
+ * Represents cloud data.
+ */
+interface CloudData {
+  all: number;
+}
+
+/**
+ * Represents weather details.
+ */
+interface Weather {
+  /** The weather condition ID. */
+  id: number;
+
+  /** The main weather category. */
+  main: string;
+
+  /** The description of the weather condition. */
+  description: string;
+
+  /** The weather icon ID. */
+  icon: string;
+}
+
+/**
+ * Represents main weather data.
+ */
+interface MainData {
+  temp: string;
+  feels_like: string;
+  temp_min: string;
+  temp_max: string;
+  pressure: string;
+  humidity: string;
+}
+
+/**
+ * Represents geographical coordinates.
+ */
+interface Coordinates {
+  lon: number;
+  lat: number;
+}
+
+/**
+ * Represents system-related data.
+ */
+interface SystemData {
+  type: number;
+  id: number;
+  country: string;
+  sunrise: number;
+  sunset: number;
+}
+
+/**
+ * Represents available units for temperature measurement.
+ */
+type TemperatureUnit = "metric" | "imperial" | string;
