@@ -44,7 +44,7 @@ function FormatEmbedDescription(ShiftTypeData) {
     `);
 
     const ShiftTypeDesc = FormatStr(
-      Template,
+      Template + "\n\n",
       ShiftType.name,
       ShiftType.is_default ? "True" : "False",
       ShiftType.permissible_roles.length
