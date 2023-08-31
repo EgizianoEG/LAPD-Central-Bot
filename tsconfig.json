@@ -25,7 +25,10 @@
     "resolveJsonModule": true,
     "typeRoots": ["./Source/Types/**", "./node_modules/@types/**", "../node_modules/@types/**"],
     "paths": {
-      "@Utilities/*": ["Utilities/*"]
+      "@Utilities/*": ["Utilities/*"],
+      "@Config/*": ["Config/*"],
+      "@Resources/*": ["Resources/*"],
+      "@Models/*": ["Models/*"]
     },
 
     /* JavaScript Support */
