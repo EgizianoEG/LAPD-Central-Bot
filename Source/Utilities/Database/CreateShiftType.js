@@ -4,16 +4,12 @@ const AppError = require("../Classes/AppError.js");
 
 /**
  * Creates a new shift type for the given guild ID
- * @param {Utilities.Database.GuildShiftType & {guild_id: string}} Data The shift type data: `name` and `permissible_roles`
+ * @param {{guild_id: string, is_default?: boolean, name: string, permissible_roles: string[] }} Data The shift type data: `name` and `permissible_roles`
  * @returns {Promise<import("mongoose").Document|AppError>} The saved guild document if creation succeeded or an `AppError` if there was an exception
  */
 async function CreateShiftType(Data) {
-  const GuildDoc = await GuildModel.findOne(
-    { id: Data.guild_id },
-    "settings.shift_settings.shift_types"
-  ).exec();
-
-  const ShiftTypeExists = GuildDoc.settings.shift_settings.shift_types.find(
+  const GuildDoc = await GuildModel.findById(Data.guild_id, "settings.shifts.types").exec();
+  const ShiftTypeExists = GuildDoc.settings.shifts.types.find(
     (ShiftType) => ShiftType.name === Data.name
   );
 
@@ -22,13 +18,13 @@ async function CreateShiftType(Data) {
       "Shift Type Already Exists",
       `There is already a shift type named \`${Data.name}\`. Please make sure you're creating a distinct shift type.`
     );
-  } else if (GuildDoc.settings.shift_settings.shift_types.length > 9) {
+  } else if (GuildDoc.settings.shifts.types.length > 9) {
     return new AppError(
       "Maximum Shift Types Reached",
       "The limit of ten shift types has been reached, and you cannot create any further."
     );
   } else {
-    GuildDoc.settings.shift_settings.shift_types.push({
+    GuildDoc.settings.shifts.types.push({
       name: Data.name,
       is_default: Data.is_default,
       permissible_roles: Data.permissible_roles,

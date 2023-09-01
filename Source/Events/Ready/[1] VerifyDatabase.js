@@ -9,9 +9,9 @@ async function VerifyDatabase(Client) {
   const NewGuilds = [];
 
   for (const JoinedGuild of Guilds) {
-    const GuildFound = await GuildModel.findOne({ id: JoinedGuild.id }).exec();
+    const GuildFound = await GuildModel.exists({ _id: JoinedGuild.id }).exec();
     if (!GuildFound) {
-      NewGuilds.push({ id: JoinedGuild.id });
+      NewGuilds.push({ _id: JoinedGuild.id });
     }
   }
 

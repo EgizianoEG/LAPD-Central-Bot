@@ -23,12 +23,9 @@ const AppError = require("../Classes/AppError.js");
  * }
  */
 async function DeleteShiftType(Name, GuildId) {
-  const GuildDoc = await GuildModel.findOne(
-    { id: GuildId },
-    "settings.shift_settings.shift_types"
-  ).exec();
+  const GuildDoc = await GuildModel.findById(GuildId, "settings.shifts.types").exec();
 
-  const ShiftTypeIndex = GuildDoc.settings.shift_settings.shift_types.findIndex(
+  const ShiftTypeIndex = GuildDoc.settings.shifts.types.findIndex(
     (ShiftType) => ShiftType.name === Name
   );
 
@@ -38,7 +35,7 @@ async function DeleteShiftType(Name, GuildId) {
       `The shift type \`${Name}\` does not exist in the server and cannot be deleted.`
     );
   } else {
-    GuildDoc.settings.shift_settings.shift_types.splice(ShiftTypeIndex, 1);
+    GuildDoc.settings.shifts.types.splice(ShiftTypeIndex, 1);
     return GuildDoc.save();
   }
 }

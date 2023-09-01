@@ -2,10 +2,10 @@ const { Schema } = require("mongoose");
 const { randomInt: RanInt } = require("node:crypto");
 
 const ShiftSchema = new Schema({
-  shift_id: {
+  id: {
     type: String,
     default: () => {
-      const Timestamp = new Date().getTime();
+      const Timestamp = Date.now();
       const RanNumber = RanInt(10, 99);
       return `${Timestamp}${RanNumber}`.slice(0, 15);
     },
@@ -22,7 +22,7 @@ const ShiftSchema = new Schema({
     required: false,
   },
 
-  shift_type: {
+  type: {
     type: String,
     default: "Default",
   },

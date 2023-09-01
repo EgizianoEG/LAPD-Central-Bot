@@ -7,8 +7,8 @@ const GuildModel = require("../../Models/Guild.js");
  * @returns {Promise<Boolean>} true if the guild has login restrictions; false otherwise.
  */
 async function IsOptionEnabled(GuildId) {
-  const GuildData = await GuildModel.findOne({ id: GuildId }).exec();
-  return !!GuildData.settings.login_restrictions;
+  const GuildData = await GuildModel.findById(GuildId).exec();
+  return !!GuildData.settings.require_authorization;
 }
 
 // ------------------------------

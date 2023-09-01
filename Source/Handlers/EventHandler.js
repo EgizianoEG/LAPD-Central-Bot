@@ -12,7 +12,7 @@ module.exports = (Client) => {
 
   for (const EventFolder of EventFolders) {
     const FuncsToExecute = [];
-    const EventName = CamelCase(EventFolder.match(/[^\\]+$/)[0]);
+    const EventName = CamelCase(EventFolder.match(/[^\\]+$/)?.[0] ?? "");
     const EventFiles = GetFiles(EventFolder).sort((a, b) => {
       const a_pos = a.match(/\[(\d+)\]/)?.[1];
       const b_pos = b.match(/\[(\d+)\]/)?.[1];

@@ -1,21 +1,15 @@
 const { Schema } = require("mongoose");
 const ShiftSchema = require("./MemberShift");
 
-/** @type {[RegExp, String]} */
-const SnowflakeID_Validation = [
-  /^\d{15,22}$/,
-  "Invalid role ID; ensure it is a valid Snowflake ID.",
-];
-
 const MemberSchema = new Schema({
   user_id: {
     type: String,
     required: true,
-    match: SnowflakeID_Validation,
+    match: /^\d{15,22}$/,
   },
 
   // The roblox user of which guild member has verified with
-  linked_user: {
+  linked_account: {
     roblox_user_id: {
       type: Number,
       default: null,
@@ -24,7 +18,7 @@ const MemberSchema = new Schema({
 
   shifts: {
     // The average shift times, including total, on-break, and on-duty durations
-    average_times: {
+    average_periods: {
       all: {
         type: Number,
         default: 0,

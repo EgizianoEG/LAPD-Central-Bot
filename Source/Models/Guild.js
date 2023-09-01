@@ -3,11 +3,12 @@ const MemberSchema = require("./Schemas/GuildMember");
 const CallsignSchema = require("./Schemas/Callsign");
 const CiationSchema = require("./Schemas/Citation");
 const ArrestSchema = require("./Schemas/Arrest");
+const ShiftTypeSchema = require("./Schemas/ShiftType");
 
 /** @type {[RegExp, string]} */
 const SnowflakeID_Validation = [
   /^\d{15,22}$/,
-  "Invalid role ID; ensure it is a valid Snowflake ID.",
+  "Invalid ID privided; ensure it is a valid Snowflake ID.",
 ];
 
 const RPerms_Validator = {
@@ -16,12 +17,9 @@ const RPerms_Validator = {
     "Invalid role ID found in the provided array; ensure that all roles are valid Snowflake IDs",
 };
 
-/** @typedef {Utilities.Database.GuildSchema} (To be used...) */
 const GuildSchema = new Schema({
-  id: {
+  _id: {
     type: String,
-    index: true,
-    unique: true,
     required: true,
     match: SnowflakeID_Validation,
   },
@@ -35,13 +33,13 @@ const GuildSchema = new Schema({
 
   settings: {
     // Restricts usage of certain commands in a server to the user who verified using the application
-    login_restrictions: {
+    require_authorization: {
       type: Boolean,
       default: true,
     },
 
     // The channel IDs of which to log specific actions and data
-    logging_channels: {
+    log_channels: {
       citations: {
         type: String,
         default: null,
@@ -52,7 +50,7 @@ const GuildSchema = new Schema({
         default: null,
         match: SnowflakeID_Validation,
       },
-      shift_actions: {
+      shift_activities: {
         type: String,
         default: null,
         match: SnowflakeID_Validation,
@@ -61,7 +59,7 @@ const GuildSchema = new Schema({
 
     // Role permissions which will be used to restrict the usage of certain commands and actions
     // Staff are the ones allowed to utilize low-profile shift management commands and actions (all members if not specified by default)
-    role_permissions: {
+    role_perms: {
       staff: {
         type: [String],
         validate: RPerms_Validator,
@@ -82,7 +80,7 @@ const GuildSchema = new Schema({
       shift_quota  -> The required duration of time (in milliseconds) for each member to be on-shift; defaults: 0 seconds
       shift_max_duration -> The maximum shift duration (in milliseconds); defaults to one day; minimum: 15 minutes
     */
-    shift_settings: {
+    shifts: {
       role_assignment: {
         on_duty: {
           type: String,
@@ -96,37 +94,17 @@ const GuildSchema = new Schema({
         },
       },
 
-      shift_quota: {
+      weekly_quota: {
         type: Number,
         default: 0,
         min: 0,
       },
 
-      shift_types: {
-        type: [
-          {
-            name: {
-              type: String,
-              required: true,
-              minLength: 3,
-              maxLength: 20,
-            },
-            is_default: {
-              type: Boolean,
-              required: false,
-              default: false,
-            },
-            permissible_roles: [
-              {
-                type: String,
-                match: SnowflakeID_Validation,
-              },
-            ],
-          },
-        ],
+      types: {
+        type: [ShiftTypeSchema],
       },
 
-      shift_max_duration: {
+      max_shift_duration: {
         type: Number,
         default: 86_400_000,
         min: 900_000,
@@ -139,5 +117,9 @@ const GuildSchema = new Schema({
     type: [MemberSchema],
   },
 });
+
+GuildSchema.set("_id", false);
+GuildSchema.set("strict", true);
+GuildSchema.set("versionKey", false);
 
 module.exports = model("Guild", GuildSchema);

@@ -133,6 +133,7 @@ function HandleCollectorFiltering(OriginalInteract, ReceivedInteract) {
  */
 async function Callback(_, Interaction) {
   const ShiftTypeName = Interaction.options.getString("name", true);
+  const IsDefaultType = !!Interaction.options.getBoolean("default");
   let ShiftTypePermittedRoles = [];
 
   await HandleNameValidation(Interaction, ShiftTypeName);
@@ -144,6 +145,7 @@ async function Callback(_, Interaction) {
     .setDescription(
       Dedent(`
         - **Name:** \`${escapeMarkdown(ShiftTypeName)}\`
+        - **Is Default:** \`${IsDefaultType}\`
         - **Permissible Roles:**
           - To limit who may use this shift type, choose the appropriate roles from the drop-down menu below.
           - To make this shift type available and usable for all members, keep the drop-down menu empty.
@@ -220,6 +222,7 @@ async function Callback(_, Interaction) {
         const Response = await CreateShiftType({
           guild_id: Interaction.guildId,
           name: ShiftTypeName,
+          is_default: IsDefaultType,
           permissible_roles: ShiftTypePermittedRoles,
         });
 
@@ -235,7 +238,8 @@ async function Callback(_, Interaction) {
               new SuccessEmbed()
                 .setTitle("Shift Type Created")
                 .setDescription(
-                  `**Shift Type Name:** \`${ShiftTypeName}\`\n`,
+                  `**Name:** \`${ShiftTypeName}\`\n`,
+                  `**Is Default:** \`${IsDefaultType}}\``,
                   "**Permissible Roles:**\n",
                   ShiftTypePermittedRoles.length
                     ? ListFormatter.format(ShiftTypePermittedRoles.map((Id) => `<@&${Id}>`))
@@ -300,6 +304,13 @@ const CommandObject = {
         .setMinLength(3)
         .setMaxLength(20)
         .setRequired(true)
+    )
+    .addBooleanOption((Option) =>
+      Option.setName("default")
+        .setRequired(false)
+        .setDescription(
+          "Whether or not to make this type the default one. (overwrites any existing default type)"
+        )
     ),
 
   callback: Callback,

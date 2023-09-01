@@ -9,15 +9,14 @@ const GuildModel = require("../../Models/Guild");
  */
 async function AutocompleteShiftType(TypedValue, GuildId) {
   let Suggestions;
-  const ShiftTypes = await GuildModel.findOne(
-    { id: GuildId },
-    "settings.shift_settings.shift_types"
-  ).then((GuildData) => {
-    if (!GuildData) return [];
-    return GuildData.settings.shift_settings.shift_types
-      .map((ShiftType) => ShiftType.name)
-      .sort((a, b) => a.localeCompare(b));
-  });
+  const ShiftTypes = await GuildModel.findById(GuildId, "settings.shifts.types").then(
+    (GuildData) => {
+      if (!GuildData) return [];
+      return GuildData.settings.shifts.types
+        .map((ShiftType) => ShiftType.name)
+        .sort((a, b) => a.localeCompare(b));
+    }
+  );
 
   if (!ShiftTypes.length) {
     return [];
