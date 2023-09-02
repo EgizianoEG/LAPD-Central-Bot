@@ -24,11 +24,18 @@ async function CreateShiftType(Data) {
       "The limit of ten shift types has been reached, and you cannot create any further."
     );
   } else {
+    if (Data.is_default) {
+      GuildDoc.settings.shifts.types.forEach((Type) => {
+        Type.is_default = false;
+      });
+    }
+
     GuildDoc.settings.shifts.types.push({
       name: Data.name,
       is_default: Data.is_default,
       permissible_roles: Data.permissible_roles,
     });
+
     return GuildDoc.save();
   }
 }

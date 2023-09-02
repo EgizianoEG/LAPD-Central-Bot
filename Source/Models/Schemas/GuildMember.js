@@ -56,7 +56,7 @@ const MemberSchema = new Schema({
     },
 
     // An array containing all shifts that have been logged
-    logs: [ShiftSchema],
+    logs: [ShiftSchema], // TODO: Consider referring to a model
   },
 });
 

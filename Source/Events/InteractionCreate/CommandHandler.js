@@ -8,10 +8,7 @@ const {
   UnauthorizedEmbed,
 } = require("../../Utilities/Classes/ExtraEmbeds");
 
-const {
-  Discord: { BotDevs },
-} = require("../../Config/Secrets.json");
-
+const { Discord } = require("../../Config/Secrets.json");
 const { Collection, PermissionFlagsBits, PermissionsBitField, time } = require("discord.js");
 const { UnorderedList } = require("../../Utilities/Strings/Formatter");
 const { PascalToNormal } = require("../../Utilities/Strings/Converter");
@@ -134,7 +131,7 @@ async function HandleCooldowns(Client, Interaction, CommandObject) {
  */
 function HandleDevOnlyCommands(CommandObject, Interaction) {
   if (Interaction.replied) return;
-  if (CommandObject.options?.devOnly && !BotDevs.includes(Interaction.user.id)) {
+  if (CommandObject.options?.devOnly && !Discord.BotDevs.includes(Interaction.user.id)) {
     return new UnauthorizedEmbed()
       .setDescription("Only developers of this bot can run this command.")
       .replyToInteract(Interaction, true);

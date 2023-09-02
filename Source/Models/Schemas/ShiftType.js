@@ -3,6 +3,7 @@ const { Schema } = require("mongoose");
 const ShiftTypeSchema = new Schema({
   _id: {
     type: Schema.Types.ObjectId,
+    required: true,
     auto: true,
   },
 

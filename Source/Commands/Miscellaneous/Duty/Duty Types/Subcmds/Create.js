@@ -145,7 +145,7 @@ async function Callback(_, Interaction) {
     .setDescription(
       Dedent(`
         - **Name:** \`${escapeMarkdown(ShiftTypeName)}\`
-        - **Is Default:** \`${IsDefaultType}\`
+        - **Is Default:** \`${IsDefaultType ? "True" : "False"}\`
         - **Permissible Roles:**
           - To limit who may use this shift type, choose the appropriate roles from the drop-down menu below.
           - To make this shift type available and usable for all members, keep the drop-down menu empty.
@@ -239,7 +239,7 @@ async function Callback(_, Interaction) {
                 .setTitle("Shift Type Created")
                 .setDescription(
                   `**Name:** \`${ShiftTypeName}\`\n`,
-                  `**Is Default:** \`${IsDefaultType}}\``,
+                  `**Is Default:** \`${IsDefaultType ? "True" : "False"}\`\n`,
                   "**Permissible Roles:**\n",
                   ShiftTypePermittedRoles.length
                     ? ListFormatter.format(ShiftTypePermittedRoles.map((Id) => `<@&${Id}>`))
@@ -309,7 +309,7 @@ const CommandObject = {
       Option.setName("default")
         .setRequired(false)
         .setDescription(
-          "Whether or not to make this type the default one. (overwrites any existing default type)"
+          "Whether or not to make this type the default one. (overwrites any existing default type if true)"
         )
     ),
 
