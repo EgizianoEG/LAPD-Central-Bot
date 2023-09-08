@@ -226,7 +226,7 @@ async function Autocomplete(Interaction) {
 // ---------------------------------------------------------------------------------------
 // Command structure:
 // ------------------
-/** @type {SlashCommandObject} */
+/** @type {SlashCommandObject<any>} */
 const CommandObject = {
   data: new SlashCommandBuilder()
     .setName("log-in")

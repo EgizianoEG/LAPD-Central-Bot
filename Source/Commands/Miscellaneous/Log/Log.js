@@ -1,21 +1,21 @@
-// eslint-disable-next-line no-unused-vars
-const { Client, ChatInputCommandInteraction, SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder } = require("discord.js");
 const AutocompleteHeight = require("../../../Utilities/Autocompletion/Height.js");
 const AutocompleteUsername = require("../../../Utilities/Autocompletion/Username.js");
 const AutocompleteWeight = require("../../../Utilities/Autocompletion/Weight.js");
+const AutocompleteVehicle = require("../../../Utilities/Autocompletion/Vehicle.js");
+
 const Subcommands = [
   require("./Deps/CitFine.js"),
   require("./Deps/CitWarn.js"),
   require("./Deps/Arrest.js"),
 ];
-// const VehicleModels = require("../../../Config/ERLCVehicles.json");
 
 // ---------------------------------------------------------------------------------------
 // Functions:
 // ----------
 /**
- * @param {Client} Client
- * @param {ChatInputCommandInteraction} Interaction
+ * @param {DiscordClient} Client
+ * @param {SlashCommandInteraction} Interaction
  */
 async function Callback(Client, Interaction) {
   for (const SubCommand of Subcommands) {
@@ -31,7 +31,7 @@ async function Callback(Client, Interaction) {
 
 async function Autocomplete(Interaction) {
   const { name, value } = Interaction.options.getFocused(true);
-  let Suggestions;
+  let Suggestions = [];
 
   if (name === "height") {
     Suggestions = AutocompleteHeight(value);
@@ -39,8 +39,8 @@ async function Autocomplete(Interaction) {
     Suggestions = await AutocompleteUsername(value);
   } else if (name === "weight") {
     Suggestions = AutocompleteWeight(value);
-  } else {
-    Suggestions = [];
+  } else if (name === "vehicle") {
+    Suggestions = AutocompleteVehicle(value);
   }
 
   return Interaction.respond(Suggestions);
@@ -49,7 +49,7 @@ async function Autocomplete(Interaction) {
 // ---------------------------------------------------------------------------------------
 // Command structure:
 // ------------------
-/** @type {SlashCommandObject} */
+/** @type {SlashCommandObject<any>} */
 const CommandObject = {
   data: new SlashCommandBuilder()
     .setName("log")

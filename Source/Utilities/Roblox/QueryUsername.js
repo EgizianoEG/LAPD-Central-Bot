@@ -12,7 +12,7 @@ const {
 async function QueryUsername(Username) {
   if (!IsValidRobloxUsername(Username)) return [];
   if (UsernameSearches.has(Username)) {
-    return UsernameSearches.get(Username);
+    return UsernameSearches.get(Username) ?? [];
   }
 
   const RequestURL = `https://www.roblox.com/search/users/results?keyword=${Username}&maxRows=25`;

@@ -1,10 +1,9 @@
+// @ts-nocheck
 // Dependencies:
 // --------------------------------------------------------------------
 
+const { Discord } = require("../../Config/Secrets.json");
 const { Routes } = require("discord.js");
-const {
-  Discord: { Test_Guild_ID, Client_ID },
-} = require("../../Config/Secrets.json");
 const GetAppCommands = require("../../Utilities/Other/GetAppCmds");
 const Chalk = require("chalk");
 
@@ -21,7 +20,7 @@ const GlobalCommandsToDelete = [""]; // The names of all commands to delete
 module.exports = async function RemoveCommands(Client) {
   if (!Enabled) return;
   if (AllGuildCommands) {
-    const Guild = Client.guilds.cache.get(Test_Guild_ID);
+    const Guild = Client.guilds.cache.get(Discord.Test_Guild_ID);
     if (!Guild) {
       return console.log(
         Chalk.yellow("Couldn't find the testing guild to remove commands; returned.")
@@ -52,7 +51,7 @@ module.exports = async function RemoveCommands(Client) {
 
     for (const Command of MatchingCommands) {
       Client.rest
-        .delete(Routes.applicationCommand(Client_ID, Command.id))
+        .delete(Routes.applicationCommand(Discord.Client_ID, Command.id))
         .then(() =>
           console.log(
             `✅ - Successfully deleted ${Chalk.magenta(Command.name)} application command.`

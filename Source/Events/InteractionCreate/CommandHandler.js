@@ -102,7 +102,7 @@ async function HandleCooldowns(Client, Interaction, CommandObject) {
 
   if (!Timestamps) return;
   if (Timestamps.has(Interaction.user.id)) {
-    const ExpTimestamp = Timestamps.get(Interaction.user.id) + CooldownDuration;
+    const ExpTimestamp = Timestamps.get(Interaction.user.id) ?? 0 + CooldownDuration;
     if (CurrentTS < ExpTimestamp) {
       return Interaction.reply({
         ephemeral: true,

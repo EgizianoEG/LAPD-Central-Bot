@@ -1,19 +1,13 @@
-/**
- * Returns the registered application commands
- * @param {DiscordClient} Client
- * @param {String} [GuildId] If provided, returns the application commands registered on it
- */
+/** @type {Utilities.GetAppCommands} */
 module.exports = async (Client, GuildId) => {
-  let AppCommands;
-
   if (GuildId) {
     const Guild = await Client.guilds.fetch(GuildId);
-    AppCommands = Guild.commands;
-    await AppCommands.fetch(GuildId);
+    await Guild.commands.fetch();
+    // @ts-ignore
+    return Guild.commands;
   } else {
-    AppCommands = Client.application.commands;
-    await AppCommands.fetch();
+    await Client.application.commands.fetch();
+    // @ts-ignore
+    return Client.application.commands;
   }
-
-  return AppCommands;
 };

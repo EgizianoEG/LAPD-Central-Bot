@@ -1,5 +1,6 @@
-const GetFiles = require("./GetFiles");
 const Path = require("path");
+const GetFiles = require("./GetFiles");
+const { IsValidCmdObject } = require("../Strings/Validator");
 // ----------------------------------------------------------------
 
 /**
@@ -16,17 +17,13 @@ module.exports = (Exceptions = []) => {
     const CommandGroups = GetFiles(CommandCat, true);
 
     for (const CommandGroup of CommandGroups) {
-      const MainFileName = CommandGroup.match(/\\?([^\\]+)\.\w+$/i)?.[1];
+      const CmdGroupName = Path.basename(CommandGroup);
       const Commands = GetFiles(CommandGroup);
 
       for (const Command of Commands) {
-        if (Command.match(new RegExp(`(?:${MainFileName}|Main).js$`))) {
+        if (Command.match(new RegExp(`(?:${CmdGroupName}|Main).js$`))) {
           const CommandObj = require(Command);
-          if (
-            CommandObj.data?.name &&
-            CommandObj.data?.description &&
-            !Exceptions.includes(CommandObj.data?.name)
-          ) {
+          if (IsValidCmdObject(CommandObj, Exceptions)) {
             LocalCommands.push(CommandObj);
           }
           break;
@@ -36,11 +33,7 @@ module.exports = (Exceptions = []) => {
 
     for (const Command of Commands) {
       const CommandObj = require(Command);
-      if (
-        CommandObj.data?.name &&
-        CommandObj.data?.description &&
-        !Exceptions.includes(CommandObj.data?.name)
-      ) {
+      if (IsValidCmdObject(CommandObj, Exceptions)) {
         LocalCommands.push(CommandObj);
       }
     }

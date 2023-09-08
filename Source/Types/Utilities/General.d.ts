@@ -1,18 +1,34 @@
-namespace Utilities {
-  declare interface ErrorReplyOptions {
-    /** The repliable interaction */
-    Interact: RepliableInteraction;
+import type { Snowflake, FetchGuildOptions } from "discord.js";
 
-    /** Whether this reply is ephemeral or publicly visible */
-    Ephemeral?: boolean;
+declare global {
+  namespace Utilities {
+    declare interface ErrorReplyOptions {
+      /** The repliable interaction */
+      Interact: RepliableInteraction;
 
-    /** The title of the error reply; defaults to "Error" */
-    Title?: string;
+      /** Whether this reply is ephemeral or publicly visible */
+      Ephemeral?: boolean;
 
-    /** The description of the error reply */
-    Message?: string;
+      /** The title of the error reply; defaults to "Error" */
+      Title?: string;
 
-    /** A pre-defined template with title and description to use instead of providing `Title` and `Description` options. `Ephemeral` option is still respected. */
-    Template?: "AppError";
+      /** The description of the error reply */
+      Message?: string;
+
+      /** A pre-defined template with title and description to use instead of providing `Title` and `Description` options. `Ephemeral` option is still respected. */
+      Template?: "AppError";
+    }
+
+    type GetAppCommands = <Scope extends Snowflake | FetchGuildOptions | undefined = undefined>(
+      /** The discord.js client */
+      Client: DiscordClient,
+
+      /** If provided, returns the application commands registered on it; otherwise, returns global registered slash commadns */
+      GuildId?: Scope
+    ) => Promise<
+      Scope extends string
+        ? DiscordJS.GuildApplicationCommandManager
+        : DiscordJS.ApplicationCommandManager
+    >;
   }
 }

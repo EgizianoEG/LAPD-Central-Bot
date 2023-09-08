@@ -1,15 +1,16 @@
 const Chalk = require("chalk");
 const Mongoose = require("mongoose");
-const {
-  MongoDB: { URI, Username, UserPass, DBName },
-} = require("../Config/Secrets.json");
+const { MongoDB } = require("../Config/Secrets.json");
 // ---------------------------------------------------------------------
 
 module.exports = async () => {
-  const DatabaseURI = URI.replace(/<username>/, Username).replace(/<password>/, UserPass);
+  const DatabaseURI = MongoDB.URI.replace(/<username>/, MongoDB.Username).replace(
+    /<password>/,
+    MongoDB.UserPass
+  );
 
   Mongoose.connect(DatabaseURI, {
-    dbName: DBName,
+    dbName: MongoDB.DBName,
   })
     .then(async () => {
       console.log("✅ - %s is connected.", Chalk.cyanBright.bold("MongoDB"));

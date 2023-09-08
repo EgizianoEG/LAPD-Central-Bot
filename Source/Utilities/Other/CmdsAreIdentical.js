@@ -1,11 +1,11 @@
 /**
  * @param {DiscordJS.ApplicationCommand & any} Cmd_1
- * @param {SlashCommandObject["data"]} Cmd_2
+ * @param {SlashCommandObject} Cmd_2
  * @returns {Boolean}
  */
 function Equals(Cmd_1, Cmd_2) {
-  Cmd_1 = Cmd_1.toJSON();
-  Cmd_2 = Cmd_2.data.toJSON();
+  const Cmd_Data_1 = Cmd_1.toJSON();
+  const Cmd_Data_2 = Cmd_2.data.toJSON();
 
   const AreChoicesDifferent = (ExistingChoices, LocalChoices) => {
     for (const LocalChoice of LocalChoices) {
@@ -44,9 +44,9 @@ function Equals(Cmd_1, Cmd_2) {
   };
 
   return !(
-    Cmd_1.description !== Cmd_2.description ||
-    Cmd_1.options?.length !== (Cmd_2.options?.length || 0) ||
-    AreOptionsDifferent(Cmd_1.options, Cmd_2.options || [])
+    Cmd_Data_1.description !== Cmd_Data_2.description ||
+    Cmd_Data_1.options?.length !== (Cmd_Data_2.options?.length || 0) ||
+    AreOptionsDifferent(Cmd_Data_1.options, Cmd_Data_2.options || [])
   );
 }
 

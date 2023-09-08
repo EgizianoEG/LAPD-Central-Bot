@@ -21,7 +21,7 @@ async function Callback(Client, Interaction) {
 // ---------------------------------------------------------------------------------------
 // Command structure:
 // ------------------
-/** @type {SlashCommandObject} */
+/** @type {SlashCommandObject<any>} */
 const CommandObject = {
   callback: Callback,
   options: { devOnly: true },

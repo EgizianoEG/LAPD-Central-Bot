@@ -70,7 +70,7 @@ async function Callback(_, Interaction) {
 // ---------------------------------------------------------------------------------------
 // Command structure:
 // ------------------
-/** @type {SlashCommandObject} */
+/** @type {SlashCommandObject<any>} */
 const CommandObject = {
   callback: Callback,
   options: { cooldown: 30 },

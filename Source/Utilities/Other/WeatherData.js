@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Dependencies:
 // -------------
 
@@ -21,11 +20,11 @@ const WeatherClient = Axios.create({
 /**
  * Converts a given visibility in meters
  * @param {Number} RawVisibility Visibility distance in meters from the original request
- * @param {String} DistanceUnit The targeted distance unit
+ * @param {Convert.Unit} DistanceUnit The targeted distance unit
  * @return {Number} The converted visibility distance
  */
 function ConvertVisibility(RawVisibility, DistanceUnit) {
-  return parseFloat(Convert(RawVisibility).from("m").to(DistanceUnit.trim()).toFixed(1));
+  return parseFloat(Convert(RawVisibility).from("m").to(DistanceUnit).toFixed(1));
 }
 
 /**
@@ -46,7 +45,7 @@ async function GetCurrentWeather(Options = { Units: "imperial" }) {
     return Res.data;
   });
 
-  /** @type {any} */
+  /** @type {Record<string, any>} */
   const Units = {
     Speed: Options.Units === "metric" ? " km/h" : " mph",
     Degree: Options.Units === "metric" ? " °C" : " °F",
@@ -71,7 +70,7 @@ async function GetCurrentWeather(Options = { Units: "imperial" }) {
     wind: RetrievedData.wind,
     humidity: RetrievedData.main.humidity,
     pressure: RetrievedData.main.pressure,
-    visibility: ConvertVisibility(RetrievedData.visibility, Units.Distance),
+    visibility: ConvertVisibility(RetrievedData.visibility, Units.Distance.trim()),
     is_day: RetrievedData.weather[0].icon.includes("d"),
     forecast_link: `https://openweathermap.org/city/${RetrievedData.id}`,
   };

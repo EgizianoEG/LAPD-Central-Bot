@@ -1,12 +1,25 @@
 import * as DiscordJSMask from "discord.js";
 import type {
+  ApplicationCommandManager,
+  GuildApplicationCommandManager,
+  SlashCommandSubcommandsOnlyBuilder,
+  SlashCommandSubcommandBuilder,
   ChatInputCommandInteraction,
   InteractionReplyOptions,
+  AutocompleteInteraction,
   PermissionResolvable,
+  SlashCommandBuilder,
   MessagePayload,
   CacheType,
   Client,
 } from "discord.js";
+
+type CommandObjectDataType =
+  | SlashCommandBuilder
+  | SlashCommandSubcommandBuilder
+  | SlashCommandSubcommandsOnlyBuilder
+  | undefined
+  | any;
 
 declare global {
   export import DiscordJS = DiscordJSMask;
@@ -27,7 +40,7 @@ declare global {
   type SlashCommandInteraction<Cached extends CacheType = CacheType> =
     ChatInputCommandInteraction<Cached>;
 
-  interface SlashCommandObject {
+  interface SlashCommandObject<DataType extends CommandObjectDataType = SlashCommandBuilder> {
     /** The callback function or the `run` function which will be executed on command call */
     callback: (arg0: DiscordClient, arg1: SlashCommandInteraction<Cached | undefined>) => any;
 
@@ -35,7 +48,7 @@ declare global {
     autocomplete?: (arg0: AutocompleteInteraction<Cached | undefined>) => any;
 
     /** The slash command itself */
-    data: SlashCommandBuilder;
+    data: DataType;
 
     /** Optional configurations */
     options?: {

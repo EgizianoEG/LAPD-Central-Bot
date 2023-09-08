@@ -19,7 +19,7 @@
     "no-unused-vars": "warn",
     "quotes": ["error", "double"],
     "semi": ["error", "always"],
-    "sonarjs/cognitive-complexity": ["warn", 30],
+    "sonarjs/cognitive-complexity": ["warn", 35],
 
     "no-extra-parens": [
       "warn",

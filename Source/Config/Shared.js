@@ -5,6 +5,7 @@ const SharedData = {
   },
 
   Embeds: {
+    /** @type {Record<string, DiscordJS.ColorResolvable>} */
     Colors: {
       Info: "#3498DB",
       Success: "#28a745",
@@ -24,6 +25,7 @@ const SharedData = {
     },
   },
 
+  /** @type {Record<string, `<:${string}:${string}>`>} */
   Emojis: {
     LosAngeles: "<:losangeles:1134606469828984873>",
     NavNext: "<:ArrowForward:1146177481653624904>",
