@@ -1,5 +1,6 @@
 const { Schema } = require("mongoose");
 const { randomInt: RanInt } = require("node:crypto");
+const DurationsSchema = require("./ShiftDurations");
 
 const ShiftSchema = new Schema({
   id: {
@@ -29,18 +30,9 @@ const ShiftSchema = new Schema({
 
   // Durations are in milliseconds
   durations: {
-    total: {
-      type: Number,
-      default: 0,
-    },
-    on_duty: {
-      type: Number,
-      default: 0,
-    },
-    on_break: {
-      type: Number,
-      default: 0,
-    },
+    _id: false,
+    default: {},
+    type: DurationsSchema,
   },
 });
 

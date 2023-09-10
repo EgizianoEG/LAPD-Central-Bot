@@ -1,4 +1,5 @@
 const GuildModel = require("../../Models/Guild");
+const { EscapeRegex } = require("../Strings/Converter");
 // ----------------------------------------------------------------
 
 /**
@@ -9,6 +10,7 @@ const GuildModel = require("../../Models/Guild");
  */
 async function AutocompleteShiftType(TypedValue, GuildId) {
   let Suggestions;
+  const EscapedValue = EscapeRegex(TypedValue);
   const ShiftTypes = await GuildModel.findById(GuildId, "settings.shifts.types").then(
     (GuildData) => {
       if (!GuildData) return [];
@@ -20,11 +22,11 @@ async function AutocompleteShiftType(TypedValue, GuildId) {
 
   if (!ShiftTypes.length) {
     return [];
-  } else if (TypedValue.match(/^\s*$/)) {
+  } else if (EscapedValue.match(/^\s*$/)) {
     Suggestions = ShiftTypes;
   } else {
     Suggestions = ShiftTypes.filter((Element) => {
-      return Element.match(new RegExp(TypedValue, "i"));
+      return Element.match(new RegExp(EscapedValue, "i"));
     });
   }
 

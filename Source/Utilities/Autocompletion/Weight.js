@@ -1,3 +1,5 @@
+const { EscapeRegex } = require("../Strings/Converter");
+
 const WeightOptions = [];
 const Cache = {};
 
@@ -22,7 +24,7 @@ function AutocompleteWeight(TypedValue) {
     return Cache.Default;
   } else if (TypedValue.length === 1) {
     Suggestions = WeightOptions.filter((Element) => {
-      return Element.match(new RegExp(`^${TypedValue}\\d0$`));
+      return Element.match(new RegExp(`^${EscapeRegex(TypedValue)}\\d0$`));
     });
   } else {
     Suggestions = WeightOptions.filter((Element) => {

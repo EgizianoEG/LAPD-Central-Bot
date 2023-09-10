@@ -8,7 +8,7 @@ const GuildModel = require("../../Models/Guild.js");
  */
 async function IsOptionEnabled(GuildId) {
   const GuildData = await GuildModel.findById(GuildId).exec();
-  return !!GuildData.settings.require_authorization;
+  return GuildData?.settings.require_authorization ?? true;
 }
 
 // ------------------------------

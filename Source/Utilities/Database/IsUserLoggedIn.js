@@ -1,24 +1,32 @@
 const GuildModel = require("../../Models/Guild.js");
+const GuildProfile = require("../../Models/GuildProfile.js");
 // -------------------------------------------------
 
 /**
  * Checks if a given user is already logged in using the bot.
- * @param {DiscordJS.ChatInputCommandInteraction} CmdInteraction
- * @returns {Promise<false|number>} Logged in Roblox user id if found or `false` if not.
+ * @param {SlashCommandInteraction} CmdInteraction
+ * @returns {Promise<Number>} Logged in Roblox user id. This value would be `0` if the user is not already logged in.
  */
 async function IsLoggedIn(CmdInteraction) {
-  const GuildData = await GuildModel.findById(CmdInteraction.guildId).exec();
-  const MemberFound = GuildData.members.find((Member) => Member.user_id === CmdInteraction.user.id);
+  const GuildDoc = await GuildModel.findById(CmdInteraction.guildId).exec();
+  const Member = await GuildProfile.findOne({
+    user_id: CmdInteraction.user.id,
+    guild_id: CmdInteraction.guildId,
+  }).exec();
 
-  if (MemberFound) {
-    return !!MemberFound.linked_account.roblox_user_id;
-  } else {
-    GuildData.members.addToSet({
-      user_id: CmdInteraction.user.id,
-    });
-    GuildData.save();
+  if (Member) {
+    return Member.linked_account.roblox_user_id;
   }
-  return false;
+
+  await GuildProfile.create({
+    user_id: CmdInteraction.user.id,
+    guild_id: CmdInteraction.guildId,
+  }).then((Doc) => {
+    GuildDoc?.members.push(Doc._id);
+    return GuildDoc?.save();
+  });
+
+  return 0;
 }
 
 // -------------------------

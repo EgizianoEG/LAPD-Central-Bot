@@ -3,15 +3,27 @@ const AppError = require("../Classes/AppError.js");
 // ----------------------------------------------------------------
 
 /**
- * Creates a new shift type for the given guild ID
- * @param {{guild_id: string, is_default?: boolean, name: string, permissible_roles: string[] }} Data The shift type data: `name` and `permissible_roles`
- * @returns {Promise<import("mongoose").Document|AppError>} The saved guild document if creation succeeded or an `AppError` if there was an exception
+ * Creates a new shift type for the given guild
+ * @param {{
+ *   name: string,
+ *   guild_id: string,
+ *   is_default?: boolean,
+ *   permissible_roles?: string[]
+ * }} Data The shift type data
+ * @returns The shift type after being saved if creation succeeded or an `AppError` instance if there was an exception (would be thrown if the exception was from the database)
  */
 async function CreateShiftType(Data) {
   const GuildDoc = await GuildModel.findById(Data.guild_id, "settings.shifts.types").exec();
-  const ShiftTypeExists = GuildDoc.settings.shifts.types.find(
+  const ShiftTypeExists = GuildDoc?.settings.shifts.types.find(
     (ShiftType) => ShiftType.name === Data.name
   );
+
+  if (!GuildDoc) {
+    throw new AppError(
+      "Database Error",
+      `Couldn't find the guild document for guild id:${Data.guild_id}`
+    );
+  }
 
   if (ShiftTypeExists) {
     return new AppError(
@@ -30,13 +42,15 @@ async function CreateShiftType(Data) {
       });
     }
 
-    GuildDoc.settings.shifts.types.push({
+    const Total = GuildDoc.settings.shifts.types.push({
       name: Data.name,
       is_default: Data.is_default,
       permissible_roles: Data.permissible_roles,
     });
 
-    return GuildDoc.save();
+    return GuildDoc.save().then((Res) => {
+      return Res.settings.shifts.types[Total - 1];
+    });
   }
 }
 

@@ -1,12 +1,6 @@
 const { Schema } = require("mongoose");
 
 const ShiftTypeSchema = new Schema({
-  _id: {
-    type: Schema.Types.ObjectId,
-    required: true,
-    auto: true,
-  },
-
   name: {
     type: String,
     required: true,
@@ -17,20 +11,26 @@ const ShiftTypeSchema = new Schema({
   is_default: {
     type: Boolean,
     default: false,
+    required: true,
   },
 
-  permissible_roles: [
-    {
-      type: String,
-      minLength: 15,
-      maxLength: 22,
-    },
-  ],
+  permissible_roles: {
+    required: true,
+    default: [],
+    type: [
+      {
+        type: String,
+        match: /^\d{15,22}$/,
+        required: true,
+      },
+    ],
+  },
 
   created_at: {
     type: Date,
     default: Date.now,
     immutable: true,
+    required: true,
   },
 });
 

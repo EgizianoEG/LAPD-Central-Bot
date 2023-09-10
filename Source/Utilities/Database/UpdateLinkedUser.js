@@ -1,34 +1,37 @@
 const GuildModel = require("../../Models/Guild.js");
+const GuildProfile = require("../../Models/GuildProfile.js");
 // -------------------------------------------------
 
 /**
  * Updates the linked Roblox user id and puts the given one instead
  * This function is runs knowing that the user and their guild are recorded in the database already
  * @param {DiscordJS.ChatInputCommandInteraction} CmdInteraction Orginal command interaction
- * @param {String|Number|Null} [RobloxUserId] The user Id to record and put into the database (`null` by default)
- * @returns {Promise<import("mongoose").Document>} The saved guild document if succeeded saving it
+ * @param {String|Number|Null} [RobloxUserId] The user Id to record and put into the database (`0` by default)
+ * @returns A promise resolves to the saved guild document if succeeded
  */
-async function UpdateLinkedRobloxUser(CmdInteraction, RobloxUserId = null) {
-  RobloxUserId = RobloxUserId ? Number(RobloxUserId) : null;
-  const GuildData = await GuildModel.findById(CmdInteraction.guildId).exec();
-  const MemberIndex = GuildData.members.findIndex(
-    (Member) => Member.user_id === CmdInteraction.user.id
-  );
+async function UpdateLinkedRobloxUser(CmdInteraction, RobloxUserId = 0) {
+  RobloxUserId = Number(RobloxUserId) || 0;
+  const GuildDoc = await GuildModel.findById(CmdInteraction.guildId).exec();
+  const Member = await GuildProfile.findOne({
+    user_id: CmdInteraction.user.id,
+    guild_id: CmdInteraction.guildId,
+  }).exec();
 
-  if (MemberIndex === -1) {
-    GuildData.members.addToSet({
+  if (Member) {
+    Member.linked_account.roblox_user_id = RobloxUserId;
+    return Member.save();
+  } else {
+    return GuildProfile.create({
       user_id: CmdInteraction.user.id,
-      linked_user: {
+      guild_id: CmdInteraction.guildId,
+      linked_account: {
         roblox_user_id: RobloxUserId,
       },
+    }).then((CreatedProfile) => {
+      GuildDoc?.members.push(CreatedProfile._id);
+      return GuildDoc?.save();
     });
-  } else {
-    GuildData.members[MemberIndex].linked_user = {
-      roblox_user_id: RobloxUserId,
-    };
   }
-
-  return GuildData.save();
 }
 
 // -------------------------------------

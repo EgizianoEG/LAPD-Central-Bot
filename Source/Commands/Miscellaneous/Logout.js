@@ -23,6 +23,7 @@ const { ErrorEmbed, InfoEmbed, SuccessEmbed } = require("../../Utilities/Classes
 /**
  * Handles the case where the command runner is not logged in
  * @param {SlashCommandInteraction} Interaction
+ * @param {Boolean} IsLoggedIn
  */
 async function HandleLoggedInUser(Interaction, IsLoggedIn) {
   if (!IsLoggedIn) {
@@ -58,16 +59,10 @@ async function HandleLoggedInUser(Interaction, IsLoggedIn) {
 async function Callback(_, Interaction) {
   const UserLoggedIn = await IsUserLoggedIn(Interaction);
 
-  await HandleLoggedInUser(Interaction, UserLoggedIn);
+  await HandleLoggedInUser(Interaction, !!UserLoggedIn);
   if (Interaction.replied) return;
 
-  const RobloxUsername = (
-    await GetPlayerInfo(
-      /** @type {Number} */
-      (UserLoggedIn)
-    )
-  ).name;
-
+  const RobloxUsername = (await GetPlayerInfo(UserLoggedIn)).name;
   const ButtonsActionRow =
     /** @type {ActionRowBuilder<ButtonBuilder>} */
     (new ActionRowBuilder()).setComponents(

@@ -2,64 +2,82 @@ const { Schema } = require("mongoose");
 
 const CallsignSchema = new Schema({
   holder: {
-    type: String,
+    type: Schema.Types.ObjectId,
     required: true,
-    match: /^\d{15,22}$/,
+    immutable: true,
+  },
+
+  formatted: {
+    type: String,
+    default: "",
   },
 
   // @see http://forums.radioreference.com/threads/lapd-supervisory-command-staff-callsigns.451920/post-3834919
   info: {
-    division: {
-      required: true,
-      type: Number,
-      min: 1,
-      max: 35,
-    },
+    _id: false,
+    required: true,
+    alias: "callsign",
+    type: {
+      division: {
+        type: Number,
+        required: true,
+        min: 1,
+        max: 35,
+      },
 
-    unit_type: {
-      type: String,
-      enum: ["A", "B", "C", "E", "F", "G", "H", "L", "M", "T", "W", "Y", "I", "K", "X", "Z"],
-      required: true,
-      uppercase: true,
-    },
+      unit_type: {
+        type: String,
+        enum: ["A", "B", "C", "E", "F", "G", "H", "L", "M", "T", "W", "Y", "I", "K", "X", "Z"],
+        trim: true,
+        required: true,
+        uppercase: true,
+      },
 
-    identifier: {
-      type: String,
-      required: true,
-      validate: {
-        validator: (Value) => {
-          return !!Value.match(/^\d{2,3}$|^0\d{1,2}$/);
+      identifier: {
+        type: String,
+        trim: true,
+        required: true,
+        validate: {
+          validator: (Value) => {
+            return !!Value.match(/^\d{2,3}$|^0\d{1,2}$/);
+          },
+          message:
+            "The callsign identifier must be between two and three digits long (01, 04, 152, etc.).",
         },
-        message:
-          "The callsign identifier must be between two and three digits long (01, 04, 152, etc.).",
       },
     },
   },
 
   status: {
-    requested_on: {
-      type: Date,
-      default: Date.now,
-      required: true,
-      immutable: true,
-    },
+    _id: false,
+    default: {},
+    type: {
+      requested_on: {
+        type: Date,
+        default: Date.now,
+        required: true,
+        immutable: true,
+      },
 
-    approving_user: {
-      type: String,
-      match: /^\d{15,22}$/,
-      required: true,
-      default: null,
-    },
+      approving_user: {
+        type: String,
+        match: /^\d{15,22}$/,
+        default: null,
+        required: false,
+      },
 
-    approved_on: {
-      type: Date,
-      default: null,
+      approved_on: {
+        type: Date,
+        default: null,
+        required: false,
+      },
     },
   },
 });
 
+CallsignSchema.set("versionKey", false);
+CallsignSchema.remove("formatted");
 CallsignSchema.virtual("formatted").get(function () {
-  if (!this.info) return null;
   return this.info.division + this.info.unit_type + "-" + this.info.identifier;
 });
 

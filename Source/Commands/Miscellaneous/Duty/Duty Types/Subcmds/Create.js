@@ -238,8 +238,8 @@ async function Callback(_, Interaction) {
               new SuccessEmbed()
                 .setTitle("Shift Type Created")
                 .setDescription(
-                  `**Name:** \`${ShiftTypeName}\`\n`,
-                  `**Is Default:** \`${IsDefaultType ? "True" : "False"}\`\n`,
+                  `**Name:** \`${Response.name}\`\n`,
+                  `**Is Default:** \`${Response.is_default ? "True" : "False"}\`\n`,
                   "**Permissible Roles:**\n",
                   ShiftTypePermittedRoles.length
                     ? ListFormatter.format(ShiftTypePermittedRoles.map((Id) => `<@&${Id}>`))

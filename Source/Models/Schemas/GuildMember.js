@@ -1,5 +1,6 @@
 const { Schema } = require("mongoose");
 const ShiftSchema = require("./MemberShift");
+const DurationsSchema = require("./ShiftDurations");
 
 const MemberSchema = new Schema({
   user_id: {
@@ -19,40 +20,16 @@ const MemberSchema = new Schema({
   shifts: {
     // The average shift times, including total, on-break, and on-duty durations
     average_periods: {
-      all: {
-        type: Number,
-        default: 0,
-        min: 0,
-      },
-      on_duty: {
-        type: Number,
-        default: 0,
-        min: 0,
-      },
-      on_break: {
-        type: Number,
-        default: 0,
-        min: 0,
-      },
+      _id: false,
+      default: {},
+      type: DurationsSchema,
     },
 
     // The total durations recorded in the shift logs
     total_durations: {
-      all: {
-        type: Number,
-        default: 0,
-        min: 0,
-      },
-      on_duty: {
-        type: Number,
-        default: 0,
-        min: 0,
-      },
-      on_break: {
-        type: Number,
-        default: 0,
-        min: 0,
-      },
+      _id: false,
+      default: {},
+      type: DurationsSchema,
     },
 
     // An array containing all shifts that have been logged

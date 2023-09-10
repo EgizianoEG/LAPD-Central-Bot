@@ -79,9 +79,9 @@ function TitleCase(Str, Strict = true) {
 
 /**
  * Converts a given string to camel case format
- * @see {@link https://stackoverflow.com/a/2970667/11442726 Stack Overflow} Original author
  * @param {String} Str - The string to convert
  * @returns {String} Returns the given string in camel case format
+ * @see {@link https://stackoverflow.com/a/2970667/11442726 Stack Overflow} Original author
  * @example
  * TitleCase("AutoComp")  // returns "autoComp"
  * TitleCase("Auto_Comp_42")  // returns "autoComp42"
@@ -101,4 +101,14 @@ function PascalToNormal(Str) {
   return Str.replace(/([A-Z])/g, " $1").trim();
 }
 
-module.exports = { TitleCase, CamelCase, PascalToNormal };
+/**
+ * Escapes the given string for additional processing using regular expressions
+ * @param {String} Str
+ * @returns {String}
+ * @see {@link https://stackoverflow.com/a/6969486/11442726 Stack Overflow} Original author
+ */
+function EscapeRegex(Str) {
+  return Str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+module.exports = { TitleCase, CamelCase, PascalToNormal, EscapeRegex };
