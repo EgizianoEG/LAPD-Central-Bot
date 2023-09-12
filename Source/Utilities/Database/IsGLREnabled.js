@@ -4,11 +4,12 @@ const GuildModel = require("../../Models/Guild.js");
 /**
  * Checks if a given guild has login restrictions enabled for its users
  * @param {String} GuildId
- * @returns {Promise<Boolean>} true if the guild has login restrictions; false otherwise.
+ * @returns {Promise<Boolean>} `true` if the guild has login restrictions; `false` otherwise.
  */
 async function IsOptionEnabled(GuildId) {
-  const GuildData = await GuildModel.findById(GuildId).exec();
-  return GuildData?.settings.require_authorization ?? true;
+  return GuildModel.findById(GuildId)
+    .select("settings.require_authorization")
+    .then((GuildData) => GuildData?.settings.require_authorization ?? true);
 }
 
 // ------------------------------

@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require("discord.js");
 const DutyTypesSubcommandGroup = require("./Duty Types/Main");
 const AutocompleteShiftType = require("../../../Utilities/Autocompletion/ShiftType");
+const UserHasPerms = require("../../../Utilities/Database/UserHasPermissions");
 
 const Subcommands = [
   require("./Subcmds/Active"),
@@ -37,7 +38,6 @@ function Callback(Client, Interaction) {
 }
 
 /**
- * Autocompletion for the Roblox username required command option
  * @param {DiscordJS.AutocompleteInteraction<"cached">} Interaction
  * @returns {Promise<void>}
  */
@@ -45,15 +45,14 @@ async function Autocomplete(Interaction) {
   const { name, value } = Interaction.options.getFocused(true);
   const SubcommandGroup = Interaction.options.getSubcommandGroup();
   const SubcommandName = Interaction.options.getSubcommand();
-  let Suggestions;
-
-  if (name === "type") {
-    Suggestions = await AutocompleteShiftType(value, Interaction.guildId);
-  } else if (name === "name" && SubcommandGroup === "types" && SubcommandName === "delete") {
-    Suggestions = await AutocompleteShiftType(value, Interaction.guildId);
-  } else {
-    Suggestions = [];
-  }
+  const Suggestions =
+    name === "type" ||
+    (name === "name" &&
+      SubcommandGroup === "types" &&
+      SubcommandName === "delete" &&
+      (await UserHasPerms(Interaction, { management: true })))
+      ? await AutocompleteShiftType(value, Interaction.guildId)
+      : [];
 
   return Interaction.respond(Suggestions);
 }

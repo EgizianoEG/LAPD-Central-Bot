@@ -33,7 +33,7 @@ const AppError = require("../Classes/AppError.js");
  * }
  */
 async function DeleteShiftType(Name, GuildId) {
-  const GuildDoc = await GuildModel.findById(GuildId, "settings.shifts.types").exec();
+  const GuildDoc = await GuildModel.findById(GuildId).select("settings.shifts.types").exec();
   const ShiftTypeIndex =
     GuildDoc?.settings.shifts.types.findIndex((ShiftType) => ShiftType.name === Name) ?? -1;
 

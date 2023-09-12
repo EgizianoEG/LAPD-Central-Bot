@@ -19,7 +19,7 @@ const DefaultCmdCooldownDuration = 3;
 // -----------------------------------------------------------------------------
 /**
  * The function that handles command executions
- * @param {DiscordClient} Client The bot user object
+ * @param {DiscordClient} Client The discord.js client
  * @param {SlashCommandInteraction} Interaction The command interaction
  */
 module.exports = async (Client, Interaction) => {
@@ -64,7 +64,7 @@ module.exports = async (Client, Interaction) => {
     }
   } catch (Err) {
     SendErrorReply({
-      Interact: Interaction,
+      Interaction,
       Ephemeral: true,
       Template: "AppError",
     });
@@ -79,8 +79,8 @@ module.exports = async (Client, Interaction) => {
 };
 
 // -----------------------------------------------------------------------------
-// Validation:
-// -----------
+// Validation Helpers:
+// -------------------
 /**
  * Command cooldowns for users
  * @param {DiscordClient} Client
@@ -188,6 +188,7 @@ function HandleBotPermissions(CommandObject, Interaction) {
 
   const BotInGuild = Interaction.guild.members.me;
   const MissingPerms = [];
+
   for (const Permission of CommandObject.options.botPerms) {
     if (
       BotInGuild?.permissions instanceof PermissionsBitField &&

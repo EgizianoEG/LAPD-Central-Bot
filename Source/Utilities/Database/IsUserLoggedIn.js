@@ -8,11 +8,14 @@ const GuildProfile = require("../../Models/GuildProfile.js");
  * @returns {Promise<Number>} Logged in Roblox user id. This value would be `0` if the user is not already logged in.
  */
 async function IsLoggedIn(CmdInteraction) {
-  const GuildDoc = await GuildModel.findById(CmdInteraction.guildId).exec();
-  const Member = await GuildProfile.findOne({
-    user_id: CmdInteraction.user.id,
-    guild_id: CmdInteraction.guildId,
-  }).exec();
+  const GuildDoc = await GuildModel.findById(CmdInteraction.guildId).select("members").exec();
+  const Member = await GuildProfile.findOne(
+    {
+      user_id: CmdInteraction.user.id,
+      guild_id: CmdInteraction.guildId,
+    },
+    { linked_account: 1 }
+  ).exec();
 
   if (Member) {
     return Member.linked_account.roblox_user_id;

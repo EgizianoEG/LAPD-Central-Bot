@@ -14,6 +14,7 @@ import type {
   Client,
 } from "discord.js";
 
+type CoodownValue = number;
 type CommandObjectDataType =
   | SlashCommandBuilder
   | SlashCommandSubcommandBuilder
@@ -64,7 +65,7 @@ declare global {
       /** Cooldown period in *seconds* between each command execution (Check the `CommandHandler` file for the default cooldown value) */
       cooldown?: number;
 
-      /** The required user permissions to run such a command */
+      /** The required user permissions to run this command */
       userPerms?: PermissionResolvable[];
 
       /** Bot permissions that are required to run this command */

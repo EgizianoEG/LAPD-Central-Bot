@@ -11,7 +11,7 @@ const GuildProfile = require("../../Models/GuildProfile.js");
  */
 async function UpdateLinkedRobloxUser(CmdInteraction, RobloxUserId = 0) {
   RobloxUserId = Number(RobloxUserId) || 0;
-  const GuildDoc = await GuildModel.findById(CmdInteraction.guildId).exec();
+  const GuildDoc = await GuildModel.findById(CmdInteraction.guildId).select("members").exec();
   const Member = await GuildProfile.findOne({
     user_id: CmdInteraction.user.id,
     guild_id: CmdInteraction.guildId,

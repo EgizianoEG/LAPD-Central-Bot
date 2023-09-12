@@ -1,5 +1,3 @@
-/* eslint-disable no-extra-parens */
-// TODO: Authorize uer command execution before continuing, add the ability to specify the default shift types.
 // -------------
 // Dependencies:
 // ------------------------------------------------------------------------------------
@@ -21,7 +19,7 @@ const {
   UnauthorizedEmbed,
 } = require("../../../../../Utilities/Classes/ExtraEmbeds");
 
-const { IsValidShiftTypeName } = require("../../../../../Utilities/Strings/Validator");
+const { IsValidShiftTypeName } = require("../../../../../Utilities/Other/Validator");
 const { SendErrorReply } = require("../../../../../Utilities/Other/SendReply");
 const CreateShiftType = require("../../../../../Utilities/Database/CreateShiftType");
 const GetShiftTypes = require("../../../../../Utilities/Database/GetShiftTypes");
@@ -43,7 +41,7 @@ async function HandleNameValidation(Interaction, ShiftTypeName) {
   if (!IsValidShiftTypeName(ShiftTypeName)) {
     return SendErrorReply({
       Ephemeral: true,
-      Interact: Interaction,
+      Interaction,
       Title: "Malformed Shift Type Name",
       Message:
         "The name of a shift type may only consist of letters, numerals, spaces, underscores, dashes, and periods.",
@@ -51,7 +49,7 @@ async function HandleNameValidation(Interaction, ShiftTypeName) {
   } else if (ShiftTypeName.match(/Default/i)) {
     return SendErrorReply({
       Ephemeral: true,
-      Interact: Interaction,
+      Interaction,
       Title: "Preserved Shift Type Name",
       Message:
         "The name of the `Default` shift type is preserved and cannot be overridden, deleted, or created.",
@@ -66,7 +64,7 @@ async function HandleNameValidation(Interaction, ShiftTypeName) {
     if (Exists)
       return SendErrorReply({
         Ephemeral: true,
-        Interact: Interaction,
+        Interaction,
         Title: "Shift Type Already Exists",
         Message: `There is already a shift type named \`${ShiftTypeName}\`. Please make sure you're creating a distinct shift type.`,
       });
@@ -230,7 +228,7 @@ async function Callback(_, Interaction) {
           SendErrorReply({
             Title: Response.title,
             Message: Response.message,
-            Interact: LastInteraction,
+            Interaction: LastInteraction,
           });
         } else {
           LastInteraction.reply({
@@ -284,7 +282,7 @@ async function Callback(_, Interaction) {
       );
 
       SendErrorReply({
-        Interact: LastInteraction,
+        Interaction: LastInteraction,
         Template: "AppError",
       });
     }

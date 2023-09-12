@@ -1,4 +1,3 @@
-/* eslint-disable no-extra-parens */
 // -------------
 // Dependencies:
 // ------------------------------------------------------------------------------------
@@ -19,7 +18,7 @@ const {
   UnauthorizedEmbed,
 } = require("../../../../../Utilities/Classes/ExtraEmbeds");
 
-const { IsValidShiftTypeName } = require("../../../../../Utilities/Strings/Validator");
+const { IsValidShiftTypeName } = require("../../../../../Utilities/Other/Validator");
 const { SendErrorReply } = require("../../../../../Utilities/Other/SendReply");
 const DeleteShiftType = require("../../../../../Utilities/Database/DeleteShiftType");
 const GetShiftTypes = require("../../../../../Utilities/Database/GetShiftTypes");
@@ -38,7 +37,7 @@ async function HandleNameValidation(Interaction, ShiftTypeName) {
   if (!IsValidShiftTypeName(ShiftTypeName)) {
     return SendErrorReply({
       Ephemeral: true,
-      Interact: Interaction,
+      Interaction,
       Title: "Malformed Shift Type Name",
       Message:
         "The name of a shift type may only consist of letters, numerals, spaces, underscores, dashes, and periods.",
@@ -46,7 +45,7 @@ async function HandleNameValidation(Interaction, ShiftTypeName) {
   } else if (ShiftTypeName.match(/Default/i)) {
     return SendErrorReply({
       Ephemeral: true,
-      Interact: Interaction,
+      Interaction,
       Title: "Preserved Shift Type",
       Message: "Cannot delete the preserved shift type `Default`.",
     });
@@ -60,7 +59,7 @@ async function HandleNameValidation(Interaction, ShiftTypeName) {
     if (!Exists)
       return SendErrorReply({
         Ephemeral: true,
-        Interact: Interaction,
+        Interaction,
         Title: "Shift Type Not Found",
         Message: `The shift type \`${ShiftTypeName}\` does not exist in the server and cannot be deleted.`,
       });
@@ -158,7 +157,7 @@ async function Callback(_, Interaction) {
     if (Err.message.match(/reason: time/)) {
       await DisablePrompt();
       return SendErrorReply({
-        Interact: PromptMessage,
+        Interaction: PromptMessage,
         Title: "Timed Out",
         Message: "Shift type deletion has been cancelled due to inactivity.",
       });
@@ -181,7 +180,7 @@ async function Callback(_, Interaction) {
 
         if (Response instanceof Error) {
           return SendErrorReply({
-            Interact: ButtonInteract,
+            Interaction: ButtonInteract,
             Title: Response.title,
             Message: Response.message,
           });

@@ -6,9 +6,11 @@ const GuildModel = require("../../Models/Guild.js");
  * @return {Promise<Utilities.Database.GuildShiftType[]>}
  */
 async function GetShiftTypes(GuildId) {
-  return GuildModel.findById(GuildId, "settings.shifts.types").then((GuildData) => {
-    return GuildData?.settings.shifts.types.toObject() ?? [];
-  });
+  return GuildModel.findById(GuildId)
+    .select("settings.shifts.types")
+    .then((GuildData) => {
+      return GuildData?.settings.shifts.types.toObject() ?? [];
+    });
 }
 
 // ----------------------------

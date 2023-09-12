@@ -1,6 +1,6 @@
 const Path = require("path");
 const GetFiles = require("./GetFiles");
-const { IsValidCmdObject } = require("../Strings/Validator");
+const { IsValidCmdObject } = require("./Validator");
 // ----------------------------------------------------------------
 
 /**

@@ -94,10 +94,9 @@ async function GetCurrentWeather(Options = { Units: "imperial" }) {
         parseFloat(Convert(WeatherData.pressure).from("hPa").to(Units.Pressure.trim()).toFixed(1)) +
         Units.Pressure;
     }
-    return WeatherData;
-  } else {
-    return WeatherData;
   }
+
+  return WeatherData;
 }
 
 // ------------------------------------------------------------------------------------

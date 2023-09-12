@@ -1,5 +1,5 @@
 const { default: Axios } = require("axios");
-const { IsValidRobloxUsername } = require("../Strings/Validator");
+const { IsValidRobloxUsername } = require("../Other/Validator");
 const {
   APICache: { UsernameSearches },
 } = require("../Other/Cache");

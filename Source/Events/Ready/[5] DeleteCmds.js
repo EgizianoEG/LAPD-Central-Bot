@@ -43,7 +43,7 @@ module.exports = async function RemoveCommands(Client) {
     const GlobalCommands = (await GetAppCommands(Client)).cache;
 
     for (const CommandName of GlobalCommandsToDelete) {
-      const Existing = GlobalCommands.find((Command) => Command.name === CommandName);
+      const Existing = GlobalCommands.some((Command) => Command.name === CommandName);
       if (Existing) {
         MatchingCommands.push(Existing);
       }

@@ -38,15 +38,14 @@
     /* Emit */
     "outDir": "Build",
     "sourceMap": true,
-    // "removeComments": true,
-    // "noEmitOnError": true,
+    "noEmitOnError": true,
 
     /* Interop Constraints */
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
 
     /* Type Checking */
-    "strict": false,
+    "strict": true,
     "noImplicitAny": false,
     "strictNullChecks": true,
     "strictFunctionTypes": true,

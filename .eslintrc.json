@@ -22,10 +22,11 @@
     "sonarjs/cognitive-complexity": ["warn", 35],
 
     "no-extra-parens": [
-      "warn",
+      "off",
       "all",
       {
-        "nestedBinaryExpressions": false
+        "nestedBinaryExpressions": false,
+        "conditionalAssign": false
       }
     ],
 

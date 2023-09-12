@@ -11,14 +11,15 @@ const { EscapeRegex } = require("../Strings/Converter");
 async function AutocompleteShiftType(TypedValue, GuildId) {
   let Suggestions;
   const EscapedValue = EscapeRegex(TypedValue);
-  const ShiftTypes = await GuildModel.findById(GuildId, "settings.shifts.types").then(
-    (GuildData) => {
+  const ShiftTypes = await GuildModel.findById(GuildId)
+    .select("settings.shifts.types")
+    .then((GuildData) => {
       if (!GuildData) return [];
+      console.log(GuildData);
       return GuildData.settings.shifts.types
         .map((ShiftType) => ShiftType.name)
         .sort((a, b) => a.localeCompare(b));
-    }
-  );
+    });
 
   if (!ShiftTypes.length) {
     return [];

@@ -4,7 +4,7 @@ declare global {
   namespace Utilities {
     declare interface ErrorReplyOptions {
       /** The repliable interaction */
-      Interact: RepliableInteraction;
+      Interaction: RepliableInteraction;
 
       /** Whether this reply is ephemeral or publicly visible */
       Ephemeral?: boolean;

@@ -14,7 +14,7 @@ const ReplyTemplates = {
  * @param {Utilities.ErrorReplyOptions} Options
  */
 function SendErrorReply(Options) {
-  if (!Options.Interact) return;
+  if (!Options.Interaction) return;
   if (Options.Template) {
     Options.Title = ReplyTemplates[Options.Template]?.Title ?? Options.Title;
     Options.Message = ReplyTemplates[Options.Template]?.Message ?? Options.Message;
@@ -23,7 +23,7 @@ function SendErrorReply(Options) {
   return new ErrorEmbed()
     .setTitle(Options.Title ?? "Error")
     .setDescription(Options.Message ?? "An unknown error occurred.")
-    .replyToInteract(Options.Interact, Options.Ephemeral);
+    .replyToInteract(Options.Interaction, Options.Ephemeral);
 }
 
 // // ----------------------------------------------------------------

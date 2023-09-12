@@ -13,8 +13,8 @@ const AppError = require("../Classes/AppError.js");
  * @returns The shift type after being saved if creation succeeded or an `AppError` instance if there was an exception (would be thrown if the exception was from the database)
  */
 async function CreateShiftType(Data) {
-  const GuildDoc = await GuildModel.findById(Data.guild_id, "settings.shifts.types").exec();
-  const ShiftTypeExists = GuildDoc?.settings.shifts.types.find(
+  const GuildDoc = await GuildModel.findById(Data.guild_id).select("settings.shifts.types").exec();
+  const ShiftTypeExists = GuildDoc?.settings.shifts.types.some(
     (ShiftType) => ShiftType.name === Data.name
   );
 
@@ -28,7 +28,7 @@ async function CreateShiftType(Data) {
   if (ShiftTypeExists) {
     return new AppError(
       "Shift Type Already Exists",
-      `There is already a shift type named \`${Data.name}\`. Please make sure you're creating a distinct shift type.`
+      `A shift type with the name \`${Data.name}\` does already exist. Please make sure you're creating a distinct shift type.`
     );
   } else if (GuildDoc.settings.shifts.types.length > 9) {
     return new AppError(

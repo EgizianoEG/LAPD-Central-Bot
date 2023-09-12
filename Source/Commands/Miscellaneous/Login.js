@@ -21,7 +21,7 @@ const GetIdFromUsername = require("../../Utilities/Roblox/UserIdByUsername");
 const AutocompleteUsername = require("../../Utilities/Autocompletion/Username");
 const UpdateLinkedRobloxUser = require("../../Utilities/Database/UpdateLinkedUser");
 const { InfoEmbed, SuccessEmbed } = require("../../Utilities/Classes/ExtraEmbeds");
-const { IsValidRobloxUsername } = require("../../Utilities/Strings/Validator");
+const { IsValidRobloxUsername } = require("../../Utilities/Other/Validator");
 const { DummyText } = require("../../Utilities/Strings/Random");
 const { SendErrorReply } = require("../../Utilities/Other/SendReply");
 const { format } = require("util");
@@ -41,7 +41,7 @@ async function HandleInvalidUsername(Interaction, RobloxUsername) {
   if (!IsValidRobloxUsername(RobloxUsername)) {
     return SendErrorReply({
       Ephemeral: true,
-      Interact: Interaction,
+      Interaction,
       Title: "Malformed Username",
       Message: format(
         "The provided username, `%s`, is malformed.\n",
@@ -52,7 +52,7 @@ async function HandleInvalidUsername(Interaction, RobloxUsername) {
   } else if ((await GetIdFromUsername(RobloxUsername)) === null) {
     return SendErrorReply({
       Ephemeral: true,
-      Interact: Interaction,
+      Interaction,
       Title: "Hold up!",
       Message: format(
         "Cannot find the input user, `%s`, on Roblox. Please ensure that the username is valid and try again.",
@@ -75,7 +75,7 @@ async function HandleUserLoginStatus(Interaction) {
     const LoggedUsername = (await GetPlayerInfo(UserLoggedIn)).name;
     return SendErrorReply({
       Ephemeral: true,
-      Interact: Interaction,
+      Interaction,
       Title: "Hold up!",
       Message: format(
         "You are already logged in as `%s`.\nDid you mean to log out instead?",
@@ -137,7 +137,11 @@ async function Callback(_, Interaction) {
       new ButtonBuilder()
         .setLabel("Cancel Login")
         .setCustomId("cancel-login")
-        .setStyle(ButtonStyle.Secondary)
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setLabel("Profile")
+        .setStyle(ButtonStyle.Link)
+        .setURL(`https://www.roblox.com/users/${RobloxUserId}`)
     );
 
   const ProcessPrompt = await Interaction.reply({
@@ -158,7 +162,7 @@ async function Callback(_, Interaction) {
       await DisablePrompt();
       return SendErrorReply({
         Ephemeral: true,
-        Interact: Interaction,
+        Interaction,
         Title: "Process Cancelled",
         Message:
           "The login process has been terminated due to no response being received within five minutes.",
@@ -187,7 +191,7 @@ async function Callback(_, Interaction) {
         } else {
           return SendErrorReply({
             Ephemeral: true,
-            Interact: ButtonInteract,
+            Interaction: ButtonInteract,
             Title: "Verification Failed",
             Message: format(
               "Login verification as `%s` failed.\nPlease rerun the command and ensure you follow the appropriate instructions.",

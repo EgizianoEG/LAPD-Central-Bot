@@ -34,8 +34,33 @@ function IsValidCmdObject(CmdObject, Exceptions = []) {
   );
 }
 
+/**
+ * Checks if a given value is an object (excluding arrays and null)
+ * @template Any
+ * @param {Any} Value
+ * @returns {Val is Object}
+ */
+function IsPlainObject(Value) {
+  return !!Value && Value.constructor === Object;
+}
+
+/**
+ * Checks if a given object is empty and has no properties in it
+ * @template Val
+ * @param {Val} Obj
+ * @returns {Val is {}}
+ */
+function IsEmptyObject(Obj) {
+  for (const Prop in Obj) {
+    if (Prop || !Prop) return false;
+  }
+  return true;
+}
+
 module.exports = {
   IsValidRobloxUsername,
   IsValidShiftTypeName,
   IsValidCmdObject,
+  IsPlainObject,
+  IsEmptyObject,
 };
