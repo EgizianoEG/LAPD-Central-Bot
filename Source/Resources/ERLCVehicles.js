@@ -70,7 +70,7 @@ const Data = [
         },
       },
       {
-        name: "Challenger SRT Hellcat Redeye Widebody",
+        name: "Challenger SRT Hellcat Widebody",
         alias: "Determinator SFP Blackjack Widebody",
         style: "Coupe",
         class: "Car",

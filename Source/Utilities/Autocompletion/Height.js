@@ -1,5 +1,4 @@
 const HeightOptions = [];
-const Cache = {};
 
 for (let i = 0; i <= 7; i++) {
   for (let j = 0; j <= 11; j++) {
@@ -15,9 +14,6 @@ for (let i = 0; i <= 7; i++) {
  */
 function AutocompleteHeight(TypedValue) {
   let Suggestions;
-  if (TypedValue in Cache) {
-    return Cache[TypedValue];
-  }
 
   if (TypedValue.match(/^\s*$/)) {
     Suggestions = HeightOptions.filter((Element) => {
@@ -33,14 +29,11 @@ function AutocompleteHeight(TypedValue) {
     });
   } else {
     Suggestions = HeightOptions.filter((Element) => {
-      return Element.startsWith(TypedValue);
+      return Element.includes(TypedValue);
     });
   }
 
-  Suggestions = Suggestions.map((Choice) => ({ name: Choice, value: Choice }));
-  Cache[TypedValue] = Suggestions;
-
-  return Suggestions;
+  return Suggestions.map((Choice) => ({ name: Choice, value: Choice }));
 }
 
 // ---------------------------------

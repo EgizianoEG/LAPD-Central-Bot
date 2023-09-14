@@ -3,6 +3,7 @@ const AutocompleteHeight = require("../../../Utilities/Autocompletion/Height.js"
 const AutocompleteUsername = require("../../../Utilities/Autocompletion/Username.js");
 const AutocompleteWeight = require("../../../Utilities/Autocompletion/Weight.js");
 const AutocompleteVehicle = require("../../../Utilities/Autocompletion/Vehicle.js");
+const AutocompleteColor = require("../../../Utilities/Autocompletion/Color.js");
 
 const Subcommands = [
   require("./Deps/CitFine.js"),
@@ -29,17 +30,23 @@ async function Callback(Client, Interaction) {
   }
 }
 
+/**
+ * @param {DiscordJS.AutocompleteInteraction} Interaction
+ * @returns {Promise<void>}
+ */
 async function Autocomplete(Interaction) {
   const { name, value } = Interaction.options.getFocused(true);
   let Suggestions = [];
 
-  if (name === "height") {
-    Suggestions = AutocompleteHeight(value);
-  } else if (name === "name") {
+  if (name === "name") {
     Suggestions = await AutocompleteUsername(value);
+  } else if (name === "height") {
+    Suggestions = AutocompleteHeight(value);
   } else if (name === "weight") {
     Suggestions = AutocompleteWeight(value);
-  } else if (name === "vehicle") {
+  } else if (name === "color" || name === "vehicle-color") {
+    Suggestions = AutocompleteColor(value);
+  } else if (name === "vehicle" || name === "vehicle-model") {
     Suggestions = AutocompleteVehicle(value);
   }
 
@@ -53,7 +60,7 @@ async function Autocomplete(Interaction) {
 const CommandObject = {
   data: new SlashCommandBuilder()
     .setName("log")
-    .setDescription("Logs a particular information.")
+    .setDescription("Logs a particular information into the database.")
     .setDMPermission(false)
     .addSubcommand(Subcommands[0].data)
     .addSubcommand(Subcommands[1].data)
@@ -61,7 +68,7 @@ const CommandObject = {
 
   callback: Callback,
   autocomplete: Autocomplete,
-  options: {},
+  options: { forceUpdate: false },
 };
 
 // ---------------------------------------------------------------------------------------

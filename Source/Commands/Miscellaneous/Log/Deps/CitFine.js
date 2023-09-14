@@ -22,7 +22,7 @@ const CommandObject = {
     )
     .addStringOption((Option) =>
       Option.setName("reason")
-        .setDescription("The reason of the given fine.")
+        .setDescription("The reason of the given cite.")
         .setMinLength(5)
         .setRequired(true)
     )
@@ -30,19 +30,24 @@ const CommandObject = {
       Option.setName("vehicle-plate")
         .setDescription("The license plate of the cited person's vehicle.")
         .setMinLength(3)
+        .setMaxLength(7)
         .setRequired(true)
     )
     .addStringOption((Option) =>
       Option.setName("vehicle-model")
         .setDescription("The cited person's vehicle model.")
         .setMinLength(5)
+        .setMaxLength(100)
         .setRequired(true)
+        .setAutocomplete(true)
     )
     .addStringOption((Option) =>
       Option.setName("vehicle-color")
         .setDescription("The cited person's vehicle color.")
         .setMinLength(3)
+        .setMaxLength(15)
         .setRequired(true)
+        .setAutocomplete(true)
     ),
 };
 

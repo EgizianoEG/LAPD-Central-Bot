@@ -1,4 +1,5 @@
 /* eslint-disable sonarjs/cognitive-complexity */
+const FormatStr = require("util").format;
 const { TitleCase } = require("./Converter.js");
 // ---------------------------------------------
 /**
@@ -521,9 +522,9 @@ function UnorderedList(Input) {
 /**
  * Returns a formatted string representation of the user's username, display name as well as the id if requested
  * @param {Object} UserData
- *      @param {String} UserData.displayName - The user's display name
- *      @param {String} UserData.name - The user's username
- *      @param {(String|Number|null)} UserData.id - The user's username
+ *   @param {String} UserData.displayName - The user's display name
+ *   @param {String} UserData.name - The user's username
+ *   @param {(String|Number|null)} UserData.id - The user's username
  * @param {Boolean} IncludeID
  * @returns {(String|null)} - The formatted username or null of either the user's display name or username is not provided
  * @example
@@ -551,6 +552,32 @@ function FormatUsername(UserData, IncludeID) {
   return null;
 }
 
+/**
+ * Returns a formatted name for a given vehicle model and its brand details
+ * Vehicle model name string should be always defined and not empty for a proper result.
+ * @param {Resources.VehicleModel} Model
+ * @param {Object} Brand
+ *   @param {String} Brand.name
+ *   @param {String} Brand.alias
+ * @returm {`${string} ${string} ${string} (${string} ${string} ${string})`}
+ */
+function FromatVehicleName(Model, Brand) {
+  const OrgMYear = Model.model_year.org ? `${Model.model_year.org} ` : "";
+  const AltMYear = Model.model_year.alt ? `${Model.model_year.alt} ` : "";
+  const BrandName = Brand.name ? `${Brand.name} ` : "";
+  const BrandAlias = Brand.alias ? `${Brand.alias} ` : "";
+
+  return FormatStr(
+    "%s%s%s (%s%s%s)",
+    OrgMYear,
+    BrandName,
+    Model.name,
+    AltMYear,
+    BrandAlias,
+    Model.alias
+  );
+}
+
 module.exports = {
   UnorderedList,
   FormatCharges,
@@ -558,4 +585,5 @@ module.exports = {
   FormatHeight,
   FormatAge,
   FormatUsername,
+  FromatVehicleName,
 };
