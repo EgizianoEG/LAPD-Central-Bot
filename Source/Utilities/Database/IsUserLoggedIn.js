@@ -11,8 +11,8 @@ async function IsLoggedIn(CmdInteraction) {
   const GuildDoc = await GuildModel.findById(CmdInteraction.guildId).select("members").exec();
   const Member = await GuildProfile.findOne(
     {
-      user_id: CmdInteraction.user.id,
-      guild_id: CmdInteraction.guildId,
+      _id: CmdInteraction.user.id,
+      guild: CmdInteraction.guildId,
     },
     { linked_account: 1 }
   ).exec();
@@ -22,8 +22,8 @@ async function IsLoggedIn(CmdInteraction) {
   }
 
   await GuildProfile.create({
-    user_id: CmdInteraction.user.id,
-    guild_id: CmdInteraction.guildId,
+    _id: CmdInteraction.user.id,
+    guild: CmdInteraction.guildId,
   }).then((Doc) => {
     GuildDoc?.members.push(Doc._id);
     return GuildDoc?.save();

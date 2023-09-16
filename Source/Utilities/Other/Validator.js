@@ -36,8 +36,8 @@ function IsValidCmdObject(CmdObject, Exceptions = []) {
 
 /**
  * Checks if a given value is an object (excluding arrays and null)
- * @template Any
- * @param {Any} Value
+ * @template Val
+ * @param {Val} Value
  * @returns {Val is Object}
  */
 function IsPlainObject(Value) {

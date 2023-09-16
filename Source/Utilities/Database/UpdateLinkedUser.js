@@ -13,8 +13,8 @@ async function UpdateLinkedRobloxUser(CmdInteraction, RobloxUserId = 0) {
   RobloxUserId = Number(RobloxUserId) || 0;
   const GuildDoc = await GuildModel.findById(CmdInteraction.guildId).select("members").exec();
   const Member = await GuildProfile.findOne({
-    user_id: CmdInteraction.user.id,
-    guild_id: CmdInteraction.guildId,
+    _id: CmdInteraction.user.id,
+    guild: CmdInteraction.guildId,
   }).exec();
 
   if (Member) {
@@ -22,8 +22,8 @@ async function UpdateLinkedRobloxUser(CmdInteraction, RobloxUserId = 0) {
     return Member.save();
   } else {
     return GuildProfile.create({
-      user_id: CmdInteraction.user.id,
-      guild_id: CmdInteraction.guildId,
+      _id: CmdInteraction.user.id,
+      guild: CmdInteraction.guildId,
       linked_account: {
         roblox_user_id: RobloxUserId,
       },

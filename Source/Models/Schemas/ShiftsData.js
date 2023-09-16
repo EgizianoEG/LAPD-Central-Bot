@@ -16,7 +16,7 @@ const ShiftsData = new Schema({
 
   logs: [
     {
-      type: Schema.ObjectId,
+      type: String,
       ref: "Shift",
     },
   ],

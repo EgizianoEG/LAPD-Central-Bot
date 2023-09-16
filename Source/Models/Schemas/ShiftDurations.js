@@ -3,8 +3,8 @@ const { Schema } = require("mongoose");
 const ShiftDurations = new Schema({
   total: {
     type: Number,
-    min: 0,
     default: 0,
+    min: 0,
   },
   on_duty: {
     type: Number,

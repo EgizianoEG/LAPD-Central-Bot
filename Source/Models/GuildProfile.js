@@ -2,13 +2,13 @@ const { Schema, model } = require("mongoose");
 const ShiftsDataSchema = require("./Schemas/ShiftsData");
 
 const ProfileSchema = new Schema({
-  user_id: {
+  _id: {
     type: String,
     match: /^\d{15,22}$/,
     required: true,
   },
 
-  guild_id: {
+  guild: {
     type: String,
     ref: "Guild",
     match: /^\d{15,22}$/,
@@ -35,5 +35,7 @@ const ProfileSchema = new Schema({
   },
 });
 
+ProfileSchema.set("_id", false);
 ProfileSchema.set("versionKey", false);
+
 module.exports = model("GuildProfile", ProfileSchema, "profiles");

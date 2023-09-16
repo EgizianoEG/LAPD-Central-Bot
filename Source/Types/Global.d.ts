@@ -1,4 +1,5 @@
-import * as DiscordJSMask from "discord.js";
+import type * as DiscordJSMask from "discord.js";
+import type * as MongooseMask from "mongoose";
 import type {
   ApplicationCommandManager,
   GuildApplicationCommandManager,
@@ -24,7 +25,9 @@ type CommandObjectDataType =
 
 declare global {
   export import DiscordJS = DiscordJSMask;
+  export import Mongoose = MongooseMask;
 
+  type Falsy = null | undefined | false | 0 | -0 | 0n | "";
   type MessageReplyOptions = string | MessagePayload | InteractionReplyOptions;
   type RepliableInteraction =
     | ChatInputCommandInteraction

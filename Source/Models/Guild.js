@@ -32,7 +32,8 @@ const GuildSchema = new Schema({
   members: {
     type: [
       {
-        type: Schema.Types.ObjectId,
+        type: String,
+        match: /^\d{15,22}$/,
         ref: "GuildProfile",
       },
     ],
