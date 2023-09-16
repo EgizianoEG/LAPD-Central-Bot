@@ -1,6 +1,5 @@
-const GuildModel = require("../../Models/Guild.js");
 const GuildProfile = require("../../Models/GuildProfile.js");
-// -------------------------------------------------
+// ----------------------------------------------------------------
 
 /**
  * Checks if a given user is already logged in using the bot.
@@ -8,7 +7,6 @@ const GuildProfile = require("../../Models/GuildProfile.js");
  * @returns {Promise<Number>} Logged in Roblox user id. This value would be `0` if the user is not already logged in.
  */
 async function IsLoggedIn(CmdInteraction) {
-  const GuildDoc = await GuildModel.findById(CmdInteraction.guildId).select("members").exec();
   const Member = await GuildProfile.findOne(
     {
       _id: CmdInteraction.user.id,
@@ -24,13 +22,10 @@ async function IsLoggedIn(CmdInteraction) {
   await GuildProfile.create({
     _id: CmdInteraction.user.id,
     guild: CmdInteraction.guildId,
-  }).then((Doc) => {
-    GuildDoc?.members.push(Doc._id);
-    return GuildDoc?.save();
   });
 
   return 0;
 }
 
-// -------------------------
+// ----------------------------------------------------------------
 module.exports = IsLoggedIn;
