@@ -1,18 +1,25 @@
 // Dependencies:
 // -------------
+const {
+  time,
+  Collection,
+  DiscordAPIError,
+  PermissionsBitField,
+  PermissionFlagsBits,
+} = require("discord.js");
 
 const {
-  ErrorEmbed,
-  WarnEmbed,
   InfoEmbed,
+  WarnEmbed,
+  ErrorEmbed,
   UnauthorizedEmbed,
 } = require("../../Utilities/Classes/ExtraEmbeds");
 
 const { Discord } = require("../../Config/Secrets.json");
-const { Collection, PermissionFlagsBits, PermissionsBitField, time } = require("discord.js");
 const { UnorderedList } = require("../../Utilities/Strings/Formatter");
 const { PascalToNormal } = require("../../Utilities/Strings/Converter");
 const { SendErrorReply } = require("../../Utilities/Other/SendReply");
+
 const Chalk = require("chalk");
 const DefaultCmdCooldownDuration = 3;
 
@@ -46,17 +53,20 @@ module.exports = async (Client, Interaction) => {
     await HandleBotPermissions(CommandObject, Interaction);
     if (Interaction.replied) return;
 
-    // Execute the command's callback function if it exists
     if (typeof CommandObject.callback === "function") {
       await CommandObject.callback(Client, Interaction);
       if (!Interaction.replied) {
-        Interaction.reply({
+        await Interaction.reply({
           ephemeral: true,
           embeds: [
             new InfoEmbed()
               .setTitle("Hold up!")
               .setDescription("Seems like this command is still under development."),
           ],
+        }).catch((Err) => {
+          if (Err instanceof DiscordAPIError && (Err.code === 40_060 || Err.code === 10_062))
+            return;
+          throw Err;
         });
       }
     } else {
@@ -84,8 +94,8 @@ module.exports = async (Client, Interaction) => {
 /**
  * Command cooldowns for users
  * @param {DiscordClient} Client
- * @param {SlashCommandInteraction} Interaction
  * @param {SlashCommandObject} CommandObject
+ * @param {SlashCommandInteraction} Interaction
  */
 async function HandleCooldowns(Client, Interaction, CommandObject) {
   const CurrentTS = Date.now();
@@ -102,7 +112,7 @@ async function HandleCooldowns(Client, Interaction, CommandObject) {
 
   if (!Timestamps) return;
   if (Timestamps.has(Interaction.user.id)) {
-    const ExpTimestamp = Timestamps.get(Interaction.user.id) ?? 0 + CooldownDuration;
+    const ExpTimestamp = (Timestamps.get(Interaction.user.id) ?? 0) + CooldownDuration;
     if (CurrentTS < ExpTimestamp) {
       return Interaction.reply({
         ephemeral: true,
