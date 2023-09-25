@@ -5,20 +5,21 @@
 const {
   SlashCommandSubcommandBuilder,
   ActionRowBuilder,
-  ButtonBuilder,
   ComponentType,
+  ButtonBuilder,
   EmbedBuilder,
   ButtonStyle,
   Colors,
 } = require("discord.js");
 
+const { format: FormatStr } = require("util");
 const { Emojis, Embeds } = require("../../../../../Config/Shared.js");
-const { InfoEmbed, UnauthorizedEmbed } = require("../../../../../Utilities/Classes/ExtraEmbeds");
+const { InfoEmbed } = require("../../../../../Utilities/Classes/ExtraEmbeds");
 
 const Chalk = require("chalk");
 const Dedent = require("dedent").default;
-const { format: FormatStr } = require("util");
 const GetShiftTypes = require("../../../../../Utilities/Database/GetShiftTypes");
+const HandleCollectorFiltering = require("../../../../../Utilities/Other/HandleCollectorFilter");
 const Clamp = (Value, Min, Max) => Math.min(Math.max(Value, Min), Max);
 
 const ListFormatter = new Intl.ListFormat("en");
@@ -94,28 +95,6 @@ function CreateEmbedPages(ShiftTypesData, ShiftTypesPerPage) {
 }
 
 /**
- * A helper function that filters the component collector interactions to ensure authorization.
- * @param {SlashCommandInteraction} OriginalInteract - The user command interaction
- * @param {DiscordJS.MessageComponentInteraction} ReceivedInteract - The received interaction from the collector
- * @returns {Boolean} A boolean indicating if the interaction is authorized
- */
-function HandleCollectorFiltering(OriginalInteract, ReceivedInteract) {
-  if (OriginalInteract.user.id !== ReceivedInteract.user.id) {
-    ReceivedInteract.reply({
-      ephemeral: true,
-      embeds: [
-        new UnauthorizedEmbed().setDescription(
-          "You are not permitted to interact with a prompt that somebody else has initiated."
-        ),
-      ],
-    });
-    return false;
-  } else {
-    return true;
-  }
-}
-
-/**
  * Handles the command execution process for displaying all available duty shift types.
  * @param {DiscordClient} _ - The Discord.js client instance (not used in this function)
  * @param {SlashCommandInteraction<"cached">} Interaction - The user command interaction
@@ -146,7 +125,7 @@ async function Callback(_, Interaction) {
   }
 
   const NavButtonsActionRow =
-    /** @type {ActionRowBuilder<ButtonBuilder>} */
+    /** @type {ActionRowBuilder<ButtonBuilder & { data: { custom_id?: string } }>} */
     (new ActionRowBuilder()).addComponents(
       new ButtonBuilder()
         .setCustomId("first")
@@ -169,6 +148,10 @@ async function Callback(_, Interaction) {
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder().setCustomId("last").setEmoji(Emojis.NavLast).setStyle(ButtonStyle.Primary)
     );
+
+  NavButtonsActionRow.components.forEach((Comp) =>
+    Comp.setCustomId(`${Comp.data.custom_id}:${Interaction.user.id}`)
+  );
 
   const InteractReply = await Interaction.reply({
     embeds: [Pages[0]],

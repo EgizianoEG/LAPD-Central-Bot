@@ -13,16 +13,13 @@ const {
   Colors,
 } = require("discord.js");
 
-const {
-  InfoEmbed,
-  SuccessEmbed,
-  UnauthorizedEmbed,
-} = require("../../../../../Utilities/Classes/ExtraEmbeds");
-
+const { InfoEmbed, SuccessEmbed } = require("../../../../../Utilities/Classes/ExtraEmbeds");
 const { IsValidShiftTypeName } = require("../../../../../Utilities/Other/Validator");
 const { SendErrorReply } = require("../../../../../Utilities/Other/SendReply");
+
 const CreateShiftType = require("../../../../../Utilities/Database/CreateShiftType");
 const GetShiftTypes = require("../../../../../Utilities/Database/GetShiftTypes");
+const HandleCollectorFiltering = require("../../../../../Utilities/Other/HandleCollectorFilter");
 
 const ListFormatter = new Intl.ListFormat("en");
 const Dedent = require("dedent").default;
@@ -69,31 +66,6 @@ async function HandleNameValidation(Interaction, ShiftTypeName) {
         Message: `There is already a shift type named \`${ShiftTypeName}\`. Please make sure you're creating a distinct shift type.`,
       });
   }
-}
-
-/**
- * A helper function that filters the component collector interactions to ensure authorization.
- * @param {SlashCommandInteraction<"cached">} OriginalInteract - The user command interaction
- * @param {DiscordJS.MessageComponentInteraction} ReceivedInteract - The received interaction from the collector
- * @returns {Boolean} A boolean indicating if the interaction is authorized
- */
-function HandleCollectorFiltering(OriginalInteract, ReceivedInteract) {
-  if (ReceivedInteract.isButton() || ReceivedInteract.isRoleSelectMenu()) {
-    if (OriginalInteract.user.id !== ReceivedInteract.user.id) {
-      ReceivedInteract.reply({
-        ephemeral: true,
-        embeds: [
-          new UnauthorizedEmbed().setDescription(
-            "You are not permitted to interact with a prompt that somebody else has initiated."
-          ),
-        ],
-      });
-      return false;
-    } else {
-      return true;
-    }
-  }
-  return false;
 }
 
 /**
@@ -157,7 +129,7 @@ async function Callback(_, Interaction) {
     /** @type {ActionRowBuilder<RoleSelectMenuBuilder>} */
     (new ActionRowBuilder()).addComponents(
       new RoleSelectMenuBuilder()
-        .setCustomId("permissible-roles")
+        .setCustomId(`permissible-roles:${Interaction.user.id}`)
         .setPlaceholder("Specify which roles may utilize this shift type")
         .setMinValues(0)
         .setMaxValues(15)
@@ -165,11 +137,11 @@ async function Callback(_, Interaction) {
     /** @type {ActionRowBuilder<ButtonBuilder>} */
     (new ActionRowBuilder()).addComponents(
       new ButtonBuilder()
-        .setCustomId("confirm-creation")
+        .setCustomId(`confirm-creation:${Interaction.user.id}`)
         .setLabel("Confirm and Create")
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
-        .setCustomId("cancel-creation")
+        .setCustomId(`cancel-creation:${Interaction.user.id}`)
         .setLabel("Cancel Creation")
         .setStyle(ButtonStyle.Secondary)
     ),

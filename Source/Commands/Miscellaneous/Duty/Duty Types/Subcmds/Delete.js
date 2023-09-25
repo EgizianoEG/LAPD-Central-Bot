@@ -3,25 +3,22 @@
 // ------------------------------------------------------------------------------------
 
 const {
+  Colors,
   ButtonStyle,
   EmbedBuilder,
   ButtonBuilder,
   ComponentType,
   ActionRowBuilder,
   SlashCommandSubcommandBuilder,
-  Colors,
 } = require("discord.js");
 
-const {
-  InfoEmbed,
-  SuccessEmbed,
-  UnauthorizedEmbed,
-} = require("../../../../../Utilities/Classes/ExtraEmbeds");
-
+const { InfoEmbed, SuccessEmbed } = require("../../../../../Utilities/Classes/ExtraEmbeds");
 const { IsValidShiftTypeName } = require("../../../../../Utilities/Other/Validator");
 const { SendErrorReply } = require("../../../../../Utilities/Other/SendReply");
-const DeleteShiftType = require("../../../../../Utilities/Database/DeleteShiftType");
+
 const GetShiftTypes = require("../../../../../Utilities/Database/GetShiftTypes");
+const DeleteShiftType = require("../../../../../Utilities/Database/DeleteShiftType");
+const HandleCollectorFiltering = require("../../../../../Utilities/Other/HandleCollectorFilter");
 const Dedent = require("dedent").default;
 
 // ---------------------------------------------------------------------------------------
@@ -67,28 +64,6 @@ async function HandleNameValidation(Interaction, ShiftTypeName) {
 }
 
 /**
- * A helper function that filters the component collector interactions to ensure authorization.
- * @param {SlashCommandInteraction} OriginalInteract - The user command interaction
- * @param {DiscordJS.MessageComponentInteraction} ReceivedInteract - The received interaction from the collector
- * @returns {Boolean} A boolean indicating if the interaction is authorized
- */
-function HandleCollectorFiltering(OriginalInteract, ReceivedInteract) {
-  if (OriginalInteract.user.id !== ReceivedInteract.user.id) {
-    ReceivedInteract.reply({
-      ephemeral: true,
-      embeds: [
-        new UnauthorizedEmbed().setDescription(
-          "You are not permitted to interact with a prompt that somebody else has initiated."
-        ),
-      ],
-    });
-    return false;
-  } else {
-    return true;
-  }
-}
-
-/**
  * Handles the command execution process for deleting a duty shift type.
  * @param {DiscordClient} _ - The Discord.js client instance (not used in this function)
  * @param {SlashCommandInteraction<"cached">} Interaction - The user command interaction
@@ -130,11 +105,11 @@ async function Callback(_, Interaction) {
     /** @type {ActionRowBuilder<ButtonBuilder>} */
     (new ActionRowBuilder()).addComponents(
       new ButtonBuilder()
-        .setCustomId("confirm-deletion")
+        .setCustomId(`confirm-deletion:${Interaction.user.id}`)
         .setLabel("Confirm and Delete")
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
-        .setCustomId("cancel-deletion")
+        .setCustomId(`cancel-deletion:${Interaction.user.id}`)
         .setLabel("Cancel Deletion")
         .setStyle(ButtonStyle.Secondary)
     ),
@@ -145,7 +120,6 @@ async function Callback(_, Interaction) {
     components: PromptComponents,
   });
 
-  // Disables the prompt and prevents any further interaction with its components
   const DisablePrompt = () => {
     PromptComponents[0].components.forEach((Button) => Button.setDisabled(true));
     return PromptMessage.edit({
@@ -153,14 +127,10 @@ async function Callback(_, Interaction) {
     });
   };
 
+  /** @param {Error} Err */
   const HandleCollectorExceptions = async (Err) => {
     if (Err.message.match(/reason: time/)) {
       await DisablePrompt();
-      return SendErrorReply({
-        Interaction: PromptMessage,
-        Title: "Timed Out",
-        Message: "Shift type deletion has been cancelled due to inactivity.",
-      });
     } else if (Err.message.match(/reason: \w+Delete/)) {
       /* ignore message/channel/guild deletion */
     } else {
