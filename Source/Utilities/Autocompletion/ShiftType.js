@@ -15,7 +15,6 @@ async function AutocompleteShiftType(TypedValue, GuildId) {
     .select("settings.shifts.types")
     .then((GuildData) => {
       if (!GuildData) return [];
-      console.log(GuildData);
       return GuildData.settings.shifts.types
         .map((ShiftType) => ShiftType.name)
         .sort((a, b) => a.localeCompare(b));

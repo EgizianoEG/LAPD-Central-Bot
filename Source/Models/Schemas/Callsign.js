@@ -13,7 +13,7 @@ const CallsignSchema = new Schema({
   },
 
   // @see http://forums.radioreference.com/threads/lapd-supervisory-command-staff-callsigns.451920/post-3834919
-  info: {
+  designation: {
     _id: false,
     required: true,
     alias: "callsign",
@@ -27,10 +27,33 @@ const CallsignSchema = new Schema({
 
       unit_type: {
         type: String,
-        enum: ["A", "B", "C", "E", "F", "G", "H", "L", "M", "T", "W", "Y", "I", "K", "X", "Z"],
         trim: true,
         required: true,
         uppercase: true,
+        enum: [
+          "A",
+          "B",
+          "C",
+          "E",
+          "F",
+          "G",
+          "K9",
+          "H",
+          "L",
+          "M",
+          "N",
+          "P",
+          "R",
+          "S",
+          "U",
+          "T",
+          "W",
+          "Y",
+          "I",
+          "K",
+          "X",
+          "Z",
+        ],
       },
 
       identifier: {
@@ -78,7 +101,7 @@ const CallsignSchema = new Schema({
 CallsignSchema.set("versionKey", false);
 CallsignSchema.remove("formatted");
 CallsignSchema.virtual("formatted").get(function () {
-  return this.info.division + this.info.unit_type + "-" + this.info.identifier;
+  return this.designation.division + this.designation.unit_type + "-" + this.designation.identifier;
 });
 
 module.exports = CallsignSchema;

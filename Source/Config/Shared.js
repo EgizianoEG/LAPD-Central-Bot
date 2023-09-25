@@ -25,7 +25,7 @@ const SharedData = {
     },
   },
 
-  /** @type {Record<string, `<:${string}:${string}>`>} */
+  // /** @type {Record<string, `<:${string}:${string}>`>} */
   Emojis: {
     LosAngeles: "<:losangeles:1134606469828984873>",
     NavNext: "<:ArrowForward:1146177481653624904>",
