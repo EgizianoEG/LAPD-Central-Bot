@@ -49,6 +49,28 @@ const ShiftSchema = new Schema(
       default: {},
       type: ShiftDurations,
     },
+
+    events: {
+      _id: false,
+      default: {},
+      type: {
+        breaks: [
+          {
+            _id: false,
+            default: undefined,
+            type: [Number, Number],
+          },
+        ],
+        arrests: {
+          type: Number,
+          default: 0,
+        },
+        citations: {
+          type: Number,
+          default: 0,
+        },
+      },
+    },
   },
   {
     methods: {
@@ -58,15 +80,48 @@ const ShiftSchema = new Schema(
        */
       end(timestamp = new Date()) {
         if (this.end_timestamp) return this;
-        timestamp = new Date(timestamp);
-        this.end_timestamp = timestamp;
+        else this.end_timestamp = new Date(timestamp);
+
+        const TotalShiftTime = this.end_timestamp.valueOf() - this.start_timestamp.valueOf();
+        this.durations.on_duty = TotalShiftTime;
+
+        if (this.events.breaks.length) {
+          for (const Break of this.events.breaks) {
+            if (!Break[1]) Break[1] = Date.now();
+            // @ts-ignore
+            const [StartEpoch, EndEpoch] = Break;
+            this.durations.on_break += EndEpoch - StartEpoch;
+          }
+          this.durations.on_duty -= this.durations.on_break;
+        }
+
         return this.save();
       },
     },
   }
 );
 
-ShiftSchema.set("versionKey", false);
 ShiftSchema.set("_id", false);
+ShiftSchema.set("versionKey", false);
+ShiftSchema.post("find", (Shifts) => {
+  Shifts.forEach((Shift) => {
+    if (Shift.end_timestamp) return;
+    const CurrTimestamp = Date.now();
+    const TotalShiftDuration = CurrTimestamp - Shift.start_timestamp.valueOf();
+    Shift.durations.on_duty = TotalShiftDuration;
+
+    if (Shift.events.breaks.length) {
+      for (const Break of Shift.events.breaks) {
+        if (!Break[1]) Break[1] = Date.now();
+        const [StartEpoch, EndEpoch] = Break;
+        Shift.durations.on_break += EndEpoch - StartEpoch;
+      }
+      Shift.durations.on_duty -= Shift.durations.on_break;
+    }
+
+    return Shift;
+  });
+  return Shifts;
+});
 
 module.exports = model("Shift", ShiftSchema);

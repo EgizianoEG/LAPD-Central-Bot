@@ -71,6 +71,12 @@ declare global {
       /** The shift type */
       type: string;
       durations: ShiftDurations;
+      events: {
+        /** An array of breaks logged during the shift. Every break has two values in the format: `[StartEpoch, EndEpoch]` */
+        breaks: [[number, number | null]];
+        arrests: number;
+        citations: number;
+      };
     }
 
     interface GuildShiftType {
