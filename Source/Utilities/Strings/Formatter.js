@@ -3,7 +3,7 @@ const FormatStr = require("util").format;
 const { TitleCase } = require("./Converter.js");
 // ---------------------------------------------
 /**
- * Formats a given string of charges into a properly formated numbered list.
+ * Formats a given string of charges into a properly formatted numbered list.
  * @param {String} Input - The string to list.
  * @param {Boolean} [RAsArray=false] - If the returned value should be as an array.
  * @return {Array<String>|String|any} - The list of charges either a string or an array.
@@ -94,9 +94,9 @@ function AddStatutes(Charges) {
       DefaultFlags
     ),
 
-    Assualt: new RegExp("A[su]{1,2}[alut]{2,4}|" + "Stab(?:bing|bed)|" + "\\bADW\\b", DefaultFlags),
+    Assault: new RegExp("A[su]{1,2}[alut]{2,4}|" + "Stab(?:bing|bed)|" + "\\bADW\\b", DefaultFlags),
 
-    ReclessDriving: new RegExp(
+    RecklessDriving: new RegExp(
       "Traffic Crimes|" +
         "Crashing into \\w+|" +
         "Endangerment of \\w+|" +
@@ -201,8 +201,8 @@ function AddStatutes(Charges) {
     const Charge = Charges[i];
     let Continue = false;
 
-    // Assualt/Stabbing charges
-    if (Charge.match(Regexes.Assualt)) {
+    // Assault/Stabbing charges
+    if (Charge.match(Regexes.Assault)) {
       if (Charge.match(Regexes.DWeaponRegex)) {
         if (Charge.match(/(?:Not|Other than) (?:a )?(?:Firearm|Gun|F\/ARM)/i)) {
           if (Charge.match(Regexes.LERegex)) {
@@ -239,12 +239,12 @@ function AddStatutes(Charges) {
 
     // Evasion and fleeing
     if (Charge.match(Regexes.Evasion)) {
-      if (Charge.match(Regexes.ReclessDriving)) {
+      if (Charge.match(Regexes.RecklessDriving)) {
         Charges[i] = `${Charge}\n  - Statute: 2800.2(A) VC`;
         Continue = true;
       } else {
         for (const RCharge of Charges) {
-          if (RCharge.match(Regexes.ReclessDriving)) {
+          if (RCharge.match(Regexes.RecklessDriving)) {
             Charges[i] = `${Charge}\n  - Statute: 2800.2(A) VC`;
             Continue = true;
             break;
@@ -264,12 +264,12 @@ function AddStatutes(Charges) {
     }
 
     // Reckless driving
-    if (Charge.match(Regexes.ReclessDriving)) {
+    if (Charge.match(Regexes.RecklessDriving)) {
       Charges[i] = `${Charge}\n  - Statute: 23103 VC`;
       continue;
     }
 
-    // Drawing a firearm in thretening manner
+    // Drawing a firearm in threatening manner
     if (Charge.match(Regexes.BrandishingFirearm)) {
       if (Charge.match(Regexes.LERegex)) {
         Charges[i] = `${Charge}\n  - Statute: 417(C) PC`;
@@ -279,7 +279,7 @@ function AddStatutes(Charges) {
       continue;
     }
 
-    // Thretening
+    // Threatening
     if (Charge.match(Regexes.Threatening)) {
       if (Charge.match(Regexes.LERegex)) {
         Charges[i] = `${Charge}\n  - Statute: 71 PC`;
@@ -317,7 +317,7 @@ function AddStatutes(Charges) {
       continue;
     }
 
-    // Grand theft: Jewerly store, bank, and ATM robberies
+    // Grand theft: Jewelry store, bank, and ATM robberies
     if (Charge.match(Regexes.GrandTheft)) {
       Charges[i] = `${Charge}\n  - Statute: 487 PC`;
       continue;
@@ -559,9 +559,9 @@ function FormatUsername(UserData, IncludeID) {
  * @param {Object} Brand
  *   @param {String} Brand.name
  *   @param {String} Brand.alias
- * @returm {`${string} ${string} ${string} (${string} ${string} ${string})`}
+ * @return* {`${string} ${string} ${string} (${string} ${string} ${string})`}
  */
-function FromatVehicleName(Model, Brand) {
+function FormatVehicleName(Model, Brand) {
   const OrgMYear = Model.model_year.org ? `${Model.model_year.org} ` : "";
   const AltMYear = Model.model_year.alt ? `${Model.model_year.alt} ` : "";
   const BrandName = Brand.name ? `${Brand.name} ` : "";
@@ -585,5 +585,5 @@ module.exports = {
   FormatHeight,
   FormatAge,
   FormatUsername,
-  FromatVehicleName,
+  FormatVehicleName,
 };

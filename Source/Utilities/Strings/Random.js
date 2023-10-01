@@ -28,7 +28,7 @@ function CharactersFromSet(CharSet) {
 
 /**
  * Returns a randomly generated string
- * @param {Number} [Length=10] - The desired lengthe of the generated string
+ * @param {Number} [Length=10] - The desired length of the generated string
  * @param {String|RegExp} [CharSet=/\w/] - The desired range of generated characters
  * @returns {String} The generated string
  */
@@ -45,7 +45,7 @@ function RandomString(Length = 10, CharSet = /\w/) {
 }
 
 /**
- * Returns a rondomly chosen filtered dummy text between 8-12 words
+ * Returns a randomly chosen filtered dummy text between 8-12 words
  * @returns {String}
  */
 function DummyText() {

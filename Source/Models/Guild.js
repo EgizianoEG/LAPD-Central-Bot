@@ -1,6 +1,6 @@
 const { Schema, model } = require("mongoose");
 const CallsignSchema = require("./Schemas/Callsign");
-const CiationSchema = require("./Schemas/Citation");
+const CitationSchema = require("./Schemas/Citation");
 const ArrestSchema = require("./Schemas/Arrest");
 const GSettingsSchema = require("./Schemas/GuildSettings");
 
@@ -16,7 +16,7 @@ const GuildSchema = new Schema({
     default: {},
     type: {
       arrests: [ArrestSchema],
-      citations: [CiationSchema],
+      citations: [CitationSchema],
       callsigns: [CallsignSchema],
     },
   },

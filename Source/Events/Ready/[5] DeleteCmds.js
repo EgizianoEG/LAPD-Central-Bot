@@ -33,7 +33,7 @@ module.exports = async function RemoveCommands(Client) {
         console.log(`✅ - Successfully deleted all ${Chalk.yellow(Guild.name)} server commands.`);
       })
       .catch((Err) => {
-        console.log(`❎ - DeleteComds - An error occurred while removing commands; ${Err.message}`);
+        console.log(`❎ - DeleteCmds - An error occurred while removing commands; ${Err.message}`);
       });
     return;
   }
@@ -59,6 +59,6 @@ module.exports = async function RemoveCommands(Client) {
         );
     }
   } catch (Err) {
-    console.log("DeleteCmds - An error occurred while executing; Erro:", Err);
+    console.log("DeleteCmds - An error occurred while executing; Details:\n", Err);
   }
 };

@@ -4,7 +4,7 @@ const GuildProfile = require("../../Models/GuildProfile.js");
 /**
  * Updates the linked Roblox user id and puts the given one instead
  * This function is runs knowing that the user and their guild are recorded in the database already
- * @param {DiscordJS.ChatInputCommandInteraction} CmdInteraction Orginal command interaction
+ * @param {DiscordJS.ChatInputCommandInteraction} CmdInteraction Original command interaction
  * @param {String|Number|Null} [RobloxUserId] The user Id to record and put into the database (`0` by default)
  * @returns A promise resolves to the saved user profile document if succeeded
  */

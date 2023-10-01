@@ -16,10 +16,10 @@ declare namespace WeatherData {
     /** The name of the city with the given latitude and longitude */
     city_name: string;
 
-    /** The id number of the city retrieved frim OpenWeather */
+    /** The id number of the city retrieved from OpenWeather */
     city_id: number;
 
-    /** The object containing all temprature data */
+    /** The object containing all temperature data */
     temp: TemperatureData;
     visibility: string;
     humidity: string;

@@ -91,7 +91,7 @@ const Colors = [
   },
   {
     hex: "#F3CF9B",
-    name: "Lig. Yellowich Orange",
+    name: "Lig. Yellowish Orange",
     number: 36,
   },
   {
@@ -461,7 +461,7 @@ const Colors = [
   },
   {
     hex: "#828A5D",
-    name: "Lemon Metalic",
+    name: "Lemon Metallic",
     number: 200,
   },
   {

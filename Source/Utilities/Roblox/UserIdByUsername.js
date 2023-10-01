@@ -10,7 +10,7 @@ const {
  * Returns the user id of the input username string
  * @param {(String|Array<String>)} Usernames - The username to get its id from
  * @param {(Boolean|undefined)} [ExcludeBanned=true] - Whether to exclude banned users from the response
- * @return {(Promise<[Number, String][]|[Number, String]|Null>)} The user id of the input username as the first array item or null if input is invailed, user is banned (optional), or the http response was corrupted
+ * @return {(Promise<[Number, String][]|[Number, String]|Null>)} The user id of the input username as the first array item or null if input is invalid, user is banned (optional), or the http response was corrupted
  */
 async function GetIdFromUsername(Usernames, ExcludeBanned = true) {
   Usernames = Array.isArray(Usernames) ? Usernames : [Usernames];

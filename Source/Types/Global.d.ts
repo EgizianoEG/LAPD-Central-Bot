@@ -15,7 +15,7 @@ import type {
   Client,
 } from "discord.js";
 
-type CoodownValue = number;
+type CooldownValue = number;
 type CommandObjectDataType =
   | SlashCommandBuilder
   | SlashCommandSubcommandBuilder

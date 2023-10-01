@@ -41,7 +41,7 @@ module.exports = async (Client, Interaction) => {
         .replyToInteract(Interaction, true)
         .then(() => {
           console.log(
-            "⚠️  - Could not find command object of command '%s'; skipping execution.",
+            "⚠️ - Could not find command object of command '%s'; skipping execution.",
             Chalk.bold(Interaction.commandName)
           );
         });
@@ -61,7 +61,7 @@ module.exports = async (Client, Interaction) => {
           embeds: [
             new InfoEmbed()
               .setTitle("Hold up!")
-              .setDescription("Seems like this command is still under development."),
+              .setDescription("This command appears to be still being worked on."),
           ],
         }).catch((Err) => {
           if (Err instanceof DiscordAPIError && (Err.code === 40_060 || Err.code === 10_062))
@@ -120,7 +120,7 @@ async function HandleCooldowns(Client, Interaction, CommandObject) {
           new WarnEmbed()
             .setTitle("Cooldown")
             .setDescription(
-              "Please wait. You are currently on a cooldown for </%s:%s> slash command.\nYou may use it again approximately %s.",
+              "Kindly wait. You currently have a cooldown for the </%s:%s> slash command. You may use it again approximately %s.",
               CommandName,
               CommandID,
               time(Math.round(ExpTimestamp / 1000), "R")
@@ -143,7 +143,7 @@ function HandleDevOnlyCommands(CommandObject, Interaction) {
   if (Interaction.replied) return;
   if (CommandObject.options?.devOnly && !Discord.BotDevs.includes(Interaction.user.id)) {
     return new UnauthorizedEmbed()
-      .setDescription("Only developers of this bot can run this command.")
+      .setDescription("This command can only be executed by the bot's developers.")
       .replyToInteract(Interaction, true);
   }
 }
@@ -217,7 +217,7 @@ function HandleBotPermissions(CommandObject, Interaction) {
       ephemeral: true,
       embeds: [
         new ErrorEmbed().setDescription(
-          "The bot lacks the following necessary permission%s to perform the command:\n%s",
+          "The bot lacks the following necessary permission%s to perform this command:\n%s",
           Plural,
           UnorderedList(MissingPerms)
         ),

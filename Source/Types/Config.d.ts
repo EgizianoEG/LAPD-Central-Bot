@@ -83,6 +83,6 @@ interface WeatherGeoCoordinates {
 }
 
 interface Roblox {
-  /** The Cookie of the account of which will be used to access certain Roblox APIs. Recomended not to be your main account. */
+  /** The Cookie of the account of which will be used to access certain Roblox APIs. Recommended not to be your main account. */
   Cookie: string;
 }

@@ -63,7 +63,7 @@ async function HandleInvalidUsername(Interaction, RobloxUsername) {
 }
 
 /**
- * Checks whether or not the command runner is already logged into the application and if so, halts any furthur execution
+ * Checks whether or not the command runner is already logged into the application and if so, halts any further execution
  * @param {SlashCommandInteraction} Interaction - The interaction object.
  * @requires `Utilities/Database/IsUserLoggedIn`
  * @requires `Utilities/Roblox/GetPlayerInfo`
@@ -98,7 +98,7 @@ async function HandleUserLoginStatus(Interaction) {
  * 5. Construct an embed to guide the user through the login process.
  * 6. Create buttons for "Verify and Login" and "Cancel Login".
  * 7. Send the embed and buttons to the user as a reply.
- * 8. Await button interaction within a time limit of five minutes (converted into milleseconds).
+ * 8. Await button interaction within a time limit of five minutes (converted into milliseconds).
  * 9. Based on button interaction received:
  *    - If "Verify and Login" is clicked, validate the profile description.
  *    - If "Cancel Login" is clicked, provide a cancellation message.

@@ -23,7 +23,7 @@ declare global {
       /** The discord.js client */
       Client: DiscordClient,
 
-      /** If provided, returns the application commands registered on it; otherwise, returns global registered slash commadns */
+      /** If provided, returns the application commands registered on it; otherwise, returns global registered slash commands */
       GuildId?: Scope
     ) => Promise<
       Scope extends string

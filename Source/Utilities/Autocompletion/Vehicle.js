@@ -1,6 +1,6 @@
 const ERLCVehicles = require("../../Resources/ERLCVehicles");
 const ShuffleArray = require("../Other/ShuffleArray");
-const { FromatVehicleName } = require("../Strings/Formatter");
+const { FormatVehicleName } = require("../Strings/Formatter");
 
 /** @type {Array<String>} */
 const VehicleNames = [];
@@ -9,7 +9,7 @@ const VehicleNames = [];
 for (const Brand of ERLCVehicles) {
   for (const Model of Brand.models) {
     VehicleNames.push(
-      FromatVehicleName(Model, {
+      FormatVehicleName(Model, {
         name: Brand.brand,
         alias: Brand.counterpart,
       })

@@ -21,7 +21,7 @@ async function Callback(_, Interaction) {
 
   const WeatherEmbed = new EmbedBuilder()
     .setURL(WeatherData.forecast_link)
-    .setTitle(Emojis.LosAngeles + " Weather")
+    .setTitle(Emojis.LosAngeles + "\u{2000}Weather")
     .setColor(Colors.Greyple)
     .setDescription("Current weather in city of Los Angeles, California\n")
     .setFooter({ text: "Powered by OpenWeather", iconURL: Icons.OpenWeather })
