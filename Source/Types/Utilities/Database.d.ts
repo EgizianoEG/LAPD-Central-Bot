@@ -54,10 +54,12 @@ declare global {
         : HydratedDocument<ShiftDocument, ShiftDocOverrides> | null
     >;
 
+    type HydratedShiftDocument = HydratedDocument<ShiftDocument, ShiftDocOverrides>;
+
     interface ShiftDocument {
       /** The unique identifier (15 digits) of this shift
        * where the first 13 digits indicates the timestamp
-       * of this shift and the last 2 are randomly generated digis
+       * of this shift and the last 2 are randomly generated digits
        */
       _id: string;
       /** The user who initiated this shift */
