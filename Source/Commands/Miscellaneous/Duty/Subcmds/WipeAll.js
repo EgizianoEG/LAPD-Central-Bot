@@ -102,7 +102,7 @@ async function Callback(_, Interaction) {
         const Response = await ShiftModel.deleteMany({
           guild: Interaction.guildId,
           type: ShiftType ?? { $exists: true },
-          end_timestamp: null,
+          end_timestamp: { $not: null },
         }).exec();
 
         return new SuccessEmbed()
