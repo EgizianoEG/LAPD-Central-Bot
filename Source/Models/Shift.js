@@ -112,9 +112,8 @@ ShiftSchema.post("find", (Shifts) => {
 
     if (Shift.events.breaks.length) {
       for (const Break of Shift.events.breaks) {
-        if (!Break[1]) Break[1] = Date.now();
         const [StartEpoch, EndEpoch] = Break;
-        Shift.durations.on_break += EndEpoch - StartEpoch;
+        Shift.durations.on_break += (EndEpoch ?? CurrTimestamp) - StartEpoch;
       }
       Shift.durations.on_duty -= Shift.durations.on_break;
     }
