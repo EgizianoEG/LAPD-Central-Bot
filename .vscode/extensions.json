@@ -1,0 +1,15 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "sonarsource.sonarlint-vscode",
+    "esbenp.prettier-vscode",
+    "christian-kohler.path-intellisense",
+    "pkief.material-icon-theme",
+    "p42ai.refactor",
+    "streetsidesoftware.code-spell-checker",
+    "bracketpaircolordlw.bracket-pair-color-dlw",
+    "mgmcdermott.vscode-language-babel",
+    "mongodb.mongodb-vscode",
+    "tabnine.tabnine-vscode"
+  ]
+}
