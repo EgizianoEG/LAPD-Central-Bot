@@ -1,7 +1,6 @@
 {
   /* Visit https://aka.ms/tsconfig to read more about this file */
   "$schema": "http://json.schemastore.org/tsconfig",
-  "extends": "@tsconfig/node20/tsconfig.json",
 
   "exclude": ["node_modules/**/*", "Build", "Build/**/*"],
   "include": ["Source/**/*"],
@@ -16,19 +15,25 @@
     /* Projects */
     /* Language and Environment */
     "target": "ESNext",
+    "lib": ["ESNext", "ES2023.Array", "DOM"],
 
     /* Modules */
     "module": "NodeNext",
     "rootDir": "Source",
-    "baseUrl": "Source",
     "moduleResolution": "NodeNext",
     "resolveJsonModule": true,
-    "typeRoots": ["./Source/Types/**", "./node_modules/@types/**", "../node_modules/@types/**"],
+    "typeRoots": [
+      "./Source/Types/**",
+      "./Source/Typings/**",
+      "./node_modules/@types/**",
+      "../node_modules/@types/**"
+    ],
     "paths": {
-      "@Utilities/*": ["Utilities/*"],
-      "@Config/*": ["Config/*"],
-      "@Resources/*": ["Resources/*"],
-      "@Models/*": ["Models/*"]
+      "@Config/*": ["./Config/*"],
+      "@Models/*": ["./Models/*"],
+      "@Typings/*": ["./Typings/*"],
+      "@Resources/*": ["./Resources/*"],
+      "@Utilities/*": ["./Utilities/*"]
     },
 
     /* JavaScript Support */
@@ -44,6 +49,10 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
 
+    /* Formatting */
+    "preserveWatchOutput": true,
+    "pretty": true,
+
     /* Type Checking */
     "strict": true,
     "noImplicitAny": false,
@@ -52,6 +61,11 @@
     "allowUnreachableCode": false,
 
     /* Completeness */
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "plugins": [
+      {
+        "name": "typescript-eslint-language-service"
+      }
+    ]
   }
 }
