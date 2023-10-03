@@ -63,7 +63,7 @@ async function Callback(_, Interaction) {
   const ASOrdered = Object.entries(GAShifts)
     .sort((a, b) => b[1].length - a[1].length)
     .reduce((obj, [key, value]) => {
-      obj[key] = [...value].sort(
+      obj[key] = value.toSorted(
         (a, b) => a.start_timestamp.valueOf() - b.start_timestamp.valueOf()
       );
       return obj;
