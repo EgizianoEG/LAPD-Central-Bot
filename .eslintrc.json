@@ -5,9 +5,17 @@
     "es2021": true
   },
 
-  "ignorePatterns": ["Build/**/*"],
-  "plugins": ["sonarjs"],
-  "extends": ["eslint:recommended", "standard", "plugin:sonarjs/recommended", "prettier"],
+  "ignorePatterns": ["Build", "Typings"],
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["sonarjs", "@typescript-eslint"],
+  "extends": [
+    // "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "eslint:recommended",
+    "standard",
+    "plugin:sonarjs/recommended",
+    "prettier"
+  ],
 
   "parserOptions": {
     "sourceType": "module",

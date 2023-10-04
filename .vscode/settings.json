@@ -1,14 +1,17 @@
 {
   "js/ts.implicitProjectConfig.checkJs": true,
+  "js/ts.implicitProjectConfig.target": "ESNext",
   "json.schemaDownload.enable": true,
-  "editor.tabSize": 2,
   "editor.defaultFormatter": null,
-  "typescript.implementationsCodeLens.enabled": false,
-  "typescript.referencesCodeLens.enabled": false,
+  "docwriter.style": "JSDoc",
+  "editor.tabSize": 2,
 
-  // "[typescript]": {
-  //   "editor.codeLens": true
-  // },
+  "json.schemas": [
+    {
+      "fileMatch": ["Source/**/Secrets.json", "Source/**/Secrets.example.json"],
+      "url": ".vscode/JSON Schemas/Secrets.json"
+    }
+  ],
 
   "[javascript]": {
     "editor.formatOnSave": true,
@@ -18,8 +21,8 @@
   "[json]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
+
   "[jsonc]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "docwriter.style": "JSDoc"
+  }
 }
