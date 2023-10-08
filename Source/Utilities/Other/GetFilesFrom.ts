@@ -1,5 +1,5 @@
-import Path from "path";
-import FileSystem from "fs";
+import Path from "node:path";
+import FileSystem from "node:fs";
 
 /** Returns child file/folder paths (files with `.js` extension) for a given directory */
 export default (Directory: string, FoldersOnly = false) => {
@@ -8,13 +8,14 @@ export default (Directory: string, FoldersOnly = false) => {
 
   for (const File of Files) {
     const FilePath = Path.join(Directory, File.name);
+    const ExtName = Path.extname(File.name);
 
     if (FoldersOnly) {
       if (File.isDirectory()) {
         Paths.push(FilePath);
       }
-    } else if (File.isFile() && File.name.endsWith(".js")) {
-      Paths.push(FilePath);
+    } else if (File.isFile() && (ExtName === ".js" || ExtName === ".ts")) {
+      Paths.push("file://" + FilePath);
     }
   }
 

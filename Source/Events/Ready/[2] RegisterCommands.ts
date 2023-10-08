@@ -5,7 +5,7 @@ import GetDeployedCommands from "@Utilities/Other/GetAppCmds.js";
 import CmdsAreIdentical from "@Utilities/Other/CmdsAreIdentical.js";
 import GetLocalCommands from "@Utilities/Other/GetLocalCmds.js";
 import Chalk from "chalk";
-import Util from "util";
+import Util from "node:util";
 
 /**
  * Handles command registration, deployment, and updates

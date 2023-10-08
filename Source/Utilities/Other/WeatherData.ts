@@ -1,7 +1,7 @@
 // Dependencies:
 // -------------
 
-import { OpenWeather as OpenWeatherConfig } from "@Config/Secrets.json";
+import { OpenWeather as OpenWeatherConfig } from "@Config/Secrets.js";
 import Axios, { AxiosResponse } from "axios";
 import Convert from "convert-units";
 

@@ -1,4 +1,4 @@
-import { randomInt as RandomInt } from "crypto";
+import { randomInt as RandomInteger } from "node:crypto";
 import { Schema, model } from "mongoose";
 import ShiftDurations from "./Schemas/ShiftDurations.js";
 
@@ -8,7 +8,7 @@ const ShiftSchema = new Schema(
       type: String,
       default: () => {
         const Timestamp = Date.now();
-        const RanNumber = RandomInt(10, 99);
+        const RanNumber = RandomInteger(10, 99);
         return `${Timestamp}${RanNumber}`.slice(0, 15);
       },
     },

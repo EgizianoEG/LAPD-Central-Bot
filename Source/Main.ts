@@ -3,8 +3,8 @@ import { Discord, Roblox } from "@Config/Secrets.js";
 
 import Chalk from "chalk";
 import Noblox from "noblox.js";
-import MongoDBHandler from "./Handlers/MongoDB.js";
 import EventHandler from "./Handlers/EventHandler.js";
+import MongoDBHandler from "./Handlers/MongoDB.js";
 
 console.log(Chalk.grey("================================================"));
 // ----------------------------------------------------------------------------------

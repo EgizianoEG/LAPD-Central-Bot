@@ -1,6 +1,7 @@
 import { IsValidCmdObject } from "./Validator.js";
+import { GetDirName } from "./Paths.js";
 import GetFiles from "./GetFilesFrom.js";
-import Path from "path";
+import Path from "node:path";
 
 /**
  * Collects all the local commands and returns them as an array of command objects
@@ -11,7 +12,10 @@ export default async (
   Exceptions: string[] = []
 ): Promise<SlashCommandObject<DiscordJS.SlashCommandBuilder>[]> => {
   const LocalCommands: SlashCommandObject[] = [];
-  const CommandCats = GetFiles(Path.join(__dirname, "..", "..", "Commands"), true);
+  const CommandCats = GetFiles(
+    Path.join(GetDirName(import.meta.url), "..", "..", "Commands"),
+    true
+  );
 
   for (const CommandCat of CommandCats) {
     const Commands = GetFiles(CommandCat);
@@ -19,11 +23,11 @@ export default async (
 
     for (const CommandGroup of CommandGroups) {
       const CmdGroupName = Path.basename(CommandGroup);
-      const Commands = GetFiles(CommandGroup);
+      const CommandPaths = GetFiles(CommandGroup);
 
-      for (const Command of Commands) {
-        if (new RegExp(`(?:${CmdGroupName}|Main).js$`).exec(Command)) {
-          const CommandObj = (await import(Command)) as SlashCommandObject;
+      for (const CommandPath of CommandPaths) {
+        if (new RegExp(`(?:${CmdGroupName}|Main).[jt]s$`).exec(CommandPath)) {
+          const CommandObj = (await import(CommandPath)).default as SlashCommandObject;
           if (IsValidCmdObject(CommandObj, Exceptions)) {
             LocalCommands.push(CommandObj);
           }
@@ -33,7 +37,7 @@ export default async (
     }
 
     for (const Command of Commands) {
-      const CommandObj = (await import(Command)) as SlashCommandObject;
+      const CommandObj = (await import(Command)).default as SlashCommandObject;
       if (IsValidCmdObject(CommandObj, Exceptions)) {
         LocalCommands.push(CommandObj);
       }

@@ -12,7 +12,7 @@ import {
   Colors,
 } from "discord.js";
 
-import { format as FormatStr } from "util";
+import { format as FormatStr } from "node:util";
 import { Emojis, Embeds } from "@Config/Shared.js";
 import { InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 

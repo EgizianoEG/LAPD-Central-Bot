@@ -1,5 +1,5 @@
 import { EmbedBuilder, EmbedData } from "discord.js";
-import { format as FormatString } from "util";
+import { format as FormatString } from "node:util";
 import SharedConfig from "@Config/Shared.js";
 
 const EmbedThumbs = SharedConfig.Embeds.Thumbs;

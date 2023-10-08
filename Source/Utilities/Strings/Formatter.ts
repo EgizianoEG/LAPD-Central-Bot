@@ -1,5 +1,5 @@
 /* eslint-disable sonarjs/cognitive-complexity */
-import { format as FormatStr } from "util";
+import { format as FormatStr } from "node:util";
 import { TitleCase } from "./Converter.js";
 
 /**

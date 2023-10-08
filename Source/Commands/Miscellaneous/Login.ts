@@ -22,9 +22,9 @@ import UpdateLinkedRobloxUser from "@Utilities/Database/UpdateLinkedUser.js";
 
 import { InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { IsValidRobloxUsername } from "@Utilities/Other/Validator.js";
+import { format as FormatStr } from "node:util";
 import { SendErrorReply } from "@Utilities/Other/SendReply.js";
 import { DummyText } from "@Utilities/Strings/Random.js";
-import { format } from "util";
 
 // ---------------------------------------------------------------------------------------
 // Functions:
@@ -45,7 +45,7 @@ async function HandleInvalidUsername(
       Ephemeral: true,
       Interaction,
       Title: "Malformed Username",
-      Message: format(
+      Message: FormatStr(
         "The provided username, `%s`, is malformed.\n",
         RobloxUsername,
         "The username can be 3 to 20 characters long and can only contain letters, digits, and one underscore character in between."
@@ -56,7 +56,7 @@ async function HandleInvalidUsername(
       Ephemeral: true,
       Interaction,
       Title: "Hold up!",
-      Message: format(
+      Message: FormatStr(
         "Cannot find the input user, `%s`, on Roblox. Please ensure that the username is valid and try again.",
         RobloxUsername
       ),
@@ -77,7 +77,7 @@ async function HandleUserLoginStatus(Interaction: SlashCommandInteraction) {
       Ephemeral: true,
       Interaction,
       Title: "Hold up!",
-      Message: format(
+      Message: FormatStr(
         "You are already logged in as `%s`.\nDid you mean to log out instead?",
         LoggedUsername
       ),
@@ -192,7 +192,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction) 
             Ephemeral: true,
             Interaction: ButtonInteract,
             Title: "Verification Failed",
-            Message: format(
+            Message: FormatStr(
               "Login verification as `%s` failed.\nPlease rerun the command and ensure you follow the appropriate instructions.",
               RobloxUsername
             ),
