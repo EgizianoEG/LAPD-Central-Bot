@@ -24,10 +24,16 @@
 
   "rules": {
     "camelcase": "off",
+    "no-undef": "off",
     "no-unused-vars": "warn",
     "quotes": ["error", "double"],
     "semi": ["error", "always"],
     "sonarjs/cognitive-complexity": ["warn", 35],
+
+    // "valid-jsdoc": [
+    //   "warn",
+    //   { "requireReturn": false, "requireReturnType": false, "requireParamType": false }
+    // ],
 
     "no-extra-parens": [
       "off",

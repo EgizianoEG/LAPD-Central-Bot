@@ -27,7 +27,6 @@ declare global {
   export import DiscordJS = DiscordJSMask;
   export import Mongoose = MongooseMask;
 
-  type Falsy = null | undefined | false | 0 | -0 | 0n | "";
   type MessageReplyOptions = string | MessagePayload | InteractionReplyOptions;
   type RepliableInteraction =
     | ChatInputCommandInteraction

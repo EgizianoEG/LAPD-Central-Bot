@@ -1,3 +1,4 @@
+import { Falsey } from "utility-types";
 import type {
   Types,
   Schema,
@@ -29,10 +30,10 @@ type ShiftDocOverrides = {
 };
 
 interface LogicalOperations {
-  $and?: boolean;
-  $or?: boolean;
-  $not?: boolean;
-  $nor?: boolean;
+  $and: boolean;
+  $or: boolean;
+  $not: boolean;
+  $nor: boolean;
 }
 
 declare global {
@@ -49,7 +50,7 @@ declare global {
       /** The received discord.js guild interaction */
       Interaction: SlashCommandInteraction<"cached">;
     }) => Promise<
-      UOType extends Falsy
+      UOType extends Falsey
         ? HydratedDocument<ShiftDocument, ShiftDocOverrides>[]
         : HydratedDocument<ShiftDocument, ShiftDocOverrides> | null
     >;
@@ -98,14 +99,14 @@ declare global {
      * if the user has one of the permissions for management (guild scope or app scope); otherwise it will fail.
      */
     interface UserPermissionsData {
-      management?:
+      management:
         | boolean
         | ({
-            guild?: boolean;
-            app?: boolean;
+            guild: boolean;
+            app: boolean;
           } & Pick<LogicalOperations, "$and" | "$or">);
 
-      staff?: boolean;
+      staff: boolean;
       // | ({
       //     guild?: boolean;
       //     app?: boolean;

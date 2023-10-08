@@ -1,4 +1,4 @@
-import {} from "@Utilities";
+import type {} from "discord.js";
 
 declare global {
   namespace Resources {

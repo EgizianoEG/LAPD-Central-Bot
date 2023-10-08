@@ -1,9 +1,9 @@
-declare namespace WeatherData {
+declare namespace Utilities.WeatherData {
   /**
    * Represents the options for retrieving current weather data.
    */
   declare interface CurrentWeatherOptions {
-    Units?: TemperatureUnit;
+    Units?: "metric" | "imperial";
     Latitude?: number;
     Longitude?: number;
     Formatted?: boolean;
@@ -152,8 +152,3 @@ interface SystemData {
   sunrise: number;
   sunset: number;
 }
-
-/**
- * Represents available units for temperature measurement.
- */
-type TemperatureUnit = "metric" | "imperial" | string;
