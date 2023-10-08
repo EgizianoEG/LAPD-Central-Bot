@@ -19,7 +19,7 @@
   ],
   "scripts": {
     "watch:dev": "tsx watch --clear-screen=false --ignore ./Build/**/* --ignore ./Source/Typings/**/* .",
-    "start:js": "node ./Source/Main.js",
+    "start:js": "node ./Build/Main.js",
     "start:ts": "tsx --clear-screen=false .",
     "build": "tsc & tsconfig-replace-paths --project tsconfig.json",
     "build:clean": "rm -rf Build & tsc & tsconfig-replace-paths --project tsconfig.json",
