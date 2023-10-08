@@ -89,7 +89,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
     if (Err.message.match(/reason: time/)) {
       await DisablePrompt();
     } else if (Err.message.match(/reason: \w+Delete/)) {
-      /* ignore message/channel/guild deletion */
+      /* Ignore message/channel/guild deletion */
     } else {
       throw Err;
     }

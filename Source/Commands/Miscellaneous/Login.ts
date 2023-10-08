@@ -167,7 +167,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction) 
           "The login process has been terminated due to no response being received within five minutes.",
       });
     } else if (Err.message.match(/reason: \w+Delete/)) {
-      /* ignore message/channel/guild deletion */
+      /* Ignore message/channel/guild deletion */
     } else {
       throw Err;
     }

@@ -1,5 +1,5 @@
 import { randomInt as RandomInteger } from "node:crypto";
-import { Schema, model } from "mongoose";
+import { HydratedDocumentFromSchema, Schema, model } from "mongoose";
 import ShiftDurations from "./Schemas/ShiftDurations.js";
 
 const ShiftSchema = new Schema(
@@ -76,9 +76,9 @@ const ShiftSchema = new Schema(
     methods: {
       /**
        * Ends the shift if it is still active and returns a promise resolves to the saved shift
-       * @param {Date | Number} [timestamp=new Date()] The shift end timestamp to set as a Date object or as a timestamp in milliseconds; defaults to the timestamp when the function was invoked.
+       * @param timestamp The shift end timestamp to set as a Date object or as a timestamp in milliseconds; defaults to the timestamp when the function was invoked.
        */
-      end(timestamp = new Date()) {
+      end(timestamp: Date | number = new Date()) {
         if (this.end_timestamp) return this;
         else this.end_timestamp = new Date(timestamp);
 
@@ -88,8 +88,7 @@ const ShiftSchema = new Schema(
         if (this.events.breaks.length) {
           for (const Break of this.events.breaks) {
             if (!Break[1]) Break[1] = Date.now();
-            // @ts-ignore
-            const [StartEpoch, EndEpoch] = Break;
+            const [StartEpoch, EndEpoch] = Break as unknown as [number, number];
             this.durations.on_break += EndEpoch - StartEpoch;
           }
           this.durations.on_duty -= this.durations.on_break;
@@ -104,7 +103,7 @@ const ShiftSchema = new Schema(
 ShiftSchema.set("_id", false);
 ShiftSchema.set("versionKey", false);
 ShiftSchema.post("find", (Shifts) => {
-  Shifts.forEach((Shift) => {
+  Shifts.forEach((Shift: HydratedDocumentFromSchema<typeof ShiftSchema>) => {
     if (Shift.end_timestamp) return;
     const CurrTimestamp = Date.now();
     const TotalShiftDuration = CurrTimestamp - Shift.start_timestamp.valueOf();
@@ -112,7 +111,7 @@ ShiftSchema.post("find", (Shifts) => {
 
     if (Shift.events.breaks.length) {
       for (const Break of Shift.events.breaks) {
-        const [StartEpoch, EndEpoch] = Break;
+        const [StartEpoch, EndEpoch] = Break as unknown as [number, number];
         Shift.durations.on_break += (EndEpoch ?? CurrTimestamp) - StartEpoch;
       }
       Shift.durations.on_duty -= Shift.durations.on_break;

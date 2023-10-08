@@ -29,7 +29,7 @@ const DisplayedShiftTypesPerPage = 3;
 // Functions:
 // ----------
 /**
- * returns a formatted string from a given shift type data
+ * Returns a formatted string from a given shift type data
  * @param ShiftTypeData - An array of shift types to format
  * @returns A formatted string to be set as an embed description
  */
