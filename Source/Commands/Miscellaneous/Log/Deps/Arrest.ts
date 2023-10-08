@@ -18,8 +18,12 @@ import { Embeds } from "@Config/Shared.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { RandomString } from "@Utilities/Strings/Random.js";
 import { FormatCharges, FormatHeight, FormatAge } from "@Utilities/Strings/Formatter.js";
-import { getPlayerThumbnail, getIdFromUsername, getPlayerInfo } from "noblox.js";
+import NobloxJs from "noblox.js";
 import Chalk from "chalk";
+
+const getPlayerThumbnail = NobloxJs.getPlayerThumbnail;
+const getIdFromUsername = NobloxJs.getIdFromUsername;
+const getPlayerInfo = NobloxJs.getPlayerInfo;
 
 const ArrestAges = [
   { name: "Kid (1-12)", value: 1 },
@@ -33,7 +37,6 @@ const ArrestAges = [
 // Functions:
 // ----------
 /**
- * @async
  * @param ModalInteraction
  * @param CmdInteraction
  */

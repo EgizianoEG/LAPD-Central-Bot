@@ -1,4 +1,4 @@
-import type { BaseInteraction, CacheType } from "discord.js";
+import { BaseInteraction, CacheType } from "discord.js";
 import { ErrorEmbed } from "../Classes/ExtraEmbeds.js";
 
 const ReplyTemplates = {

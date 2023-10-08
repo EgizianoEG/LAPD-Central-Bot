@@ -3,7 +3,12 @@ import type {
   RESTPostAPIChatInputApplicationCommandsJSONBody,
 } from "discord.js";
 
-/** Quickly validates two slash commands if they are equal in properties and values */
+/**
+ * Validates two slash commands if they are semi-equal in properties and values
+ * @param Cmd_1
+ * @param Cmd_2
+ * @returns
+ */
 export default function CmdsAreEqual(
   Cmd_1: ApplicationCommand,
   Cmd_2: SlashCommandObject
