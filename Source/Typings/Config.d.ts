@@ -30,7 +30,7 @@ interface Discord {
    * The server’s snowflake ID; a server that will be used to test the bot and to allow
    * specific development commands for it.
    */
-  TestGuildID: string;
+  TestGuildId: string;
 
   /** The bot token for the Discord application (Bot). */
   BotToken: string;

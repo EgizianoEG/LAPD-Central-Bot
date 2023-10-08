@@ -33,7 +33,7 @@ export default async function RegisterCommands(Client: DiscordClient) {
           continue;
         }
 
-        const Guild = Client.guilds.cache.get(Discord.Test_Guild_ID);
+        const Guild = Client.guilds.cache.get(Discord.TestGuildId);
         const GuildCommands = await Guild?.commands?.fetch();
         const GuildExistingCmd = GuildCommands?.find((Cmd) => Cmd.name === CmdName);
 
@@ -187,7 +187,7 @@ async function HandleCommandScopeSwitching(
   });
 
   await Client.application.commands
-    .create(LocalCmd.data, SwitchTo === "guild" ? Discord.Test_Guild_ID : undefined)
+    .create(LocalCmd.data, SwitchTo === "guild" ? Discord.TestGuildId : undefined)
     .then((Cmd) => {
       Client.commands.set(Cmd.name, LocalCmd);
       console.log(

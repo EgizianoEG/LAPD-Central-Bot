@@ -20,7 +20,7 @@ const GlobalCommandsToDelete = [""]; // The names of all commands to delete
 export default async function RemoveCommands(Client: DiscordClient) {
   if (!Enabled) return;
   if (AllGuildCommands) {
-    const Guild = Client.guilds.cache.get(Discord.Test_Guild_ID);
+    const Guild = Client.guilds.cache.get(Discord.TestGuildId);
     if (!Guild) {
       return console.log(
         Chalk.yellow("Couldn't find the testing guild to remove commands; returned.")
@@ -51,7 +51,7 @@ export default async function RemoveCommands(Client: DiscordClient) {
 
     for (const Command of MatchingCommands) {
       Client.rest
-        .delete(Routes.applicationCommand(Discord.Client_ID, Command.id))
+        .delete(Routes.applicationCommand(Discord.ClientID, Command.id))
         .then(() =>
           console.log(
             `✅ - Successfully deleted ${Chalk.magenta(Command.name)} application command.`
