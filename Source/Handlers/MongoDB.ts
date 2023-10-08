@@ -1,6 +1,6 @@
 import Chalk from "chalk";
 import Mongoose from "mongoose";
-import { MongoDB } from "@Config/Secrets.json";
+import { MongoDB } from "@Config/Secrets.js";
 
 export default async () => {
   const DatabaseURI = MongoDB.URI.replace(/<username>/, MongoDB.Username).replace(
