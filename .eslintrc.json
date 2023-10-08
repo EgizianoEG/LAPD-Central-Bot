@@ -9,10 +9,10 @@
   "parser": "@typescript-eslint/parser",
   "plugins": ["sonarjs", "@typescript-eslint"],
   "extends": [
-    // "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/recommended",
     "plugin:@typescript-eslint/eslint-recommended",
     "eslint:recommended",
-    "standard",
+    "eslint-config-standard",
     "plugin:sonarjs/recommended",
     "prettier"
   ],
@@ -23,26 +23,19 @@
   },
 
   "rules": {
-    "camelcase": "off",
+    "no-var": "error",
     "no-undef": "off",
+    "camelcase": "off",
     "no-unused-vars": "warn",
+    "no-useless-call": "error",
     "quotes": ["error", "double"],
     "semi": ["error", "always"],
     "sonarjs/cognitive-complexity": ["warn", 35],
+    "no-extra-parens": ["off", "functions"],
+    "capitalized-comments": ["warn", "always", { "ignoreConsecutiveComments": true }],
 
-    // "valid-jsdoc": [
-    //   "warn",
-    //   { "requireReturn": false, "requireReturnType": false, "requireParamType": false }
-    // ],
-
-    "no-extra-parens": [
-      "off",
-      "all",
-      {
-        "nestedBinaryExpressions": false,
-        "conditionalAssign": false
-      }
-    ],
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-unused-vars": "off",
 
     "indent": [
       "error",
