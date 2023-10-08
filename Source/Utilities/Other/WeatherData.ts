@@ -9,8 +9,8 @@ const WeatherGeoConfig = OpenWeatherConfig.WeatherGeoCoordinates;
 const WeatherClient = Axios.create({
   baseURL: "https://api.openweathermap.org/data/2.5/weather",
   params: {
-    lat: WeatherGeoConfig.lat ?? 34.052235,
-    lon: WeatherGeoConfig.lon ?? -118.243683,
+    lat: WeatherGeoConfig?.lat ?? 34.052235,
+    lon: WeatherGeoConfig?.lon ?? -118.243683,
     appid: OpenWeatherConfig.API_Key,
   },
 });
