@@ -20,8 +20,9 @@
   "scripts": {
     "watch:dev": "tsx watch --clear-screen=false --ignore ./Build/**/* --ignore ./Source/Typings/**/* .",
     "start:js": "node ./Source/Main.js",
-    "start:ts": "tsx .",
-    "build": "rm -rf Build & tsc & tsconfig-replace-paths --project tsconfig.json",
+    "start:ts": "tsx --clear-screen=false .",
+    "build": "tsc & tsconfig-replace-paths --project tsconfig.json",
+    "build:clean": "rm -rf Build & tsc & tsconfig-replace-paths --project tsconfig.json",
     "lint": "eslint ./Source",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
