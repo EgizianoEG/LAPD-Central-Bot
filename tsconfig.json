@@ -22,7 +22,7 @@
     "rootDir": "Source",
     "baseUrl": "./",
     "moduleResolution": "NodeNext",
-    "resolveJsonModule": true,
+    "resolveJsonModule": false,
     "typeRoots": [
       "./Source/Types/**",
       "./Source/Typings/**",
