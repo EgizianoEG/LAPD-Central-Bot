@@ -36,7 +36,7 @@ interface Discord {
   BotToken: string;
 
   /** The application’s (bot’s) snowflake ID. */
-  ClientID: string;
+  ClientId: string;
 }
 
 interface MongoDB {
