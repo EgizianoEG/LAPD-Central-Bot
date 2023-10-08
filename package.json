@@ -1,7 +1,7 @@
 {
   "name": "lapd-central-bot",
   "version": "1.0.0",
-  "description": "A discord.js bot designed to be used as a helper to manage and operate role playing LAPD discord servers.",
+  "description": "A discord.js bot designed to be used as a helper to manage and operate role playing LAPD Discord servers.",
   "author": "EgizianoEG",
   "license": "MIT",
   "main": "Source/Main.ts",
@@ -20,10 +20,11 @@
   "scripts": {
     "watch:dev": "tsx watch --clear-screen=false --ignore ./Build/**/* --ignore ./Source/Typings/**/* .",
     "start:js": "node ./Build/Main.js",
-    "start:ts": "tsx --clear-screen=false .",
-    "build": "tsc & tsconfig-replace-paths --project tsconfig.json",
-    "build:clean": "rm -rf Build & tsc & tsconfig-replace-paths --project tsconfig.json",
-    "lint": "eslint ./Source",
+    "start:ts": "tsx .",
+    "start": "npm run start:ts",
+    "build": "tsc && tsconfig-replace-paths --project tsconfig.json",
+    "clean-build": "rm -rf Build & npm run build",
+    "lint": "tsc --noEmit && eslint \"**/*.{js,ts}\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
