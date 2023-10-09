@@ -13,7 +13,7 @@ export function GetFileName(MetaUrl: string) {
 /**
  * A polyfill to commonjs `__dirname` global variable
  * @param MetaUrl - The import statement meta url value (`import.meta.url`)
- * @requires {@link GetFileName Paths.GetFileName()}
+ * @requires {@link GetFileName `Paths.GetFileName()`}
  * @returns
  */
 export function GetDirName(MetaUrl: string) {

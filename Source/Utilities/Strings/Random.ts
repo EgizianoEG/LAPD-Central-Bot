@@ -5,9 +5,16 @@ for (let CharCode = 0; CharCode <= 255; CharCode++) {
   Cache["."].push(String.fromCharCode(CharCode));
 }
 
+/**
+ * Generates an array of characters that match the given character set.
+ * @param CharSet - The character set to match against.
+ * @return An array of characters that match the character set.
+ */
 function CharactersFromSet(CharSet: string | RegExp): string[] {
   const Characters: string[] = [];
+  const CacheKey = String(CharSet);
 
+  if (Cache[CacheKey]) return Cache[CacheKey];
   for (const Character of Cache["."]) {
     if (Character) {
       if (CharSet.constructor === RegExp) {
@@ -16,15 +23,16 @@ function CharactersFromSet(CharSet: string | RegExp): string[] {
     }
   }
 
-  Cache[String(CharSet)] = Characters;
+  Cache[CacheKey] = Characters;
   return Characters;
 }
 
 /**
- * Returns a randomly generated string
- * @param Length - The desired length of the generated string
- * @param CharSet - The desired range of generated characters
+ * Generates a random string of a specified length using a given character set.
+ * @param Length - The desired length of the generated string; defaults to `10`.
+ * @param CharSet - The desired range of generated characters; defaults to alphanumeric characters.
  * @return The generated string
+ * @requires {@link CharactersFromSet `Random.CharactersFromSet()`}
  */
 export function RandomString(Length: number = 10, CharSet: string | RegExp = /\w/): string {
   const CharPattern = Cache[String(CharSet)] ?? CharactersFromSet(CharSet);
@@ -40,6 +48,8 @@ export function RandomString(Length: number = 10, CharSet: string | RegExp = /\w
 
 /**
  * Returns a randomly chosen filtered dummy text between 8-12 words
+ * @returns
+ * @requires {@link DummyTexts Sample Texts Array}
  */
 export function DummyText(): string {
   return DummyTexts[Math.floor(Math.random() * DummyTexts.length)];

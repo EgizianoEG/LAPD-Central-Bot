@@ -6,36 +6,42 @@ import { TitleCase } from "./Converter.js";
  * Formats a given string of charges into a properly formatted numbered list.
  * @param Input - The string to list.
  * @param RAsArray - If the returned value should be as an array.
- * @return - The list of charges either a string or an array.
+ * @return The list of charges either a string or an array.
  */
-export function ListCharges(Input: string, RAsArray?: boolean): Array<string> | string | any {
-  let Charges: any = Input.match(/([^\n\r]+)/g);
+export function ListCharges<ReturnType extends boolean = false>(
+  Input: string,
+  RAsArray?: ReturnType
+): ReturnType extends true ? string[] : string {
+  const Charges: string[] = Input.match(/([^\n\r]+)/g) ?? [];
+  let FormattedCharges: string[] = [];
 
-  if (!Charges || Charges.length === 0) {
-    return RAsArray ? [] : Input;
-  } else if (
+  if (Charges.length === 0) {
+    return RAsArray ? FormattedCharges : (Input as any);
+  }
+
+  if (
     Charges.length === 1 &&
     Charges[0].match(/, |and/i) &&
     Charges[0].match(/hit and run/i) === null
   ) {
     if (RAsArray) {
-      Charges.push(true);
-      return Charges;
+      Charges.push(true as any);
+      return Charges as any;
     } else {
-      return Charges.join();
+      return Charges.join() as any;
     }
   }
 
-  Charges = Charges.filter((Charge) => {
+  FormattedCharges = Charges.filter((Charge) => {
     return !Charge.match(/^\s*[-*#] Statute/i);
   }).map((Charge, Index) => {
-    Charge = Charge.trim()
+    const Modified = Charge.trim()
       .replace(/\s+/g, " ")
-      .match(/^(?:\d+\W|\*|-|#\d+:?)? ?(.+)$/)[1];
-    return `${Index + 1}. ${Charge}`;
+      .match(/^(?:\d+\W|\*|-|#\d+:?)? ?(.+)$/)?.[1];
+    return `${Index + 1}. ${Modified}`;
   });
 
-  return RAsArray ? Charges : Charges.join("\n");
+  return RAsArray ? FormattedCharges : (FormattedCharges.join("\n") as any);
 }
 
 /**
@@ -450,6 +456,8 @@ export function AddStatutes(Charges: Array<string>): Array<string> {
 
 /**
  * Formats a given charges text for arrest report
+ * @param ChargesText - The input charges text
+ * @return - The list of charges after adding statutes
  */
 export function FormatCharges(ChargesText: string): string {
   const Titled = TitleCase(ChargesText, true);
@@ -459,6 +467,8 @@ export function FormatCharges(ChargesText: string): string {
 
 /**
  * Properly formats an input height if it is incomplete or mistyped
+ * @param Input - The input height
+ * @returns - The properly formatted height
  */
 export function FormatHeight(Input: string): string {
   if (typeof Input !== "string") return Input;
@@ -484,7 +494,8 @@ export function FormatHeight(Input: string): string {
 
 /**
  * Parses a given age integer into a string representation
- * @param AgeInteger - The age integer [1-5]; defaults to 3
+ * @param AgeInteger - The age integer [1-5]; defaults to `3`
+ * @returns - The age string
  * @enum
  *  - [1]: Kid (1-12);
  *  - [2]: Teen (13-19);
@@ -510,7 +521,9 @@ export function FormatAge(AgeInteger: string | number = 3): string {
 }
 
 /**
- * Converts a given multiline string or an array of lines into an unordered list
+ * Converts a given multiline string or an array of lines into an unordered list.
+ * @param Input
+ * @returns
  */
 export function UnorderedList(Input: string | Array<string>): string {
   const Lines = Input instanceof Array ? Input : Input.split(/[\r\n]/);
@@ -519,6 +532,8 @@ export function UnorderedList(Input: string | Array<string>): string {
 
 /**
  * Returns a formatted string representation of the user's username, display name as well as the id if requested
+ * @param UserData
+ * @param IncludeID - Whether to include the user's id in the string (e.g. "Builderman (@builderman_fifty) [5010050100]")
  * @example
  * const UserData = {
  *   name: "builderman_fifty",
@@ -548,9 +563,11 @@ export function FormatUsername(
 }
 
 /**
- * Returns a formatted name for a given vehicle model and its brand details
+ * Returns a formatted name for a given vehicle model and its brand details.
  * Vehicle model name string should be always defined and not empty for a proper result.
- * @return* {`${string} ${string} ${string} (${string} ${string} ${string})`}
+ * @param Model
+ * @param Brand
+ * @returns
  */
 export function FormatVehicleName(
   Model: Resources.VehicleModel,

@@ -1,8 +1,14 @@
 import Path from "node:path";
 import FileSystem from "node:fs";
 
-/** Returns child file/folder paths (files with `.js` extension) for a given directory */
-export default (Directory: string, FoldersOnly = false) => {
+/**
+ * Returns an array of full string paths inside a directory
+ * @param Directory - The directory to get its file paths from
+ * @param FoldersOnly - Whether to only return folder paths inside the given directory or not
+ * @requires {@link Path.join `Path.join()`}, {@link Path.extname `Path.extname()`}, and {@link FileSystem.readdirSync `Path.readdirSync()`}
+ * @returns
+ */
+export default function GetFilesFrom(Directory: string, FoldersOnly: boolean = false) {
   const Files = FileSystem.readdirSync(Directory, { withFileTypes: true });
   const Paths: string[] = [];
 
@@ -20,4 +26,4 @@ export default (Directory: string, FoldersOnly = false) => {
   }
 
   return Paths;
-};
+}

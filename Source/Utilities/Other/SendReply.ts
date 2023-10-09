@@ -11,6 +11,8 @@ const ReplyTemplates = {
 
 /**
  * Replies to the given interaction with an error embed containing a specified title and description.
+ * @param Options
+ * @returns
  */
 export function SendErrorReply(Options: {
   Interaction: BaseInteraction<CacheType> & { replied: boolean };

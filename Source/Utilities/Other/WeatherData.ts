@@ -22,7 +22,7 @@ const WeatherClient = Axios.create({
  * Converts a given visibility in meters
  * @param RawVisibility Visibility distance in meters from the original request
  * @param DistanceUnit The targeted distance unit
- * @return The converted visibility distance
+ * @returns The converted visibility distance
  */
 function ConvertVisibility(RawVisibility: number, DistanceUnit: Convert.Unit): number {
   return parseFloat(Convert(RawVisibility).from("m").to(DistanceUnit).toFixed(1));
@@ -31,7 +31,7 @@ function ConvertVisibility(RawVisibility: number, DistanceUnit: Convert.Unit): n
 /**
  * Retrieves the current weather data for a specified latitude and longitude or for the default city, Los Angeles via OpenWeather API.
  * @param Options Request and returned data options object
- * @returns The current weather data retrieved from OpenWeather organized
+ * @returns A Promise that resolves to the current weather data retrieved from OpenWeather API
  */
 export async function GetCurrentWeather(
   Options: Utilities.WeatherData.CurrentWeatherOptions = { Units: "imperial" }

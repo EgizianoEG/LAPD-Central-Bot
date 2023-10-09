@@ -1,17 +1,21 @@
 /**
  * Uppers the first character of a string and lowers the rest of its length
+ * @param Str - The string to process
+ * @returns
  * @example
  * UpperFirst("heLLo!")  // returns "Hello!"
+ * UpperFirst("1. item")  // returns "1. item"
  */
 export function UpperFirst(Str: string): string {
-  return Str.at(0)?.toUpperCase() + Str.substring(1).toLowerCase();
+  return Str.charAt(0)?.toUpperCase() + Str.slice(1).toLowerCase();
 }
 
 /**
  * Title case a given string
  * @param Str - The string to convert into title case format
- * @param {*} [Strict=true] - Whether or not to strict format the input string; defaults to `true`
+ * @param Strict - Whether or not to strict format the input string; defaults to `true`
  * @returns The converted string
+ * @requires {@link UpperFirst `Converter.UpperFirst()`}
  * @example
  * TitleCase("hello, world of the earth!")  // returns "Hello, World of the Earth!"
  * TitleCase("testing X3")  // returns "Testing x3"
@@ -21,39 +25,39 @@ export function TitleCase(Str: string, Strict: boolean = true): string {
   const Lowers = [
     "a",
     "an",
-    "and",
     "or",
-    "the",
-    "but",
     "in",
     "on",
     "of",
     "up",
     "at",
     "by",
+    "to",
+    "as",
+    "so",
+    "and",
+    "the",
+    "but",
     "for",
+    "not",
+    "yet",
+    "out",
+    "nor",
     "from",
     "with",
-    "under",
-    "until",
     "atop",
-    "to",
-    "not",
     "over",
-    "as",
     "down",
-    "yet",
-    "so",
     "into",
     "near",
     "over",
     "plus",
     "past",
-    "out",
-    "nor",
+    "under",
+    "until",
   ];
 
-  // Capitalize the first letter of each word except numbers starting with "x"
+  // Capitalize the first letter of each word except numbers starting with "x" (e.g. "Tasks: x3")
   let Modified = Str.replace(/[^\W]+[^\s-]* */g, (Cap) => {
     return Cap.match(/x\d+/) ? Cap.toLowerCase() : UpperFirst(Cap);
   });
@@ -77,9 +81,9 @@ export function TitleCase(Str: string, Strict: boolean = true): string {
 
 /**
  * Converts a given string to camel case format
+ * @see {@link https://stackoverflow.com/a/2970667/11442726 Stack Overflow Reference}
  * @param Str - The string to convert
  * @returns Returns the given string in camel case format
- * @see {@link https://stackoverflow.com/a/2970667/11442726 Stack Overflow} Original author
  * @example
  * TitleCase("AutoComp")  // returns "autoComp"
  * TitleCase("Auto_Comp_42")  // returns "autoComp42"
@@ -91,15 +95,22 @@ export function CamelCase(Str: string): string {
 }
 
 /**
- * Normalizes the given pascal string and adds back spaces
+ * Converts a PascalCase string to normal sentence case.
+ * @param Str - The PascalCase string to be converted.
+ * @return The normal sentence case string.
+ * @example
+ * const PascalCase = 'PascalCaseString';
+ * console.log(PascalToNormal(PascalCase));  // returns "Pascal Case String"
  */
 export function PascalToNormal(Str: string): string {
-  return Str.replace(/([A-Z])/g, " $1").trim();
+  return Str.replace(/[A-Z]/g, " $&").trim();
 }
 
 /**
- * Escapes the given string for additional processing using regular expressions
- * @see {@link https://stackoverflow.com/a/6969486/11442726 Stack Overflow} Original author
+ * Escapes special characters in a string for additional processing using regular expressions.
+ * @see {@link https://stackoverflow.com/a/6969486/11442726 Stack Overflow Reference}
+ * @param Str - The string to process and escape.
+ * @returns The given string with special characters escaped using backslashes.
  */
 export function EscapeRegex(Str: string): string {
   return Str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

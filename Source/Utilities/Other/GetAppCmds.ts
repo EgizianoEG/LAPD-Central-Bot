@@ -3,6 +3,7 @@ import type { Snowflake, GuildResolvable } from "discord.js";
 /**
  * @param Client - The discord.js client
  * @param GuildId - If provided, returns the application commands registered on it; otherwise, returns global registered slash commands
+ * @returns
  */
 export default async function <Options extends Snowflake | GuildResolvable | undefined = undefined>(
   Client: DiscordClient,
