@@ -1,4 +1,4 @@
-import { EmbedBuilder, EmbedData } from "discord.js";
+import { Message, EmbedBuilder, EmbedData, BaseInteraction, InteractionResponse } from "discord.js";
 import { format as FormatString } from "node:util";
 import SharedConfig from "@Config/Shared.js";
 
@@ -19,9 +19,9 @@ class BaseEmbed extends EmbedBuilder {
    * @param interaction - The interaction to reply to
    */
   replyToInteract(
-    interaction: DiscordJS.BaseInteraction & { replied: boolean },
+    interaction: BaseInteraction & { replied: boolean },
     ephemeral?: boolean
-  ): Promise<DiscordJS.InteractionResponse<boolean>> | Promise<DiscordJS.Message<boolean>> {
+  ): Promise<InteractionResponse<boolean>> | Promise<Message<boolean>> {
     const ReplyMethod = interaction.replied ? "followUp" : "reply";
     return interaction[ReplyMethod]({
       ephemeral,

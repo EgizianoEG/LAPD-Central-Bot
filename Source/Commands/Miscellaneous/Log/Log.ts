@@ -1,8 +1,8 @@
-import { SlashCommandBuilder } from "discord.js";
-import AutocompleteHeight from "@Utilities/Autocompletion/Height.js";
+import { SlashCommandBuilder, AutocompleteInteraction } from "discord.js";
 import AutocompleteUsername from "@Utilities/Autocompletion/Username.js";
-import AutocompleteWeight from "@Utilities/Autocompletion/Weight.js";
 import AutocompleteVehicle from "@Utilities/Autocompletion/Vehicle.js";
+import AutocompleteHeight from "@Utilities/Autocompletion/Height.js";
+import AutocompleteWeight from "@Utilities/Autocompletion/Weight.js";
 import AutocompleteColor from "@Utilities/Autocompletion/Color.js";
 
 const Subcommands = [
@@ -34,7 +34,7 @@ async function Callback(Client: DiscordClient, Interaction: SlashCommandInteract
  * @param Interaction
  * @returns
  */
-async function Autocomplete(Interaction: DiscordJS.AutocompleteInteraction): Promise<void> {
+async function Autocomplete(Interaction: AutocompleteInteraction): Promise<void> {
   const { name, value } = Interaction.options.getFocused(true);
   let Suggestions: { name: string; value: string }[] = [];
 

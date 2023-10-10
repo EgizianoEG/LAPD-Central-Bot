@@ -1,3 +1,4 @@
+import { MessageComponentInteraction } from "discord.js";
 import { UnauthorizedEmbed } from "../Classes/ExtraEmbeds.js";
 
 /**
@@ -10,7 +11,7 @@ import { UnauthorizedEmbed } from "../Classes/ExtraEmbeds.js";
  */
 export default function HandleCollectorFiltering(
   OriginalInteract: SlashCommandInteraction,
-  ReceivedInteract: DiscordJS.MessageComponentInteraction
+  ReceivedInteract: MessageComponentInteraction
 ): boolean {
   if (OriginalInteract.user.id !== ReceivedInteract.user.id) {
     ReceivedInteract.reply({

@@ -1,10 +1,9 @@
-// TODO: add verification by following user or by joining a game.
-// -------------
 // Dependencies:
-// ------------------------------------------------------------------------------------
+// -------------
 
 import {
   Colors,
+  Message,
   ButtonStyle,
   EmbedBuilder,
   ComponentType,
@@ -12,6 +11,8 @@ import {
   escapeMarkdown,
   ActionRowBuilder,
   SlashCommandBuilder,
+  InteractionResponse,
+  AutocompleteInteraction,
 } from "discord.js";
 
 import GetPlayerInfo from "@Utilities/Roblox/GetPlayerInfo.js";
@@ -38,7 +39,7 @@ import { DummyText } from "@Utilities/Strings/Random.js";
 async function HandleInvalidUsername(
   Interaction: SlashCommandInteraction,
   RobloxUsername: string
-): Promise<DiscordJS.Message<boolean> | DiscordJS.InteractionResponse<boolean> | undefined> {
+): Promise<Message<boolean> | InteractionResponse<boolean> | undefined> {
   if (Interaction.replied) return;
   if (!IsValidRobloxUsername(RobloxUsername)) {
     return SendErrorReply({
@@ -89,6 +90,7 @@ async function HandleUserLoginStatus(Interaction: SlashCommandInteraction) {
  * Handles command execution logic
  * @param _ - The Discord.js client object.
  * @param Interaction - The interaction object.
+ * @todo - Add verification by following user or by joining a game.
  * @execution
  * This function executes the following steps:
  * 1. Retrieve the provided Roblox username from the interaction options.
@@ -213,7 +215,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction) 
  * @param Interaction
  * @returns
  */
-async function Autocomplete(Interaction: DiscordJS.AutocompleteInteraction): Promise<void> {
+async function Autocomplete(Interaction: AutocompleteInteraction): Promise<void> {
   const { name, value } = Interaction.options.getFocused(true);
   let Suggestions: { name: string; value: string }[];
 

@@ -1,3 +1,4 @@
+import { SlashCommandBuilder } from "discord.js";
 import { IsValidCmdObject } from "./Validator.js";
 import { GetDirName } from "./Paths.js";
 import GetFiles from "./GetFilesFrom.js";
@@ -10,7 +11,7 @@ import Path from "node:path";
  */
 export default async (
   Exceptions: string[] = []
-): Promise<SlashCommandObject<DiscordJS.SlashCommandBuilder>[]> => {
+): Promise<SlashCommandObject<SlashCommandBuilder>[]> => {
   const LocalCommands: SlashCommandObject[] = [];
   const CommandCats = GetFiles(
     Path.join(GetDirName(import.meta.url), "..", "..", "Commands"),

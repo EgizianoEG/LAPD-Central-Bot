@@ -3,11 +3,13 @@
 
 import {
   Colors,
+  Message,
   ButtonStyle,
   EmbedBuilder,
   ButtonBuilder,
   ComponentType,
   ActionRowBuilder,
+  InteractionResponse,
   SlashCommandSubcommandBuilder,
 } from "discord.js";
 
@@ -32,7 +34,7 @@ import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js"
 async function HandleNameValidation(
   Interaction: SlashCommandInteraction<"cached">,
   ShiftTypeName: string
-): Promise<DiscordJS.Message<boolean> | DiscordJS.InteractionResponse<boolean> | undefined> {
+): Promise<Message<boolean> | InteractionResponse<boolean> | undefined> {
   if (!IsValidShiftTypeName(ShiftTypeName)) {
     return SendErrorReply({
       Ephemeral: true,

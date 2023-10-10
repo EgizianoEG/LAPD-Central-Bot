@@ -1,4 +1,9 @@
-import type { Snowflake, GuildResolvable } from "discord.js";
+import type {
+  Snowflake,
+  GuildResolvable,
+  ApplicationCommandManager,
+  GuildApplicationCommandManager,
+} from "discord.js";
 
 /**
  * @param Client - The discord.js client
@@ -8,11 +13,7 @@ import type { Snowflake, GuildResolvable } from "discord.js";
 export default async function <Options extends Snowflake | GuildResolvable | undefined = undefined>(
   Client: DiscordClient,
   GuildId?: Options
-): Promise<
-  Options extends string
-    ? DiscordJS.GuildApplicationCommandManager
-    : DiscordJS.ApplicationCommandManager
-> {
+): Promise<Options extends string ? GuildApplicationCommandManager : ApplicationCommandManager> {
   if (typeof GuildId === "string") {
     const Guild = await Client.guilds.fetch(GuildId);
     await Guild.commands.fetch();

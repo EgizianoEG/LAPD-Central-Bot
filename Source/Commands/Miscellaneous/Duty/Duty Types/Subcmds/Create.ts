@@ -4,11 +4,13 @@
 import {
   SlashCommandSubcommandBuilder,
   RoleSelectMenuBuilder,
+  InteractionResponse,
   ActionRowBuilder,
   escapeMarkdown,
   ButtonBuilder,
   EmbedBuilder,
   ButtonStyle,
+  Message,
   Colors,
 } from "discord.js";
 
@@ -35,7 +37,7 @@ const ListFormatter = new Intl.ListFormat("en");
 async function HandleNameValidation(
   Interaction: SlashCommandInteraction<"cached">,
   ShiftTypeName: string
-): Promise<DiscordJS.Message<boolean> | DiscordJS.InteractionResponse<boolean> | undefined> {
+): Promise<Message<boolean> | InteractionResponse<boolean> | undefined> {
   if (!IsValidShiftTypeName(ShiftTypeName)) {
     return SendErrorReply({
       Ephemeral: true,
