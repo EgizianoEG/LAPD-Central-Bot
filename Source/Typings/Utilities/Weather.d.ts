@@ -1,8 +1,8 @@
-declare namespace Utilities.WeatherData {
+export namespace WeatherDataTypings {
   /**
    * Represents the options for retrieving current weather data.
    */
-  declare interface CurrentWeatherOptions {
+  export interface CurrentWeatherOptions {
     Units?: "metric" | "imperial";
     Latitude?: number;
     Longitude?: number;
@@ -12,7 +12,7 @@ declare namespace Utilities.WeatherData {
   /**
    * Represents fetched weather data from OpenWeather API.
    */
-  declare interface CurrentWeatherData {
+  export interface CurrentWeatherData {
     /** The name of the city with the given latitude and longitude */
     city_name: string;
 
@@ -38,7 +38,7 @@ declare namespace Utilities.WeatherData {
   /**
    * Represents weather data retrieved from OpenWeather API.
    */
-  declare interface RetrievedWeatherData {
+  export interface RetrievedWeatherData {
     /** The coordinates of the location. */
     coord: Coordinates;
 
@@ -78,77 +78,85 @@ declare namespace Utilities.WeatherData {
     /** The response code. */
     cod: number;
   }
+
+  /**
+   * Represents temperature data.
+   */
+  export interface TemperatureData {
+    min: string;
+    max: string;
+    current: string;
+    feels_like: string;
+  }
+
+  /**
+   * Represents wind data.
+   */
+  export interface WindData {
+    speed: string;
+    deg: number;
+  }
+
+  /**
+   * Represents cloud data.
+   */
+  export interface CloudData {
+    all: number;
+  }
+
+  /**
+   * Represents weather details.
+   */
+  export interface Weather {
+    /** The weather condition ID. */
+    id: number;
+
+    /** The main weather category. */
+    main: string;
+
+    /** The description of the weather condition. */
+    description: string;
+
+    /** The weather icon ID. */
+    icon: string;
+  }
+
+  /**
+   * Represents main weather data.
+   */
+  export interface MainData {
+    temp: string;
+    feels_like: string;
+    temp_min: string;
+    temp_max: string;
+    pressure: string;
+    humidity: string;
+  }
+
+  /**
+   * Represents geographical coordinates.
+   */
+  export interface Coordinates {
+    lon: number;
+    lat: number;
+  }
+
+  /**
+   * Represents system-related data.
+   */
+  export interface SystemData {
+    type: number;
+    id: number;
+    country: string;
+    sunrise: number;
+    sunset: number;
+  }
 }
 
-/**
- * Represents temperature data.
- */
-interface TemperatureData {
-  min: string;
-  max: string;
-  current: string;
-  feels_like: string;
-}
-
-/**
- * Represents wind data.
- */
-interface WindData {
-  speed: string;
-  deg: number;
-}
-
-/**
- * Represents cloud data.
- */
-interface CloudData {
-  all: number;
-}
-
-/**
- * Represents weather details.
- */
-interface Weather {
-  /** The weather condition ID. */
-  id: number;
-
-  /** The main weather category. */
-  main: string;
-
-  /** The description of the weather condition. */
-  description: string;
-
-  /** The weather icon ID. */
-  icon: string;
-}
-
-/**
- * Represents main weather data.
- */
-interface MainData {
-  temp: string;
-  feels_like: string;
-  temp_min: string;
-  temp_max: string;
-  pressure: string;
-  humidity: string;
-}
-
-/**
- * Represents geographical coordinates.
- */
-interface Coordinates {
-  lon: number;
-  lat: number;
-}
-
-/**
- * Represents system-related data.
- */
-interface SystemData {
-  type: number;
-  id: number;
-  country: string;
-  sunrise: number;
-  sunset: number;
+declare global {
+  namespace Utilities.WeatherData {
+    type CurrentWeatherOptions = WeatherDataTypings.CurrentWeatherOptions;
+    type RetrievedWeatherData = WeatherDataTypings.RetrievedWeatherData;
+    type CurrentWeatherData = WeatherDataTypings.CurrentWeatherData;
+  }
 }

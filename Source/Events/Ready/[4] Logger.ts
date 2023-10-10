@@ -9,10 +9,6 @@ import GetPresence from "@Utilities/Roblox/GetPresence.js";
 import ShiftActive from "@Utilities/Database/GetShiftActive.js";
 /* eslint-enable */
 
-/**
- * Development logger
- * @param Client
- */
 export default async function DevelopmentLogger(Client: DiscordClient) {
   // -----
   process.on("uncaughtException", (Err) => {

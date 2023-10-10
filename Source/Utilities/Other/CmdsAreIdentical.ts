@@ -5,8 +5,8 @@ import type {
 
 /**
  * Validates two slash commands if they are semi-equal in properties and values
- * @param Cmd_1
- * @param Cmd_2
+ * @param Cmd_1 - The first slash command to compare
+ * @param Cmd_2 - The second slash command to compare
  * @returns
  */
 export default function CmdsAreEqual(

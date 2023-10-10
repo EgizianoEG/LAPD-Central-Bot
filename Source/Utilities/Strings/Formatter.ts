@@ -1,6 +1,7 @@
 /* eslint-disable sonarjs/cognitive-complexity */
 import { format as FormatStr } from "node:util";
 import { TitleCase } from "./Converter.js";
+import { Vehicles } from "@Typings/Resources.js";
 
 /**
  * Formats a given string of charges into a properly formatted numbered list.
@@ -570,7 +571,7 @@ export function FormatUsername(
  * @returns
  */
 export function FormatVehicleName(
-  Model: Resources.VehicleModel,
+  Model: Vehicles.VehicleModel,
   Brand: { name: string; alias: string }
 ) {
   const OrgMYear = Model.model_year.org ? `${Model.model_year.org} ` : "";

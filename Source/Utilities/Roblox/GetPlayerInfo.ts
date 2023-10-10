@@ -1,3 +1,4 @@
+import { RobloxAPI } from "@Typings/Utilities/Roblox.js";
 import Axios from "axios";
 
 /**
@@ -7,6 +8,6 @@ import Axios from "axios";
  */
 export default async function GetPlayerInfo(
   UserId: number | string
-): Promise<Utilities.Roblox.UserProfileDetails> {
+): Promise<RobloxAPI.Users.GetUserResponse> {
   return Axios.get(`https://users.roblox.com/v1/users/${UserId}`).then((Resp) => Resp.data);
 }

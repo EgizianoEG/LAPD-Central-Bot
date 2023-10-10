@@ -5,8 +5,8 @@ import ShiftModel from "@Models/Shift.js";
  * Retrieves and returns the active shifts (with the input ShiftType or with all by default)
  * for a certain guild using the interaction data in the provided object and, if specified
  * (UserOnly option), the current active shift for the person who initiated the interaction.
+ * @param param0 - Configuration options for the function.
  * @defaults All active shifts for the guild in which the interaction was initiated, including all shift types.
- * @type {Utilities.Database.ShiftActiveFunc}
  * @example
  * const ShiftActive = require("../ShiftActive");
  * const CmdInteraction = ...

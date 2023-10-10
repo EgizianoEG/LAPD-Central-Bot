@@ -12,11 +12,6 @@ const AllGuildCommands = false;
 const GlobalCommandsToDelete = [""]; // The names of all commands to delete
 
 // --------------------------------------------------------------------
-
-/**
- * Removes specified commands from the application
- * @param Client
- */
 export default async function RemoveCommands(Client: DiscordClient) {
   if (!Enabled) return;
   if (AllGuildCommands) {

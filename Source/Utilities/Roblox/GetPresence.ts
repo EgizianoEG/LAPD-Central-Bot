@@ -1,3 +1,4 @@
+import { RobloxAPI } from "@Typings/Utilities/Roblox.js";
 import Axios, { AxiosResponse } from "axios";
 
 /**
@@ -17,7 +18,7 @@ export default async function GetPresence(UserIDs: string | number | Array<numbe
   const RequestURL = "https://presence.roblox.com/v1/presence/users";
 
   return Axios.post(RequestURL, Payload).then(
-    (Resp: AxiosResponse<{ userPresences: Utilities.Roblox.UserPresence[] }>) => {
+    (Resp: AxiosResponse<RobloxAPI.Presence.UserPresencesResponse>) => {
       return IdsArray.length > 1 ? Resp.data.userPresences : Resp.data.userPresences[0];
     }
   );

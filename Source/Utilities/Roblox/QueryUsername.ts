@@ -1,14 +1,7 @@
 import { APICache } from "../Other/Cache.js";
+import { RobloxAPI } from "@Typings/Utilities/Roblox.js";
 import { IsValidRobloxUsername } from "../Other/Validator.js";
 import Axios, { AxiosResponse } from "axios";
-
-interface APIQueryResponse {
-  Keyword: string;
-  StartIndex: number;
-  MaxRows: number;
-  TotalResults: number;
-  UserSearchResults: Utilities.Roblox.UserSearchResult[];
-}
 
 /**
  * Searches for a user by their username and returns the search results
@@ -17,14 +10,14 @@ interface APIQueryResponse {
  */
 export default async function QueryUsername(
   Username: string
-): Promise<Utilities.Roblox.UserSearchResult[]> {
+): Promise<RobloxAPI.Users.UserSearchResult[]> {
   if (!IsValidRobloxUsername(Username)) return [];
   if (APICache.UsernameSearches.has(Username)) {
     return APICache.UsernameSearches.get(Username) ?? [];
   }
 
   return Axios.get(`https://www.roblox.com/search/users/results?keyword=${Username}&maxRows=25`)
-    .then(({ data }: AxiosResponse<APIQueryResponse>) => {
+    .then(({ data }: AxiosResponse<RobloxAPI.Users.UsernameQuery>) => {
       if (data.UserSearchResults) {
         APICache.UsernameSearches.set(Username, data.UserSearchResults);
         return data.UserSearchResults;

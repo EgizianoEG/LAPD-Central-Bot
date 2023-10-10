@@ -1,7 +1,7 @@
 import { BaseInteraction } from "discord.js";
 import { UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
-export default async function (_, Interaction: BaseInteraction) {
+export default async function (_: DiscordClient, Interaction: BaseInteraction) {
   if (!Interaction.isButton()) return;
   setTimeout(() => {
     Interaction.fetchReply();

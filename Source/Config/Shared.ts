@@ -1,4 +1,4 @@
-import { ColorResolvable } from "discord.js";
+import type { ColorResolvable } from "discord.js";
 
 const SharedData = {
   Images: {
@@ -129,8 +129,8 @@ interface SharedConfig extends OrgTypings {
   };
 }
 
-export const Images = SharedData.Images as SharedConfig["Images"];
-export const Emojis = SharedData.Emojis as SharedConfig["Emojis"];
+export const Icons = SharedData.Icons;
+export const Emojis = SharedData.Emojis;
+export const Images = SharedData.Images;
 export const Embeds = SharedData.Embeds as SharedConfig["Embeds"];
-export const Icons = SharedData.Icons as SharedConfig["Icons"];
 export default SharedData as SharedConfig;

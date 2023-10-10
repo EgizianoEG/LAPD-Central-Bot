@@ -1,4 +1,6 @@
-const Data: Resources.VehicleModelData[] = [
+import type { Vehicles } from "@Typings/Resources.js";
+
+const Data: Vehicles.VehicleData[] = [
   {
     brand: "Nissan",
     counterpart: "Navara",

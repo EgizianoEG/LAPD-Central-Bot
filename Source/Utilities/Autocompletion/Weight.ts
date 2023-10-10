@@ -13,6 +13,7 @@ Cache.Default = WeightOptions.filter((Element) => {
 
 /**
  * Autocompletes an input weight
+ * @param TypedValue - The user's input value
  * @returns An array of weight suggestions
  */
 export default function AutocompleteWeight(

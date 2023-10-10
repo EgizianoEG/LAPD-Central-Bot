@@ -1,17 +1,6 @@
 import { APICache } from "../Other/Cache.js";
+import { RobloxAPI } from "@Typings/Utilities/Roblox.js";
 import Axios, { AxiosResponse } from "axios";
-
-interface APIResponseData {
-  data: [
-    {
-      id: number;
-      name: string;
-      displayName: string;
-      hasVerifiedBadge: boolean;
-      requestedUsername: string;
-    },
-  ];
-}
 
 /**
  * Returns the user id of the input username string
@@ -36,7 +25,7 @@ export default async function GetIdFromUsername(
     usernames: RequestArray,
     excludeBannedUsers: ExcludeBanned,
   })
-    .then((Resp: AxiosResponse<APIResponseData>) => {
+    .then((Resp: AxiosResponse<RobloxAPI.Users.MultiGetByNameResponse>) => {
       let Results = RequestArray.map((Username) => {
         return Resp.data.data.find((UserObject) => UserObject.requestedUsername === Username);
       }).map((UserObject) => {
