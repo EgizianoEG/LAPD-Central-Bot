@@ -130,7 +130,7 @@ async function HandleCooldowns(
           new WarnEmbed()
             .setTitle("Cooldown")
             .setDescription(
-              "Kindly wait. You currently have a cooldown for the </%s:%s> slash command. You may use it again approximately %s.",
+              "Kindly wait. You currently have a cooldown for the </%s:%s> slash command and you may use it again approximately %s.",
               CommandName,
               CommandID,
               time(Math.round(ExpTimestamp / 1000), "R")
