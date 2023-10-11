@@ -2,6 +2,7 @@
 // -------------
 
 import { OpenWeather as OpenWeatherConfig } from "@Config/Secrets.js";
+import { WeatherDataTypings } from "@Typings/Utilities/Weather.js";
 import Axios, { AxiosResponse } from "axios";
 import Convert from "convert-units";
 
@@ -34,21 +35,21 @@ function ConvertVisibility(RawVisibility: number, DistanceUnit: Convert.Unit): n
  * @returns A Promise that resolves to the current weather data retrieved from OpenWeather API
  */
 export async function GetCurrentWeather(
-  Options: Utilities.WeatherData.CurrentWeatherOptions = { Units: "imperial" }
-): Promise<Utilities.WeatherData.CurrentWeatherData> {
+  Options: WeatherDataTypings.CurrentWeatherOptions = { Units: "imperial" }
+): Promise<WeatherDataTypings.CurrentWeatherData> {
   const RetrievedData = await WeatherClient.request({
     params: {
       units: Options.Units,
     },
-  }).then((Res: AxiosResponse<Utilities.WeatherData.RetrievedWeatherData>) => {
+  }).then((Res: AxiosResponse<WeatherDataTypings.RetrievedWeatherData>) => {
     for (const [Key, Value] of Object.entries(Res.data.main)) {
       Res.data.main[Key] = Math.round(Value).toString();
     }
-    return Res.data;
+    return Res.data as unknown as WeatherDataTypings.RetrievedWeatherData<string>;
   });
 
   const IsMetric = Options.Units === "metric";
-  const Units: Record<string, string> = {
+  const Units = {
     Speed: IsMetric ? " km/h" : " mph",
     Degree: IsMetric ? " °C" : " °F",
     Distance: IsMetric ? " km" : " mi",
@@ -68,9 +69,12 @@ export async function GetCurrentWeather(
     temp: Temperatures,
     weather: RetrievedData.weather[0],
     clouds: RetrievedData.clouds,
-    wind: RetrievedData.wind,
     humidity: RetrievedData.main.humidity,
     pressure: RetrievedData.main.pressure,
+    wind: {
+      speed: RetrievedData.wind.speed.toString(),
+      deg: RetrievedData.wind.deg,
+    },
     visibility: ConvertVisibility(
       RetrievedData.visibility,
       Units.Distance.trim() as Convert.Unit

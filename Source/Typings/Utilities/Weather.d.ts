@@ -38,7 +38,7 @@ export namespace WeatherDataTypings {
   /**
    * Represents weather data retrieved from OpenWeather API.
    */
-  export interface RetrievedWeatherData {
+  export interface RetrievedWeatherData<MVTypes extends number | string = number> {
     /** The coordinates of the location. */
     coord: Coordinates;
 
@@ -49,7 +49,7 @@ export namespace WeatherDataTypings {
     base: string;
 
     /** The main weather data. */
-    main: MainData;
+    main: MainData<MVTypes>;
 
     /** The visibility in meters. */
     visibility: number;
@@ -93,7 +93,7 @@ export namespace WeatherDataTypings {
    * Represents wind data.
    */
   export interface WindData {
-    speed: string;
+    speed: number | string;
     deg: number;
   }
 
@@ -124,13 +124,13 @@ export namespace WeatherDataTypings {
   /**
    * Represents main weather data.
    */
-  export interface MainData {
-    temp: string;
-    feels_like: string;
-    temp_min: string;
-    temp_max: string;
-    pressure: string;
-    humidity: string;
+  export interface MainData<VType extends number | string = number> {
+    temp: VType;
+    feels_like: VType;
+    temp_min: VType;
+    temp_max: VType;
+    pressure: VType;
+    humidity: VType;
   }
 
   /**
