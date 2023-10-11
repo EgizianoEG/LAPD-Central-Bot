@@ -2,7 +2,7 @@ import { SlashCommandSubcommandGroupBuilder } from "discord.js";
 
 const Subcommands = [
   (await import("./Subcmds/View.js")).default,
-  (await import("./Subcmds/View.js")).default,
+  (await import("./Subcmds/Delete.js")).default,
   (await import("./Subcmds/Create.js")).default,
 ];
 
