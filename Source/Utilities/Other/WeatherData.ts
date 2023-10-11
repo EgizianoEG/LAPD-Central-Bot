@@ -36,7 +36,7 @@ function ConvertVisibility(RawVisibility: number, DistanceUnit: Convert.Unit): n
  */
 export async function GetCurrentWeather(
   Options: WeatherDataTypings.CurrentWeatherOptions = { Units: "imperial" }
-): Promise<WeatherDataTypings.CurrentWeatherData> {
+) {
   const RetrievedData = await WeatherClient.request({
     params: {
       units: Options.Units,
