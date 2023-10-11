@@ -1,16 +1,16 @@
 export namespace RobloxAPI.Users {
   interface GetUserResponse {
-    /** The about/description of the user. */
+    /** The user's bio/description. */
     description: string;
 
-    /** The date string indicating when the user signed up (RFC 3339). */
+    /** The date string showing the user's registration date (RFC 3339). */
     created: string;
 
     /** Whether or not the user is banned. */
     isBanned: boolean;
 
     /** The display name in an external app. Unused, legacy attribute.
-     * For now always `null` to not disturb existing client code that might rely on its existence.
+     * For now always `null` to avoid disrupting existing client code that may rely on it.
      * */
     externalAppDisplayName: string | null;
 
@@ -27,6 +27,23 @@ export namespace RobloxAPI.Users {
     displayName: string;
   }
 
+  /** The API response for a user search by keyword using "https://www.roblox.com/search/users/results" endpoint */
+  interface UserSearchQueryResponse {
+    /** The search keyword. This field can be filtered and replaced with hashtags by Roblox. */
+    Keyword: string;
+
+    /** The maximum number of rows (search results) returned. */
+    MaxRows: number;
+
+    /** The starting index of the search results. */
+    StartIndex: number;
+
+    /** The total number of search results. Maximum of 500 results. */
+    TotalResults: number;
+    UserSearchResults: Users.UserSearchResult[];
+  }
+
+  /** An object representing a user search result for the endpoint "https://www.roblox.com/search/users/results" */
   interface UserSearchResult {
     /** The id of the user. */
     UserId: number;
@@ -37,40 +54,32 @@ export namespace RobloxAPI.Users {
     /** The display name of the user. */
     DisplayName: string;
 
-    /** A brief description of the user. */
+    /** The bio/description of the user. */
     Blurb: string;
 
-    /** A comma-separated list of the user's previous usernames. */
+    /** A comma-separated stringified list of the user's previous usernames e.g. "roblox, roblox2, roblox3" */
     PreviousUserNamesCsv: string;
 
-    /** Whether the user is online. */
+    /** Whether the user is online. This property is not recommended to be used and depend on. */
     IsOnline: boolean;
 
-    /** The user's last known location. */
-    LastLocation?: string;
+    /** The user's last known location. This property is not recommended to be used and depend on. */
+    LastLocation: string | null;
 
-    /** The URL of the user's profile page. */
+    /** The URL of the user's profile page. e.g. "/users/000000/profile" */
     UserProfilePageUrl: string;
 
     /** The user's last seen date. */
-    LastSeenDate?: string;
+    LastSeenDate: string | null;
 
-    /** The user's primary group. */
+    /** The user's primary group. An empty string if the user has no primary group. */
     PrimaryGroup: string;
 
-    /** The URL of the user's primary group. */
+    /** The URL of the user's primary group if applicable. */
     PrimaryGroupUrl: string;
 
-    /** Whether the user has a verified badge. */
+    /** Whether the user has a verified badge. Not recommended to be used. */
     HasVerifiedBadge: boolean;
-  }
-
-  interface UsernameQuery {
-    Keyword: string;
-    StartIndex: number;
-    MaxRows: number;
-    TotalResults: number;
-    UserSearchResults: Users.UserSearchResult[];
   }
 
   interface MultiGetByNameResponse {
@@ -93,7 +102,9 @@ export namespace RobloxAPI.Presence {
         /** The Id of the user. */
         userId: number;
 
-        /** User presence Type ['Offline' = 0, 'Online' = 1, 'InGame' = 2, 'InStudio' = 3, 'Invisible' = 4] */
+        /** User presence Type.
+         * Enums: ['Offline': `0`, 'Online': `1`, 'InGame': `2`, 'InStudio': `3`, 'Invisible': `4`]
+         * */
         userPresenceType: 0 | 1 | 2 | 3 | 4;
 
         /** The user's last location if applicable. Could be an empty string (`""`). */
@@ -114,6 +125,7 @@ export namespace RobloxAPI.Presence {
         /** The last seen date string. Can be convert to normal Date object. */
         lastOnline: string;
 
+        // Unknown presence:
         // invisibleModeExpiry: string;
       },
     ];

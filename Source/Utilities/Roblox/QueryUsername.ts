@@ -17,7 +17,7 @@ export default async function QueryUsername(
   }
 
   return Axios.get(`https://www.roblox.com/search/users/results?keyword=${Username}&maxRows=25`)
-    .then(({ data }: AxiosResponse<RobloxAPI.Users.UsernameQuery>) => {
+    .then(({ data }: AxiosResponse<RobloxAPI.Users.UserSearchQueryResponse>) => {
       if (data.UserSearchResults) {
         APICache.UsernameSearches.set(Username, data.UserSearchResults);
         return data.UserSearchResults;
