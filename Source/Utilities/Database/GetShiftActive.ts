@@ -1,3 +1,4 @@
+import { ExtraTypings } from "@Typings/Utilities/Database.js";
 import { Falsey } from "utility-types";
 import ShiftModel from "@Models/Shift.js";
 
@@ -33,8 +34,8 @@ export default async function ShiftActive<UOType extends boolean | undefined = f
   Interaction: SlashCommandInteraction<"cached">;
 }): Promise<
   UOType extends Falsey
-    ? Utilities.Database.HydratedShiftDocument[]
-    : Utilities.Database.HydratedShiftDocument | null
+    ? ExtraTypings.HydratedShiftDocument[]
+    : ExtraTypings.HydratedShiftDocument | null
 > {
   const ActiveShifts = await ShiftModel.find({
     guild: Interaction.guildId,

@@ -8,7 +8,7 @@ import type {
   HydratedDocumentFromSchema,
 } from "mongoose";
 
-export namespace MongooseTypings {
+export namespace ExtraTypings {
   export type HydratedShiftDocument = HydratedDocument<ShiftDocument, ShiftDocOverrides>;
   export interface ShiftDurations {
     /** The total duration (on-duty and on-break sum) for the shift in milliseconds */
@@ -72,7 +72,15 @@ export namespace MongooseTypings {
     };
   }
 
+  export interface CreateShiftTypeConfig {
+    name: string;
+    guild_id: string;
+    is_default?: boolean;
+    permissible_roles?: string[];
+  }
+
   export interface GuildShiftType {
+    _id: Types.ObjectId;
     /** The unique shift type name */
     name: string;
     /** Should this shift type be the default one? */
@@ -88,7 +96,7 @@ export namespace MongooseTypings {
    * meaning that if the object is `{ management: true }`; then the check will succeed
    * if the user has one of the permissions for management (guild scope or app scope); otherwise it will fail.
    */
-  export interface UserPermissionsData {
+  export interface UserPermissionsConfig {
     management:
       | boolean
       | ({
@@ -109,6 +117,6 @@ declare global {
     type HydratedShiftDocument = MongooseTypings.HydratedShiftDocument;
     type ShiftDocument = MongooseTypings.ShiftDocument;
     type GuildShiftType = MongooseTypings.GuildShiftType;
-    type UserPermissionsData = MongooseTypings.UserPermissionsData;
+    type UserPermissionsData = MongooseTypings.UserPermissionsConfig;
   }
 }

@@ -1,5 +1,6 @@
 import { BaseInteraction, PermissionFlagsBits } from "discord.js";
 import { IsPlainObject, IsEmptyObject } from "../Other/Validator.js";
+import { ExtraTypings } from "@Typings/Utilities/Database.js";
 import { DeepPartial } from "utility-types";
 import GuildModel from "@Models/Guild.js";
 
@@ -12,12 +13,12 @@ function GetLogicalOperation(Obj: object & { $and?: boolean; $or?: boolean }): "
 
 /**
  * Checks if a given user is already logged in using the bot.
- * @param {} CmdInteraction - The user command interaction to process.
- * @param {} Perms - Permissions object to validate against
+ * @param CmdInteraction - The user command interaction to process.
+ * @param Perms - Permissions object to validate against
  */
 export default async function UserHasPerms(
   CmdInteraction: BaseInteraction<"cached">,
-  Perms: DeepPartial<Utilities.Database.UserPermissionsData>
+  Perms: DeepPartial<ExtraTypings.UserPermissionsConfig>
 ): Promise<boolean> {
   if (!IsPlainObject(Perms) || IsEmptyObject(Perms)) return true;
   if (Object.values(Perms).every((Val) => !Val)) return true;
@@ -61,7 +62,7 @@ export default async function UserHasPerms(
         HasManagement = true;
       }
     } else {
-      throw new Error(`Invalid 'management' object structure; ${Perms.management}`);
+      throw new Error(`Invalid 'management' object structure; ${String(Perms.management)}`);
     }
   }
 

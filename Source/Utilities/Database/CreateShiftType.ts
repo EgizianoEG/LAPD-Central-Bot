@@ -1,19 +1,13 @@
+import { ExtraTypings } from "@Typings/Utilities/Database.js";
 import GuildModel from "@Models/Guild.js";
 import AppError from "../Classes/AppError.js";
-
-interface CreateShiftTypeConfig {
-  name: string;
-  guild_id: string;
-  is_default?: boolean;
-  permissible_roles?: string[];
-}
 
 /**
  * Creates a new shift type for the given guild
  * @param Data The shift type data
  * @returns The shift type after being saved if creation succeeded or an `AppError` instance if there was an exception (would be thrown if the exception was from the database)
  */
-export default async function CreateShiftType(Data: CreateShiftTypeConfig) {
+export default async function CreateShiftType(Data: ExtraTypings.CreateShiftTypeConfig) {
   const GuildDoc = await GuildModel.findById(Data.guild_id).select("settings.shifts.types").exec();
   const ShiftTypeExists = GuildDoc?.settings.shifts.types.some(
     (ShiftType) => ShiftType.name === Data.name
