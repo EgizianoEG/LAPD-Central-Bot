@@ -1,5 +1,5 @@
+import { Discord as DiscordSecrets, Roblox as RobloxSecrets } from "@Config/Secrets.js";
 import { Client, Collection, GatewayIntentBits } from "discord.js";
-import { Discord, Roblox } from "@Config/Secrets.js";
 
 import Chalk from "chalk";
 import Noblox from "noblox.js";
@@ -20,7 +20,7 @@ const App = new Client({
 App.commands = new Collection();
 App.cooldowns = new Collection();
 
-App.login(Discord.BotToken)
+App.login(DiscordSecrets.BotToken)
   .then(() => {
     if (!App.user) throw new Error("`App.user` is not accessible.");
     console.info("✅ - %s bot is online.", Chalk.cyanBright.bold(App.user.username));
@@ -29,7 +29,7 @@ App.login(Discord.BotToken)
     console.error("❎ - %s", Chalk.red("Failed to run the application. Details:\n"), Err)
   );
 
-Noblox.setCookie(Roblox.Cookie)
+Noblox.setCookie(RobloxSecrets.Cookie)
   .then((UserData) => {
     console.log("✅ - Logged into Roblox as %s.", Chalk.cyanBright.bold(UserData.UserName));
   })
