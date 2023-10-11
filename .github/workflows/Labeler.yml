@@ -60,8 +60,8 @@ jobs:
           l_label: "Size - L"
           xl_label: "Size - XL"
 
-          message_if_xl: >
-            ### ⚠️ - Pull Request Size Exceeds Recommended Limit
+          message_if_xl: |-
+            #### ⚠️ - Pull Request Size Exceeds Recommendation
 
-            This pull request exceeds the maximum recommended size of 1,000 lines.
-            Please consider breaking it down into smaller, focused PRs for easier review and collaboration.
+            > This pull request exceeds the maximum recommended size of 1,000 lines.
+            > Please consider breaking it down into smaller, focused PRs for easier review and collaboration.
