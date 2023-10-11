@@ -52,7 +52,6 @@
     "eslint-config-prettier": "^9.0.0",
     "eslint-config-standard": "^17.1.0",
     "eslint-plugin-sonarjs": "^0.21.0",
-    "nodemon": "^3.0.1",
     "prettier": "^3.0.3",
     "tsconfig-replace-paths": "^0.0.14",
     "tsx": "^3.13.0",
