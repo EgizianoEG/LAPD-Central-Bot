@@ -61,7 +61,7 @@ const CallsignSchema = new Schema({
         trim: true,
         required: true,
         validate: {
-          validator: (Value) => {
+          validator: (Value: string) => {
             return !!Value.match(/^\d{2,3}$|^0\d{1,2}$/);
           },
           message:
@@ -85,6 +85,7 @@ const CallsignSchema = new Schema({
       approving_user: {
         type: String,
         match: /^\d{15,22}$/,
+        ref: "GuildProfile",
         default: null,
         required: false,
       },

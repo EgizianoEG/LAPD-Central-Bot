@@ -44,21 +44,30 @@ export namespace MongooseTypings {
      * of this shift and the last 2 are randomly generated digits
      */
     _id: string;
+
     /** The user who initiated this shift */
     user: string;
+
     /** The guild this shift belongs to */
     guild: string;
+
     /** The start timestamp of the shift (i.e. the time when this shift was created) */
     start_timestamp: Date;
+
     /** End timestamp of this shift; defaults to `null` which indicates that this shift is currently active */
     end_timestamp: Date | null;
-    /** The shift type */
+
+    /** The shift type; defaults to `"Default"` */
     type: string;
     durations: ShiftDurations;
+
+    /** Logged events during the shift */
     events: {
       /** An array of breaks logged during the shift. Every break has two values in the format: `[StartEpoch, EndEpoch]` */
       breaks: [[number, number | null]];
+      /** The number of arrests logged during this shift */
       arrests: number;
+      /** The number of citations logged during this shift */
       citations: number;
     };
   }
