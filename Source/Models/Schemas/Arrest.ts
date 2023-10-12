@@ -1,8 +1,10 @@
 import { Schema } from "mongoose";
 
-export default new Schema({
+const ArrestSchema = new Schema({
   defendant: {
     type: String,
     required: true,
   },
 });
+
+export default ArrestSchema;

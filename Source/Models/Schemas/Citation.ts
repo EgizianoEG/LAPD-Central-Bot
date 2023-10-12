@@ -1,8 +1,10 @@
 import { Schema } from "mongoose";
 
-export default new Schema({
+const CitationSchema = new Schema({
   offender: {
     type: String,
     required: true,
   },
 });
+
+export default CitationSchema;
