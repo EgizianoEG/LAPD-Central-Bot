@@ -101,6 +101,7 @@ const CallsignSchema = new Schema(
     },
   },
   {
+    versionKey: false,
     virtuals: {
       formatted: {
         get() {
@@ -116,5 +117,4 @@ const CallsignSchema = new Schema(
   }
 );
 
-CallsignSchema.set("versionKey", false);
 export default CallsignSchema;
