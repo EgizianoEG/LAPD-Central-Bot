@@ -1,9 +1,9 @@
-declare namespace WeatherData {
+export namespace WeatherDataTypings {
   /**
    * Represents the options for retrieving current weather data.
    */
-  declare interface CurrentWeatherOptions {
-    Units?: TemperatureUnit;
+  export interface CurrentWeatherOptions {
+    Units?: "metric" | "imperial";
     Latitude?: number;
     Longitude?: number;
     Formatted?: boolean;
@@ -12,7 +12,7 @@ declare namespace WeatherData {
   /**
    * Represents fetched weather data from OpenWeather API.
    */
-  declare interface CurrentWeatherData {
+  export interface CurrentWeatherData {
     /** The name of the city with the given latitude and longitude */
     city_name: string;
 
@@ -38,7 +38,7 @@ declare namespace WeatherData {
   /**
    * Represents weather data retrieved from OpenWeather API.
    */
-  declare interface RetrievedWeatherData {
+  export interface RetrievedWeatherData<MVTypes extends number | string = number> {
     /** The coordinates of the location. */
     coord: Coordinates;
 
@@ -49,7 +49,7 @@ declare namespace WeatherData {
     base: string;
 
     /** The main weather data. */
-    main: MainData;
+    main: MainData<MVTypes>;
 
     /** The visibility in meters. */
     visibility: number;
@@ -78,82 +78,85 @@ declare namespace WeatherData {
     /** The response code. */
     cod: number;
   }
+
+  /**
+   * Represents temperature data.
+   */
+  export interface TemperatureData {
+    min: string;
+    max: string;
+    current: string;
+    feels_like: string;
+  }
+
+  /**
+   * Represents wind data.
+   */
+  export interface WindData {
+    speed: number | string;
+    deg: number;
+  }
+
+  /**
+   * Represents cloud data.
+   */
+  export interface CloudData {
+    all: number;
+  }
+
+  /**
+   * Represents weather details.
+   */
+  export interface Weather {
+    /** The weather condition ID. */
+    id: number;
+
+    /** The main weather category. */
+    main: string;
+
+    /** The description of the weather condition. */
+    description: string;
+
+    /** The weather icon ID. */
+    icon: string;
+  }
+
+  /**
+   * Represents main weather data.
+   */
+  export interface MainData<VType extends number | string = number> {
+    temp: VType;
+    feels_like: VType;
+    temp_min: VType;
+    temp_max: VType;
+    pressure: VType;
+    humidity: VType;
+  }
+
+  /**
+   * Represents geographical coordinates.
+   */
+  export interface Coordinates {
+    lon: number;
+    lat: number;
+  }
+
+  /**
+   * Represents system-related data.
+   */
+  export interface SystemData {
+    type: number;
+    id: number;
+    country: string;
+    sunrise: number;
+    sunset: number;
+  }
 }
 
-/**
- * Represents temperature data.
- */
-interface TemperatureData {
-  min: string;
-  max: string;
-  current: string;
-  feels_like: string;
+declare global {
+  namespace Utilities.WeatherData {
+    type CurrentWeatherOptions = WeatherDataTypings.CurrentWeatherOptions;
+    type RetrievedWeatherData = WeatherDataTypings.RetrievedWeatherData;
+    type CurrentWeatherData = WeatherDataTypings.CurrentWeatherData;
+  }
 }
-
-/**
- * Represents wind data.
- */
-interface WindData {
-  speed: string;
-  deg: number;
-}
-
-/**
- * Represents cloud data.
- */
-interface CloudData {
-  all: number;
-}
-
-/**
- * Represents weather details.
- */
-interface Weather {
-  /** The weather condition ID. */
-  id: number;
-
-  /** The main weather category. */
-  main: string;
-
-  /** The description of the weather condition. */
-  description: string;
-
-  /** The weather icon ID. */
-  icon: string;
-}
-
-/**
- * Represents main weather data.
- */
-interface MainData {
-  temp: string;
-  feels_like: string;
-  temp_min: string;
-  temp_max: string;
-  pressure: string;
-  humidity: string;
-}
-
-/**
- * Represents geographical coordinates.
- */
-interface Coordinates {
-  lon: number;
-  lat: number;
-}
-
-/**
- * Represents system-related data.
- */
-interface SystemData {
-  type: number;
-  id: number;
-  country: string;
-  sunrise: number;
-  sunset: number;
-}
-
-/**
- * Represents available units for temperature measurement.
- */
-type TemperatureUnit = "metric" | "imperial" | string;

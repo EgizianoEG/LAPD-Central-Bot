@@ -1,11 +1,11 @@
 {
   "name": "lapd-central-bot",
-  "version": "1.0.0",
-  "description": "A discord.js bot designed to be used as a helper to manage and operate role playing LAPD discord servers.",
+  "version": "0.5.0",
+  "description": "A discord.js bot designed to be used as a helper to manage and operate role playing LAPD Discord servers.",
   "author": "EgizianoEG",
   "license": "MIT",
-  "main": "Source/Main.js",
-  "type": "commonjs",
+  "main": "Source/Main.ts",
+  "type": "module",
   "private": true,
   "repository": {
     "type": "git",
@@ -19,13 +19,17 @@
   ],
   "scripts": {
     "watch:dev": "tsx watch --clear-screen=false --ignore ./Build/**/* --ignore ./Source/Typings/**/* .",
-    "start": "node ./Source/Main.js",
-    "lint": "eslint ./Source",
+    "start:js": "node ./Build/Main.js",
+    "start:ts": "tsx .",
+    "start": "npm run start:ts",
+    "build": "tsc && tsconfig-replace-paths --project tsconfig.json",
+    "clean-build": "rm -rf Build & npm run build",
+    "lint": "tsc --noEmit && eslint \"Source/**/*.{js,ts}\" && prettier -c \"Source/**/*.{js,ts,json}\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "axios": "^1.5.1",
-    "chalk": "^4.1.2",
+    "chalk": "^5.3.0",
     "convert-units": "^2.3.4",
     "dedent": "^1.5.1",
     "discord.js": "^14.13.0",
@@ -33,7 +37,8 @@
     "lodash": "^4.17.21",
     "mongoose": "^7.5.3",
     "noblox.js": "^4.14.1",
-    "node-cache": "^5.1.2"
+    "node-cache": "^5.1.2",
+    "utility-types": "^3.10.0"
   },
   "devDependencies": {
     "@tsconfig/node20": "^20.1.2",
@@ -47,8 +52,8 @@
     "eslint-config-prettier": "^9.0.0",
     "eslint-config-standard": "^17.1.0",
     "eslint-plugin-sonarjs": "^0.21.0",
-    "nodemon": "^3.0.1",
     "prettier": "^3.0.3",
+    "tsconfig-replace-paths": "^0.0.14",
     "tsx": "^3.13.0",
     "typescript": "^5.2.2"
   },
