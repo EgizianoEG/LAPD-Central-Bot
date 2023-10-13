@@ -3,9 +3,9 @@ import Mongoose from "mongoose";
 import { MongoDB } from "@Config/Secrets.js";
 
 export default async () => {
-  const DatabaseURI = MongoDB.URI.replace(/<username>/, MongoDB.Username).replace(
-    /<password>/,
-    MongoDB.UserPass
+  const DatabaseURI = MongoDB.URI.replace(
+    /(<username>):(<password>)/g,
+    `${MongoDB.Username}:${MongoDB.UserPass}`
   );
 
   Mongoose.connect(DatabaseURI, {

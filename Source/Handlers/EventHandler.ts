@@ -7,7 +7,7 @@ export default async function HandleEvents(Client: DiscordClient) {
   const EventFolders = GetFiles(Path.join(GetDirName(import.meta.url), "..", "Events"), true);
 
   for (const EventFolder of EventFolders) {
-    const FuncsToExecute: ((Client: DiscordClient, ...Args: any[]) => void)[] = [];
+    const FuncsToExecute: ((Client: DiscordClient, ...Args: any[]) => any)[] = [];
     const EventName = CamelCase(EventFolder.match(/[^\\]+$/)?.[0] ?? "");
     const EventFiles = GetFiles(EventFolder).sort((a, b) => {
       const a_pos = a.match(/\[(\d+)\]/)?.[1];
@@ -20,7 +20,7 @@ export default async function HandleEvents(Client: DiscordClient) {
     });
 
     for (const EventFile of EventFiles) {
-      const EventFunc = (await import(EventFile)).default;
+      const EventFunc = (await import(EventFile)).default as (typeof FuncsToExecute)[number];
       if (typeof EventFunc === "function") {
         FuncsToExecute.push(EventFunc);
       }
