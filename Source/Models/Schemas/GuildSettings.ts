@@ -3,13 +3,13 @@ import ShiftTypeSchema from "./ShiftType.js";
 
 const SnowflakeIDValidation: [RegExp, string] = [
   /^\d{15,22}$/,
-  "Invalid ID provided; ensure it is a valid Snowflake ID.",
+  "Received an invalid snowflake Id provided; received '{VALUE}'.",
 ];
 
 const RolePermsValidator = {
   validator: (Arr: string[]) => Arr.every((id: string) => /^\d{15,22}$/.test(id)),
   message:
-    "Invalid role ID found in the provided array; ensure that all roles are valid Snowflake IDs",
+    "Invalid role Id found in the provided snowflake Id array; ensure that all roles are valid",
 };
 
 const GuildSettings = new Schema({
@@ -30,16 +30,19 @@ const GuildSettings = new Schema({
       citations: {
         type: String,
         default: null,
+        required: false,
         match: SnowflakeIDValidation,
       },
       arrests: {
         type: String,
         default: null,
+        required: false,
         match: SnowflakeIDValidation,
       },
       shift_activities: {
         type: String,
         default: null,
+        required: false,
         match: SnowflakeIDValidation,
       },
     },
@@ -77,22 +80,7 @@ const GuildSettings = new Schema({
     _id: false,
     default: {},
     type: {
-      role_assignment: {
-        _id: false,
-        default: {},
-        type: {
-          on_duty: {
-            type: String,
-            default: null,
-            match: SnowflakeIDValidation,
-          },
-          on_break: {
-            type: String,
-            default: null,
-            match: SnowflakeIDValidation,
-          },
-        },
-      },
+      types: [ShiftTypeSchema],
 
       weekly_quota: {
         type: Number,
@@ -100,7 +88,24 @@ const GuildSettings = new Schema({
         min: 0,
       },
 
-      types: [ShiftTypeSchema],
+      role_assignment: {
+        _id: false,
+        default: {},
+        type: {
+          on_duty: {
+            type: String,
+            default: null,
+            required: false,
+            match: SnowflakeIDValidation,
+          },
+          on_break: {
+            type: String,
+            default: null,
+            required: false,
+            match: SnowflakeIDValidation,
+          },
+        },
+      },
 
       durations: {
         _id: false,

@@ -29,6 +29,7 @@ const GuildSchema = new Schema({
 
   // Members who have interacted with particular application commands are included in the
   // guild members array, which is an array of object Ids that refer to member profiles.
+  // Currently unused due to the usage of the GuildProfile model.
   members: {
     type: [
       {

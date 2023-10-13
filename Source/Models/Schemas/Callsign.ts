@@ -2,7 +2,7 @@ import { Schema } from "mongoose";
 
 const CallsignSchema = new Schema({
   holder: {
-    type: Schema.Types.ObjectId,
+    type: String,
     required: true,
     immutable: true,
   },
@@ -12,10 +12,11 @@ const CallsignSchema = new Schema({
     default: "",
   },
 
-  // @see http://forums.radioreference.com/threads/lapd-supervisory-command-staff-callsigns.451920/post-3834919
+  /** @see http://forums.radioreference.com/threads/lapd-supervisory-command-staff-callsigns.451920/post-3834919 */
   designation: {
     _id: false,
     required: true,
+    immutable: true,
     alias: "callsign",
     type: {
       division: {
@@ -30,30 +31,34 @@ const CallsignSchema = new Schema({
         trim: true,
         required: true,
         uppercase: true,
-        enum: [
-          "A",
-          "B",
-          "C",
-          "E",
-          "F",
-          "G",
-          "K9",
-          "H",
-          "L",
-          "M",
-          "N",
-          "P",
-          "R",
-          "S",
-          "U",
-          "T",
-          "W",
-          "Y",
-          "I",
-          "K",
-          "X",
-          "Z",
-        ],
+        enum: {
+          values: [
+            "A",
+            "B",
+            "C",
+            "E",
+            "F",
+            "G",
+            "K9",
+            "H",
+            "L",
+            "M",
+            "N",
+            "P",
+            "R",
+            "S",
+            "U",
+            "T",
+            "W",
+            "Y",
+            "I",
+            "K",
+            "X",
+            "Z",
+          ],
+          message:
+            "The callsign unit type must be one of the following: A, B, C, E, F, G, K9, H, L, M, N, P, R, S, U, T, W, Y, I, K, X, Z.\n{VALUE} is not supported.",
+        },
       },
 
       identifier: {

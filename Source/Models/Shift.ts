@@ -1,5 +1,5 @@
-import { randomInt as RandomInteger } from "node:crypto";
 import { HydratedDocumentFromSchema, Schema, model } from "mongoose";
+import { randomInt as RandomInteger } from "node:crypto";
 import ShiftDurations from "./Schemas/ShiftDurations.js";
 
 const ShiftSchema = new Schema(
@@ -32,11 +32,13 @@ const ShiftSchema = new Schema(
     start_timestamp: {
       type: Date,
       default: Date.now,
+      immutable: true,
     },
 
     end_timestamp: {
       type: Date,
       default: null,
+      required: false,
     },
 
     type: {

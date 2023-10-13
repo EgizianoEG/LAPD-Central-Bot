@@ -1,7 +1,7 @@
 import { Schema } from "mongoose";
 import ShiftDurations from "./ShiftDurations.js";
 
-export default new Schema({
+const ShiftDataSchema = new Schema({
   average_periods: {
     _id: false,
     default: {},
@@ -21,3 +21,5 @@ export default new Schema({
     },
   ],
 });
+
+export default ShiftDataSchema;

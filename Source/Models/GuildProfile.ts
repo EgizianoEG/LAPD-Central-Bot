@@ -22,7 +22,6 @@ const ProfileSchema = new Schema({
       roblox_user_id: {
         min: 0,
         default: 0,
-        required: true,
         type: Number,
       },
     },

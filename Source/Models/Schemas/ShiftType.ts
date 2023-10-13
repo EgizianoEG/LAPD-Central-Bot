@@ -1,6 +1,6 @@
 import { Schema } from "mongoose";
 
-export default new Schema({
+const ShiftTypeSchema = new Schema({
   name: {
     type: String,
     required: true,
@@ -33,3 +33,5 @@ export default new Schema({
     required: true,
   },
 });
+
+export default ShiftTypeSchema;
