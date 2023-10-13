@@ -10,6 +10,7 @@
     "bracketpaircolordlw.bracket-pair-color-dlw",
     "mgmcdermott.vscode-language-babel",
     "mongodb.mongodb-vscode",
-    "tabnine.tabnine-vscode"
+    "tabnine.tabnine-vscode",
+    "ms-vscode.vscode-typescript-next"
   ]
 }

@@ -1,18 +1,20 @@
-namespace Utilities.Roblox {
-  interface UserProfileDetails {
-    /** The about/description of the user. */
+export namespace RobloxAPI.Users {
+  interface GetUserResponse {
+    /** The user's bio/description. */
     description: string;
 
-    /** The timestamp when the user profile was created (RFC 3339). */
+    /** The date string showing the user's registration date (RFC 3339). */
     created: string;
 
-    /** Indicates whether the user is banned or not. */
+    /** Whether or not the user is banned. */
     isBanned: boolean;
 
-    /** The display name in an external app, if available. */
-    externalAppDisplayName?: string | null;
+    /** The display name in an external app. Unused, legacy attribute.
+     * For now always `null` to avoid disrupting existing client code that may rely on it.
+     * */
+    externalAppDisplayName: string | null;
 
-    /** Indicates if the user has a verified badge. */
+    /** The user's verified badge status. */
     hasVerifiedBadge: boolean;
 
     /** The unique identifier for the user. */
@@ -25,6 +27,23 @@ namespace Utilities.Roblox {
     displayName: string;
   }
 
+  /** The API response for a user search by keyword using "https://www.roblox.com/search/users/results" endpoint */
+  interface UserSearchQueryResponse {
+    /** The search keyword. This field can be filtered and replaced with hashtags by Roblox. */
+    Keyword: string;
+
+    /** The maximum number of rows (search results) returned. */
+    MaxRows: number;
+
+    /** The starting index of the search results. */
+    StartIndex: number;
+
+    /** The total number of search results. Maximum of 500 results. */
+    TotalResults: number;
+    UserSearchResults: Users.UserSearchResult[];
+  }
+
+  /** An object representing a user search result for the endpoint "https://www.roblox.com/search/users/results" */
   interface UserSearchResult {
     /** The id of the user. */
     UserId: number;
@@ -35,66 +54,88 @@ namespace Utilities.Roblox {
     /** The display name of the user. */
     DisplayName: string;
 
-    /** A brief description of the user. */
+    /** The bio/description of the user. */
     Blurb: string;
 
-    /** A comma-separated list of the user's previous usernames. */
+    /** A comma-separated stringified list of the user's previous usernames e.g. "roblox, roblox2, roblox3" */
     PreviousUserNamesCsv: string;
 
-    /** Whether the user is online. */
+    /** Whether the user is online. This property is not recommended to be used and depend on. */
     IsOnline: boolean;
 
-    /** The user's last known location. */
-    LastLocation?: string;
+    /** The user's last known location. This property is not recommended to be used and depend on. */
+    LastLocation: string | null;
 
-    /** The URL of the user's profile page. */
+    /** The URL of the user's profile page. e.g. "/users/000000/profile" */
     UserProfilePageUrl: string;
 
     /** The user's last seen date. */
-    LastSeenDate?: string;
+    LastSeenDate: string | null;
 
-    /** The user's primary group. */
+    /** The user's primary group. An empty string if the user has no primary group. */
     PrimaryGroup: string;
 
-    /** The URL of the user's primary group. */
+    /** The URL of the user's primary group if applicable. */
     PrimaryGroupUrl: string;
 
-    /** Whether the user has a verified badge. */
+    /** Whether the user has a verified badge. Not recommended to be used. */
     HasVerifiedBadge: boolean;
   }
 
-  interface UserPresence {
-    /**
-     * The user presence type. Possible values: 0 = Offline, 1 = Online, 2 = InGame, 3 = InStudio, 4 = Invisible.
-     */
-    userPresenceType: 0 | 1 | 2 | 3 | 4;
-    /**
-     * The user's last location.
-     */
-    lastLocation: string | "";
-    /**
-     * The ID of the current place.
-     */
-    placeId: number | null;
-    /**
-     * The ID of the root place.
-     */
-    rootPlaceId: number | null;
-    /**
-     * The ID of the game. (Format: UUID)
-     */
-    gameId: string | null;
-    /**
-     * The ID of the universe.
-     */
-    universeId: number | null;
-    /**
-     * The ID of the user.
-     */
-    userId: number;
-    /**
-     * The timestamp indicating the last online time. (Format: Date-Time)
-     */
-    lastOnline: string;
+  interface MultiGetByNameResponse {
+    data: [
+      {
+        id: number;
+        name: string;
+        displayName: string;
+        hasVerifiedBadge: boolean;
+        requestedUsername: string;
+      },
+    ];
+  }
+}
+
+export namespace RobloxAPI.Presence {
+  interface UserPresencesResponse {
+    userPresences: [
+      {
+        /** The Id of the user. */
+        userId: number;
+
+        /** User presence Type.
+         * Enums: ['Offline': `0`, 'Online': `1`, 'InGame': `2`, 'InStudio': `3`, 'Invisible': `4`]
+         * */
+        userPresenceType: 0 | 1 | 2 | 3 | 4;
+
+        /** The user's last location if applicable. Could be an empty string (`""`). */
+        lastLocation: string;
+
+        /** The Id of the current place. Available if the user status is `2` (In Game). */
+        placeId: number | null;
+
+        /** The Id of the root place. Available if the user status is `2` (In Game). */
+        rootPlaceId: number | null;
+
+        /** The Id of the game as a UUID string. Available if the user status is `2` (In Game). */
+        gameId: string | null;
+
+        /** The Id of the universe. Available if the user status is `2` (In Game). */
+        universeId: number | null;
+
+        /** The last seen date string. Can be convert to normal Date object. */
+        lastOnline: string;
+
+        // Unknown presence:
+        // invisibleModeExpiry: string;
+      },
+    ];
+  }
+}
+
+declare global {
+  namespace Utilities.Roblox {
+    type UserPresence = RobloxAPI.Presence.UserPresence;
+    type UserSearchResult = RobloxAPI.Users.UserSearchResult;
+    type UserProfileDetails = RobloxAPI.Users.GetUserResponse;
   }
 }

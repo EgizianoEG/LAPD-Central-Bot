@@ -2,6 +2,7 @@
 .vscode-test
 
 # Confedential data
+[Ss]ecrets.[jt]s
 [Ss]ecrets.json
 !.vscode/JSON Schemas/*
 
