@@ -27,20 +27,22 @@ export namespace RobloxAPI.Users {
     displayName: string;
   }
 
-  /** The API response for a user search by keyword using "https://www.roblox.com/search/users/results" endpoint */
+  /** The API response for a user search by keyword using {@link https://www.roblox.com/search/users/results /search/users/results} Roblox endpoint */
   interface UserSearchQueryResponse {
-    /** The search keyword. This field can be filtered and replaced with hashtags by Roblox. */
-    Keyword: string;
+    /** The search keyword. This field can be filtered and replaced with hashtags by Roblox and would be `null` if there wasn't a keyword parameter in the query. */
+    Keyword: string | null;
 
-    /** The maximum number of rows (search results) returned. */
+    /** The maximum number of rows (search results) returned. Mirrors the original request parameter `maxRows`. */
     MaxRows: number;
 
-    /** The starting index of the search results. */
+    /** The starting index of the search results. Mirrors the original request parameter `startIndex`. */
     StartIndex: number;
 
     /** The total number of search results. Maximum of 500 results. */
     TotalResults: number;
-    UserSearchResults: Users.UserSearchResult[];
+
+    /** Users discovered through the api request. If no people were found using the current keyword, this value would be 'null'. */
+    UserSearchResults: Users.UserSearchResult[] | null;
   }
 
   /** An object representing a user search result for the endpoint "https://www.roblox.com/search/users/results" */

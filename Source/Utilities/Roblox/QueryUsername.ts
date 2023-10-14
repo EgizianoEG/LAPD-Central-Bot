@@ -22,6 +22,7 @@ export default async function QueryUsername(
         APICache.UsernameSearches.set(Username, data.UserSearchResults);
         return data.UserSearchResults;
       } else {
+        APICache.UsernameSearches.set(Username, []);
         return [];
       }
     })
