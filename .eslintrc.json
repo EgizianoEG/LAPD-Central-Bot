@@ -7,7 +7,6 @@
     "commonjs": false
   },
 
-  "ignorePatterns": ["Build", "Typings"],
   "parser": "@typescript-eslint/parser",
   "plugins": ["sonarjs", "@typescript-eslint"],
   "extends": [
