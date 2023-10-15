@@ -1,5 +1,5 @@
 import GuildModel from "@Models/Guild.js";
-import { EscapeRegex } from "../Strings/Converter.js";
+import EscapeRegex from "lodash/escapeRegExp.js";
 
 /**
  * Autocompletes an input weight

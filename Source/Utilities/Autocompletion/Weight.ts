@@ -1,4 +1,4 @@
-import { EscapeRegex } from "../Strings/Converter.js";
+import EscapeRegex from "lodash/escapeRegExp.js";
 
 const WeightOptions: string[] = [];
 const Cache: Record<string, { name: string; value: string }[]> = {};
