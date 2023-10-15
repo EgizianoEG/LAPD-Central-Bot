@@ -1,5 +1,6 @@
 /**
- * Uppers the first character of a string and lowers the rest of its length
+ * Uppers the first character of a string and lowers the rest of its length.
+ * @notice This does not behave the same as lodash's upperFirst function implementation and converts the rest of the string to lowercase.
  * @param Str - The string to process
  * @returns
  * @example
@@ -14,7 +15,7 @@ export function UpperFirst(Str: string): string {
  * Title case a given string
  * @param Str - The string to convert into title case format
  * @param Strict - Whether or not to strict format the input string; defaults to `true`
- * @returns The converted string
+ * @returns The converted string. When parameter `Strict` is `false`, every word in the input string would be capitalized.
  * @requires {@link UpperFirst `Converter.UpperFirst()`}
  * @example
  * TitleCase("hello, world of the earth!")  // returns "Hello, World of the Earth!"
@@ -59,7 +60,7 @@ export function TitleCase(Str: string, Strict: boolean = true): string {
 
   // Capitalize the first letter of each word except numbers starting with "x" (e.g. "Tasks: x3")
   let Modified = Str.replace(/[^\W]+[^\s-]* */g, (Cap) => {
-    return Cap.match(/x\d+/) ? Cap.toLowerCase() : UpperFirst(Cap);
+    return Cap.match(/\bx\d+\b/i) ? Cap.toLowerCase() : UpperFirst(Cap);
   });
 
   // Preserve certain words in lower-case and some acronyms in upper-case.
@@ -80,21 +81,6 @@ export function TitleCase(Str: string, Strict: boolean = true): string {
 }
 
 /**
- * Converts a given string to camel case format
- * @see {@link https://stackoverflow.com/a/2970667/11442726 Stack Overflow Reference}
- * @param Str - The string to convert
- * @returns Returns the given string in camel case format
- * @example
- * TitleCase("AutoComp")  // returns "autoComp"
- * TitleCase("Auto_Comp_42")  // returns "autoComp42"
- */
-export function CamelCase(Str: string): string {
-  return Str.replace(/(?:^\w|[A-Z]|\b\w)/g, (Word, Index) => {
-    return Index === 0 ? Word.toLowerCase() : Word.toUpperCase();
-  }).replace(/\s+/g, "");
-}
-
-/**
  * Converts a PascalCase string to normal sentence case.
  * @param Str - The PascalCase string to be converted.
  * @return The normal sentence case string.
@@ -103,15 +89,5 @@ export function CamelCase(Str: string): string {
  * console.log(PascalToNormal(PascalCase));  // returns "Pascal Case String"
  */
 export function PascalToNormal(Str: string): string {
-  return Str.replace(/[A-Z]/g, " $&").trim();
-}
-
-/**
- * Escapes special characters in a string for additional processing using regular expressions.
- * @see {@link https://stackoverflow.com/a/6969486/11442726 Stack Overflow Reference}
- * @param Str - The string to process and escape.
- * @returns The given string with special characters escaped using backslashes.
- */
-export function EscapeRegex(Str: string): string {
-  return Str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return Str.replace(/[A-Z]/g, " $&").trim().replace(/\s+/, " ");
 }
