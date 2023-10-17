@@ -35,7 +35,7 @@
     "discord.js": "^14.13.0",
     "humanize-duration": "^3.30.0",
     "lodash": "^4.17.21",
-    "mongoose": "^7.6.1",
+    "mongoose": "^7.6.2",
     "noblox.js": "^4.14.1",
     "node-cache": "^5.1.2",
     "utility-types": "^3.10.0"
