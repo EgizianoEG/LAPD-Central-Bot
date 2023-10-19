@@ -7,16 +7,18 @@ const EmbedColors = SharedConfig.Embeds.Colors;
 
 class BaseEmbed extends EmbedBuilder {
   /**
-   * Sets the description of this embed.
-   * @param description - A tuple of data to format (by `util.format()`) and set as the description
+   * Sets the description of this embed using node `util.format()`.
+   * @requires {@link FormatString `node:util.format()`}
+   * @param description - A tuple of data to format (by `util.format()`) and set as the description.
    */
   setDescription(...description: any[]): this {
     return super.setDescription(FormatString(...description));
   }
 
   /**
-   * Replies to a given *repliable* interaction with the current properties set
-   * @param interaction - The interaction to reply to
+   * Replies to a given *repliable* interaction with the current properties set.
+   * @param interaction - The interaction to reply to.
+   * @param ephemeral - Either `true` or `false`; whether the reply should be ephemeral (private).
    */
   replyToInteract(
     interaction: BaseInteraction & { replied: boolean },
