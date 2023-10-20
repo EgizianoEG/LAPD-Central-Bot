@@ -1,5 +1,5 @@
+import { EscapeRegExp } from "@Utilities/Strings/Formatter.js";
 import GuildModel from "@Models/Guild.js";
-import EscapeRegex from "lodash/escapeRegExp.js";
 
 /**
  * Autocompletes an input weight
@@ -12,7 +12,7 @@ export default async function AutocompleteShiftType(
   GuildId: string
 ): Promise<Array<{ name: string; value: string }>> {
   let Suggestions: string[];
-  const EscapedValue = EscapeRegex(TypedValue);
+  const EscapedValue = EscapeRegExp(TypedValue);
   const ShiftTypes = await GuildModel.findById(GuildId)
     .select("settings.shifts.types")
     .then((GuildData) => {

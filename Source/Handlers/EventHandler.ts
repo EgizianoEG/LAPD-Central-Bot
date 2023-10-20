@@ -1,5 +1,5 @@
 import { GetDirName } from "@Utilities/Other/Paths.js";
-import CamelCase from "lodash/camelCase.js";
+import { CamelCase } from "@Utilities/Strings/Converter.js";
 import GetFiles from "@Utilities/Other/GetFilesFrom.js";
 import Path from "node:path";
 

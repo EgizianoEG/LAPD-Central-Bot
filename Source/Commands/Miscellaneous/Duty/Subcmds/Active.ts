@@ -3,7 +3,6 @@ import { InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import DurationHumanizer from "humanize-duration";
 import GetActiveShifts from "@Utilities/Database/GetShiftActive.js";
-import groupBy from "lodash/groupBy.js";
 
 const ReadableDuration = DurationHumanizer.humanizer({
   conjunction: " and ",
@@ -61,7 +60,7 @@ async function FormatActiveShifts(
 async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
   const ActiveShifts = await GetActiveShifts({ Interaction });
 
-  const GAShifts = groupBy(ActiveShifts, (Shift) => Shift.type);
+  const GAShifts = Object.groupBy(ActiveShifts, ({ type }) => type);
   const ASOrdered = Object.entries(GAShifts)
     .sort((a, b) => b[1].length - a[1].length)
     .reduce((obj, [key, value]) => {

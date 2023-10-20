@@ -1,7 +1,8 @@
+import { EscapeRegExp } from "@Utilities/Strings/Formatter.js";
 import DummyTexts from "@Resources/SampleTexts.js";
 
-const Cache = { ".": [" "] };
-for (let CharCode = 0; CharCode <= 255; CharCode++) {
+const Cache: Record<string, string[]> = { ".": [] };
+for (let CharCode = 32; CharCode <= 127; CharCode++) {
   Cache["."].push(String.fromCharCode(CharCode));
 }
 
@@ -13,13 +14,12 @@ for (let CharCode = 0; CharCode <= 255; CharCode++) {
 function CharactersFromSet(CharSet: string | RegExp): string[] {
   const Characters: string[] = [];
   const CacheKey = String(CharSet);
+  CharSet = typeof CharSet === "string" ? new RegExp(`[${EscapeRegExp(CharSet)}]`) : CharSet;
 
   if (Cache[CacheKey]) return Cache[CacheKey];
   for (const Character of Cache["."]) {
-    if (Character) {
-      if (CharSet.constructor === RegExp) {
-        if (Character.match(CharSet)) Characters.push(Character);
-      } else if (Character.match(new RegExp(CharSet))) Characters.push(Character);
+    if (CharSet.test(Character)) {
+      Characters.push(Character);
     }
   }
 
@@ -29,27 +29,28 @@ function CharactersFromSet(CharSet: string | RegExp): string[] {
 
 /**
  * Generates a random string of a specified length using a given character set.
+ * @requires {@link CharactersFromSet `Random.CharactersFromSet()`}
  * @param Length - The desired length of the generated string; defaults to `10`.
  * @param CharSet - The desired range of generated characters; defaults to alphanumeric characters.
  * @return The generated string
- * @requires {@link CharactersFromSet `Random.CharactersFromSet()`}
  */
 export function RandomString(Length: number = 10, CharSet: string | RegExp = /\w/): string {
-  const CharPattern = Cache[String(CharSet)] ?? CharactersFromSet(CharSet);
+  if (!Length || !CharSet) return "";
+  const AvailableChars = Cache[String(CharSet)] ?? CharactersFromSet(CharSet);
   const Randomized: string[] = [];
-  const MaxRange = CharPattern.length;
+  const MaxRange = AvailableChars.length;
 
   for (let CharIndex = 0; CharIndex < Length; CharIndex++) {
-    Randomized[CharIndex] = CharPattern[Math.floor(Math.random() * MaxRange)];
+    Randomized[CharIndex] = AvailableChars[Math.floor(Math.random() * MaxRange)];
   }
 
   return Randomized.join("");
 }
 
 /**
- * Returns a randomly chosen filtered dummy text between 8-12 words
- * @returns
+ * Returns a randomly chosen and Roblox filtered dummy/sample text between 7-12 words
  * @requires {@link DummyTexts Sample Texts Array}
+ * @returns
  */
 export function DummyText(): string {
   return DummyTexts[Math.floor(Math.random() * DummyTexts.length)];

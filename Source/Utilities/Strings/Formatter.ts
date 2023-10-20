@@ -7,53 +7,43 @@ import { Vehicles } from "@Typings/Resources.js";
  * Formats a given string of charges into a properly formatted numbered list.
  * @param Input - The string to list.
  * @param RAsArray - If the returned value should be as an array.
- * @return The list of charges either a string or an array.
+ * @returns The list of charges either a string or an array.
  */
 export function ListCharges<ReturnType extends boolean = false>(
   Input: string,
-  RAsArray?: ReturnType
+  ReturnAsArray?: ReturnType
 ): ReturnType extends true ? string[] : string {
-  const Charges: string[] = Input.match(/([^\n\r]+)/g) ?? [];
-  let FormattedCharges: string[] = [];
+  const Charges: string[] =
+    Input.trim()
+      .replace(/[^\S\w\n\r]+/g, " ")
+      .match(/([^\n\r]+)/g) ?? [];
 
-  if (Charges.length === 0) {
-    return RAsArray ? FormattedCharges : (Input as any);
+  if (Charges.length === 0 || Charges[0].trim() === "") {
+    return ReturnAsArray ? Charges : ("" as any);
   }
 
-  if (
-    Charges.length === 1 &&
-    Charges[0].match(/, |and/i) &&
-    Charges[0].match(/hit and run/i) === null
-  ) {
-    if (RAsArray) {
-      Charges.push(true as any);
-      return Charges as any;
-    } else {
-      return Charges.join() as any;
-    }
-  }
-
-  FormattedCharges = Charges.filter((Charge) => {
-    return !Charge.match(/^\s*[-*#] Statute/i);
+  const FormattedCharges = Charges.filter((Charge) => {
+    return !Charge.match(/^\s*[-+=#*] Statute/i);
   }).map((Charge, Index) => {
-    const Modified = Charge.trim()
-      .replace(/\s+/g, " ")
-      .match(/^(?:\d+\W|\*|-|#\d+:?)? ?(.+)$/)?.[1];
+    const Modified = Charge.trim().match(/^(?:\d+\W|\*|-|#\d+:?)?\s?(.+)$/)?.[1];
     return `${Index + 1}. ${Modified}`;
   });
 
-  return RAsArray ? FormattedCharges : (FormattedCharges.join("\n") as any);
+  return ReturnAsArray ? FormattedCharges : (FormattedCharges.join("\n") as any);
 }
 
 /**
  * Adds statutes (law codes) that should apply to every listed charge.
  * @param Charges - The input array of charges.
- * @return - The list of charges after adding statutes.
+ * @returns - The list of charges after adding statutes.
  */
 export function AddStatutes(Charges: Array<string>): Array<string> {
   if (!Array.isArray(Charges)) return Charges;
-  if (Charges.includes(true as any)) {
-    Charges.pop();
+  if (
+    Charges.length === 1 &&
+    Charges[0].match(/, |\band\b/i) &&
+    Charges[0].match(/hit\s+and\s+run/i) === null
+  ) {
     return Charges;
   }
 
@@ -456,37 +446,41 @@ export function AddStatutes(Charges: Array<string>): Array<string> {
 }
 
 /**
- * Formats a given charges text for arrest report
- * @param ChargesText - The input charges text
- * @return - The list of charges after adding statutes
+ * Formats a user input of charges text for an arrest report.
+ * @param Input - The input charges text to format and formalize.
+ * @returns A formatted and number listed charges with its penal codes.
  */
-export function FormatCharges(ChargesText: string): string {
-  const Titled = TitleCase(ChargesText, true);
+export function FormatCharges(Input: string): string {
+  const Titled = TitleCase(Input, true);
   const Listed = ListCharges(Titled, true);
   return AddStatutes(Listed).join("\n");
 }
 
 /**
- * Properly formats an input height if it is incomplete or mistyped
- * @param Input - The input height
- * @returns - The properly formatted height
+ * Properly formats an input height if it is incomplete or mistyped.
+ * @param Input - The input height string.
+ * @returns If succeeded, a height in the format `x'y"`; should be a maximum of `7'11"` (not enforced).
+ * @example
+ * FormatHeight("7")  // returns the string 7'0"
+ * FormatHeight("6 ft 1 in")  // returns the string 6'1"
+ * FormatHeight("5 feet 11 inches")  // returns the string 5'11"
  */
 export function FormatHeight(Input: string): string {
-  if (typeof Input !== "string") return Input;
-  if (Input.match(/^[1-7]'(\d|1[01])"$/)) {
-    return Input.match(/^[8-9]/) ? "7'0\"" : Input;
+  const Sanitized = Input.trim().replace(/\s+/g, " ");
+  if (Sanitized.match(/^[1-9]+'(\d|1[01])"$/)) {
+    return Sanitized.match(/^[8-9]|[1-9]\d+/) ? "7'11\"" : Sanitized;
   }
 
-  if (Input.match(/^\d+$/)) {
-    return Input + "'0\"";
-  } else if (Input.match(/^\d'$/)) {
-    return `${Input}0"`;
-  } else if (Input.match(/^\d'\d+$/)) {
-    return `${Input}"`;
-  } else if (Input.match(/^\d[^\d]+\d+[^\d]*$/)) {
-    const Matches = Input.match(/^(\d)[^\d]+(\d+)[^\d]*$/);
-    const Feet = Matches?.[1];
-    const Inches = Matches?.[2];
+  if (Sanitized.match(/^\d+$/)) {
+    return `${Sanitized}'0"`;
+  } else if (Sanitized.match(/^\d'$/)) {
+    return `${Sanitized}0"`;
+  } else if (Sanitized.match(/^\d'\d+$/)) {
+    return `${Sanitized}"`;
+  } else if (Sanitized.match(/^\d\D+\d+\D*$/)) {
+    const Matches = Sanitized.match(/^(\d)\D+(\d+)\D*$/);
+    const Feet = Matches![1];
+    const Inches = Matches![2];
     return `${Feet}'${Inches}"`;
   }
 
@@ -494,9 +488,9 @@ export function FormatHeight(Input: string): string {
 }
 
 /**
- * Parses a given age integer into a string representation
- * @param AgeInteger - The age integer [1-5]; defaults to `3`
- * @returns - The age string
+ * Parses a given age integer into a string representation.
+ * @param AgeInteger - The age integer as a number or string; `1`, `2`, `3`, `4` or `5`.
+ * @returns - The age category string if the input is within the enum range; `"[Unknown]"` otherwise.
  * @enum
  *  - [1]: Kid (1-12);
  *  - [2]: Teen (13-19);
@@ -504,9 +498,8 @@ export function FormatHeight(Input: string): string {
  *  - [4]: Mid Adult (30-49);
  *  - [5]: Senior (50+);
  */
-export function FormatAge(AgeInteger: string | number = 3): string {
-  AgeInteger = +AgeInteger;
-  switch (AgeInteger) {
+export function FormatAge(AgeInteger: number | string): string {
+  switch (+AgeInteger) {
     case 1:
       return "Kid (1-12)";
     case 2:
@@ -517,24 +510,27 @@ export function FormatAge(AgeInteger: string | number = 3): string {
       return "Mid Adult (30-49)";
     case 5:
       return "Senior (50+)";
+    default:
+      return "[Unknown]";
   }
-  return "Unknown";
 }
 
 /**
- * Converts a given multiline string or an array of lines into an unordered list.
+ * Converts a given multiline string or an array of lines into a flat unordered list.
  * @param Input
  * @returns
  */
-export function UnorderedList(Input: string | Array<string>): string {
-  const Lines = Input instanceof Array ? Input : Input.split(/[\r\n]/);
-  return Lines.map((Line) => `- ${Line}`).join("\n");
+export function UnorderedList(Input: string | string[]): string {
+  if (!Input.length) return Input.toString();
+  const Lines = Array.isArray(Input) ? Input : Input.split(/\r?\n/);
+  return Lines.map((Line) => (Line ? `- ${Line}` : "")).join("\n");
 }
 
 /**
  * Returns a formatted string representation of the user's username, display name as well as the id if requested
- * @param UserData
- * @param IncludeID - Whether to include the user's id in the string (e.g. "Builderman (@builderman_fifty) [5010050100]")
+ * @param UserData - The basic user data; display name if available, username, and id if also available.
+ * @param IncludeId - Whether to include the user's id in the string (e.g. `"... [000000]"`).
+ * @returns
  * @example
  * const UserData = {
  *   name: "builderman_fifty",
@@ -550,11 +546,11 @@ export function UnorderedList(Input: string | Array<string>): string {
  */
 export function FormatUsername(
   UserData: { name: string; display_name?: string; id?: string | number },
-  IncludeID: boolean
+  IncludeId?: boolean
 ): string | null {
   if (UserData.name) {
     const Formatted = `${UserData.display_name ?? UserData.name} (@${UserData.name})`;
-    if (IncludeID && UserData.id) {
+    if (IncludeId && UserData.id) {
       return `${Formatted} [${UserData.id}]`;
     } else {
       return Formatted;
@@ -566,20 +562,34 @@ export function FormatUsername(
 /**
  * Returns a formatted name for a given vehicle model and its brand details.
  * Vehicle model name string should be always defined and not empty for a proper result.
- * @param Model
- * @param Brand
- * @returns
+ * @param Model - The vehicle model data.
+ * @param Brand - The brand of the vehicle model including its counterpart (ER:LC alias).
+ * @returns A vehicle name in the format:
+ * `[OriginalModelYear] [BrandName] [ModelName] ([AltModelYear] [BrandAlias] [ModelAlias])`.
+ * @example
+ * const Model = {
+     name: "A-100",
+     alias: "F-150",
+     model_year: { org: "2022", alt: "2021" },
+   };
+
+   const Brand = {
+     name: "Brand-X",
+     alias: "BX",
+   };
+
+   // returns "2022 Brand-X A-100 (2021 BX F-150)"
+   FormatVehicleName(Model, Brand);
  */
 export function FormatVehicleName(
-  Model: Vehicles.VehicleModel,
+  Model: Omit<Vehicles.VehicleModel, "category" | "class" | "style">,
   Brand: { name: string; alias: string }
 ) {
   const OrgMYear = Model.model_year.org ? `${Model.model_year.org} ` : "";
   const AltMYear = Model.model_year.alt ? `${Model.model_year.alt} ` : "";
   const BrandName = Brand.name ? `${Brand.name} ` : "";
   const BrandAlias = Brand.alias ? `${Brand.alias} ` : "";
-
-  return FormatStr(
+  const Formatted = FormatStr(
     "%s%s%s (%s%s%s)",
     OrgMYear,
     BrandName,
@@ -588,4 +598,19 @@ export function FormatVehicleName(
     BrandAlias,
     Model.alias
   );
+
+  return /^[\s()]+$/.test(Formatted) ? "" : Formatted;
+}
+
+/**
+ * Escapes special characters in a string so that it can be used in a regular expression.
+ * @see {@link https://stackoverflow.com/q/3561493 Stack Overflow Reference}
+ * @param Str - The string to escape.
+ * @returns
+ * @example
+ * console.log(escapeRegExp("Hello [World]!"));  // Output: Hello \[World\]\!
+ * console.log(escapeRegExp("123.456"));  // Output: 123\.456
+ */
+export function EscapeRegExp(Str: string): string {
+  return Str.replace(/[-[\]{}()*+!<=:?./\\^$|]/g, "\\$&");
 }

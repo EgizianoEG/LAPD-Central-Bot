@@ -1,18 +1,5 @@
 /**
- * Uppers the first character of a string and lowers the rest of its length.
- * @notice This does not behave the same as lodash's upperFirst function implementation and converts the rest of the string to lowercase.
- * @param Str - The string to process
- * @returns
- * @example
- * UpperFirst("heLLo!")  // returns "Hello!"
- * UpperFirst("1. item")  // returns "1. item"
- */
-export function UpperFirst(Str: string): string {
-  return Str.charAt(0)?.toUpperCase() + Str.slice(1).toLowerCase();
-}
-
-/**
- * Title case a given string
+ * Converts an input string into title case format with optional strict formatting.
  * @param Str - The string to convert into title case format
  * @param Strict - Whether or not to strict format the input string; defaults to `true`
  * @returns The converted string. When parameter `Strict` is `false`, every word in the input string would be capitalized.
@@ -81,13 +68,86 @@ export function TitleCase(Str: string, Strict: boolean = true): string {
 }
 
 /**
+ * Converts an input string of basic Latin alphabet, numbers, and special characters to camel case format.
+ * @see {@link https://stackoverflow.com/a/2970667 Stack Overflow Reference}
+ * @notice
+ * - With the exception of a single initial `$` sign, which is included if it exists,
+ *   this function will not retain any other special characters at the start, middle, or end of the string.
+ * - The input string's in between special characters will be ignored and handled as regular whitespace.
+ *
+ * @param Str - The string to convert.
+ * @returns The input string in camel case format if succeeded.
+ * @example
+ * CamelCase("#@$@#%@---")        // returns "#@$@#%@---" (not appropriate to be converted)
+ * CamelCase("PascalCaseString")  // returns "pascalCaseString"
+ * CamelCase("kebab-case-string") // returns "kebabCaseString"
+ * CamelCase("dot.case.string")   // returns "dotCaseString"
+ * CamelCase("$Var_1")            // returns "$var1"
+ * CamelCase("__FOO_BAR__-")      // returns "fooBar"
+ * CamelCase("Thirty4auto5Var")   // returns "thirty4Auto5Var"
+ * CamelCase("special_characters!@#$%^&*\(")  // returns "specialCharacters"
+ *
+ * // returns "$done45AndGoIng"
+ * // (notice the character `i` being uppercased as the previous special characters are treated as a single whitespace character)
+ * CamelCase("$Done_45_and_go#$&^*^&*@#$@#$@#$&*^&(&*ing")
+ */
+export function CamelCase(Str: string): string {
+  let SDSign = "";
+  const Sanitized = Str.replace(/^[\W\s_\uFEFF\xA0]+|[\W\s_\uFEFF\xA0]+$/g, "").replace(
+    /[^\w]+|[\s_]+/g,
+    " "
+  );
+
+  if (!Sanitized) return Str;
+  if (Str.match(/\$[\da-z]/i)) SDSign = "$";
+  if (Sanitized.match(/^[\da-z]+$/)) return SDSign + Sanitized;
+  if (Sanitized.match(/^[A-Z\d\s]+$/)) {
+    return (
+      SDSign +
+      Sanitized.split(" ")
+        .map((Capture, Index) => {
+          const FChar = Index === 0 ? Capture.at(0)?.toLowerCase() : Capture.at(0)?.toUpperCase();
+          return FChar + Capture.slice(1).toLowerCase();
+        })
+        .join("")
+    );
+  }
+
+  return (
+    SDSign +
+    Sanitized.replace(/(?:^\w|[A-Z]|\b\w|\d[a-z])/g, (Word, Index) => {
+      return Index === 0 ? Word.toLowerCase() : Word.toUpperCase();
+    }).replace(/\s+/g, "")
+  );
+}
+
+/**
+ * Uppers the first character of a string and lowers the rest of its length.
+ * @notice This does not behave the same as lodash's upperFirst function implementation and converts the rest of the string to lowercase.
+ * @param Str - The string to process
+ * @returns
+ * @example
+ * UpperFirst("heLLo!")  // returns "Hello!"
+ * UpperFirst("1. item")  // returns "1. item"
+ */
+export function UpperFirst(Str: string): string {
+  return Str.charAt(0)?.toUpperCase() + Str.slice(1).toLowerCase();
+}
+
+/**
  * Converts a PascalCase string to normal sentence case.
  * @param Str - The PascalCase string to be converted.
  * @return The normal sentence case string.
+ * @notice
+ * - The input string will be trimmed.
+ * - Numbers won't be treated as words but will be combined with the previous ones.
+ *
  * @example
- * const PascalCase = 'PascalCaseString';
+ * const PascalCase = "PascalCaseString";
  * console.log(PascalToNormal(PascalCase));  // returns "Pascal Case String"
  */
 export function PascalToNormal(Str: string): string {
-  return Str.replace(/[A-Z]/g, " $&").trim().replace(/\s+/, " ");
+  return Str.replace(/(?<!\s+)[A-Z]/g, " $&")
+    .replace(/\s+/, " ")
+    .trim();
 }

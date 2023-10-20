@@ -1,4 +1,4 @@
-import EscapeRegex from "lodash/escapeRegExp.js";
+import { EscapeRegExp } from "@Utilities/Strings/Formatter.js";
 
 const WeightOptions: string[] = [];
 const Cache: Record<string, { name: string; value: string }[]> = {};
@@ -26,7 +26,7 @@ export default function AutocompleteWeight(
     return Cache.Default;
   } else if (TypedValue.length === 1) {
     Suggestions = WeightOptions.filter((Element) => {
-      return Element.match(new RegExp(`^${EscapeRegex(TypedValue)}\\d0$`));
+      return Element.match(new RegExp(`^${EscapeRegExp(TypedValue)}\\d0$`));
     });
   } else {
     Suggestions = WeightOptions.filter((Element) => {
