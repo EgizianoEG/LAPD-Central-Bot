@@ -4,10 +4,10 @@ import { TitleCase } from "./Converter.js";
 import { Vehicles } from "@Typings/Resources.js";
 
 /**
- * Formats a given string of charges into a properly formatted numbered list.
- * @param Input - The string to list.
- * @param RAsArray - If the returned value should be as an array.
- * @returns The list of charges either a string or an array.
+ * Formats an input multiline string of charges into a properly formatted numbered list.
+ * @param Input - The input string to format and formalize.
+ * @param ReturnAsArray - If the returned value should be as an array or a string.
+ * @returns The list of charges either a string or an array depending on the value of `ReturnAsArray` parameter.
  */
 export function ListCharges<ReturnType extends boolean = false>(
   Input: string,
