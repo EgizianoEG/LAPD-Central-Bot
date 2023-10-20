@@ -26,6 +26,7 @@
     "build": "tsc && tsconfig-replace-paths --project tsconfig.json",
     "clean-build": "rm -rf Build & npm run build",
     "lint": "tsc --noEmit && eslint \"Source/**/*.{js,ts}\" && prettier -c \"Source/**/*.{js,ts,json}\"",
+    "test:coverage": "jest \"--coverage\"",
     "test": "jest"
   },
   "dependencies": {
@@ -35,7 +36,6 @@
     "dedent": "^1.5.1",
     "discord.js": "^14.13.0",
     "humanize-duration": "^3.30.0",
-    "lodash": "^4.17.21",
     "mongoose": "^7.6.3",
     "noblox.js": "^4.14.1",
     "node-cache": "^5.1.2",
@@ -46,7 +46,6 @@
     "@types/convert-units": "^2.3.7",
     "@types/humanize-duration": "^3.27.1",
     "@types/jest": "^29.5.5",
-    "@types/lodash": "^4.14.199",
     "@types/node": "^20.8.6",
     "@typescript-eslint/eslint-plugin": "^6.7.4",
     "@typescript-eslint/parser": "^6.8.0",

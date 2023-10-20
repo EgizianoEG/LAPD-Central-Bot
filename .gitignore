@@ -9,6 +9,10 @@
 # Dependency directories
 node_modules
 
+# Test coverage files
+/[Cc]overage.data
+/[Cc]overage/
+
 # Distribution
 [Bb]uild/**/*
 [Dd]ist/**/*

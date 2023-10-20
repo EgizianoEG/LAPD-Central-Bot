@@ -1,0 +1,25 @@
+{
+  /* Visit https://aka.ms/tsconfig to read more about this file */
+  "$schema": "http://json.schemastore.org/tsconfig",
+  "extends": "./../tsconfig.json",
+
+  "exclude": [],
+  "include": ["./"],
+
+  "compilerOptions": {
+    /* Modules */
+    "baseUrl": "./",
+    "rootDir": "../",
+    "module": "ES2022",
+    "moduleResolution": "Node",
+    "types": ["node", "jest"],
+
+    "paths": {
+      "@Config/*": ["./../Source/Config/*"],
+      "@Models/*": ["./../Source/Models/*"],
+      "@Typings/*": ["./../Source/Typings/*"],
+      "@Resources/*": ["./../Source/Resources/*"],
+      "@Utilities/*": ["./../Source/Utilities/*"]
+    }
+  }
+}

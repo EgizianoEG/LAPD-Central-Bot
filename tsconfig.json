@@ -23,7 +23,7 @@
     /* Projects */
     /* Language and Environment */
     "target": "ESNext",
-    "lib": ["ESNext", "ES2023.Array", "DOM"],
+    "lib": ["ESNext", "DOM"],
 
     /* Modules */
     "module": "NodeNext",
@@ -36,9 +36,8 @@
     "typeRoots": [
       "./Source/Types/**",
       "./Source/Typings/**",
-      "node_modules/@types",
-      "./node_modules/@types/**",
-      "../node_modules/@types/**"
+      "./node_modules/@types",
+      "./node_modules/@types/**"
     ],
 
     "paths": {
@@ -60,7 +59,6 @@
 
     /* Interop Constraints */
     "esModuleInterop": true,
-
     "forceConsistentCasingInFileNames": true,
 
     /* Formatting */
