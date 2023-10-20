@@ -11,7 +11,6 @@ import {
   FormatVehicleName,
   UnorderedList,
   EscapeRegExp,
-  AddStatutes,
   ListCharges,
 } from "@Utilities/Strings/Formatter";
 
@@ -511,9 +510,9 @@ describe("String Formatting Utilities", () => {
 
       const ExpectedOutput = Dedent`\
       1. Resisting a Peace Officer
-        - Statute: 69(A)/148(A) PC
+        - Statute: § 69(A)/148(A) PC
       2. Evading a Peace Officer: Disregarding Safety
-        - Statute: 2800.2(A) VC\
+        - Statute: § 2800.2(A) VC\
       `;
 
       const Result = FormatCharges(Input);

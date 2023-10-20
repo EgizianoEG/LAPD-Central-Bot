@@ -33,12 +33,26 @@ export function ListCharges<ReturnType extends boolean = false>(
 }
 
 /**
- * Adds statutes (law codes) that should apply to every listed charge.
- * @param Charges - The input array of charges.
- * @returns - The list of charges after adding statutes.
+ * Analyses every charge in the input array and assigns it a specific California statute (law code) if possible.
+ * The following template string is being used:
+ * ```yaml
+ * "[ChargeShortDescription]\n  - Statute: [StatuteCodeAndSubdivisionIfApplicable] [CodeGroup]"
+ * ```
+ *
+ * So an example of an assigned law code for a charge would be as the following:
+ * 1. Eluding a Peace Officer: Disregarding Safety
+ *     - Statute: § 2800.2(A) VC
+ *
+ * @param Charges - The input array of charges (strings).
+ * @returns An array of charges after adding statutes to them.
+ * @example
+ * const CapitalizedNumberedCharges = ["Evading a Peace Officer: Disregarding Safety", "2. Failure to Comply with a Peace Officer"];
+ * console.log(AddStatutes(CapitalizedNumberedCharges));
+ * // Output:
+ * // ["1. Evading a Peace Officer: Disregarding Safety\n  - Statute: § 2800.2(A) VC",
+ * //  "2. Failure to Comply with a Peace Officer\n  - Statute: § 69(A)/148(A) PC"]
  */
-export function AddStatutes(Charges: Array<string>): Array<string> {
-  if (!Array.isArray(Charges)) return Charges;
+export function AddStatutes(this: any, Charges: Array<string>): Array<string> {
   if (
     Charges.length === 1 &&
     Charges[0].match(/, |\band\b/i) &&
@@ -47,398 +61,368 @@ export function AddStatutes(Charges: Array<string>): Array<string> {
     return Charges;
   }
 
-  const LEORegexString = /(?:Officer|Peace Officer|Police|\\bLEO\\b|\\bPO\\b)s?/.source;
-  const DefaultFlags = "i";
+  /** Creates a regular expression pattern that matches any of the given strings. */
+  const ORRegExp = (...Args: string[]): RegExp => {
+    return new RegExp(Args.join("|"), "i");
+  };
+
+  const LEORegexString = /(?:Officer|Peace Officer|Police|\bLEO\b|\bPO\b)s?/.source;
   const Regexes = {
     Battery: /Batt[ea]ry/i,
+    Bribery: /Brib[eau]ry|Brib(?:e|ing)/i,
+    Assault: /A[su]{1,2}[alut]{2,4}|Stab(?:bing|bed)|\\bADW\\b/i,
+    LERegex: /Officers?|Peace Officers?|Police|\bLEO\b|\bPO\b/,
     HitAndRun: /Hit(?: and | ?& ?)Run/i,
     CRRobbery: /Cash Register Robber(?:y|ies)/i,
     Tampering: /(?:Damag(?:e|ing)|Tamper(?:ing)) (?:a |an |with )?(?:Car|Vehicle)s?/i,
     Vandalism: /Graffiti|Sabotage|Vandalism|Vandali[zs](?:ing|ed?|es) \w+|Defac(?:e|ing) \w+/i,
     Threatening: /Threat[ei]n(?:ing)?|Threats to \\w+/i,
-    Bribery: /Brib[eau]ry|Brib(?:e|ing)/i,
-
-    LERegex: /Officers?|Peace Officers?|Police|\bLEO\b|\bPO\b/,
     DWeaponRegex: /Deadly|Weapon|Firearm|Gun|Pistol|Rifle|Bat|Knife|Hammer/i,
 
-    Evasion: new RegExp(
-      "(?:Evasion|Evading)|" +
-        "Vehicle (?:Fleeing|Eluding|Evasion)|" +
-        "(?:Running from|Elud(?:e|ing)|Evade) (?:an |a )?",
-      DefaultFlags
+    Kidnapping: ORRegExp("\\bKidnapp?(ing)?\\b|", "Abduct(?:ion|ing)"),
+    Burglary: ORRegExp("Burglary", "Breaking into (?:a |an )?(?:House|Residential)"),
+    Murder: ORRegExp("\\bMurd[eua]r(?:ing)?\\b|", "Homicide|", "Killing .+"),
+
+    Evasion: ORRegExp(
+      "(?:Evasion|Evading)",
+      "Vehicle (?:Fleeing|Eluding|Evasion)",
+      "(?:Running from|Elud(?:e|ing)|Evade) (?:an |a )?"
     ),
 
-    Resisting: new RegExp(
-      "Fail(?:ing|ure)? to Comply|" +
-        "Resist(?:ing)? (?:an |a )?Arrest|" +
-        "Obstruct(?:ing|ion)(?: of)? Justice|" +
-        `Not (?:Listening|Complying) (?:to|with) (?:an |a )?${LEORegexString}|` +
-        `(?:Resist(?:ing)?|Defy(?:ing)?|Obstruct(?:ing|ion)?|Interfer(?:e|ing)? with) (?:an |a )?${LEORegexString}`,
-      DefaultFlags
+    Resisting: ORRegExp(
+      "Fail(?:ing|ure)? to Comply",
+      "Resist(?:ing)? (?:an |a )?Arrest",
+      "Obstruct(?:ing|ion)(?: of)? Justice",
+      `Not (?:Listening|Complying) (?:to|with) (?:an |a )?${LEORegexString}`,
+      `(?:Resist(?:ing)?|Defy(?:ing)?|Obstruct(?:ing|ion)?|Interfer(?:e|ing)? with) (?:an |a )?${LEORegexString}`
     ),
 
-    AAF: new RegExp(
-      "Accessory (?:after|in) (?:the |a )?(?:Fact|Murder|Crime|Robbery)|" +
-        "(?:Helping|Helping out|Assisting) (?:a |an )?(?:Criminal|Offender|Lawbreaker)",
-      DefaultFlags
+    AAF: ORRegExp(
+      "Accessory (?:after|in) (?:the |a )?(?:Fact|Murder|Crime|Robbery)",
+      "(?:Helping|Helping out|Assisting) (?:a |an )?(?:Criminal|Offender|Lawbreaker)"
     ),
 
-    InvalidLicense: new RegExp(
-      "(?:Expired|Suspended|Invalid) (?:Driving )?License|" +
-        "Driving (?:W/o|Without) (?:a )?(?:Driving )?License|" +
-        "(?:Unlawful|Illegal) to Drive (?:W/o|Without) (?:a )?(?:Driving |Valid (?:Driving )?)?License",
-      DefaultFlags
+    InvalidLicense: ORRegExp(
+      "(?:Expired|Suspended|Invalid) (?:Driving )?License",
+      "Driving (?:W/o|Without) (?:a )?(?:Driving )?License",
+      "(?:Unlawful|Illegal) to Drive (?:W/o|Without) (?:a )?(?:Driving |Valid (?:Driving )?)?License"
     ),
 
-    Assault: new RegExp("A[su]{1,2}[alut]{2,4}|" + "Stab(?:bing|bed)|" + "\\bADW\\b", DefaultFlags),
-
-    RecklessDriving: new RegExp(
-      "Traffic Crimes|" +
-        "Crashing into \\w+|" +
-        "Endangerment of \\w+|" +
-        "Driving Reckless(?:ly)?|" +
-        "Dangerous(?:ly)? Driving|" +
-        "Reckless(?:ly)? (?:Driving|Endangerment)|" +
-        "Run(?:ning)? (?:Multiple )?(?:Red)? Lights|" +
-        "(?:Disregard|Disregarding|Ignor(?:ed?|ing)?|No|W/o|Without) Safety",
-      DefaultFlags
+    RecklessDriving: ORRegExp(
+      "Traffic Crimes",
+      "Crashing into \\w+",
+      "Endangerment of \\w+",
+      "Driving Reckless(?:ly)?",
+      "Dangerous(?:ly)? Driving",
+      "Reckless(?:ly)? (?:Driving|Endangerment)",
+      "Run(?:ning)? (?:Multiple )?(?:Red)? Lights",
+      "(?:Disregard|Disregarding|Ignor(?:ed?|ing)?|No|W/o|Without) Safety"
     ),
 
-    BrandishingFirearm: new RegExp(
-      "(?:Brandish(?:ing|e?s)?|Point(?:ing|s)?|Draw(?:ing|s)?) (?:a |an )?(?:Gun|Firearm|Weapon|Pistol|Rifle)|" +
-        "(?:Brandish(?:ing|e?s)?|Point(?:ing|s)?|Draw(?:ing|s)?) (?:or )?(?:Exhibit(?:s|ing) )?(?:a |an )?(?:\\w+ )?(?:Gun|Firearm|Weapon|Pistol|Rifle)",
-      DefaultFlags
+    BrandishingFirearm: ORRegExp(
+      "(?:Brandish(?:ing|e?s)?|Point(?:ing|s)?|Draw(?:ing|s)?) (?:a |an )?(?:Gun|Firearm|Weapon|Pistol|Rifle)",
+      "(?:Brandish(?:ing|e?s)?|Point(?:ing|s)?|Draw(?:ing|s)?) (?:or )?(?:Exhibit(?:s|ing) )?(?:a |an )?(?:\\w+ )?(?:Gun|Firearm|Weapon|Pistol|Rifle)"
     ),
 
-    Arson: new RegExp(
-      "Ars[oe]n|" + "Incendiarism|" + "Burn(?:ing) \\w+|" + "Fire(?:-| )(?:setting|raising)",
-      DefaultFlags
+    Arson: ORRegExp(
+      "Ars[oe]n",
+      "Incendiarism",
+      "Burn(?:ing) \\w+",
+      "Fire(?:-| )(?:setting|raising)"
     ),
 
-    GrandTheft: new RegExp(
-      "Grand Theft|" +
-        "(?:Jewelry|Bank|Jewelery|jew[elar]ry|House|Residential|\\bATM\\b) (?:Store )?Robber(?:y|ies)",
-      DefaultFlags
+    GrandTheft: ORRegExp(
+      "Grand Theft",
+      "(?:Jewelry|Bank|Jewelery|jew[elar]ry|House|Residential|\\bATM\\b) (?:Store )?Robber(?:y|ies)"
     ),
 
-    PBTools: new RegExp(
-      "(?:Possess(?:es|ion|ing)?|Carry(?:es|ing)?) (?:of )?Burglary (?:Tools?|Instruments?)",
-      DefaultFlags
+    PBTools: ORRegExp(
+      "(?:Possess(?:es|ion|ing)?|Carry(?:es|ing)?) (?:of )?Burglary (?:Tools?|Instruments?)"
     ),
 
-    Burglary: new RegExp(
-      "Burglary|" + "Breaking into (?:a |an )?(?:House|Residential)",
-      DefaultFlags
+    PIFirearms: ORRegExp(
+      "(?:Unlawful |Illegal |Prohibited )?(?:Possess(?:es|ion|ing)?|Carr(?:y|ies|ying)) (?:of )?(?:a |an )?(?:Unlawful|Illegal|Prohibited) (?:Weapon|Gun|Firearm)s?"
     ),
 
-    PIFirearms: new RegExp(
-      "(?:Unlawful |Illegal |Prohibited )?(?:Possess(?:es|ion|ing)?|Carr(?:y|ies|ying)) (?:of )?(?:a |an )?(?:Unlawful|Illegal|Prohibited) (?:Weapon|Gun|Firearm)s?",
-      DefaultFlags
+    ShootingVB: ORRegExp(
+      "Pop(?:ping)? (?:Vehicle(?:s.|s)? |Car(?:s.|s)? )?T[iy]res?",
+      "Discharg(?:e|ing) of (?:a|an)?(?:Firearm|Gun|Weapon)",
+      "Discharg(?:e|ing) (?:a )?(?:Firearm|Gun|Weapon) (?:at|on) (?:a |an )?(?:inhabited |Uninhabited |Unoccupied |Occupied )?(?:Vehicle?|Car?|Building?|Bank|Store?|Dwelling)s?",
+      "(?:Shoot(?:ing)?|Fir(?:ing|e)) (?:on |at )?(?:a |an )?(?:Inhabited |Uninhabited |Unoccupied |Occupied )?(?:Police |PO(?:s.|s)? |LEO(?:.?s.|s)? |Officer(?:s.|s)? )?(?:Vehicle?|Car?|Building?|Bank|Store?|Dwelling)s?"
     ),
 
-    ShootingVB: new RegExp(
-      "Pop(?:ping)? (?:Vehicle(?:s.|s)? |Car(?:s.|s)? )?T[iy]res?|" +
-        "Discharg(?:e|ing) of (?:a|an)?(?:Firearm|Gun|Weapon)|" +
-        "Discharg(?:e|ing) (?:a )?(?:Firearm|Gun|Weapon) (?:at|on) (?:a |an )?(?:inhabited |Uninhabited |Unoccupied |Occupied )?(?:Vehicle?|Car?|Building?|Bank|Store?|Dwelling)s?|" +
-        "(?:Shoot(?:ing)?|Fir(?:ing|e)) (?:on |at )?(?:a |an )?(?:Inhabited |Uninhabited |Unoccupied |Occupied )?(?:Police |PO(?:s.|s)? |LEO(?:.?s.|s)? |Officer(?:s.|s)? )?(?:Vehicle?|Car?|Building?|Bank|Store?|Dwelling)s?",
-      DefaultFlags
+    AttemptMurder: ORRegExp(
+      "(?:Trying|Attempt(?:ed|ing)?) (?:to )?(?:Kill|Murder|Homicide)",
+      "(?:Shoot(?:ing)?|Fir(?:ing|e)|Discharg(?:e|ing)) (?:at |on )?(?:a |an )?(?:Officer|Peace Officer|Police|Civilian|\\bLEO\\b|\\bPO\\b)s?"
     ),
 
-    AttemptMurder: new RegExp(
-      "(?:Trying|Attempt(?:ed|ing)?) (?:to )?(?:Kill|Murder|Homicide)|" +
-        "(?:Shoot(?:ing)?|Fir(?:ing|e)|Discharg(?:e|ing)) (?:at |on )?(?:a |an )?(?:Officer|Peace Officer|Police|Civilian|\\bLEO\\b|\\bPO\\b)s?",
-      DefaultFlags
+    FImprisonment: ORRegExp(
+      "Hostage",
+      "False Imprisonment",
+      "Taking (?:a )?(?:Human(?:being)?|Person|Civilian|\\bPO\\b|\\bLEO\\b) (?:as |as a )?Shield"
     ),
 
-    Murder: new RegExp("\\bMurd[eua]r(?:ing)?\\b|" + "Homicide|" + "Killing .+", DefaultFlags),
-
-    Kidnapping: new RegExp("\\bKidnapp?(ing)?\\b|" + "Abduct(?:ion|ing)", DefaultFlags),
-
-    FImprisonment: new RegExp(
-      "Hostage|" +
-        "False Imprisonment|" +
-        "Taking (?:a )?(?:Human(?:being)?|Person|Civilian|\\bPO\\b|\\bLEO\\b) (?:as |as a )?Shield",
-      DefaultFlags
+    CSubstances: ORRegExp(
+      "(?:Drug|Controlled Substance)s? (?:Possess(?:ion|ing)?|Carry(?:ing)?)",
+      "(?:Possess(?:es|ion|ing)?|Carry(?:es|ing)?) (?:of |of a )?(?:Controlled Substance|Drug)s?"
     ),
 
-    CSubstances: new RegExp(
-      "(?:Drug|Controlled Substance)s? (?:Possess(?:ion|ing)?|Carry(?:ing)?)|" +
-        "(?:Possess(?:es|ion|ing)?|Carry(?:es|ing)?) (?:of |of a )?(?:Controlled Substance|Drug)s?",
-      DefaultFlags
-    ),
-
-    FInformation_TC: new RegExp(
+    FInformation_TC: ORRegExp(
       "(?:Giv(?:e|es|ing) |Show(?:s|ing)? )?(?:a )?( ?:False|Incorrect|Invalid) (?:(?:Driving )?License|(?:Car |Vehicle )?Registration|(?:Car |Vehicle )?Insurance)" +
-        " to (?:a |an )?(?:Officer|Peace Officer|Police|\\bLEO\\b|\\bPO\\b)s?",
-      DefaultFlags
+        " to (?:a |an )?(?:Officer|Peace Officer|Police|\\bLEO\\b|\\bPO\\b)s?"
     ),
 
-    FInformation_NTC: new RegExp(
-      "(?:Giv(?:e|es|ing) |Show(?:s|ing)? )?(?:a )?(?:False|Incorrect|Invalid) (?:\\bID\\b|Identification)" +
-        " to (?:a |an )?(?:Officer|Peace Officer|Police|\\bLEO\\b|\\bPO\\b)s?",
-      DefaultFlags
+    FInformation_NTC: ORRegExp(
+      "(?:Giv(?:e|es|ing) |Show(?:s|ing)? )?(?:a )?(?:False|Incorrect|Invalid) (?:\\bID\\b|Identification)",
+      " to (?:a |an )?(?:Officer|Peace Officer|Police|\\bLEO\\b|\\bPO\\b)s?"
     ),
 
-    Trespassing: new RegExp(
-      "Trespass(?:ing)?|" +
-        "Refus(?:ed?|ing) to Leave (?:a |an |the )?(?:\\w+ )?(?:Property|Building|Store|Shop)",
-      DefaultFlags
+    Trespassing: ORRegExp(
+      "Trespass(?:ing)?",
+      "Refus(?:ed?|ing) to Leave (?:a |an |the )?(?:\\w+ )?(?:Property|Building|Store|Shop)"
     ),
 
-    FirearmInPublic: new RegExp(
-      "(?:Possess(?:es|ion|ing)?|Carry(?:es|ing)?) (?:a |of |of a )?(?:Concealed |Loaded )?(?:Firearm|Weapon|Gun|Pistol|Rifle)|" +
-        "(Conceal(?:ed|ing)?|Loaded) (?:Firearm|Weapon|Gun|Pistol|Rifle)",
-      DefaultFlags
+    FirearmInPublic: ORRegExp(
+      "(Conceal(?:ed|ing)?|Loaded) (?:Firearm|Weapon|Gun|Pistol|Rifle)",
+      "(?:Possess(?:es|ion|ing)?|Carry(?:es|ing)?) (?:a |of |of a )?(?:Concealed |Loaded )?(?:Firearm|Weapon|Gun|Pistol|Rifle)"
     ),
   };
 
-  // Analyses every charge and assigns every charge a specific law code
   for (let i = 0; i < Charges.length; i++) {
+    const AddChargeStatute = FormatStr.bind(this, "%s\n  - Statute: § %s %s");
     const Charge = Charges[i];
-    let Continue = false;
 
-    // Assault/Stabbing charges
-    if (Charge.match(Regexes.Assault)) {
-      if (Charge.match(Regexes.DWeaponRegex)) {
+    // Assault/Stabbing charge statute codes
+    if (Regexes.Assault.test(Charge)) {
+      if (Regexes.DWeaponRegex.test(Charge)) {
         if (Charge.match(/(?:Not|Other than) (?:a )?(?:Firearm|Gun|F\/ARM)/i)) {
-          if (Charge.match(Regexes.LERegex)) {
-            Charges[i] = `${Charge}\n  - Statute: 245(C) PC`;
+          if (Regexes.LERegex.test(Charge)) {
+            Charges[i] = AddChargeStatute(Charge, "245(C)", "PC");
           } else {
-            Charges[i] = `${Charge}\n  - Statute: 245(A)(1) PC`;
+            Charges[i] = AddChargeStatute(Charge, "245(A)(1)", "PC");
           }
+        } else if (Regexes.LERegex.test(Charge)) {
+          Charges[i] = AddChargeStatute(Charge, "245(D)", "PC");
         } else {
-          if (Charge.match(Regexes.LERegex)) {
-            Charges[i] = `${Charge}\n  - Statute: 245(D) PC`;
-          } else {
-            Charges[i] = `${Charge}\n  - Statute: 245(B) PC`;
-          }
+          Charges[i] = AddChargeStatute(Charge, "245(B)", "PC");
         }
+      } else if (Regexes.LERegex.test(Charge)) {
+        Charges[i] = AddChargeStatute(Charge, "240/241(C)", "PC");
       } else {
-        if (Charge.match(Regexes.LERegex)) {
-          Charges[i] = `${Charge}\n  - Statute: 240/241(C) PC`;
-        } else {
-          Charges[i] = `${Charge}\n  - Statute: 240 PC`;
-        }
+        Charges[i] = AddChargeStatute(Charge, "240", "PC");
       }
       continue;
     }
 
-    // Battery charge
-    if (Charge.match(Regexes.Battery)) {
-      if (Charge.match(Regexes.LERegex)) {
-        Charges[i] = `${Charge}\n  - Statute: 243(B) PC`;
+    // Battery
+    if (Regexes.Battery.test(Charge)) {
+      if (Regexes.LERegex.test(Charge)) {
+        Charges[i] = AddChargeStatute(Charge, "243(B)", "PC");
       } else {
-        Charges[i] = `${Charge}\n  - Statute: 242 PC`;
+        Charges[i] = AddChargeStatute(Charge, "242", "PC");
       }
       continue;
     }
 
-    // Evasion and fleeing
-    if (Charge.match(Regexes.Evasion)) {
-      if (Charge.match(Regexes.RecklessDriving)) {
-        Charges[i] = `${Charge}\n  - Statute: 2800.2(A) VC`;
+    // Evasion and Fleeing
+    if (Regexes.Evasion.test(Charge)) {
+      let Continue = false;
+      if (Regexes.RecklessDriving.test(Charge)) {
+        Charges[i] = AddChargeStatute(Charge, "2800.2(A)", "VC");
         Continue = true;
       } else {
         for (const RCharge of Charges) {
-          if (RCharge.match(Regexes.RecklessDriving)) {
-            Charges[i] = `${Charge}\n  - Statute: 2800.2(A) VC`;
+          if (Regexes.RecklessDriving.test(RCharge)) {
+            Charges[i] = AddChargeStatute(Charge, "2800.2(A)", "VC");
             Continue = true;
             break;
           }
         }
       }
       if (!Continue) {
-        Charges[i] = `${Charge}\n  - Statute: 2800 VC`;
+        Charges[i] = AddChargeStatute(Charge, "2800", "VC");
       }
       continue;
     }
 
-    // Resisting a peace officer
-    if (Charge.match(Regexes.Resisting)) {
-      Charges[i] = `${Charge}\n  - Statute: 69(A)/148(A) PC`;
+    // Resisting a Peace Officer
+    if (Regexes.Resisting.test(Charge)) {
+      Charges[i] = AddChargeStatute(Charge, "69(A)/148(A)", "PC");
       continue;
     }
 
-    // Reckless driving
-    if (Charge.match(Regexes.RecklessDriving)) {
-      Charges[i] = `${Charge}\n  - Statute: 23103 VC`;
+    // Reckless Driving
+    if (Regexes.RecklessDriving.test(Charge)) {
+      Charges[i] = AddChargeStatute(Charge, "23103", "VC");
       continue;
     }
 
-    // Drawing a firearm in threatening manner
-    if (Charge.match(Regexes.BrandishingFirearm)) {
-      if (Charge.match(Regexes.LERegex)) {
-        Charges[i] = `${Charge}\n  - Statute: 417(C) PC`;
+    // Drawing a Firearm in Threatening Manner
+    if (Regexes.BrandishingFirearm.test(Charge)) {
+      if (Regexes.LERegex.test(Charge)) {
+        Charges[i] = AddChargeStatute(Charge, "417(C)", "PC");
       } else {
-        Charges[i] = `${Charge}\n  - Statute: 417(A)(1) PC`;
+        Charges[i] = AddChargeStatute(Charge, "417(A)(1)", "PC");
       }
       continue;
     }
 
-    // Threatening
-    if (Charge.match(Regexes.Threatening)) {
-      if (Charge.match(Regexes.LERegex)) {
-        Charges[i] = `${Charge}\n  - Statute: 71 PC`;
+    // Threatening Charge
+    if (Regexes.Threatening.test(Charge)) {
+      if (Regexes.LERegex.test(Charge)) {
+        Charges[i] = AddChargeStatute(Charge, "71", "PC");
       } else {
-        Charges[i] = `${Charge}\n  - Statute: 422(A) PC`;
+        Charges[i] = AddChargeStatute(Charge, "422(A)", "PC");
       }
       continue;
     }
 
-    // Accessory after the fact: unlawfully helping a criminal
-    if (Charge.match(Regexes.AAF)) {
-      Charges[i] = `${Charge}\n  - Statute: 32 PC`;
+    // Accessory After the Fact; Unlawfully Helping a Criminal
+    if (Regexes.AAF.test(Charge)) {
+      Charges[i] = AddChargeStatute(Charge, "32", "PC");
       continue;
     }
 
-    // Arson: setting a building/property on fire
-    if (Charge.match(Regexes.Arson)) {
-      Charges[i] = `${Charge}\n  - Statute: 451 PC`;
+    // Arson; Setting a Building/Property on Fire With the Intent
+    if (Regexes.Arson.test(Charge)) {
+      Charges[i] = AddChargeStatute(Charge, "451", "PC");
       continue;
     }
 
-    // Bribery charge
-    if (Charge.match(Regexes.Bribery)) {
-      Charges[i] = `${Charge}\n  - Statute: 67 PC`;
+    // Bribery Charge
+    if (Regexes.Bribery.test(Charge)) {
+      Charges[i] = AddChargeStatute(Charge, "67", "PC");
       continue;
     }
 
-    // Cash register robbery
-    if (Charge.match(Regexes.CRRobbery)) {
+    // Cash Register Robbery (Considered Grand Theft If Was Done +2 Times)
+    if (Regexes.CRRobbery.test(Charge)) {
       if (Charge.match(/Robberies/i) || Charge.match(/x[2-9]\d?/i)) {
-        Charges[i] = `${Charge}\n  - Statute: 487 PC`;
+        Charges[i] = AddChargeStatute(Charge, "487", "PC");
       } else {
-        Charges[i] = `${Charge}\n  - Statute: 211 PC`;
+        Charges[i] = AddChargeStatute(Charge, "211", "PC");
       }
       continue;
     }
 
-    // Grand theft: Jewelry store, bank, and ATM robberies
-    if (Charge.match(Regexes.GrandTheft)) {
-      Charges[i] = `${Charge}\n  - Statute: 487 PC`;
+    // Grand theft; Jewelry Store, Bank, and ATM Robberies
+    if (Regexes.GrandTheft.test(Charge)) {
+      Charges[i] = AddChargeStatute(Charge, "487", "PC");
       continue;
     }
 
-    // Driving without a valid license
-    if (Charge.match(Regexes.InvalidLicense)) {
-      Charges[i] = `${Charge}\n  - Statute: 12500 VC`;
+    // Driving Without a Valid License
+    if (Regexes.InvalidLicense.test(Charge)) {
+      Charges[i] = AddChargeStatute(Charge, "12500", "VC");
       continue;
     }
 
-    // Possession of burglary tools
-    if (Charge.match(Regexes.PBTools)) {
-      Charges[i] = `${Charge}\n  - Statute: 466 PC`;
+    // Possession of Burglary Tools
+    if (Regexes.PBTools.test(Charge)) {
+      Charges[i] = AddChargeStatute(Charge, "466", "PC");
       continue;
     }
 
-    // House/residential burglary charge
-    if (Charge.match(Regexes.Burglary)) {
-      Charges[i] = `${Charge}\n  - Statute: 459/460(A) PC`;
+    // House/Residential Burglary Charge
+    if (Regexes.Burglary.test(Charge)) {
+      Charges[i] = AddChargeStatute(Charge, "459/460(A)", "PC");
       continue;
     }
 
-    // Possession of illegal weapon(s)
-    if (Charge.match(Regexes.PIFirearms)) {
-      Charges[i] = `${Charge}\n  - Statute: 12020 PC`;
+    // Illegal Possession of Weapon(s)
+    if (Regexes.PIFirearms.test(Charge)) {
+      Charges[i] = AddChargeStatute(Charge, "12020", "PC");
       continue;
     }
 
-    // Attempt murder
-    if (Charge.match(Regexes.AttemptMurder)) {
-      if (Charge.match(Regexes.LERegex)) {
-        Charges[i] = `${Charge}\n  - Statute: 664(E)/187(A) PC`;
+    // Attempt Murder Charges
+    if (Regexes.AttemptMurder.test(Charge)) {
+      if (Regexes.LERegex.test(Charge)) {
+        Charges[i] = AddChargeStatute(Charge, "664(E)/187(A)", "PC");
       } else {
-        Charges[i] = `${Charge}\n  - Statute: 664/187(A) PC`;
+        Charges[i] = AddChargeStatute(Charge, "664/187(A)", "PC");
       }
       continue;
     }
 
-    // Shooting on vehicles/buildings
-    if (Charge.match(Regexes.ShootingVB)) {
-      if (Charge.match(/Occupied|Inhabited/i) || Charge.match(Regexes.LERegex)) {
-        Charges[i] = `${Charge}\n  - Statute: 246 PC`;
+    // Shooting on Vehicles/Buildings
+    if (Regexes.ShootingVB.test(Charge)) {
+      if (Charge.match(/Occupied|Inhabited/i) || Regexes.LERegex.test(Charge)) {
+        Charges[i] = AddChargeStatute(Charge, "246", "PC");
       } else {
-        Charges[i] = `${Charge}\n  - Statute: 247(B) PC`;
+        Charges[i] = AddChargeStatute(Charge, "247(B)", "PC");
       }
       continue;
     }
 
-    // Murder
-    if (Charge.match(Regexes.Murder)) {
-      Charges[i] = `${Charge}\n  - Statute: 187(A) PC`;
+    // Murder Charge
+    if (Regexes.Murder.test(Charge)) {
+      Charges[i] = AddChargeStatute(Charge, "187(A)", "PC");
       continue;
     }
 
-    // Kidnapping
-    if (Charge.match(Regexes.Kidnapping)) {
-      Charges[i] = `${Charge}\n  - Statute: 209 PC`;
+    // Kidnapping Charge
+    if (Regexes.Kidnapping.test(Charge)) {
+      Charges[i] = AddChargeStatute(Charge, "209", "PC");
       continue;
     }
 
-    // False imprisonment
-    if (Charge.match(Regexes.FImprisonment)) {
-      Charges[i] = `${Charge}\n  - Statute: 210.5 PC`;
+    // False Imprisonment
+    if (Regexes.FImprisonment.test(Charge)) {
+      Charges[i] = AddChargeStatute(Charge, "210.5", "PC");
       continue;
     }
 
-    // Controlled substances
-    if (Charge.match(Regexes.CSubstances)) {
-      Charges[i] = `${Charge}\n  - Statute: 11350(A) HS`;
+    // Controlled Substances
+    if (Regexes.CSubstances.test(Charge)) {
+      Charges[i] = AddChargeStatute(Charge, "11350(A)", "HS");
       continue;
     }
 
-    // Hit and run
-    if (Charge.match(Regexes.HitAndRun)) {
-      Charges[i] = `${Charge}\n  - Statute: 20001/20002 VC`;
+    // Hit and Run Charge
+    if (Regexes.HitAndRun.test(Charge)) {
+      Charges[i] = AddChargeStatute(Charge, "20001/20002", "VC");
       continue;
     }
 
-    // Tamper with vehicles
-    if (Charge.match(Regexes.Tampering)) {
-      Charges[i] = `${Charge}\n  - Statute: 10852 VC`;
+    // Tamper With Vehicles With Intent
+    if (Regexes.Tampering.test(Charge)) {
+      Charges[i] = AddChargeStatute(Charge, "10852", "VC");
       continue;
     }
 
-    // Vandalism: damaging public/others' properties
-    if (Charge.match(Regexes.Vandalism)) {
-      Charges[i] = `${Charge}\n  - Statute: 594 PC`;
+    // Vandalism; Damaging Public/Others' Properties
+    if (Regexes.Vandalism.test(Charge)) {
+      Charges[i] = AddChargeStatute(Charge, "594", "PC");
       continue;
     }
 
-    // False information to a peace officer
-    // (not in a traffic stop)
-    if (Charge.match(Regexes.FInformation_NTC)) {
-      if (Charge.match(/Pulled Over|Traffic Stop/i)) {
-        Charges[i] = `${Charge}\n  - Statute: 31 VC`;
+    // Giving False Information to a Peace Officer
+    if (Regexes.FInformation_NTC.test(Charge) || Regexes.FInformation_TC.test(Charge)) {
+      if (Charge.match(/Pulled Over|Traffic Stop/i) && Regexes.FInformation_TC.test(Charge)) {
+        Charges[i] = AddChargeStatute(Charge, "31", "VC");
       } else {
-        Charges[i] = `${Charge}\n  - Statute: 148.9 PC`;
+        Charges[i] = AddChargeStatute(Charge, "148.9", "PC");
       }
       continue;
     }
 
-    // False information to a peace officer
-    // (Traffic stop: license, registration, etc..)
-    if (Charge.match(Regexes.FInformation_TC)) {
-      Charges[i] = `${Charge}\n  - Statute: 31 VC`;
+    // Trespassing in a Private Property or at an Illegal Location
+    if (Regexes.Trespassing.test(Charge)) {
+      Charges[i] = AddChargeStatute(Charge, "602", "PC");
       continue;
     }
 
-    // Trespassing
-    if (Charge.match(Regexes.Trespassing)) {
-      Charges[i] = `${Charge}\n  - Statute: 602 PC`;
-      continue;
-    }
-
-    // Carrying a firearm in public without a CCW (Concealed Carry) Permit
-    if (Charge.match(Regexes.FirearmInPublic)) {
+    // Carrying a Firearm in Public Without a CCW (California Concealed Carry) Permit
+    if (Regexes.FirearmInPublic.test(Charge)) {
       if (Charge.match(/Conceal(?:ed|ing)?|Hidden|Covered|Invisible/i)) {
         if (Charge.match(/Loaded/i)) {
-          Charges[i] = `${Charge}\n  - Statute: 25850(A) PC`;
+          Charges[i] = AddChargeStatute(Charge, "25850(A)", "PC");
         } else {
-          Charges[i] = `${Charge}\n  - Statute: 25400(A) PC`;
+          Charges[i] = AddChargeStatute(Charge, "25400(A)", "PC");
         }
       } else {
-        Charges[i] = `${Charge}\n  - Statute: 25850(A) PC`;
+        Charges[i] = AddChargeStatute(Charge, "25850(A)", "PC");
       }
     }
   }
@@ -468,7 +452,7 @@ export function FormatCharges(Input: string): string {
 export function FormatHeight(Input: string): string {
   const Sanitized = Input.trim().replace(/\s+/g, " ");
   if (Sanitized.match(/^[1-9]+'(\d|1[01])"$/)) {
-    return Sanitized.match(/^[8-9]|[1-9]\d+/) ? "7'11\"" : Sanitized;
+    return Sanitized.match(/^(?:[8-9]|[1-9]\d+)/) ? "7'11\"" : Sanitized;
   }
 
   if (Sanitized.match(/^\d+$/)) {
