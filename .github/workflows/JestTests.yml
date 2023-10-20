@@ -9,16 +9,22 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+
     steps:
       - uses: actions/checkout@v3
-      - name: Use Node.js versin 21.x
+      - name: Use Package's Node.js Version - ${{ matrix.os }}
         uses: actions/setup-node@v3
         with:
           cache: "npm"
-          node-version: "21.x"
+          node-version-file: "package.json"
 
       - name: Install Dependencies
         run: npm ci
 
-      - name: Run Tests
+      - name: Run App Tests
         run: npm test
