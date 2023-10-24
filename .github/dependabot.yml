@@ -12,3 +12,10 @@ updates:
       interval: "weekly"
     labels:
       - "🧩 - Dependencies"
+    ignore:
+      - dependency-name: "@types/*"
+      - dependency-name: "*"
+        update-types: 
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+        
