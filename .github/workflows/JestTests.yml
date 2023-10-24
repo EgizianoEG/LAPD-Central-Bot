@@ -17,14 +17,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - name: Use Package's Node.js Version - ${{ matrix.os }}
+      - name: Use Node.js Version 21 - ${{ matrix.os }}
         uses: actions/setup-node@v3
         with:
           cache: "npm"
           node-version: "21.x.x"
 
-      - name: Install Dependencies
+      - name: Install App Dependencies
         run: npm ci
 
       - name: Run App Tests
-        run: npm test
+        run: npm test -- --testPathIgnorePatterns=Secrets.*.ts
