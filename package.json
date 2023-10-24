@@ -27,6 +27,9 @@
     "clean-build": "rm -rf Build & npm run build",
     "lint": "tsc --noEmit && eslint \"Source/**/*.{js,ts}\" && prettier -c \"Source/**/*.{js,ts,json}\"",
     "test:coverage": "jest \"--coverage\"",
+    "test:secrets": "npm run test -- Tests/Other/Secrets.test.ts",
+    "test:utils": "npm run test -- Tests/Utils/*",
+    "test:rscs": "npm run test -- Tests/Other/Resources.test.ts",
     "test": "jest"
   },
   "dependencies": {

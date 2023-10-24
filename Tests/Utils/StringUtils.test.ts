@@ -1,8 +1,8 @@
 /* eslint-disable prefer-regex-literals */
 /* eslint-disable sonarjs/no-duplicate-string */
 // ---------------------------------------------------------------------------------------
-import { UpperFirst, TitleCase, CamelCase, PascalToNormal } from "@Utilities/Strings/Converter";
-import { DummyText, RandomString } from "@Utilities/Strings/Random";
+import { UpperFirst, TitleCase, CamelCase, PascalToNormal } from "@Utilities/Strings/Converter.js";
+import { DummyText, RandomString } from "@Utilities/Strings/Random.js";
 import {
   FormatAge,
   FormatHeight,
@@ -12,10 +12,11 @@ import {
   UnorderedList,
   EscapeRegExp,
   ListCharges,
-} from "@Utilities/Strings/Formatter";
+  AddStatutes,
+} from "@Utilities/Strings/Formatter.js";
 
 import { faker as Faker } from "@faker-js/faker";
-import SampleTexts from "@Resources/SampleTexts";
+import SampleTexts from "@Resources/SampleTexts.js";
 import Dedent from "dedent";
 
 // ---------------------------------------------------------------------------------------
@@ -551,5 +552,130 @@ describe("String Formatting Utilities", () => {
     it("Should format a multiline input string into a formatted numbered list of charges or an array", () => {});
   });
 
-  describe.skip("Formatting:AddStatutes()", () => {});
+  describe("Formatting:AddStatutes()", () => {
+    it("Should assign the proper statute codes to resisting charge with various formats", () => {
+      const Inputs = [
+        "Failure to Comply with a peace officer",
+        "#1 resisting a LEO",
+        "Obstruction of justice",
+        "4. not listening to PO",
+        "5. Interfering with police",
+      ];
+
+      Inputs.forEach((CAlias) => {
+        const Result = AddStatutes([CAlias]);
+        expect(Result.toString()).toMatch(/69\(\w\)|148\(\w\)|69\(\w\)\/148\(\w\)/i);
+      });
+    });
+
+    it("Should return the input array if it has only one element which is suspected to have more than one charge", () => {
+      const Inputs = [
+        "evasion, resisting, and assault",
+        "attempt robbery and murder",
+        "Trespassing and theft",
+      ];
+
+      expect(AddStatutes(["Hit and Run"]).toString()).not.toMatch(/^Hit and Run$/);
+      Inputs.forEach((CAlias) => {
+        const Result = AddStatutes([CAlias]);
+        expect(Result.toString()).toMatch(CAlias);
+      });
+    });
+
+    it("Should assign the proper statute codes to battery charges with various formats", () => {
+      const Inputs = [
+        "Battery on a LEO",
+        "Civilian Battery",
+        "Battery on a civilian",
+        "Battary on a peace officer",
+      ];
+
+      Inputs.forEach((CAlias) => {
+        const Result = AddStatutes([CAlias]);
+        expect(Result.toString()).toMatch(/\n\s*- Statute:.*?(?:242|243\(\w\))/i);
+      });
+    });
+
+    it("Should assign the proper statute codes to assault charges with various formats", () => {
+      const Inputs = [
+        "ADW on a LEO",
+        "ADW - Not A Gun",
+        "Stabbing a civilian",
+        "Assaulted PO: F/ARM",
+        "3. Assualted a protester",
+        "Assaulting a Peace Officer",
+        "ADW on an officer: Other than a gun",
+        "Assaulting a LEO: w/ a Deadly Weapon",
+        "7. Assaulting a civilian with a deadly weapon",
+        "Assault with a Deadly Weapon: Other than a Firearm",
+      ];
+
+      Inputs.forEach((CAlias) => {
+        const Result = AddStatutes([CAlias]);
+        expect(Result.toString()).toMatch(
+          /\n\s*- Statute:.*?(?:240|245\(\w\)|245\(\w\)\(1\)|240\/241\(\w\))/i
+        );
+      });
+    });
+
+    it("Should assign the proper statute codes to evasion charges with various formats", () => {
+      const Inputs = [
+        "Evading",
+        "1. Evasion",
+        "3. Vehicle evasion",
+        "3. Vehicle fleeing",
+        "Evasion: Disregarding Safety",
+        "Eluding a peace officer",
+        "Evading Law Enforcement",
+        "Running from LEO",
+        ["1. Vehicle Evasion", "2. Reckless Driving"],
+        ["4. Fleeing an Officer", "3. Traffic Crimes"],
+      ];
+
+      Inputs.forEach((CAlias) => {
+        const Result = AddStatutes(Array.isArray(CAlias) ? CAlias : [CAlias]);
+        expect(Result.toString()).toMatch(/\n\s*- Statute:.*?(?:2800.2\(A\)|2800)/i);
+      });
+    });
+
+    it("Should assign the proper statute codes to fire-related crimes (Arson) of different formats", () => {
+      const Inputs = [
+        "Incendiarism",
+        "#4 Fire raising",
+        "- Burning a public place.",
+        "Fire-setting of a building",
+        ["1. Murder", "2. Arsen"],
+      ];
+
+      Inputs.forEach((CAlias) => {
+        const Result = AddStatutes(Array.isArray(CAlias) ? CAlias : [CAlias]);
+        expect(Result.toString()).toMatch(/\n\s*- Statute:.*?(?:451)/i);
+      });
+    });
+
+    it("Should handle and properly assign the law statute codes to an array of various charges", () => {
+      const Inputs = [
+        [
+          "1. Vehicle Evasion",
+          "2. Possession of burglary tools",
+          "3. Reckless Driving",
+          "4. Accessory after the fact",
+        ],
+        [
+          "1. House robbery",
+          "2. Shooting at police vehicles",
+          "3. Resisting an Arrest",
+          "4. Grand Theft: Jewelry Robbery",
+        ],
+      ];
+
+      Inputs.forEach((CAlias) => {
+        const Org = [...CAlias];
+        const Result = AddStatutes(Array.isArray(CAlias) ? CAlias : [CAlias]);
+        Result.forEach((Charge, i) =>
+          expect(Charge).toMatch(new RegExp(`^${Org[i]}\\n\\s*- Statute:`))
+        );
+      });
+    });
+  });
 });
