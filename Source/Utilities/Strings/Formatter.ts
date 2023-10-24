@@ -15,7 +15,7 @@ export function ListCharges<ReturnType extends boolean = false>(
 ): ReturnType extends true ? string[] : string {
   const Charges: string[] =
     Input.trim()
-      .replace(/[^\S\w\n\r]+/g, " ")
+      .replace(/[^\S\n\r]+/g, " ")
       .match(/([^\n\r]+)/g) ?? [];
 
   if (Charges.length === 0 || Charges[0].trim() === "") {
@@ -43,6 +43,7 @@ export function ListCharges<ReturnType extends boolean = false>(
  * 1. Eluding a Peace Officer: Disregarding Safety
  *     - Statute: § 2800.2(A) VC
  *
+ * @todo Instead of relying solely on regex patterns to assign a law code to a charge, use a score-based approach.
  * @param Charges - The input array of charges (strings).
  * @returns An array of charges after adding statutes to them.
  * @example
@@ -66,32 +67,32 @@ export function AddStatutes(this: any, Charges: Array<string>): Array<string> {
     return new RegExp(Args.join("|"), "i");
   };
 
-  const LEORegexString = /(?:Officer|Peace Officer|Police|\bLEO\b|\bPO\b)s?/.source;
+  const LEORegexString = /(?:Officer|Peace Officer|\bPolice\b|\bLEO\b|\bPO\b)s?/.source;
   const Regexes = {
     Battery: /Batt[ea]ry/i,
     Bribery: /Brib[eau]ry|Brib(?:e|ing)/i,
-    Assault: /A[su]{1,2}[alut]{2,4}|Stab(?:bing|bed)|\\bADW\\b/i,
-    LERegex: /Officers?|Peace Officers?|Police|\bLEO\b|\bPO\b/,
+    Assault: /A[su]{1,3}[alut]{2,4}|Stab(?:bing|bed)|\bADW(?:\b|[-+:#])/i,
+    LERegex: /Officers?|Peace Officers?|\bPolice\b|\bLEO\b|\bPO\b/i,
     HitAndRun: /Hit(?: and | ?& ?)Run/i,
     CRRobbery: /Cash Register Robber(?:y|ies)/i,
     Tampering: /(?:Damag(?:e|ing)|Tamper(?:ing)) (?:a |an |with )?(?:Car|Vehicle)s?/i,
     Vandalism: /Graffiti|Sabotage|Vandalism|Vandali[zs](?:ing|ed?|es) \w+|Defac(?:e|ing) \w+/i,
     Threatening: /Threat[ei]n(?:ing)?|Threats to \\w+/i,
-    DWeaponRegex: /Deadly|Weapon|Firearm|Gun|Pistol|Rifle|Bat|Knife|Hammer/i,
+    DWeaponRegex: /Deadly|Weapon|Firearm|(?:Hand )?Gun|Pistol|Rifle|Bat|Knife|Hammer/i,
 
-    Kidnapping: ORRegExp("\\bKidnapp?(ing)?\\b|", "Abduct(?:ion|ing)"),
+    Kidnapping: ORRegExp("\\bKidnapp?(ing)?\\b", "Abduct(?:ion|ing)"),
     Burglary: ORRegExp("Burglary", "Breaking into (?:a |an )?(?:House|Residential)"),
-    Murder: ORRegExp("\\bMurd[eua]r(?:ing)?\\b|", "Homicide|", "Killing .+"),
+    Murder: ORRegExp("\\bMurd[eua]r(?:ing)?\\b", "Homicide", "Killing .+"),
 
     Evasion: ORRegExp(
-      "(?:Evasion|Evading)",
+      "(?:Evasion|Evading|Fleeing)",
       "Vehicle (?:Fleeing|Eluding|Evasion)",
       "(?:Running from|Elud(?:e|ing)|Evade) (?:an |a )?"
     ),
 
     Resisting: ORRegExp(
-      "Fail(?:ing|ure)? to Comply",
-      "Resist(?:ing)? (?:an |a )?Arrest",
+      "Fail(?:ing|ure|ed)? to Comply",
+      "Resist(?:ing|ed)? (?:an |a )?Arrest",
       "Obstruct(?:ing|ion)(?: of)? Justice",
       `Not (?:Listening|Complying) (?:to|with) (?:an |a )?${LEORegexString}`,
       `(?:Resist(?:ing)?|Defy(?:ing)?|Obstruct(?:ing|ion)?|Interfer(?:e|ing)? with) (?:an |a )?${LEORegexString}`
@@ -115,7 +116,7 @@ export function AddStatutes(this: any, Charges: Array<string>): Array<string> {
       "Driving Reckless(?:ly)?",
       "Dangerous(?:ly)? Driving",
       "Reckless(?:ly)? (?:Driving|Endangerment)",
-      "Run(?:ning)? (?:Multiple )?(?:Red)? Lights",
+      "R[au]n(?:ning)? (?:Multiple )?(?:Red)? Lights",
       "(?:Disregard|Disregarding|Ignor(?:ed?|ing)?|No|W/o|Without) Safety"
     ),
 
@@ -127,7 +128,8 @@ export function AddStatutes(this: any, Charges: Array<string>): Array<string> {
     Arson: ORRegExp(
       "Ars[oe]n",
       "Incendiarism",
-      "Burn(?:ing) \\w+",
+      "Raising Fire",
+      "Burn(?:ing|ed) \\w+",
       "Fire(?:-| )(?:setting|raising)"
     ),
 
@@ -158,8 +160,10 @@ export function AddStatutes(this: any, Charges: Array<string>): Array<string> {
 
     FImprisonment: ORRegExp(
       "Hostage",
-      "False Imprisonment",
-      "Taking (?:a )?(?:Human(?:being)?|Person|Civilian|\\bPO\\b|\\bLEO\\b) (?:as |as a )?Shield"
+      "Restraint of Liberty",
+      "(?:False|Unlawful) (?:Imprisonment|Confinement)",
+      "(?:Forcing|Coercing) (?:Someone|Somebody|Civilian) (?:to Stay|to Remain)",
+      "(?:Taking|Having) (?:a )?(?:Human(?:being)?|Person|Civilian|Officer|Police Officer|\\bPO\\b|\\bLEO\\b) (?:as |as a )?(?:Human )?(?:Shield|Hostage)"
     ),
 
     CSubstances: ORRegExp(
@@ -169,17 +173,19 @@ export function AddStatutes(this: any, Charges: Array<string>): Array<string> {
 
     FInformation_TC: ORRegExp(
       "(?:Giv(?:e|es|ing) |Show(?:s|ing)? )?(?:a )?( ?:False|Incorrect|Invalid) (?:(?:Driving )?License|(?:Car |Vehicle )?Registration|(?:Car |Vehicle )?Insurance)" +
-        " to (?:a |an )?(?:Officer|Peace Officer|Police|\\bLEO\\b|\\bPO\\b)s?"
+        " to (?:a |an )?" +
+        LEORegexString
     ),
 
     FInformation_NTC: ORRegExp(
       "(?:Giv(?:e|es|ing) |Show(?:s|ing)? )?(?:a )?(?:False|Incorrect|Invalid) (?:\\bID\\b|Identification)",
-      " to (?:a |an )?(?:Officer|Peace Officer|Police|\\bLEO\\b|\\bPO\\b)s?"
+      " to (?:a |an )?" + LEORegexString
     ),
 
     Trespassing: ORRegExp(
-      "Trespass(?:ing)?",
-      "Refus(?:ed?|ing) to Leave (?:a |an |the )?(?:\\w+ )?(?:Property|Building|Store|Shop)"
+      "Trespass(?:ing|ed?)?",
+      "(?:Unauthorized Entry|Illegal Entry)",
+      "Refus(?:ing|ed?) to Leave (?:a |an |the )?(?:\\w+ )?(?:Property|Building|Store|Shop)"
     ),
 
     FirearmInPublic: ORRegExp(
@@ -195,7 +201,7 @@ export function AddStatutes(this: any, Charges: Array<string>): Array<string> {
     // Assault/Stabbing charge statute codes
     if (Regexes.Assault.test(Charge)) {
       if (Regexes.DWeaponRegex.test(Charge)) {
-        if (Charge.match(/(?:Not|Other than) (?:a )?(?:Firearm|Gun|F\/ARM)/i)) {
+        if (Charge.match(/(?:Not|Other than) (?:a )?(?:Firearm|(?:Hand )?Gun|F\/ARM)/i)) {
           if (Regexes.LERegex.test(Charge)) {
             Charges[i] = AddChargeStatute(Charge, "245(C)", "PC");
           } else {
