@@ -35,9 +35,6 @@ export namespace Secrets {
 
     /** The bot token for the Discord application (Bot). */
     BotToken: string;
-
-    /** The application’s (bot’s) snowflake ID. */
-    ClientId: string;
   }
 
   interface MongoDB {

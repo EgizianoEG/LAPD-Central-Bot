@@ -46,7 +46,7 @@ export default async function RemoveCommands(Client: DiscordClient) {
 
     for (const Command of MatchingCommands) {
       Client.rest
-        .delete(Routes.applicationCommand(Discord.ClientId, Command.id))
+        .delete(Routes.applicationCommand(Client.user.id, Command.id))
         .then(() =>
           console.log(
             `✅ - Successfully deleted ${Chalk.magenta(Command.name)} application command.`

@@ -1,9 +1,8 @@
 import type { Secrets } from "@Typings/Config.js";
 
 export const Discord: Secrets.Discord = {
-  ClientId: "10918796117460245810",
-  BotToken: "MTA5Nzg3OTYxMTc0NjAyOTcxMA.G3NsSn.cqsdmmAmnqeUe_PT7ROQAzWzWZA3nzFfN_xHWI",
   TestGuildId: "299142369297356",
+  BotToken: "MTA5Nzg3OTYxMTc0NjAyOTcxMA.G3NsSn.cqsdmmAmnqeUe_PT7ROQAzWzWZA3nzFfN_xHWI",
   BotDevs: ["792228590451603", "7236923635792345", "090408080567741", "45515157287732599227"],
 };
 
@@ -14,9 +13,9 @@ export const Roblox: Secrets.Roblox = {
 
 export const MongoDB: Secrets.MongoDB = {
   URI: "mongodb+srv://<username>:<password>@lapd-central-bot.rdjesxr.mongodb.net/?retryWrites=true&w=majority",
+  DBName: "bot-database",
   Username: "Data-Admin",
   UserPass: "jDnQiJ1DEz26L1fS",
-  DBName: "bot-database",
 };
 
 export const OpenWeather: Secrets.OpenWeather = {

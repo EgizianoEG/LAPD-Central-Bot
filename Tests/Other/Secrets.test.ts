@@ -62,10 +62,6 @@ describe("Secrets.Discord", () => {
     }
   });
 
-  it(`Should have a valid ${Cyanish("ClientId")} value; a snowflake id`, () => {
-    expect(IsValidSnowflake(Discord.ClientId)).toBe(true);
-  });
-
   it(`Should have a valid ${Cyanish("TestGuildId")} value; a snowflake id`, () => {
     expect(IsValidSnowflake(Discord.TestGuildId)).toBe(true);
   });
