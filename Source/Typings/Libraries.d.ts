@@ -1,10 +1,16 @@
 import type { ChatInputCommandInteraction, Collection } from "discord.js";
+import type { TupleMinMax } from "./Global.js";
 
 export declare module "discord.js" {
   export interface Client {
     commands: Collection<string, SlashCommandObject>;
     cooldowns: Collection<string, Collection<string, number>>;
   }
+}
+
+export declare module "utility-types" {
+  export type NonEmptyArray<T> = [T, ...T[]];
+  export type RangedArray<T, Min extends number, Max extends number> = TupleMinMax<T, Min, Max>;
 }
 
 declare global {

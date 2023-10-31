@@ -12,16 +12,29 @@ import type {
 } from "discord.js";
 
 export type DiscordClient = Client<true>;
-
-export type SlashCommandInteraction<Cached extends CacheType = undefined> =
-  ChatInputCommandInteraction<Cached>;
-
+export type RangedArray<T, Min extends number, Max extends number> = TupleMinMax<T, Min, Max>;
+export type SlashCommandInteraction<Cached extends CacheType = undefined> = ChatInputCommandInteraction<Cached>;
 export type CommandObjectDataType =
   | SlashCommandBuilder
   | SlashCommandSubcommandBuilder
   | SlashCommandSubcommandsOnlyBuilder
   | undefined
   | any;
+
+/** @see {@link https://stackoverflow.com/a/72522221} */
+export type TupleMinMax<
+  T,
+  Min extends number,
+  Max extends number,
+  A extends (T | undefined)[] = [],
+  O extends boolean = false,
+> = O extends false
+  ? Min extends A["length"]
+    ? TupleMinMax<T, Min, Max, A, true>
+    : TupleMinMax<T, Min, Max, [...A, T], false>
+  : Max extends A["length"]
+  ? A
+  : TupleMinMax<T, Min, Max, [...A, T?], false>;
 
 export interface CommandObjectOptions {
   /** Whether or not this command will be removed if it already exists in the application or excluded from registration. */
@@ -48,8 +61,7 @@ declare global {
   export import Mongoose = MongooseMask;
 
   type DiscordClient = Client<true>;
-  type SlashCommandInteraction<Cached extends CacheType = CacheType> =
-    ChatInputCommandInteraction<Cached>;
+  type SlashCommandInteraction<Cached extends CacheType = CacheType> = ChatInputCommandInteraction<Cached>;
 
   interface SlashCommandObject<ClassType extends CommandObjectDataType = SlashCommandBuilder> {
     /** The callback function or the `run` function which will be executed on command call */
