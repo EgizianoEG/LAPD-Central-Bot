@@ -1,4 +1,6 @@
-export namespace RobloxAPI.Users {
+import { DeepReadonly } from "utility-types";
+
+export namespace APIResponses.Users {
   interface GetUserResponse {
     /** The user's bio/description. */
     description: string;
@@ -97,7 +99,7 @@ export namespace RobloxAPI.Users {
   }
 }
 
-export namespace RobloxAPI.Presence {
+export namespace APIResponses.Presence {
   interface UserPresencesResponse {
     userPresences: [
       {
@@ -134,10 +136,73 @@ export namespace RobloxAPI.Presence {
   }
 }
 
+export namespace APIResponses.Thumbnails {
+  interface ThumbnailResponse {
+    data: {
+      /** The state of the response. */
+      state: keyof APITypes.Thumbnails.ResponseStates;
+
+      /** The targetted user id. */
+      targetId: number;
+
+      /** The image url of the targetted user's thumbnail. */
+      imageUrl: string;
+
+      version: string;
+    }[];
+  }
+}
+
+export namespace APITypes.Thumbnails {
+  type ImageFormat = "png" | "jpeg";
+  type AvatarCropSizes = "body" | "bust" | "headshot";
+  type ResponseStates = DeepReadonly<{
+    Error: 0;
+    Completed: 1;
+    InReview: 2;
+    Pending: 3;
+    Blocked: 4;
+    TemporarilyUnavailable: 5;
+  }>;
+
+  interface ThumbSizes {
+    readonly bust: ["48x48", "50x50", "60x60", "75x75", "100x100", "150x150", "180x180", "352x352", "420x420"];
+    readonly body: [
+      "30x30",
+      "48x48",
+      "60x60",
+      "75x75",
+      "100x100",
+      "110x110",
+      "140x140",
+      "150x150",
+      "150x200",
+      "180x180",
+      "250x250",
+      "352x352",
+      "420x420",
+      "720x720",
+    ];
+    readonly headshot: [
+      "48x48",
+      "50x50",
+      "60x60",
+      "75x75",
+      "100x100",
+      "110x110",
+      "150x150",
+      "180x180",
+      "352x352",
+      "420x420",
+      "720x720",
+    ];
+  }
+}
+
 declare global {
   namespace Utilities.Roblox {
-    type UserPresence = RobloxAPI.Presence.UserPresence;
-    type UserSearchResult = RobloxAPI.Users.UserSearchResult;
-    type UserProfileDetails = RobloxAPI.Users.GetUserResponse;
+    type UserPresence = APIResponses.Presence.UserPresence;
+    type UserSearchResult = APIResponses.Users.UserSearchResult;
+    type UserProfileDetails = APIResponses.Users.GetUserResponse;
   }
 }
