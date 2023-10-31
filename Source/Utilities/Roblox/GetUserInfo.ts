@@ -1,4 +1,4 @@
-import { RobloxAPI } from "@Typings/Utilities/Roblox.js";
+import { APIResponses } from "@Typings/Utilities/Roblox.js";
 import Axios from "axios";
 
 /**
@@ -6,8 +6,6 @@ import Axios from "axios";
  * @param UserId - The ID of the user.
  * @return A promise that resolves to the user profile details.
  */
-export default async function GetPlayerInfo(
-  UserId: number | string
-): Promise<RobloxAPI.Users.GetUserResponse> {
+export default async function GetUserInfo(UserId: number | string): Promise<APIResponses.Users.GetUserResponse> {
   return Axios.get(`https://users.roblox.com/v1/users/${UserId}`).then((Resp) => Resp.data);
 }

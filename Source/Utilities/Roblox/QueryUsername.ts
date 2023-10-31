@@ -1,5 +1,5 @@
 import { APICache } from "../Other/Cache.js";
-import { RobloxAPI } from "@Typings/Utilities/Roblox.js";
+import { APIResponses } from "@Typings/Utilities/Roblox.js";
 import { IsValidRobloxUsername } from "../Other/Validator.js";
 import Axios, { AxiosResponse } from "axios";
 
@@ -10,14 +10,14 @@ import Axios, { AxiosResponse } from "axios";
  */
 export default async function QueryUsername(
   Username: string
-): Promise<RobloxAPI.Users.UserSearchResult[]> {
+): Promise<APIResponses.Users.UserSearchResult[]> {
   if (!IsValidRobloxUsername(Username)) return [];
   if (APICache.UsernameSearches.has(Username)) {
     return APICache.UsernameSearches.get(Username) ?? [];
   }
 
   return Axios.get(`https://www.roblox.com/search/users/results?keyword=${Username}&maxRows=25`)
-    .then(({ data }: AxiosResponse<RobloxAPI.Users.UserSearchQueryResponse>) => {
+    .then(({ data }: AxiosResponse<APIResponses.Users.UserSearchQueryResponse>) => {
       if (data.UserSearchResults) {
         APICache.UsernameSearches.set(Username, data.UserSearchResults);
         return data.UserSearchResults;
