@@ -15,9 +15,9 @@ import {
   AutocompleteInteraction,
 } from "discord.js";
 
-import GetPlayerInfo from "@Utilities/Roblox/GetPlayerInfo.js";
+import GetUserInfo from "@Utilities/Roblox/GetUserInfo.js";
 import IsUserLoggedIn from "@Utilities/Database/IsUserLoggedIn.js";
-import GetIdFromUsername from "@Utilities/Roblox/UserIdByUsername.js";
+import GetIdByUsername from "@Utilities/Roblox/GetIdByUsername.js";
 import AutocompleteUsername from "@Utilities/Autocompletion/Username.js";
 import UpdateLinkedRobloxUser from "@Utilities/Database/UpdateLinkedUser.js";
 
@@ -52,7 +52,7 @@ async function HandleInvalidUsername(
         "The username can be 3 to 20 characters long and can only contain letters, digits, and one underscore character in between."
       ),
     });
-  } else if ((await GetIdFromUsername(RobloxUsername)) === null) {
+  } else if ((await GetIdByUsername(RobloxUsername)) === null) {
     return SendErrorReply({
       Ephemeral: true,
       Interaction,
@@ -73,15 +73,12 @@ async function HandleUserLoginStatus(Interaction: SlashCommandInteraction) {
   if (Interaction.replied) return;
   const UserLoggedIn = await IsUserLoggedIn(Interaction);
   if (UserLoggedIn) {
-    const LoggedUsername = (await GetPlayerInfo(UserLoggedIn)).name;
+    const LoggedUsername = (await GetUserInfo(UserLoggedIn)).name;
     return SendErrorReply({
       Ephemeral: true,
       Interaction,
       Title: "Hold up!",
-      Message: FormatStr(
-        "You are already logged in as `%s`.\nDid you mean to log out instead?",
-        LoggedUsername
-      ),
+      Message: FormatStr("You are already logged in as `%s`.\nDid you mean to log out instead?", LoggedUsername),
     });
   }
 }
@@ -113,10 +110,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction) 
   await HandleInvalidUsername(Interaction, InputUsername);
   if (Interaction.replied) return;
 
-  const [RobloxUserId, RobloxUsername] = (await GetIdFromUsername(InputUsername)) as [
-    number,
-    string,
-  ];
+  const [RobloxUserId, RobloxUsername] = (await GetIdByUsername(InputUsername)) as [number, string];
 
   const SampleText = DummyText();
   const ProcessEmbed = new EmbedBuilder()
@@ -131,14 +125,8 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction) 
     );
 
   const ButtonsActionRow = new ActionRowBuilder().setComponents(
-    new ButtonBuilder()
-      .setLabel("Verify and Login")
-      .setCustomId("confirm-login")
-      .setStyle(ButtonStyle.Success),
-    new ButtonBuilder()
-      .setLabel("Cancel Login")
-      .setCustomId("cancel-login")
-      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setLabel("Verify and Login").setCustomId("confirm-login").setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setLabel("Cancel Login").setCustomId("cancel-login").setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setLabel("Profile")
       .setStyle(ButtonStyle.Link)
@@ -165,8 +153,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction) 
         Ephemeral: true,
         Interaction,
         Title: "Process Cancelled",
-        Message:
-          "The login process has been terminated due to no response being received within five minutes.",
+        Message: "The login process has been terminated due to no response being received within five minutes.",
       });
     } else if (Err.message.match(/reason: \w+Delete/)) {
       /* Ignore message/channel/guild deletion */
@@ -182,7 +169,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction) 
     .then(async (ButtonInteract) => {
       await DisablePrompt();
       if (ButtonInteract.customId === "confirm-login") {
-        const CurrentAbout = (await GetPlayerInfo(RobloxUserId)).description;
+        const CurrentAbout = (await GetUserInfo(RobloxUserId)).description;
 
         if (CurrentAbout.includes(SampleText)) {
           await UpdateLinkedRobloxUser(Interaction, RobloxUserId);
