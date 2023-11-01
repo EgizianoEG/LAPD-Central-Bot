@@ -5,7 +5,7 @@ import ShiftModel from "@Models/Shift.js";
 import GuildModel from "@Models/Guild.js";
 import { Discord } from "@Config/Secrets.js";
 import { Client } from "discord.js";
-import GetPresence from "@Utilities/Roblox/GetPresence.js";
+import GetUserPresence from "@Utilities/Roblox/GetUserPresence.js";
 import ShiftActive from "@Utilities/Database/GetShiftActive.js";
 /* eslint-enable */
 
