@@ -5,7 +5,7 @@ import Axios from "axios";
 /**
  * Primarily retrieves the Roblox user Id(s) of the given username(s).
  * @param Usernames - The Roblox username(s) to get the Id(s) for. Can be a string or an array of strings.
- * @param ExcludeBanned - Whether to exclude banned users from the response and results.
+ * @param ExcludeBanned - Whether to exclude banned users from the response and results. `false` by default.
  * @return An array of tuples or a single tuple (`[string, number, boolean]`), where each tuple contains the user ID, the exact found username, and a boolean indicating whether the user was found.
  *
  * @notice The returned tuple(s) value can be `[0, "", false]` indicating that the user was not found.
