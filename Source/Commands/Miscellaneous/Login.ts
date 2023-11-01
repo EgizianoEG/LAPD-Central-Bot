@@ -52,13 +52,13 @@ async function HandleInvalidUsername(
         "The username can be 3 to 20 characters long and can only contain letters, digits, and one underscore character in between."
       ),
     });
-  } else if ((await GetIdByUsername(RobloxUsername)) === null) {
+  } else if ((await GetIdByUsername(RobloxUsername))[2] === false) {
     return SendErrorReply({
       Ephemeral: true,
       Interaction,
       Title: "Hold up!",
       Message: FormatStr(
-        "Cannot find the input user, `%s`, on Roblox. Please ensure that the username is valid and try again.",
+        "The input user, `%s`, cannot be found on Roblox.Please double-check the username and try again.",
         RobloxUsername
       ),
     });
@@ -110,9 +110,9 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction) 
   await HandleInvalidUsername(Interaction, InputUsername);
   if (Interaction.replied) return;
 
-  const [RobloxUserId, RobloxUsername] = (await GetIdByUsername(InputUsername)) as [number, string];
-
   const SampleText = DummyText();
+  const [RobloxUserId, RobloxUsername] = await GetIdByUsername(InputUsername);
+
   const ProcessEmbed = new EmbedBuilder()
     .setColor(Colors.Aqua)
     .setTitle("Login Process - " + escapeMarkdown(RobloxUsername))
