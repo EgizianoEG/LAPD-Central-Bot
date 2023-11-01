@@ -40,9 +40,7 @@
     "discord.js": "^14.13.0",
     "humanize-duration": "^3.30.0",
     "mongoose": "^7.6.3",
-    "noblox.js": "^4.14.1",
-    "node-cache": "^5.1.2",
-    "utility-types": "^3.10.0"
+    "node-cache": "^5.1.2"
   },
   "devDependencies": {
     "@faker-js/faker": "^8.2.0",
@@ -62,7 +60,8 @@
     "ts-node": "^10.9.1",
     "tsconfig-replace-paths": "^0.0.14",
     "tsx": "^3.14.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "utility-types": "^3.10.0"
   },
   "engines": {
     "node": "^21.0.0",

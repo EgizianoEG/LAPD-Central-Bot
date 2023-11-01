@@ -18,12 +18,11 @@ import { Embeds } from "@Config/Shared.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { RandomString } from "@Utilities/Strings/Random.js";
 import { FormatCharges, FormatHeight, FormatAge } from "@Utilities/Strings/Formatter.js";
-import NobloxJs from "noblox.js";
-import Chalk from "chalk";
 
-const getPlayerThumbnail = NobloxJs.getPlayerThumbnail;
-const getIdFromUsername = NobloxJs.getIdFromUsername;
-const getPlayerInfo = NobloxJs.getPlayerInfo;
+import GetUserThumbnail from "@Utilities/Roblox/GetUserThumb.js";
+import GetIdByUsername from "@Utilities/Roblox/GetIdByUsername.js";
+import GetUserInfo from "@Utilities/Roblox/GetUserInfo.js";
+import Chalk from "chalk";
 
 const ArrestAges = [
   { name: "Kid (1-12)", value: 1 },
@@ -40,10 +39,7 @@ const ArrestAges = [
  * @param ModalInteraction
  * @param CmdInteraction
  */
-async function FollowUp(
-  CmdInteraction: SlashCommandInteraction<"cached">,
-  ModalInteraction: ModalSubmitInteraction
-) {
+async function FollowUp(CmdInteraction: SlashCommandInteraction<"cached">, ModalInteraction: ModalSubmitInteraction) {
   const ChargesText = ModalInteraction.fields.getTextInputValue("charges-text");
   const ChargesFormatted = FormatCharges(ChargesText);
   const Options = {
@@ -54,17 +50,15 @@ async function FollowUp(
     Weight: CmdInteraction.options.getInteger("weight", true) + " lbs",
   };
 
-  const UserID = await getIdFromUsername(Options.Username);
-  const UserInfo = await getPlayerInfo(UserID);
-  const Thumb = await getPlayerThumbnail(UserID, 150, "png", false, "headshot");
+  const [UserID] = await GetIdByUsername(Options.Username);
+  const ThumbUrl = await GetUserThumbnail(UserID, "150x150", "png", "headshot");
+  const UserInfo = await GetUserInfo(UserID);
 
   const ConfirmationEmbed = new EmbedBuilder()
     .setTitle("Arrest Report - Confirmation")
     .setDescription("Please review the arrest report information before submitting it.")
     .setColor(Colors.Gold)
-    .setThumbnail(
-      Thumb?.[0]?.imageUrl ? Thumb[0].imageUrl : Embeds.Thumbs["Avatar" + Options.Gender]
-    )
+    .setThumbnail(ThumbUrl ?? Embeds.Thumbs["Avatar" + Options.Gender])
     .setFields([
       {
         name: "Defendant Name",
@@ -99,24 +93,18 @@ async function FollowUp(
     ]);
 
   const ButtonsActionRow = new ActionRowBuilder().setComponents(
-    new ButtonBuilder()
-      .setCustomId("confirm-report")
-      .setLabel("Confirm Submission")
-      .setStyle(ButtonStyle.Success),
-    new ButtonBuilder()
-      .setCustomId("cancel-report")
-      .setLabel("Cancel Submission")
-      .setStyle(ButtonStyle.Danger)
+    new ButtonBuilder().setCustomId("confirm-report").setLabel("Confirm Submission").setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId("cancel-report").setLabel("Cancel Submission").setStyle(ButtonStyle.Danger)
   ) as ActionRowBuilder<ButtonBuilder>;
 
-  if (!ModalInteraction.replied) {
-    ModalInteraction.reply({
+  if (ModalInteraction.replied) {
+    ModalInteraction.followUp({
       embeds: [ConfirmationEmbed],
       components: [ButtonsActionRow],
       ephemeral: true,
     });
   } else {
-    ModalInteraction.followUp({
+    ModalInteraction.reply({
       embeds: [ConfirmationEmbed],
       components: [ButtonsActionRow],
       ephemeral: true,
@@ -130,9 +118,7 @@ async function FollowUp(
  * @param Interaction
  */
 async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
-  const Modal = new ModalBuilder()
-    .setTitle("Arrest Report - Charges")
-    .setCustomId(`arrest-report-${RandomString(10)}`);
+  const Modal = new ModalBuilder().setTitle("Arrest Report - Charges").setCustomId(`arrest-report-${RandomString(10)}`);
 
   const ChargesActionRow = new ActionRowBuilder().setComponents(
     new TextInputBuilder()
@@ -168,9 +154,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
     .catch(async (Err) => {
       if (!Err.message.match(/reason: (.+)/)?.[1].match(/time/i)) {
         await Interaction.followUp({
-          embeds: [
-            new ErrorEmbed().setDescription("Something went wrong while executing this command."),
-          ],
+          embeds: [new ErrorEmbed().setDescription("Something went wrong while executing this command.")],
           ephemeral: true,
         });
 
@@ -189,9 +173,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
 const CommandObject = {
   data: new SlashCommandSubcommandBuilder()
     .setName("arrest")
-    .setDescription(
-      "Creates a database entry to log an arrest and generate a corresponding report."
-    )
+    .setDescription("Creates a database entry to log an arrest and generate a corresponding report.")
     .addStringOption((Option) =>
       Option.setName("name")
         .setDescription("The username of the arrested suspect.")
