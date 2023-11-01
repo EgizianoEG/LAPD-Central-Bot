@@ -11,7 +11,7 @@ import {
   ButtonStyle,
 } from "discord.js";
 
-import GetPlayerInfo from "@Utilities/Roblox/GetPlayerInfo.js";
+import GetUserInfo from "@Utilities/Roblox/GetUserInfo.js";
 import IsUserLoggedIn from "@Utilities/Database/IsUserLoggedIn.js";
 import UpdateLinkedRobloxUser from "@Utilities/Database/UpdateLinkedUser.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
@@ -61,16 +61,10 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction) 
   await HandleLoggedInUser(Interaction, !!UserLoggedIn);
   if (Interaction.replied) return;
 
-  const RobloxUsername = (await GetPlayerInfo(UserLoggedIn)).name;
+  const RobloxUsername = (await GetUserInfo(UserLoggedIn)).name;
   const ButtonsActionRow = new ActionRowBuilder().setComponents(
-    new ButtonBuilder()
-      .setLabel("Confirm and Log Out")
-      .setCustomId("confirm-logout")
-      .setStyle(ButtonStyle.Success),
-    new ButtonBuilder()
-      .setLabel("Cancel")
-      .setCustomId("cancel-logout")
-      .setStyle(ButtonStyle.Secondary)
+    new ButtonBuilder().setLabel("Confirm and Log Out").setCustomId("confirm-logout").setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setLabel("Cancel").setCustomId("cancel-logout").setStyle(ButtonStyle.Secondary)
   ) as ActionRowBuilder<ButtonBuilder>;
 
   const PromptEmbed = new EmbedBuilder()
@@ -117,9 +111,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction) 
         return ButtonAction.reply({
           ephemeral: true,
           embeds: [
-            new InfoEmbed()
-              .setTitle("Process Cancellation")
-              .setDescription("Logout process has been cancelled."),
+            new InfoEmbed().setTitle("Process Cancellation").setDescription("Logout process has been cancelled."),
           ],
         });
       }
