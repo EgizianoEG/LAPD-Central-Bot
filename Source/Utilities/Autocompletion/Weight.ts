@@ -16,9 +16,7 @@ Cache.Default = WeightOptions.filter((Element) => {
  * @param TypedValue - The user's input value
  * @returns An array of weight suggestions
  */
-export default function AutocompleteWeight(
-  TypedValue: string
-): Array<{ name: string; value: string }> {
+export default function AutocompleteWeight(TypedValue: string): { name: string; value: string }[] {
   let Suggestions: string[];
 
   if (TypedValue in Cache) return Cache[TypedValue];
@@ -30,7 +28,7 @@ export default function AutocompleteWeight(
     });
   } else {
     Suggestions = WeightOptions.filter((Element) => {
-      return Element.startsWith(TypedValue);
+      return Element.startsWith(TypedValue.replace(/[^\d]+/g, ""));
     });
   }
 
