@@ -2,7 +2,6 @@ import { OmitByValue } from "utility-types";
 import Splatter from "./Splatter.js";
 import Winston from "winston";
 import Config from "@Config/Shared.js";
-import Axios, { AxiosError } from "axios";
 import Chalk from "chalk";
 import Util from "node:util";
 
