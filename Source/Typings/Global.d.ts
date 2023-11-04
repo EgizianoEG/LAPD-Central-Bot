@@ -13,7 +13,8 @@ import type {
 
 export type DiscordClient = Client<true>;
 export type RangedArray<T, Min extends number, Max extends number> = TupleMinMax<T, Min, Max>;
-export type SlashCommandInteraction<Cached extends CacheType = undefined> = ChatInputCommandInteraction<Cached>;
+export type SlashCommandInteraction<Cached extends CacheType = undefined> =
+  ChatInputCommandInteraction<Cached>;
 export type CommandObjectDataType =
   | SlashCommandBuilder
   | SlashCommandSubcommandBuilder
@@ -61,14 +62,18 @@ declare global {
   export import Mongoose = MongooseMask;
 
   type DiscordClient = Client<true>;
-  type SlashCommandInteraction<Cached extends CacheType = CacheType> = ChatInputCommandInteraction<Cached>;
+  type SlashCommandInteraction<Cached extends CacheType = CacheType> =
+    ChatInputCommandInteraction<Cached>;
 
   interface SlashCommandObject<ClassType extends CommandObjectDataType = SlashCommandBuilder> {
     /** The callback function or the `run` function which will be executed on command call */
-    callback: (arg0: DiscordClient, arg1: SlashCommandInteraction<Cached | undefined>) => any;
+    callback: (
+      arg0: DiscordClient,
+      arg1: SlashCommandInteraction<Cached | undefined>
+    ) => Promise<any>;
 
     /** The autocomplete function which will handle and process autocomplete interactions if applicable */
-    autocomplete?: (arg0: AutocompleteInteraction<Cached | undefined>) => any;
+    autocomplete?: (arg0: AutocompleteInteraction<Cached | undefined>) => Promise<any>;
 
     /** Optional configurations */
     options?: CommandObjectOptions;
