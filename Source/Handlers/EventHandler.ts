@@ -1,5 +1,6 @@
 import { GetDirName } from "@Utilities/Other/Paths.js";
 import { CamelCase } from "@Utilities/Strings/Converter.js";
+import AppLogger from "@Utilities/Classes/AppLogger.js";
 import GetFiles from "@Utilities/Other/GetFilesFrom.js";
 import Path from "node:path";
 
@@ -30,4 +31,9 @@ export default async function HandleEvents(Client: DiscordClient) {
       FuncsToExecute.forEach((Func) => Func(Client, ...Args));
     });
   }
+
+  AppLogger.info({
+    label: "Handlers:EventHandler",
+    message: "Successfully Loaded all event listeners.",
+  });
 }

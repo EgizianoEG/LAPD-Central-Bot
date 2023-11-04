@@ -1,5 +1,5 @@
-import Chalk from "chalk";
 import Mongoose from "mongoose";
+import AppLogger from "@Utilities/Classes/AppLogger.js";
 import { MongoDB } from "@Config/Secrets.js";
 
 export default async () => {
@@ -11,8 +11,18 @@ export default async () => {
   Mongoose.connect(DatabaseURI, {
     dbName: MongoDB.DBName,
   })
-    .then(async () => {
-      console.log("✅ - %s is connected.", Chalk.cyanBright.bold("MongoDB"));
+    .then(() => {
+      AppLogger.info({
+        message: "Connection to MongoDB has been established.",
+        label: "Handlers:MongoDB",
+      });
     })
-    .catch((Err) => console.log("❎ - An error occurred while connecting to MongoDB:", Err));
+    .catch((Err) => {
+      AppLogger.error({
+        message: "An error occurred while connecting to MongoDB;",
+        label: "Handlers:MongoDB",
+        stack: Err.stack,
+        ...Err,
+      });
+    });
 };

@@ -22,9 +22,10 @@ import { Discord } from "@Config/Secrets.js";
 import { UnorderedList } from "@Utilities/Strings/Formatter.js";
 import { PascalToNormal } from "@Utilities/Strings/Converter.js";
 import { SendErrorReply } from "@Utilities/Other/SendReply.js";
+import AppLogger from "@Utilities/Classes/AppLogger.js";
 
-import Chalk from "chalk";
 const DefaultCmdCooldownDuration = 3;
+const LogLabel = "InteractionCreate:CommandHandler";
 
 // -----------------------------------------------------------------------------
 /**
@@ -46,10 +47,12 @@ export default async function CommandHandler(
         .setDescription("Attempt execution of a non-existent command on the application.")
         .replyToInteract(Interaction, true)
         .then(() => {
-          console.log(
-            "⚠️ - Could not find command object of command '%s'; skipping execution.",
-            Chalk.bold(Interaction.commandName)
-          );
+          AppLogger.warn({
+            label: LogLabel,
+            message:
+              "Could not find the command object of slash command '%s'; terminated execution.",
+            splat: [CommandName],
+          });
         });
     }
 
@@ -78,19 +81,19 @@ export default async function CommandHandler(
     } else {
       throw new ReferenceError(`❎ - '${CommandName}' callback function has not been found.`);
     }
-  } catch (Err) {
+  } catch (Err: any) {
     SendErrorReply({
       Interaction,
       Ephemeral: true,
       Template: "AppError",
     });
 
-    console.log(
-      "%s:%s - An error occurred;\n",
-      Chalk.yellow("InteractionCreate"),
-      Chalk.red("CommandHandler"),
-      Err
-    );
+    AppLogger.error({
+      label: LogLabel,
+      stack: Err.stack,
+      splat: [CommandName],
+      message: "An error occurred while executing slash command '%s';",
+    });
   }
 }
 

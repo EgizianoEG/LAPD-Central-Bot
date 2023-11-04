@@ -1,3 +1,4 @@
+import AppLogger from "@Utilities/Classes/AppLogger.js";
 import GuildModel from "@Models/Guild.js";
 
 /**
@@ -17,6 +18,11 @@ export default async function VerifyDatabase(Client: DiscordClient) {
   }
 
   if (NewGuilds.length > 0) {
-    GuildModel.insertMany(NewGuilds);
+    await GuildModel.insertMany(NewGuilds);
+    AppLogger.info({
+      message: "New guilds were added to the database. Guilds:\n%o",
+      label: "Ready:VerifyDatabase",
+      splat: [NewGuilds],
+    });
   }
 }

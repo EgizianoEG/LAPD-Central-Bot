@@ -4,8 +4,11 @@ import { Discord } from "@Config/Secrets.js";
 import GetDeployedCommands from "@Utilities/Other/GetAppCmds.js";
 import CmdsAreIdentical from "@Utilities/Other/CmdsAreIdentical.js";
 import GetLocalCommands from "@Utilities/Other/GetLocalCmds.js";
+import AppLogger from "@Utilities/Classes/AppLogger.js";
 import Chalk from "chalk";
 import Util from "node:util";
+const LogLabel = "Ready:RegisterCommands";
+const OneTab = " ".repeat(4);
 
 /**
  * Handles command registration, deployment, and updates
@@ -20,8 +23,7 @@ export default async function RegisterCommands(Client: DiscordClient) {
       const { name: CmdName } = LocalCommand.data;
       const AppDeployedCmd = AppCommands.cache.find((Cmd) => Cmd.name === CmdName);
       const DeletedCmdLog = Util.format(
-        "%s - Registering '%s' command skipped; property 'deleted' is set to true.",
-        Chalk.bold.blue("🛈"),
+        "Registering '%s' command was skipped; property 'deleted' is set to true.",
         Chalk.bold(CmdName)
       );
 
@@ -29,7 +31,7 @@ export default async function RegisterCommands(Client: DiscordClient) {
         await HandleExistingCommand(Client, LocalCommand, AppDeployedCmd);
       } else {
         if (!LocalCommand.options?.devOnly && LocalCommand.options?.deleted) {
-          console.log(DeletedCmdLog);
+          AppLogger.info(DeletedCmdLog, { label: LogLabel });
           continue;
         }
 
@@ -39,11 +41,12 @@ export default async function RegisterCommands(Client: DiscordClient) {
 
         if (GuildExistingCmd || LocalCommand.options?.devOnly) {
           if (!Guild) {
-            console.log(
-              "%s - Registering '%s' command skipped; could not find the testing guild to register on.",
-              Chalk.bold.blue("🛈"),
-              Chalk.bold(CmdName)
-            );
+            AppLogger.info({
+              message:
+                "Registering '%s' command skipped; could not find the testing guild to register on.",
+              splat: [Chalk.bold(CmdName)],
+              label: LogLabel,
+            });
             continue;
           }
 
@@ -51,46 +54,45 @@ export default async function RegisterCommands(Client: DiscordClient) {
             await HandleExistingCommand(Client, LocalCommand, GuildExistingCmd);
           } else {
             if (LocalCommand.options?.deleted) {
-              console.log(DeletedCmdLog);
+              AppLogger.info(DeletedCmdLog, { label: LogLabel });
               continue;
             }
 
-            await Guild.commands
-              .create(LocalCommand.data)
-              .then(() => {
-                Client.commands.set(CmdName, LocalCommand);
-                console.log(
-                  "✅ - '%s' command has been registered on '%s' server.",
-                  Chalk.bold(CmdName),
-                  Chalk.bold(Guild.name)
-                );
-              })
-              .catch((Err) => {
-                throw new Error(Err);
+            await Guild.commands.create(LocalCommand.data).then(() => {
+              Client.commands.set(CmdName, LocalCommand);
+              AppLogger.info({
+                message: "'%s' slash command has been registered on '%s' server.",
+                splat: [Chalk.bold(CmdName), Chalk.bold(Guild.name)],
+                label: LogLabel,
               });
+            });
           }
           continue;
         }
 
         if (!(AppCommands instanceof Collection)) {
-          await AppCommands.create(LocalCommand.data)
-            .then(() => {
-              Client.commands.set(CmdName, LocalCommand);
-              console.log("✅ - '%s' command has been registered globally.", Chalk.bold(CmdName));
-            })
-            .catch((Err) => {
-              throw new Error(Err);
+          await AppCommands.create(LocalCommand.data).then(() => {
+            Client.commands.set(CmdName, LocalCommand);
+            AppLogger.info({
+              message: "'%s' slash command has been registered globally.",
+              splat: [Chalk.bold(CmdName)],
+              label: LogLabel,
             });
+          });
         }
       }
     }
-  } catch (Err) {
-    console.log(
-      "%s:%s - An error occurred while executing;\n",
-      Chalk.yellow("Ready"),
-      Chalk.red("RegisterCommands"),
-      Err
-    );
+
+    AppLogger.info("%o slash command(s) has/have been registered locally.", Client.commands.size, {
+      label: LogLabel,
+    });
+  } catch (Err: any) {
+    AppLogger.error({
+      message: "An error occurred while executing.",
+      label: LogLabel,
+      stack: Err.stack,
+      ...Err,
+    });
   }
 }
 
@@ -114,16 +116,20 @@ async function HandleExistingCommand(
   if (LocalCmd.options?.deleted) {
     return CmdManager.delete(ExistingCmd.id)
       .then(() => {
-        console.log(
-          "%s - '%s' command has been deleted%s due its set property 'deleted'",
-          Chalk.bold.blue("🛈"),
-          Chalk.bold(ExistingCmd.name),
-          CmdManager instanceof GuildApplicationCommandManager ? " (guild scope)" : " globally"
-        );
+        AppLogger.info({
+          label: LogLabel,
+          message: "'%s' slash command has been deleted%s; property 'deleted' is set to true.",
+          splat: [
+            Chalk.bold(ExistingCmd.name),
+            CmdManager instanceof GuildApplicationCommandManager ? " (guild scope)" : " globally",
+          ],
+        });
       })
       .catch((Err) => {
         throw new Error(
-          `Failed to delete '${ExistingCmd.name}' slash command from the API; ${Err}`
+          `Failed to delete '${ExistingCmd.name}' slash command from the application;\n${
+            OneTab + Err
+          }`
         );
       });
   }
@@ -137,15 +143,15 @@ async function HandleExistingCommand(
 
   if (LocalCmd.options?.forceUpdate || !CmdsAreIdentical(ExistingCmd, LocalCmd)) {
     await CmdManager.edit(ExistingCmd.id, LocalCmd.data)
-      .then(() => {
-        console.log(
-          "%s - '%s' command has been updated.",
-          Chalk.bold.blue("🛈"),
-          Chalk.bold(ExistingCmd.name)
-        );
+      .then((Cmd) => {
+        AppLogger.info({
+          label: LogLabel,
+          splat: [Chalk.bold(Cmd.name)],
+          message: "Successfully updated '%s' slash command.",
+        });
       })
       .catch((Err) => {
-        throw new Error(`Failed to update '${ExistingCmd.name}' slash command; ${Err}`);
+        throw new Error(`Failed to update '${ExistingCmd.name}' slash command;\n${OneTab + Err}`);
       });
   }
   Client.commands.set(LocalCmd.data.name, LocalCmd);
@@ -174,32 +180,27 @@ async function HandleCommandScopeSwitching(
     return;
   }
 
-  console.log(
-    "%s - Switching the '%s' slash command scope to %s rather than %s..",
-    Chalk.bold.blue("🛈"),
-    Chalk.bold(ExistingCmd.name),
-    SwitchTo,
-    SwitchFrom
-  );
-
   await OrgCmdManager.delete(ExistingCmd.id).catch((Err) => {
-    throw new Error(`Failed to delete '${ExistingCmd.name}' slash command from the API;\n${Err}`);
+    throw new Error(
+      `Failed to delete '${ExistingCmd.name}' slash command from the API;\n${OneTab + Err}`
+    );
   });
 
   await Client.application.commands
     .create(LocalCmd.data, SwitchTo === "guild" ? Discord.TestGuildId : undefined)
     .then((Cmd) => {
       Client.commands.set(Cmd.name, LocalCmd);
-      console.log(
-        "✅ - Successfully switched '%s' slash command to %s scope.",
-        Chalk.bold(Cmd.name),
-        SwitchTo
-      );
+      AppLogger.info({
+        label: LogLabel,
+        splat: [Chalk.bold(Cmd.name), Chalk.bold(SwitchTo), Chalk.bold(SwitchFrom)],
+        message: "Switched '%s' slash command scope to %s rather than %s.",
+      });
     })
     .catch((Err) => {
       throw new Error(
-        `Failed to switch '${ExistingCmd.name}' slash command scope; Exiting with error:\n`,
-        Err
+        `Failed to switch '${ExistingCmd.name}' slash command scope; Exiting with error:\n${
+          OneTab + Err
+        }`
       );
     });
 }

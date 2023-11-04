@@ -6,6 +6,11 @@ const SharedData = {
     LAPD_Header: "https://i.ibb.co/fXsLH03/LAPD-Header-500.jpg",
   },
 
+  Env: {
+    NodeEnv: process.env.NODE_ENV ?? "development",
+    LogLevel: process.env.LOG_LEVEL ?? "debug",
+  },
+
   Embeds: {
     Colors: {
       Info: "#3498DB",

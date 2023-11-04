@@ -5,21 +5,37 @@ import { GetDirName } from "@Utilities/Other/Paths.js";
 import Path from "node:path";
 import Chalk from "chalk";
 import GetFiles from "@Utilities/Other/GetFilesFrom.js";
+import AppLogger from "@Utilities/Classes/AppLogger.js";
 console.log(Chalk.grey("================================================"));
 // ----------------------------------------------------------------------------------
 
 const App = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages],
+  intents: [
+    //
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMessages,
+  ],
 });
 
 App.commands = new Collection();
 App.cooldowns = new Collection();
+
 App.login(DiscordSecrets.BotToken)
   .then(() => {
     if (!App.user) throw new Error("`App.user` is not accessible.");
-    console.info("✅ - %s bot is online.", Chalk.cyanBright.bold(App.user.username));
+    AppLogger.info({
+      label: "Main.ts",
+      message: "%s bot is online.",
+      splat: [Chalk.cyanBright.bold(App.user.username)],
+    });
   })
-  .catch((Err) => console.error("❎ - %s", Chalk.red("Failed to run the application. Details:\n"), Err));
+  .catch((Err) => {
+    AppLogger.fatal("Failed to run the application. Details:", {
+      label: "Main.ts",
+      stack: Err.stack,
+    });
+  });
 
 (async function RunHandlers() {
   const DirPath = Path.join(GetDirName(import.meta.url), "Handlers");

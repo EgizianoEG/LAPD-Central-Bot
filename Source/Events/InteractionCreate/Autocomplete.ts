@@ -1,5 +1,5 @@
 import { BaseInteraction } from "discord.js";
-import Chalk from "chalk";
+import AppLogger from "@Utilities/Classes/AppLogger.js";
 
 /**
  * Handles autocompletion for command options
@@ -10,14 +10,21 @@ export default (Client: DiscordClient, Interaction: BaseInteraction) => {
   if (!Interaction.isAutocomplete()) return;
   const CommandName = Interaction.commandName;
   const CommandObj = Client.commands.get(CommandName);
+  const FieldName = Interaction.options.getFocused(true).name;
+  const FullCmdName = [
+    CommandName,
+    Interaction.options.getSubcommandGroup(),
+    Interaction.options.getSubcommand(),
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   if (!CommandObj) {
-    return console.log(
-      "%s:%s - No command matching '%s' was found. Autocompletion failed.",
-      Chalk.yellow("InteractionCreate"),
-      Chalk.red("AutoComplete"),
-      Chalk.bold(Interaction.commandName)
-    );
+    return AppLogger.warn({
+      message: "No registered command matching '%s' was found. Autocompletion failed for '%s' field.",
+      label: "InteractionCreate:AutoComplete",
+      splat: [FullCmdName, FieldName],
+    });
   }
 
   try {
@@ -25,16 +32,15 @@ export default (Client: DiscordClient, Interaction: BaseInteraction) => {
       CommandObj.autocomplete(Interaction);
     } else {
       throw new Error(
-        `Autocomplete failed for command "${CommandName}" as there is no autocomplete function found for it.`
+        `Autocompletion failed for command '${FullCmdName}', field '${FieldName}'. No function for autocompletion was found on the command object.`
       );
     }
-  } catch (Err) {
-    console.log(
-      "%s:%s - Something went wrong while autocomplete command '%s'. Details:\n",
-      Chalk.yellow("InteractionCreate"),
-      Chalk.red("AutoComplete"),
-      Chalk.bold(Interaction.commandName),
-      Err
-    );
+  } catch (Err: any) {
+    AppLogger.error({
+      label: "InteractionCreate:AutoComplete",
+      stack: Err.stack,
+      message: Err.message,
+      ...Err,
+    });
   }
 };
