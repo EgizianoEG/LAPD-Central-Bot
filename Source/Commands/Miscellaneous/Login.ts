@@ -78,7 +78,10 @@ async function HandleUserLoginStatus(Interaction: SlashCommandInteraction) {
       Ephemeral: true,
       Interaction,
       Title: "Hold up!",
-      Message: FormatStr("You are already logged in as `%s`.\nDid you mean to log out instead?", LoggedUsername),
+      Message: FormatStr(
+        "You are already logged in as `%s`.\nDid you mean to log out instead?",
+        LoggedUsername
+      ),
     });
   }
 }
@@ -125,8 +128,14 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction) 
     );
 
   const ButtonsActionRow = new ActionRowBuilder().setComponents(
-    new ButtonBuilder().setLabel("Verify and Login").setCustomId("confirm-login").setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setLabel("Cancel Login").setCustomId("cancel-login").setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setLabel("Verify and Login")
+      .setCustomId("confirm-login")
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setLabel("Cancel Login")
+      .setCustomId("cancel-login")
+      .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setLabel("Profile")
       .setStyle(ButtonStyle.Link)
@@ -153,7 +162,8 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction) 
         Ephemeral: true,
         Interaction,
         Title: "Process Cancelled",
-        Message: "The login process has been terminated due to no response being received within five minutes.",
+        Message:
+          "The login process has been terminated due to no response being received within five minutes.",
       });
     } else if (Err.message.match(/reason: \w+Delete/)) {
       /* Ignore message/channel/guild deletion */

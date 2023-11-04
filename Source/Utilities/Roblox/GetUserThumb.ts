@@ -48,14 +48,18 @@ export default async function GetUserThumbnail<
   UserIds: UserIdsType,
   Size: ThumbImgSizes<ThumbCropType>,
   Format: ThumbImgFormat<ImageFormat, ThumbCropType> = "png" as any,
-  CropType: ImageFormat extends "jpeg" ? Exclude<ThumbCropType, "bust"> : ThumbCropType = "body" as any,
+  CropType: ImageFormat extends "jpeg"
+    ? Exclude<ThumbCropType, "bust">
+    : ThumbCropType = "body" as any,
   IsCircular: boolean = false
 ): Promise<UserIdsType extends number[] ? string[] : string> {
   const Endpoint = EndpointMapping[CropType].endpoint;
   const UserIdsArray = Array.isArray(UserIds) ? [...new Set(UserIds)] : [UserIds];
 
   if (UserIdsArray.length > 100 || UserIdsArray.length === 0) {
-    throw new RangeError(`UserIds parameter must be between 1 and 100 entries; received ${UserIdsArray.length}.`);
+    throw new RangeError(
+      `UserIds parameter must be between 1 and 100 entries; received ${UserIdsArray.length}.`
+    );
   }
 
   const Thumbnails = await Axios.request<APIResponses.Thumbnails.ThumbnailResponse>({

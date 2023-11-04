@@ -166,7 +166,17 @@ export namespace APITypes.Thumbnails {
   }>;
 
   interface ThumbSizes {
-    readonly bust: ["48x48", "50x50", "60x60", "75x75", "100x100", "150x150", "180x180", "352x352", "420x420"];
+    readonly bust: [
+      "48x48",
+      "50x50",
+      "60x60",
+      "75x75",
+      "100x100",
+      "150x150",
+      "180x180",
+      "352x352",
+      "420x420",
+    ];
     readonly body: [
       "30x30",
       "48x48",

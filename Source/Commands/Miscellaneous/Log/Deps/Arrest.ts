@@ -39,7 +39,10 @@ const ArrestAges = [
  * @param ModalInteraction
  * @param CmdInteraction
  */
-async function FollowUp(CmdInteraction: SlashCommandInteraction<"cached">, ModalInteraction: ModalSubmitInteraction) {
+async function FollowUp(
+  CmdInteraction: SlashCommandInteraction<"cached">,
+  ModalInteraction: ModalSubmitInteraction
+) {
   const ChargesText = ModalInteraction.fields.getTextInputValue("charges-text");
   const ChargesFormatted = FormatCharges(ChargesText);
   const Options = {
@@ -93,8 +96,14 @@ async function FollowUp(CmdInteraction: SlashCommandInteraction<"cached">, Modal
     ]);
 
   const ButtonsActionRow = new ActionRowBuilder().setComponents(
-    new ButtonBuilder().setCustomId("confirm-report").setLabel("Confirm Submission").setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId("cancel-report").setLabel("Cancel Submission").setStyle(ButtonStyle.Danger)
+    new ButtonBuilder()
+      .setCustomId("confirm-report")
+      .setLabel("Confirm Submission")
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId("cancel-report")
+      .setLabel("Cancel Submission")
+      .setStyle(ButtonStyle.Danger)
   ) as ActionRowBuilder<ButtonBuilder>;
 
   if (ModalInteraction.replied) {
@@ -118,7 +127,9 @@ async function FollowUp(CmdInteraction: SlashCommandInteraction<"cached">, Modal
  * @param Interaction
  */
 async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
-  const Modal = new ModalBuilder().setTitle("Arrest Report - Charges").setCustomId(`arrest-report-${RandomString(10)}`);
+  const Modal = new ModalBuilder()
+    .setTitle("Arrest Report - Charges")
+    .setCustomId(`arrest-report-${RandomString(10)}`);
 
   const ChargesActionRow = new ActionRowBuilder().setComponents(
     new TextInputBuilder()
@@ -154,7 +165,9 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
     .catch(async (Err) => {
       if (!Err.message.match(/reason: (.+)/)?.[1].match(/time/i)) {
         await Interaction.followUp({
-          embeds: [new ErrorEmbed().setDescription("Something went wrong while executing this command.")],
+          embeds: [
+            new ErrorEmbed().setDescription("Something went wrong while executing this command."),
+          ],
           ephemeral: true,
         });
 
@@ -173,7 +186,9 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
 const CommandObject = {
   data: new SlashCommandSubcommandBuilder()
     .setName("arrest")
-    .setDescription("Creates a database entry to log an arrest and generate a corresponding report.")
+    .setDescription(
+      "Creates a database entry to log an arrest and generate a corresponding report."
+    )
     .addStringOption((Option) =>
       Option.setName("name")
         .setDescription("The username of the arrested suspect.")

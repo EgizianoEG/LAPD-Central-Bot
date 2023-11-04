@@ -17,7 +17,9 @@ export default async function GetUserPresence(UserIDs: string | number | Array<n
   const Payload = { userIds: IdsArray };
   const RequestURL = "https://presence.roblox.com/v1/presence/users";
 
-  return Axios.post(RequestURL, Payload).then((Resp: AxiosResponse<APIResponses.Presence.UserPresencesResponse>) => {
-    return IdsArray.length > 1 ? Resp.data.userPresences : Resp.data.userPresences[0];
-  });
+  return Axios.post(RequestURL, Payload).then(
+    (Resp: AxiosResponse<APIResponses.Presence.UserPresencesResponse>) => {
+      return IdsArray.length > 1 ? Resp.data.userPresences : Resp.data.userPresences[0];
+    }
+  );
 }

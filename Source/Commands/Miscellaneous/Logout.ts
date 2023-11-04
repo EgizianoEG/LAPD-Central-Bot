@@ -63,8 +63,14 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction) 
 
   const RobloxUsername = (await GetUserInfo(UserLoggedIn)).name;
   const ButtonsActionRow = new ActionRowBuilder().setComponents(
-    new ButtonBuilder().setLabel("Confirm and Log Out").setCustomId("confirm-logout").setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setLabel("Cancel").setCustomId("cancel-logout").setStyle(ButtonStyle.Secondary)
+    new ButtonBuilder()
+      .setLabel("Confirm and Log Out")
+      .setCustomId("confirm-logout")
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setLabel("Cancel")
+      .setCustomId("cancel-logout")
+      .setStyle(ButtonStyle.Secondary)
   ) as ActionRowBuilder<ButtonBuilder>;
 
   const PromptEmbed = new EmbedBuilder()
@@ -111,7 +117,9 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction) 
         return ButtonAction.reply({
           ephemeral: true,
           embeds: [
-            new InfoEmbed().setTitle("Process Cancellation").setDescription("Logout process has been cancelled."),
+            new InfoEmbed()
+              .setTitle("Process Cancellation")
+              .setDescription("Logout process has been cancelled."),
           ],
         });
       }
