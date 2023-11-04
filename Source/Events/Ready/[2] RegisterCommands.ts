@@ -7,6 +7,7 @@ import GetLocalCommands from "@Utilities/Other/GetLocalCmds.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import Chalk from "chalk";
 import Util from "node:util";
+
 const LogLabel = "Ready:RegisterCommands";
 const OneTab = " ".repeat(4);
 
@@ -83,7 +84,13 @@ export default async function RegisterCommands(Client: DiscordClient) {
       }
     }
 
-    AppLogger.info("%o slash command(s) has/have been registered locally.", Client.commands.size, {
+    AppLogger.info({
+      message: "%o slash command(s) %s been registered locally; %o globally deployed.",
+      splat: [
+        Client.commands.size,
+        Client.commands.size > 1 ? "have" : "has ",
+        AppCommands.cache.size,
+      ],
       label: LogLabel,
     });
   } catch (Err: any) {
