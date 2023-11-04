@@ -39,8 +39,9 @@
     "dedent": "^1.5.1",
     "discord.js": "^14.13.0",
     "humanize-duration": "^3.30.0",
-    "mongoose": "^7.6.3",
-    "node-cache": "^5.1.2"
+    "mongoose": "^8.0.0",
+    "node-cache": "^5.1.2",
+    "winston": "^3.11.0"
   },
   "devDependencies": {
     "@faker-js/faker": "^8.2.0",
