@@ -2,6 +2,7 @@ import { OmitByValue } from "utility-types";
 import Splatter from "./Splatter.js";
 import Winston from "winston";
 import Config from "@Config/Shared.js";
+import Axios, { AxiosError } from "axios";
 import Chalk from "chalk";
 import Util from "node:util";
 
@@ -60,8 +61,8 @@ const AppLogger = Winston.createLogger({
     new Transports.Console({
       format: Format.combine(
         SplatFormat({ colors: true }),
-        Format.metadata(),
         Format.timestamp({ format: "hh:mm:ss A" }),
+        Format.metadata(),
 
         Format.printf((Info) => {
           const LogLabel: string | undefined = LogLabels

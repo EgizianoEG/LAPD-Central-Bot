@@ -25,7 +25,7 @@ import { SendErrorReply } from "@Utilities/Other/SendReply.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 
 const DefaultCmdCooldownDuration = 3;
-const LogLabel = "InteractionCreate:CommandHandler";
+const LogLabel = "Events:InteractionCreate:CommandHandler";
 
 // -----------------------------------------------------------------------------
 /**
@@ -79,7 +79,9 @@ export default async function CommandHandler(
         });
       }
     } else {
-      throw new ReferenceError(`❎ - '${CommandName}' callback function has not been found.`);
+      throw new ReferenceError(
+        `Execution failed for '${CommandName}' slash command. Callback function has not been found.`
+      );
     }
   } catch (Err: any) {
     SendErrorReply({

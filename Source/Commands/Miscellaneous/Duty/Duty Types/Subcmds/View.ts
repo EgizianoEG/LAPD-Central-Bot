@@ -16,8 +16,8 @@ import { format as FormatStr } from "node:util";
 import { Emojis, Embeds } from "@Config/Shared.js";
 import { InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
-import Chalk from "chalk";
 import Dedent from "dedent";
+import AppLogger from "@Utilities/Classes/AppLogger.js";
 import GetShiftTypes from "@Utilities/Database/GetShiftTypes.js";
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
 
@@ -215,13 +215,13 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
     try {
       NavButtonsActionRow.components.forEach((Btn) => Btn.setDisabled(true));
       InteractReply.edit({ components: [NavButtonsActionRow] });
-    } catch (Err) {
-      console.log(
-        "%s:%s - An error occurred;\n",
-        Chalk.yellow("InteractionCreate"),
-        Chalk.red("CommandHandler"),
-        Err
-      );
+    } catch (Err: any) {
+      AppLogger.error({
+        message: "Could not query '%s' username;",
+        label: "Command:DutyTypes:View",
+        stack: Err.stack,
+        details: { ...Err },
+      });
     }
   });
 }

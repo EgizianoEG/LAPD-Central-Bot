@@ -11,7 +11,7 @@ import Chalk from "chalk";
 const Enabled = false;
 const AllGuildCommands = false;
 const GlobalCommandsToDelete = [""]; // The names of all commands to delete
-const LogLabel = "Ready:DeleteCmds";
+const LogLabel = "Events:Ready:DeleteCmds";
 
 // --------------------------------------------------------------------
 export default async function RemoveCommands(Client: DiscordClient) {

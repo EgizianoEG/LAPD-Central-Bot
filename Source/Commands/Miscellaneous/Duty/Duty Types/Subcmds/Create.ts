@@ -18,8 +18,8 @@ import { InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { IsValidShiftTypeName } from "@Utilities/Other/Validator.js";
 import { SendErrorReply } from "@Utilities/Other/SendReply.js";
 
-import Chalk from "chalk";
 import Dedent from "dedent";
+import AppLogger from "@Utilities/Classes/AppLogger.js";
 import GetShiftTypes from "@Utilities/Database/GetShiftTypes.js";
 import CreateShiftType from "@Utilities/Database/CreateShiftType.js";
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
@@ -246,13 +246,13 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
           ],
         });
       }
-    } catch (Err) {
-      console.log(
-        "%s:%s - An error occurred;\n",
-        Chalk.yellow("InteractionCreate"),
-        Chalk.red("CommandHandler"),
-        Err
-      );
+    } catch (Err: any) {
+      AppLogger.error({
+        message: "Could not query '%s' username;",
+        label: "Command:DutyTypes:Create",
+        stack: Err.stack,
+        details: { ...Err },
+      });
 
       SendErrorReply({
         Interaction: LastInteraction,

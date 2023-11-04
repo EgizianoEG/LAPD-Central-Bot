@@ -9,7 +9,7 @@ export default function SetAppStatus(Client: Client<true>) {
   });
 
   AppLogger.log("info", {
-    label: "Ready:SetStatus",
+    label: "Events:Ready:SetStatus",
     message: "Successfully set and updated the bot status.",
   });
 }

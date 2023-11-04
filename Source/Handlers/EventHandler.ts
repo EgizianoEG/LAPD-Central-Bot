@@ -4,7 +4,7 @@ import AppLogger from "@Utilities/Classes/AppLogger.js";
 import GetFiles from "@Utilities/Other/GetFilesFrom.js";
 import Path from "node:path";
 
-export default async function HandleEvents(Client: DiscordClient) {
+export default async function EventHandler(Client: DiscordClient) {
   const EventFolders = GetFiles(Path.join(GetDirName(import.meta.url), "..", "Events"), true);
 
   for (const EventFolder of EventFolders) {

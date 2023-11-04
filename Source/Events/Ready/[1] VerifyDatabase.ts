@@ -21,7 +21,7 @@ export default async function VerifyDatabase(Client: DiscordClient) {
     await GuildModel.insertMany(NewGuilds);
     AppLogger.info({
       message: "New guilds were added to the database. Guilds:\n%o",
-      label: "Ready:VerifyDatabase",
+      label: "Events:Ready:VerifyDatabase",
       splat: [NewGuilds],
     });
   }

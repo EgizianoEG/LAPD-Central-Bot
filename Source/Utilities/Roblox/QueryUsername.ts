@@ -1,7 +1,8 @@
 import { APICache } from "../Other/Cache.js";
 import { APIResponses } from "@Typings/Utilities/Roblox.js";
 import { IsValidRobloxUsername } from "../Other/Validator.js";
-import Axios, { AxiosResponse } from "axios";
+import AppLogger from "@Utilities/Classes/AppLogger.js";
+import Axios from "axios";
 
 /**
  * Searches for a user by their username and returns the search results
@@ -16,8 +17,10 @@ export default async function QueryUsername(
     return APICache.UsernameSearches.get(Username) ?? [];
   }
 
-  return Axios.get(`https://www.roblox.com/search/users/results?keyword=${Username}&maxRows=25`)
-    .then(({ data }: AxiosResponse<APIResponses.Users.UserSearchQueryResponse>) => {
+  return Axios.get<APIResponses.Users.UserSearchQueryResponse>(
+    `https://www.roblox.com/search/users/results?keyword=${Username}&maxRows=25`
+  )
+    .then(({ data }) => {
       if (data.UserSearchResults) {
         APICache.UsernameSearches.set(Username, data.UserSearchResults);
         return data.UserSearchResults;
@@ -27,7 +30,13 @@ export default async function QueryUsername(
       }
     })
     .catch((Err) => {
-      console.log("QueryUsername - Could not query requested username;", Err);
+      AppLogger.error({
+        message: "Could not query '%s' username;",
+        label: "Utils:Roblox:QueryUsername",
+        splat: [Username],
+        stack: Err.stack,
+        details: { ...Err },
+      });
       return [];
     });
 }

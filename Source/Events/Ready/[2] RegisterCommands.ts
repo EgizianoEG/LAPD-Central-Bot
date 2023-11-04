@@ -8,7 +8,7 @@ import AppLogger from "@Utilities/Classes/AppLogger.js";
 import Chalk from "chalk";
 import Util from "node:util";
 
-const LogLabel = "Ready:RegisterCommands";
+const LogLabel = "Events:Ready:RegisterCommands";
 const OneTab = " ".repeat(4);
 
 /**

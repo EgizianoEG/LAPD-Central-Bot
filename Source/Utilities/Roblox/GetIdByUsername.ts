@@ -1,6 +1,10 @@
 import { APIResponses } from "@Typings/Utilities/Roblox.js";
 import { APICache } from "../Other/Cache.js";
+import AppLogger from "@Utilities/Classes/AppLogger.js";
 import Axios from "axios";
+export type ReturnType<Input> = Input extends string[]
+  ? [number, string, boolean][]
+  : [number, string, boolean];
 
 /**
  * Primarily retrieves the Roblox user Id(s) of the given username(s).
@@ -27,33 +31,41 @@ import Axios from "axios";
 export default async function GetIdByUsername<Input extends string | string[]>(
   Usernames: Input,
   ExcludeBanned: boolean = true
-): Promise<Input extends string[] ? [number, string, boolean][] : [number, string, boolean]> {
+): Promise<ReturnType<Input>> {
   const RequestArray: string[] = Array.isArray(Usernames) ? Usernames : [Usernames];
   const Stringified: string = RequestArray.toString();
 
   if (APICache.IdByUsername.has(Stringified)) {
-    return APICache.IdByUsername.get(Stringified) as any;
+    return APICache.IdByUsername.get<any>(Stringified);
   }
 
-  return Axios.post<APIResponses.Users.MultiGetByNameResponse>("https://users.roblox.com/v1/usernames/users", {
-    usernames: RequestArray,
-    excludeBannedUsers: ExcludeBanned,
-  })
-    .then((Resp) => {
-      let Results = RequestArray.map((Username) => {
-        return Resp.data.data.find((UserObject) => UserObject.requestedUsername === Username) ?? null;
-      }).map((UserObject) => {
-        if (!UserObject) return [0, "", false];
-        return [UserObject.id, UserObject.name, true];
-      }) as any;
+  try {
+    const Resp = await Axios.post<APIResponses.Users.MultiGetByNameResponse>(
+      "https://users.roblox.com/v1/usernames/users",
+      {
+        usernames: RequestArray,
+        excludeBannedUsers: ExcludeBanned,
+      }
+    );
 
-      Results = Array.isArray(Usernames) ? Results : Results[0];
-      APICache.IdByUsername.set(Stringified, Results);
+    let Results = RequestArray.map((Username) => {
+      return Resp.data.data.find((UserObject) => UserObject.requestedUsername === Username) ?? null;
+    }).map((UserObject) => {
+      if (!UserObject) return [0, "", false];
+      return [UserObject.id, UserObject.name, true];
+    }) as any;
 
-      return Results;
-    })
-    .catch((Err) => {
-      console.log("GetIdFromUsername - Error Occurred: ", Err);
-      return Array.isArray(Usernames) ? [] : [0, "", false];
+    Results = Array.isArray(Usernames) ? Results : Results[0];
+    APICache.IdByUsername.set(Stringified, Results);
+
+    return Results;
+  } catch (Err: any) {
+    AppLogger.error({
+      label: "Utils:Roblox:GetIdFromUsername",
+      stack: Err.stack,
+      message: Err.message,
+      details: { ...Err },
     });
+    return (Array.isArray(Usernames) ? [] : [0, "", false]) as any;
+  }
 }
