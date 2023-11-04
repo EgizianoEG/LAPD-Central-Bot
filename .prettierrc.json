@@ -1,8 +1,9 @@
 {
   "semi": true,
   "tabWidth": 2,
-  "printWidth": 110,
+  "printWidth": 100,
   "singleQuote": false,
   "trailingComma": "es5",
+  "proseWrap": "preserve",
   "endOfLine": "crlf"
 }
