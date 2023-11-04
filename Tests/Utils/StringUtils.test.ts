@@ -283,13 +283,6 @@ describe("String Randomizing Utilities", () => {
   });
 
   describe("Random:DummyText()", () => {
-    for (const DT of SampleTexts) {
-      const Words = DT.split(" ");
-      if (Words.length < 7 || Words.length > 12) {
-        console.log(DT);
-      }
-    }
-
     it("Should return a string", () => {
       expect(typeof DummyText()).toBe("string");
     });
