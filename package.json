@@ -26,6 +26,7 @@
     "build": "tsc && tsconfig-replace-paths --project tsconfig.json",
     "clean-build": "rm -rf Build & npm run build",
     "lint": "tsc --noEmit && eslint \"Source/**/*.{js,ts}\" && prettier -c --end-of-line auto \"Source/**/*.{js,ts,json}\"",
+    "cp:secrets": "cp ./Source/Config/Secrets.example.ts ./Source/Config/Secrets.ts",
     "test:coverage": "jest \"--coverage\"",
     "test:secrets": "npm run test -- Tests/Other/Secrets.test.ts",
     "test:utils": "npm run test -- Tests/Utils/*",
