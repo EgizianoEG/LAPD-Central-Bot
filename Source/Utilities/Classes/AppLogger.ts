@@ -10,7 +10,7 @@ type CustomLogger<Levels> = OmitByValue<Winston.Logger, Winston.LeveledLogMethod
 } & { log(level: keyof Levels, message: any): Winston.Logger };
 
 const LogLevel = process.env.LOG_LEVEL ?? "debug";
-const LogLabels = process.env.LOG_LABELS ?? false;
+const LogLabels = Boolean(process.env.LOG_LABELS);
 
 const LevelsData = {
   Levels: {
