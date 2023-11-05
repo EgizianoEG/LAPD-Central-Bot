@@ -41,12 +41,6 @@ export default async function CommandHandler(
   const CommandName = Interaction.commandName;
   const CommandObject = Client.commands.get(CommandName);
 
-  AppLogger.debug({
-    message: "Slash command execution requested for '%s' slash command by '%s'.",
-    splat: [CommandName, Interaction.user.username],
-    label: LogLabel,
-  });
-
   try {
     if (!CommandObject) {
       return new ErrorEmbed()
