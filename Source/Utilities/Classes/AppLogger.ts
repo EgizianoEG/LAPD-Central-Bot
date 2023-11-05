@@ -1,7 +1,6 @@
 import { OmitByValue } from "utility-types";
 import Splatter from "./Splatter.js";
 import Winston from "winston";
-import Config from "@Config/Shared.js";
 import Chalk from "chalk";
 import Util from "node:util";
 
@@ -10,8 +9,8 @@ type CustomLogger<Levels> = OmitByValue<Winston.Logger, Winston.LeveledLogMethod
   readonly [Level in keyof Levels]: Winston.LeveledLogMethod;
 } & { log(level: keyof Levels, message: any): Winston.Logger };
 
-const LogLevel = Config.Env.LogLevel ?? "debug";
-const LogLabels = false;
+const LogLevel = process.env.LOG_LEVEL ?? "debug";
+const LogLabels = process.env.LOG_LABELS ?? false;
 
 const LevelsData = {
   Levels: {
