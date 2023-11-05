@@ -74,10 +74,10 @@ export namespace Secrets {
    */
   interface WeatherGeoCoordinates {
     /** The latitude of the location. */
-    lat: number;
+    lat: number | string;
 
     /** The longitude of the location. */
-    lon: number;
+    lon: number | string;
   }
 }
 
