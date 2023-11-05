@@ -16,6 +16,11 @@ const OneTab = " ".repeat(4);
  * @param Client
  */
 export default async function RegisterCommands(Client: DiscordClient) {
+  AppLogger.debug({
+    message: "Started registering and deploying slash commands...",
+    label: LogLabel,
+  });
+
   try {
     const AppCommands = await GetDeployedCommands(Client);
     const LocalCommands = await GetLocalCommands();
