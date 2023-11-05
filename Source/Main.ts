@@ -21,31 +21,31 @@ const App = new Client({
 App.commands = new Collection();
 App.cooldowns = new Collection();
 
-App.login(DiscordSecrets.BotToken)
-  .then(() => {
-    if (!App.user) throw new Error("`App.user` is not accessible.");
-    AppLogger.info({
-      label: "Main.ts",
-      message: "%s bot is online.",
-      splat: [Chalk.cyanBright.bold(App.user.username)],
-    });
-  })
-  .catch((Err) => {
-    AppLogger.fatal("Failed to run the application. Details:", {
-      label: "Main.ts",
-      stack: Err.stack,
-    });
-  });
-
-(async function RunHandlers() {
+(async function RunApplication() {
   const DirPath = Path.join(GetDirName(import.meta.url), "Handlers");
   const Files = GetFiles(DirPath);
 
   for (const File of Files) {
-    import(File).then((Module) => {
+    await import(File).then(async (Module) => {
       if (typeof Module.default === "function") {
-        Module.default(App);
+        await Module.default(App);
       }
     });
   }
+
+  App.login(DiscordSecrets.BotToken)
+    .then(() => {
+      if (!App.user) throw new Error("`App.user` is not accessible.");
+      AppLogger.info({
+        label: "Main.ts",
+        message: "%s bot is online.",
+        splat: [Chalk.cyanBright.bold(App.user.username)],
+      });
+    })
+    .catch((Err) => {
+      AppLogger.fatal("Failed to run the application. Details:", {
+        label: "Main.ts",
+        stack: Err.stack,
+      });
+    });
 })();
