@@ -24,7 +24,7 @@ jobs:
           node-version: "21.x.x"
 
       - name: Use Dummy Secrets File
-        run: cp ./Source/Config/Secrets.example.ts ./Source/Config/Secrets.ts
+        run: npm run cp:secrets
 
       - name: Install App Dependencies
         run: npm ci
