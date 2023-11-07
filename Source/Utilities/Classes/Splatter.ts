@@ -1,9 +1,9 @@
-import util from "util";
 import { SPLAT } from "triple-beam";
+import util from "node:util";
 
 /**
  * @see {@link "https://github.com/winstonjs/logform/blob/master/splat.js" Original}
- * @note This is a modified splat winston formatter.
+ * @note This is a modified version of the `splat` winston formatter.
  * Implemented to make usage of the `util.formatWithOptions` `node:util` method.
  */
 
@@ -13,18 +13,18 @@ import { SPLAT } from "triple-beam";
  * https://github.com/nodejs/node/blob/b1c8f15c5f169e021f7c46eb7b219de95fe97603/lib/util.js#L201-L230
  * @type {RegExp}
  */
-const formatRegExp = /%[scdjifoO%]/g;
+const formatRegExp: RegExp = /%[scdjifoO%]/g;
 
 /**
  * Captures the number of escaped % signs in a format string (i.e. %s strings).
  * @type {RegExp}
  */
-const escapedPercent = /%%/g;
+const escapedPercent: RegExp = /%%/g;
 
 class Splatter {
-  options: any;
+  options: util.InspectOptions;
 
-  constructor(opts = {}) {
+  constructor(opts: util.InspectOptions = {}) {
     this.options = opts;
   }
 
@@ -37,18 +37,18 @@ class Splatter {
    * @returns {Info} Modified info message
    * @private
    */
-  _splat(info, tokens) {
-    const msg = info.message;
-    const splat = info[SPLAT] || info.splat || [];
+  _splat(info, tokens: string[]) {
+    const msg: string = info.message;
+    const splat: any[] = info[SPLAT] || info.splat || [];
     const percents = msg.match(escapedPercent);
-    const escapes = (percents && percents.length) || 0;
+    const escapes = percents?.length ?? 0;
 
     // The expected splat is the number of tokens minus the number of escapes
     // e.g.
     // - { expectedSplat: 3 } '%d %s %j'
     // - { expectedSplat: 5 } '[%s] %d%% %d%% %s %j'
     //
-    // Any "meta" will be arugments in addition to the expected splat size
+    // Any "meta" will be arguments in addition to the expected splat size
     // regardless of type. e.g.
     //
     // logger.log('info', '%d%% %s %j', 100, 'wow', { such: 'js' }, { thisIsMeta: true });
@@ -65,11 +65,8 @@ class Splatter {
     // can assign this to the `info` object and write it to our format stream.
     // If the additional metas are **NOT** objects or **LACK** enumerable properties
     // you are going to have a bad time.
-    const metalen = metas.length;
-    if (metalen) {
-      for (let i = 0; i < metalen; i++) {
-        Object.assign(info, metas[i]);
-      }
+    for (const meta of metas) {
+      Object.assign(info, meta);
     }
 
     info.message = util.formatWithOptions(this.options, msg, ...splat);
@@ -86,32 +83,29 @@ class Splatter {
    * @returns {Info} Modified info message
    */
   transform(info) {
-    const msg = info.message;
-    const splat = info[SPLAT] || info.splat;
+    const msg: string = info.message;
+    const splat: any[] | undefined = info[SPLAT] || info.splat;
 
     // No need to process anything if splat is undefined
-    if (!splat || !splat.length) {
+    if (!splat?.length) {
       return info;
     }
 
     // Extract tokens, if none available default to empty array to
-    // ensure consistancy in expected results
-    const tokens = msg && msg.match && msg.match(formatRegExp);
+    // ensure consistency in expected results
+    const tokens = msg?.match?.(formatRegExp);
 
     // This condition will take care of inputs with info[SPLAT]
     // but no tokens present
-    if (!tokens && (splat || splat.length)) {
+    if (!tokens && splat?.length) {
       const metas = splat.length > 1 ? splat.splice(0) : splat;
 
       // Now that { splat } has been separated from any potential { meta }. we
       // can assign this to the `info` object and write it to our format stream.
       // If the additional metas are **NOT** objects or **LACK** enumerable properties
       // you are going to have a bad time.
-      const metalen = metas.length;
-      if (metalen) {
-        for (let i = 0; i < metalen; i++) {
-          Object.assign(info, metas[i]);
-        }
+      for (const meta of metas) {
+        Object.assign(info, meta);
       }
 
       return info;
@@ -131,4 +125,6 @@ class Splatter {
  * which performs string interpolation from `info` objects. This was
  * previously exposed implicitly in `winston < 3.0.0`.
  */
-export default Splatter;
+export default function splat(opts: util.InspectOptions) {
+  return new Splatter(opts);
+}

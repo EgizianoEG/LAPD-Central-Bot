@@ -1,5 +1,5 @@
 import { OmitByValue } from "utility-types";
-import Splatter from "./Splatter.js";
+import SplatFormat from "./Splatter.js";
 import Winston from "winston";
 import Chalk from "chalk";
 import Util from "node:util";
@@ -9,7 +9,7 @@ type CustomLogger<Levels> = OmitByValue<Winston.Logger, Winston.LeveledLogMethod
   readonly [Level in keyof Levels]: Winston.LeveledLogMethod;
 } & { log(level: keyof Levels, message: any): Winston.Logger };
 
-const LogLevel = process.env.LOG_LEVEL ?? "debug";
+const LogLevel = process.env.LOG_LEVEL ?? "info";
 const LogLabels = Boolean(process.env.LOG_LABELS);
 
 const LevelsData = {
@@ -31,7 +31,6 @@ const LevelsData = {
 
 const Format = Winston.format;
 const Transports = Winston.transports;
-const SplatFormat = (opts: Util.InspectOptions) => new Splatter(opts);
 const ColorizeLevel = Format.colorize({ colors: LevelsData.Colors }).colorize;
 const IgnorePrivateLogs = Format((Info) => {
   if (Info.private) {
