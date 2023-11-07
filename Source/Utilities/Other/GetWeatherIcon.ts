@@ -233,11 +233,11 @@ const IconMap = {
  * @param IsDaytime - Whether the current time is daytime
  * @return Animated weather icon link if the corresponding condition found; otherwise, N/A static icon link
  */
-export default (ConditionCode: string | number, IsDaytime: boolean): string => {
+export default function GetWeatherIcon(ConditionCode: string | number, IsDaytime: boolean): string {
   const ConditionCodeDesc = IsDaytime ? IconMap[ConditionCode].day : IconMap[ConditionCode].night;
   return (
     Icons.Weather.Animated.find((IconLink) => {
       return new RegExp(`/${ConditionCodeDesc}.gif`).exec(IconLink);
     }) ?? "https://i.ibb.co/HrCdjmK/not-available.png"
   );
-};
+}

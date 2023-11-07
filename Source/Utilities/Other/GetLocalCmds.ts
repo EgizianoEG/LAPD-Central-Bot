@@ -9,9 +9,9 @@ import Path from "node:path";
  * @param Exceptions - The names of commands and exceptions which to ignore when collecting local commands
  * @returns An array of command objects
  */
-export default async (
+export default async function GetLocalCommands(
   Exceptions: string[] = []
-): Promise<SlashCommandObject<SlashCommandBuilder>[]> => {
+): Promise<SlashCommandObject<SlashCommandBuilder>[]> {
   const LocalCommands: SlashCommandObject[] = [];
   const CommandCats = GetFiles(
     Path.join(GetDirName(import.meta.url), "..", "..", "Commands"),
@@ -46,4 +46,4 @@ export default async (
   }
 
   return LocalCommands;
-};
+}
