@@ -15,7 +15,7 @@ export default async function UpdateDatabase(_: DiscordClient, CreatedGuild: Gui
     });
 
     AppLogger.info({
-      message: "A new guild record was added to the database. Id: %d",
+      message: "A new guild record was added to the database. Id: %o",
       label: "Events:GuildCreate:UpdateDB",
       splat: [CreatedGuild.id],
     });

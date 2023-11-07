@@ -103,7 +103,7 @@ export default async function RegisterCommands(Client: DiscordClient) {
       message: "An error occurred while executing.",
       label: LogLabel,
       stack: Err.stack,
-      ...Err,
+      details: { ...Err },
     });
   }
 }

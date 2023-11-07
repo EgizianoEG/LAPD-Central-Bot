@@ -39,7 +39,7 @@ export default async function AutocompletionHandler(
       label: "Events:InteractionCreate:AutoComplete",
       stack: Err.stack,
       message: Err.message,
-      ...Err,
+      details: { ...Err },
     });
   }
 }
