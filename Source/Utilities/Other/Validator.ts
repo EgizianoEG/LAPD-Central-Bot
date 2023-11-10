@@ -1,7 +1,8 @@
 import { SlashCommandBuilder } from "discord.js";
 
 /**
- * Checks wether a given string can be valid as a Roblox username
+ * Checks wether a given string can be valid as a Roblox username.
+ * @see {@link https://stackoverflow.com/q/54391861 Stack Overflow Reference}
  * @param Str
  * @returns
  */
@@ -10,20 +11,22 @@ export function IsValidRobloxUsername(Str: string): boolean {
 }
 
 /**
- * Checks wether a given string can be a valid shift type name
+ * Checks wether a given string can be a valid shift type name.
+ * Valid names consist of letters, numerals, spaces, underscores, dashes, and periods
+ * with a minimum length of `3` characters and a maximum length of `20` characters.
  * @param Str
  * @returns
  */
 export function IsValidShiftTypeName(Str: string): boolean {
-  return !!Str.match(/^[\w\-. ]{3,20}$/);
+  return !!Str.trim().match(/^[\w\-. ]{3,20}$/);
 }
 
 /**
- * Validates a given Command Object
- * Used for retrieving local commands (GetLocalCmds)
+ * Validates a given Command Object.
+ * Used for validating retrieved local commands.
  * @param CmdObject
  * @param Exceptions
- * @returns `true` if the command object is valid; `false` otherwise.
+ * @returns
  */
 export function IsValidCmdObject(
   CmdObject: SlashCommandObject,
@@ -38,7 +41,7 @@ export function IsValidCmdObject(
 }
 
 /**
- * Checks if a given value is a plain object (excluding arrays and null)
+ * Checks if a given value is a plain object (excluding arrays and `null`s)
  * @param Value
  * @returns
  */
@@ -53,7 +56,9 @@ export function IsPlainObject(Value: any): boolean {
  */
 export function IsEmptyObject(Obj: any): boolean {
   for (const Prop in Obj) {
-    if (Prop || !Prop) return false;
+    if (Object.hasOwn(Obj, Prop)) {
+      return false;
+    }
   }
   return true;
 }

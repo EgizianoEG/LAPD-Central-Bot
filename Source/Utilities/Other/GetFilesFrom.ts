@@ -1,5 +1,5 @@
-import Path from "node:path";
 import FileSystem from "node:fs";
+import Path from "node:path";
 
 /**
  * Returns an array of full string paths inside a directory

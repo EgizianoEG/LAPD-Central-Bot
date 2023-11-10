@@ -4,7 +4,7 @@
   "extends": "./../tsconfig.json",
 
   "exclude": [],
-  "include": ["./"],
+  "include": ["./**/*", "../Source/Typings"],
 
   "compilerOptions": {
     /* Modules */
@@ -13,7 +13,11 @@
     "module": "ES2022",
     "moduleResolution": "Node",
     "types": ["node", "jest"],
-
+    "typeRoots": [
+      "../node_modules/@types",
+      "../Source/Typings"
+      //
+    ],
     "paths": {
       "@Config/*": ["./../Source/Config/*"],
       "@Models/*": ["./../Source/Models/*"],
