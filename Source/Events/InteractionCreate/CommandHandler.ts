@@ -40,6 +40,13 @@ export default async function CommandHandler(
   if (!Interaction.isChatInputCommand()) return;
   const CommandName = Interaction.commandName;
   const CommandObject = Client.commands.get(CommandName);
+  const FullCmdName = [
+    CommandName,
+    Interaction.options.getSubcommandGroup(false),
+    Interaction.options.getSubcommand(false),
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   try {
     if (!CommandObject) {
@@ -51,7 +58,7 @@ export default async function CommandHandler(
             label: LogLabel,
             message:
               "Could not find the command object of slash command '%s'; terminated execution.",
-            splat: [CommandName],
+            splat: [FullCmdName],
           });
         });
     }
@@ -80,7 +87,7 @@ export default async function CommandHandler(
       }
     } else {
       throw new ReferenceError(
-        `Execution failed for '${CommandName}' slash command. Callback function has not been found.`
+        `Execution failed for '${FullCmdName}' slash command. Callback function has not been found.`
       );
     }
   } catch (Err: any) {
@@ -93,7 +100,7 @@ export default async function CommandHandler(
     AppLogger.error({
       label: LogLabel,
       stack: Err.stack,
-      splat: [CommandName],
+      splat: [FullCmdName],
       message: "An error occurred while executing slash command '%s';",
     });
   }
