@@ -46,7 +46,7 @@ function FormatEmbedDescription(ShiftTypeData: Utilities.Database.GuildShiftType
     const ShiftTypeDesc = FormatStr(
       Template + "\n\n",
       ShiftType.name,
-      ShiftType.is_default ? "True" : "False",
+      ShiftType.is_default ? "Yes" : "No",
       ShiftType.permissible_roles.length
         ? ListFormatter.format(ShiftType.permissible_roles.map((RoleId) => `<@&${RoleId}>`))
         : "*Usable by All Staff Identified Members*"

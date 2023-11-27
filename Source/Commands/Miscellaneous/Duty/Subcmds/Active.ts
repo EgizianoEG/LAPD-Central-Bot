@@ -1,4 +1,5 @@
 import { SlashCommandSubcommandBuilder } from "discord.js";
+import { ExtraTypings } from "@Typings/Utilities/Database.js";
 import { InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import DurationHumanizer from "humanize-duration";
@@ -19,7 +20,7 @@ const ReadableDuration = DurationHumanizer.humanizer({
  * @returns
  */
 async function FormatActiveShifts(
-  ActiveGroupedShifts: Record<string, Array<Utilities.Database.HydratedShiftDocument>>
+  ActiveGroupedShifts: Record<string, Array<ExtraTypings.HydratedShiftDocument>>
 ): Promise<InfoEmbed> {
   const Fields: Array<{ value: string; name: string; inline?: boolean }> = [];
   let IncludesAnnotations = false;

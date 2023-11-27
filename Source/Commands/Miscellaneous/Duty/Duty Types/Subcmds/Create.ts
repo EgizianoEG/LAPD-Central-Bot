@@ -210,7 +210,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
                 .setTitle("Shift Type Created")
                 .setDescription(
                   `**Name:** \`${Response.name}\`\n`,
-                  `**Is Default:** \`${Response.is_default ? "True" : "False"}\`\n`,
+                  `**Is Default:** \`${Response.is_default ? "Yes" : "No"}\`\n`,
                   "**Permissible Roles:**\n",
                   ShiftTypePermittedRoles.length
                     ? ListFormatter.format(ShiftTypePermittedRoles.map((Id) => `<@&${Id}>`))
