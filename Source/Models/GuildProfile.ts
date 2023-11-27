@@ -1,3 +1,4 @@
+import { PreDelete, ProfilePostFind } from "./Functions/ProfileModel.js";
 import { Schema, model } from "mongoose";
 import ShiftsDataSchema from "./Schemas/ShiftsData.js";
 
@@ -12,6 +13,7 @@ const ProfileSchema = new Schema({
     type: String,
     ref: "Guild",
     match: /^\d{15,22}$/,
+    index: true,
     required: true,
   },
 
@@ -36,5 +38,20 @@ const ProfileSchema = new Schema({
 
 ProfileSchema.set("_id", false);
 ProfileSchema.set("versionKey", false);
+
+ProfileSchema.post(/^find/, ProfilePostFind);
+ProfileSchema.pre("deleteOne", { query: false, document: true }, PreDelete);
+ProfileSchema.pre(
+  [
+    "deleteOne",
+    "deleteMany",
+    "findOneAndDelete",
+    "findOneAndRemove",
+    "findByIdAndDelete",
+    "findByIdAndRemove",
+  ] as any,
+  { query: true, document: false },
+  PreDelete
+);
 
 export default model("GuildProfile", ProfileSchema, "profiles");

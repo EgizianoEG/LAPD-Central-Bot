@@ -14,8 +14,15 @@ export declare module "utility-types" {
 }
 
 declare global {
+  // A workaround until the actual usage of Object/Map.groupBy types in TS
+  interface MapConstructor {
+    groupBy<Item, Key>(
+      items: Iterable<Item>,
+      keySelector: (item: Item, index: number) => Key
+    ): Map<Key, Item[]>;
+  }
+
   interface Object {
-    // A workaround until the actual usage of Object.groupBy types in TS
     /**
      * Returns an object that groups the iterable of the iterable object into arrays, using the return value of the callback function as the key.
      * @param iterable An iterable object
@@ -25,7 +32,6 @@ declare global {
       iterable: Iterable<T>,
       callbackfn: (value: T, index: number) => K
     ): Record<K, T[]>;
-
     /**
      * Returns an object that groups the iterable of the iterable object into arrays, using the return value of the callback function as the key.
      * @param iterable An iterable object
