@@ -18,10 +18,5 @@ export default async function IsLoggedIn(CmdInteraction: SlashCommandInteraction
     return Member.linked_account.roblox_user_id;
   }
 
-  await GuildProfile.create({
-    _id: CmdInteraction.user.id,
-    guild: CmdInteraction.guildId,
-  });
-
   return 0;
 }

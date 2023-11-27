@@ -12,7 +12,7 @@ import ShiftModel from "@Models/Shift.js";
  * const ShiftActive = require("../ShiftActive");
  * const CmdInteraction = ...
  * 
- * const IsShiftActive = ShiftActive({ Interaction: CmdInteraction, ShiftType: ["Default", "Night"] }).then((Shifts) => {
+ * ShiftActive({ Interaction: CmdInteraction, ShiftType: ["Default", "Night"] }).then((Shifts) => {
     Shifts.forEach(async (Shift) => {
       console.log("Shift Started:", Shift.start_timestamp);
       console.log("Shift Type:", Shift.type);

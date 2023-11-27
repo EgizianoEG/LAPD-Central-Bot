@@ -1,6 +1,11 @@
 import { EscapeRegExp } from "@Utilities/Strings/Formatter.js";
 import GuildModel from "@Models/Guild.js";
 
+const DefaultSuggestion = {
+  name: "[Default Shift Type]",
+  value: "Default",
+};
+
 /**
  * Autocompletes an input weight
  * @param TypedValue The input string
@@ -11,7 +16,7 @@ export default async function AutocompleteShiftType(
   TypedValue: string,
   GuildId: string
 ): Promise<Array<{ name: string; value: string }>> {
-  let Suggestions: string[];
+  let Suggestions: (string | { name: string; value: string })[];
   const EscapedValue = EscapeRegExp(TypedValue);
   const ShiftTypes = await GuildModel.findById(GuildId)
     .select("settings.shifts.types")
@@ -23,7 +28,7 @@ export default async function AutocompleteShiftType(
     });
 
   if (!ShiftTypes.length) {
-    return [];
+    Suggestions = [];
   } else if (EscapedValue.match(/^\s*$/)) {
     Suggestions = ShiftTypes;
   } else {
@@ -32,8 +37,8 @@ export default async function AutocompleteShiftType(
     });
   }
 
-  return Suggestions.slice(0, 25).map((Choice) => ({
-    name: Choice,
-    value: Choice,
-  }));
+  Suggestions.unshift(DefaultSuggestion);
+  return Suggestions.slice(0, 25).map((Choice) =>
+    typeof Choice === "string" ? { name: Choice, value: Choice } : Choice
+  ) as { name: string; value: string }[];
 }
