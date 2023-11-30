@@ -17,7 +17,9 @@ import {
 import { InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { IsValidShiftTypeName } from "@Utilities/Other/Validator.js";
 import { SendErrorReply } from "@Utilities/Other/SendReply.js";
+import { ErrorMessages } from "@Resources/AppMessages.js";
 
+import Util from "util";
 import Dedent from "dedent";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import GetShiftTypes from "@Utilities/Database/GetShiftTypes.js";
@@ -42,31 +44,30 @@ async function HandleNameValidation(
     return SendErrorReply({
       Ephemeral: true,
       Interaction,
-      Title: "Malformed Shift Type Name",
-      Message:
-        "The name of a shift type may only consist of letters, numerals, spaces, underscores, dashes, and periods.",
+      Title: ErrorMessages.MalformedShiftTypeName.Title,
+      Message: ErrorMessages.MalformedShiftTypeName.Description,
     });
   } else if (ShiftTypeName.match(/Default/i)) {
     return SendErrorReply({
       Ephemeral: true,
       Interaction,
-      Title: "Preserved Shift Type Name",
-      Message:
-        "The name of the `Default` shift type is preserved and cannot be overridden, deleted, or created.",
+      Title: ErrorMessages.PreservedShiftTypeCreation.Title,
+      Message: ErrorMessages.PreservedShiftTypeCreation.Description,
     });
   } else {
-    const Exists = await GetShiftTypes(Interaction.guildId).then((ShiftTypes) => {
+    const ShiftTypeExists = await GetShiftTypes(Interaction.guildId).then((ShiftTypes) => {
       for (const ShiftType of ShiftTypes) {
         if (ShiftType.name === ShiftTypeName) return true;
       }
       return false;
     });
-    if (Exists)
+
+    if (ShiftTypeExists)
       return SendErrorReply({
         Ephemeral: true,
         Interaction,
-        Title: "Shift Type Already Exists",
-        Message: `There is already a shift type named \`${ShiftTypeName}\`. Please make sure you're creating a distinct shift type.`,
+        Title: ErrorMessages.ShiftTypeAlreadyExists.Title,
+        Message: Util.format(ErrorMessages.ShiftTypeAlreadyExists.Description, ShiftTypeName),
       });
   }
 }

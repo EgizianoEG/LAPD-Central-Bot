@@ -9,9 +9,10 @@ import {
   SlashCommandSubcommandBuilder,
 } from "discord.js";
 
+import { ErrorMessages } from "@Resources/AppMessages.js";
 import { SendErrorReply } from "@Utilities/Other/SendReply.js";
-import { InfoEmbed, WarnEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { IsValidShiftTypeName } from "@Utilities/Other/Validator.js";
+import { InfoEmbed, WarnEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import ShiftModel from "@Models/Shift.js";
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
@@ -31,11 +32,10 @@ async function HandleNameValidation(
 ): Promise<boolean> {
   if (!IsValidShiftTypeName(ShiftTypeName)) {
     await SendErrorReply({
-      Ephemeral: true,
       Interaction,
-      Title: "Malformed Shift Type Name",
-      Message:
-        "The name of a shift type may only consist of letters, numerals, spaces, underscores, dashes, and periods.",
+      Ephemeral: true,
+      Title: ErrorMessages.MalformedShiftTypeName.Title,
+      Message: ErrorMessages.MalformedShiftTypeName.Description,
     });
     return true;
   }

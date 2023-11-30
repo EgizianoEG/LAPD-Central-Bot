@@ -1,5 +1,6 @@
 import { AutocompleteInteraction, SlashCommandBuilder } from "discord.js";
 import { UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+
 import DutyTypesSubcommandGroup from "./Duty Types/Main.js";
 import AutocompleteShiftType from "@Utilities/Autocompletion/ShiftType.js";
 import UserHasPerms from "@Utilities/Database/UserHasPermissions.js";

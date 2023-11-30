@@ -1,9 +1,9 @@
 // Dependencies:
 // -------------
 import GetWeatherIcon from "@Utilities/Other/GetWeatherIcon.js";
-import { Colors, EmbedBuilder, SlashCommandBuilder } from "discord.js";
-import { GetCurrentWeather } from "@Utilities/Other/WeatherData.js";
 import { Icons, Emojis } from "@Config/Shared.js";
+import { GetCurrentWeather } from "@Utilities/Other/WeatherData.js";
+import { Colors, EmbedBuilder, SlashCommandBuilder } from "discord.js";
 // ---------------------------------------------------------------------------------------
 
 /**
@@ -21,10 +21,10 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
 
   const WeatherEmbed = new EmbedBuilder()
     .setURL(WeatherData.forecast_link)
-    .setTitle(Emojis.LosAngeles + "\u{2000}Weather")
+    .setTitle(Emojis.LosAngeles + "\u{2000}" + "Weather")
     .setColor(Colors.Greyple)
-    .setDescription("Current weather in city of Los Angeles, California\n")
     .setFooter({ text: "Powered by OpenWeather", iconURL: Icons.OpenWeather })
+    .setDescription("Current weather in city of Los Angeles, California\n")
     .setThumbnail(GetWeatherIcon(WeatherData.weather.id, WeatherData.is_day))
     .setTimestamp()
     .setFields(

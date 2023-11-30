@@ -13,10 +13,12 @@ import {
   SlashCommandSubcommandBuilder,
 } from "discord.js";
 
+import { ErrorMessages } from "@Resources/AppMessages.js";
 import { SendErrorReply } from "@Utilities/Other/SendReply.js";
 import { IsValidShiftTypeName } from "@Utilities/Other/Validator.js";
 import { InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
+import Util from "node:util";
 import Dedent from "dedent";
 import GetShiftTypes from "@Utilities/Database/GetShiftTypes.js";
 import DeleteShiftType from "@Utilities/Database/DeleteShiftType.js";
@@ -37,32 +39,31 @@ async function HandleNameValidation(
 ): Promise<Message<boolean> | InteractionResponse<boolean> | undefined> {
   if (!IsValidShiftTypeName(ShiftTypeName)) {
     return SendErrorReply({
-      Ephemeral: true,
       Interaction,
-      Title: "Malformed Shift Type Name",
-      Message:
-        "The name of a shift type may only consist of letters, numerals, spaces, underscores, dashes, and periods.",
+      Ephemeral: true,
+      Title: ErrorMessages.MalformedShiftTypeName.Title,
+      Message: ErrorMessages.MalformedShiftTypeName.Description,
     });
   } else if (ShiftTypeName.match(/Default/i)) {
     return SendErrorReply({
-      Ephemeral: true,
       Interaction,
-      Title: "Preserved Shift Type",
-      Message: "Cannot delete the preserved shift type `Default`.",
+      Ephemeral: true,
+      Title: ErrorMessages.PreservedShiftTypeDeletion.Title,
+      Message: ErrorMessages.PreservedShiftTypeDeletion.Description,
     });
   } else {
-    const Exists = await GetShiftTypes(Interaction.guildId).then((ShiftTypes) => {
+    const ShiftTypeExists = await GetShiftTypes(Interaction.guildId).then((ShiftTypes) => {
       for (const ShiftType of ShiftTypes) {
         if (ShiftType.name === ShiftTypeName) return true;
       }
       return false;
     });
-    if (!Exists)
+    if (!ShiftTypeExists)
       return SendErrorReply({
-        Ephemeral: true,
         Interaction,
-        Title: "Shift Type Not Found",
-        Message: `The shift type \`${ShiftTypeName}\` does not exist in the server and cannot be deleted.`,
+        Ephemeral: true,
+        Title: ErrorMessages.NonexistentShiftTypeDeletion.Title,
+        Message: Util.format(ErrorMessages.NonexistentShiftTypeDeletion.Description, ShiftTypeName),
       });
   }
 }

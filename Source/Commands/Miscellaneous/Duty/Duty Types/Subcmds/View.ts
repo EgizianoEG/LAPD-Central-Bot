@@ -12,10 +12,10 @@ import {
   Colors,
 } from "discord.js";
 
-import { format as FormatStr } from "node:util";
-import { Emojis, Embeds } from "@Config/Shared.js";
 import { InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { Emojis, Embeds } from "@Config/Shared.js";
 
+import Util from "node:util";
 import Dedent from "dedent";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import GetShiftTypes from "@Utilities/Database/GetShiftTypes.js";
@@ -43,7 +43,7 @@ function FormatEmbedDescription(ShiftTypeData: Utilities.Database.GuildShiftType
         > %s
     `);
 
-    const ShiftTypeDesc = FormatStr(
+    const ShiftTypeDesc = Util.format(
       Template + "\n\n",
       ShiftType.name,
       ShiftType.is_default ? "Yes" : "No",

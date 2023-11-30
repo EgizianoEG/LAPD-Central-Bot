@@ -11,10 +11,12 @@ import {
   ButtonStyle,
 } from "discord.js";
 
+import { ErrorMessages } from "@Resources/AppMessages.js";
+import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+
 import GetUserInfo from "@Utilities/Roblox/GetUserInfo.js";
 import IsUserLoggedIn from "@Utilities/Database/IsUserLoggedIn.js";
 import UpdateLinkedRobloxUser from "@Utilities/Database/UpdateLinkedUser.js";
-import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 // ---------------------------------------------------------------------------------------
 // Functions:
@@ -30,10 +32,8 @@ async function HandleLoggedInUser(Interaction: SlashCommandInteraction, IsLogged
       ephemeral: true,
       embeds: [
         new ErrorEmbed()
-          .setTitle("Hold on!")
-          .setDescription(
-            "To log out of the application, you must be logged in and have linked your Roblox account already."
-          ),
+          .setTitle(ErrorMessages.RobloxUserNotLinked.Title)
+          .setDescription(ErrorMessages.RobloxUserNotLinked.Description),
       ],
     });
   }

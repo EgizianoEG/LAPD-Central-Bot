@@ -23,10 +23,10 @@ async function Callback(Client: DiscordClient, Interaction: SlashCommandInteract
   const Response = new SuccessEmbed()
     .setTimestamp()
     .setFooter({
-      text: "Application Developed by @egiziano",
+      text: "Application developed by @egiziano",
     })
     .setDescription(
-      "Client Ping: `%s`ms\nWebsocket: `%s`ms\nApplication Uptime: `%s`",
+      "Client Ping: `%i`ms\n" + "Websocket: `%i`ms\n" + "Application Uptime: `%s`",
       ClientPing,
       Client.ws.ping >= 0 ? Client.ws.ping : 0,
       AppUptime

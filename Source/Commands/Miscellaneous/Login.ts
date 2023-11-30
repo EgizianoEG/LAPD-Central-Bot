@@ -15,17 +15,18 @@ import {
   AutocompleteInteraction,
 } from "discord.js";
 
+import { DummyText } from "@Utilities/Strings/Random.js";
+import { ErrorMessages } from "@Resources/AppMessages.js";
+import { SendErrorReply } from "@Utilities/Other/SendReply.js";
+import { IsValidRobloxUsername } from "@Utilities/Other/Validator.js";
+import { InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+
+import Util from "node:util";
 import GetUserInfo from "@Utilities/Roblox/GetUserInfo.js";
 import IsUserLoggedIn from "@Utilities/Database/IsUserLoggedIn.js";
 import GetIdByUsername from "@Utilities/Roblox/GetIdByUsername.js";
 import AutocompleteUsername from "@Utilities/Autocompletion/Username.js";
 import UpdateLinkedRobloxUser from "@Utilities/Database/UpdateLinkedUser.js";
-
-import { InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import { IsValidRobloxUsername } from "@Utilities/Other/Validator.js";
-import { format as FormatStr } from "node:util";
-import { SendErrorReply } from "@Utilities/Other/SendReply.js";
-import { DummyText } from "@Utilities/Strings/Random.js";
 
 // ---------------------------------------------------------------------------------------
 // Functions:
@@ -33,34 +34,27 @@ import { DummyText } from "@Utilities/Strings/Random.js";
 /**
  * Validates the entered Roblox username before continuing
  * @param Interaction - The interaction object.
- * @param RobloxUsername - The Roblox username to be validated.
+ * @param InputUsername - The Roblox username to be validated.
  * @returns The interaction reply (an error reply) if validation failed; otherwise `undefined`
  */
 async function HandleInvalidUsername(
   Interaction: SlashCommandInteraction,
-  RobloxUsername: string
+  InputUsername: string
 ): Promise<Message<boolean> | InteractionResponse<boolean> | undefined> {
   if (Interaction.replied) return;
-  if (!IsValidRobloxUsername(RobloxUsername)) {
+  if (!IsValidRobloxUsername(InputUsername)) {
     return SendErrorReply({
       Ephemeral: true,
       Interaction,
-      Title: "Malformed Username",
-      Message: FormatStr(
-        "The provided username, `%s`, is malformed.\n",
-        RobloxUsername,
-        "The username can be 3 to 20 characters long and can only contain letters, digits, and one underscore character in between."
-      ),
+      Title: ErrorMessages.MalformedRobloxUsername.Title,
+      Message: Util.format(ErrorMessages.MalformedRobloxUsername.Description, InputUsername),
     });
-  } else if ((await GetIdByUsername(RobloxUsername))[2] === false) {
+  } else if ((await GetIdByUsername(InputUsername))[2] === false) {
     return SendErrorReply({
       Ephemeral: true,
       Interaction,
-      Title: "Hold up!",
-      Message: FormatStr(
-        "The input user, `%s`, cannot be found on Roblox.Please double-check the username and try again.",
-        RobloxUsername
-      ),
+      Title: ErrorMessages.NonexistentRobloxUsername.Title,
+      Message: Util.format(ErrorMessages.NonexistentRobloxUsername.Description, InputUsername),
     });
   }
 }
@@ -77,11 +71,8 @@ async function HandleUserLoginStatus(Interaction: SlashCommandInteraction) {
     return SendErrorReply({
       Ephemeral: true,
       Interaction,
-      Title: "Hold up!",
-      Message: FormatStr(
-        "You are already logged in as `%s`.\nDid you mean to log out instead?",
-        LoggedUsername
-      ),
+      Title: ErrorMessages.RobloxUserAlreadyLinked.Title,
+      Message: Util.format(ErrorMessages.RobloxUserAlreadyLinked.Description, LoggedUsername),
     });
   }
 }
@@ -191,7 +182,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction) 
             Ephemeral: true,
             Interaction: ButtonInteract,
             Title: "Verification Failed",
-            Message: FormatStr(
+            Message: Util.format(
               "Login verification as `%s` failed.\nPlease rerun the command and ensure you follow the appropriate instructions.",
               RobloxUsername
             ),
