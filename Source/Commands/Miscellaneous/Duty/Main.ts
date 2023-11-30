@@ -97,7 +97,7 @@ async function Autocomplete(Interaction: AutocompleteInteraction<"cached">) {
       SubcommandGroup === "types" &&
       SubcommandName === "delete" &&
       (await UserHasPerms(Interaction, { management: true })))
-      ? await AutocompleteShiftType(value, Interaction.guildId)
+      ? await AutocompleteShiftType(value, Interaction.guildId, SubcommandName !== "delete")
       : [{ name: "[Unauthorized]", value: "0" }];
 
   return Interaction.respond(Suggestions);

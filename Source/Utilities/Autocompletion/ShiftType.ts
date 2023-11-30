@@ -7,14 +7,16 @@ const DefaultSuggestion = {
 };
 
 /**
- * Autocompletes an input weight
- * @param TypedValue The input string
- * @param GuildId The interaction guild Id
- * @returns An array of suggestions
+ * Autocompletes an input weight.
+ * @param TypedValue The input string.
+ * @param GuildId The interaction guild Id.
+ * @param IncludeDefault Whether or not to include the default shift type suggestion; `true` by default.
+ * @returns An array of suggestions.
  */
 export default async function AutocompleteShiftType(
   TypedValue: string,
-  GuildId: string
+  GuildId: string,
+  IncludeDefault = true
 ): Promise<Array<{ name: string; value: string }>> {
   let Suggestions: (string | { name: string; value: string })[];
   const EscapedValue = EscapeRegExp(TypedValue);
@@ -37,7 +39,10 @@ export default async function AutocompleteShiftType(
     });
   }
 
-  Suggestions.unshift(DefaultSuggestion);
+  if (IncludeDefault) {
+    Suggestions.unshift(DefaultSuggestion);
+  }
+
   return Suggestions.slice(0, 25).map((Choice) =>
     typeof Choice === "string" ? { name: Choice, value: Choice } : Choice
   ) as { name: string; value: string }[];
