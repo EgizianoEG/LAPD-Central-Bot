@@ -14,8 +14,10 @@ import { SendErrorReply } from "@Utilities/Other/SendReply.js";
 import { IsValidShiftTypeName } from "@Utilities/Other/Validator.js";
 import { InfoEmbed, WarnEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
-import ShiftModel from "@Models/Shift.js";
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
+import ShiftActionLogger from "@Utilities/Classes/ShiftActionLogger.js";
+import HumanizeDuration from "humanize-duration";
+import ShiftModel from "@Models/Shift.js";
 
 // ---------------------------------------------------------------------------------------
 // Functions:
@@ -50,15 +52,26 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
   const ShiftType = Interaction.options.getString("type");
   if (ShiftType && (await HandleNameValidation(Interaction, ShiftType))) return;
 
+  const QueryMatch = { guild: Interaction.guildId, type: ShiftType ?? { $exists: true } };
+  const ShiftData = await ShiftModel.aggregate([
+    { $match: QueryMatch },
+    { $group: { _id: null, totalTime: { $sum: "$durations.on_duty" }, count: { $sum: 1 } } },
+    { $unset: ["_id"] },
+  ]);
+
   const PromptEmbed = new WarnEmbed()
-    .setDescription(
-      "**Are you certain you want to delete all recorded shifts for %s?**\n",
-      ShiftType ? `\`${ShiftType}\` duty shift type` : "all duty shift types",
-      "**Note:** This action is ***irreversible***, and data cannot be restored after confirmation, and you take responsibility for it.\n\n"
-    )
     .setFooter({
+      iconURL: "https://i.ibb.co/d7mdTRY/Info-Orange-Outlined-28.png",
       text: "This prompt will automatically cancel after five minutes of inactivity.",
-    });
+    })
+    .setDescription(
+      "**Are you certain you want to delete all recorded and active shifts for %s?**\n\n" +
+        "A total number of `%i` shifts with total duration of `%s` will be deleted.\n\n" +
+        "**Note:** This action is ***irreversible***, and data cannot be restored after confirmation, and you take responsibility for it.",
+      ShiftType ? `\`${ShiftType}\` duty shift type` : "all duty shift types",
+      ShiftData[0]?.count ?? 0,
+      HumanizeDuration(ShiftData[0]?.totalTime ?? 0, { round: true, conjunction: " and " })
+    );
 
   const PromptComponents = [
     new ActionRowBuilder().addComponents(
@@ -76,12 +89,16 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
   const PromptMessage = await Interaction.reply({
     embeds: [PromptEmbed],
     components: PromptComponents,
+    fetchReply: true,
   });
 
   const DisablePrompt = () => {
     PromptComponents[0].components.forEach((Button) => Button.setDisabled(true));
     return PromptMessage.edit({
       components: PromptComponents,
+    }).catch((Err) => {
+      if (Err.code === 50_001) return;
+      throw Err;
     });
   };
 
@@ -103,15 +120,15 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
     .then(async (ButtonInteract) => {
       await DisablePrompt();
       if (ButtonInteract.customId.includes("confirm-wipe")) {
-        const Response = await ShiftModel.deleteMany({
-          guild: Interaction.guildId,
-          type: ShiftType ?? { $exists: true },
-          end_timestamp: { $not: null },
-        }).exec();
+        const Response = (await ShiftModel.deleteMany(QueryMatch).exec()) as any;
+        Response.allTime = ShiftData[0]?.allTime;
 
-        return new SuccessEmbed()
-          .setDescription("Deleted **`%d`** recorded shifts successfully.", Response.deletedCount)
-          .replyToInteract(ButtonInteract);
+        return Promise.all([
+          ShiftActionLogger.LogShiftsWipe(ButtonInteract, Response, ShiftType),
+          new SuccessEmbed()
+            .setDescription("Deleted **`%d`** recorded shifts successfully.", Response.deletedCount)
+            .replyToInteract(ButtonInteract),
+        ]);
       } else {
         return new InfoEmbed()
           .setTitle("Deletion Cancelled")

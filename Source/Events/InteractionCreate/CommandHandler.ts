@@ -23,6 +23,7 @@ import { UnorderedList } from "@Utilities/Strings/Formatter.js";
 import { PascalToNormal } from "@Utilities/Strings/Converter.js";
 import { SendErrorReply } from "@Utilities/Other/SendReply.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
+import AppError from "@Utilities/Classes/AppError.js";
 
 const DefaultCmdCooldownDuration = 3;
 const LogLabel = "Events:InteractionCreate:CommandHandler";
@@ -84,11 +85,17 @@ export default async function CommandHandler(
       throw new ReferenceError("The command's Callback function has not been found.");
     }
   } catch (Err: any) {
-    SendErrorReply({
-      Interaction,
-      Ephemeral: true,
-      Template: "AppError",
-    });
+    if (Err instanceof DiscordAPIError && Err.code === 10_062) {
+      // Most likely this error is due to high latency issues.
+      return;
+    } else if (Err instanceof AppError) {
+      await SendErrorReply({
+        Interaction,
+        Title: Err.title,
+        Message: Err.message,
+      });
+      return;
+    }
 
     AppLogger.error({
       label: LogLabel,
@@ -96,6 +103,12 @@ export default async function CommandHandler(
       splat: [FullCmdName],
       message: "An error occurred while executing slash command '%s';",
       cmd_options: Object(Interaction.options)._hoistedOptions,
+    });
+
+    await SendErrorReply({
+      Interaction,
+      Ephemeral: true,
+      Template: "AppError",
     });
   }
 }

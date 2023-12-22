@@ -1,13 +1,12 @@
+import { CallbackWithoutResultAndOptionalError, HydratedDocument, Document, Query } from "mongoose";
+import { ExtraTypings } from "@Typings/Utilities/Database.js";
 import ShiftModel from "@Models/Shift.js";
-import GuildProfile from "@Models/GuildProfile.js";
-import {
-  CallbackWithoutResultAndOptionalError,
-  HydratedDocumentFromSchema,
-  Document,
-  Query,
-} from "mongoose";
 
-type ProfileDoc = HydratedDocumentFromSchema<typeof GuildProfile.schema>;
+type ProfileDoc = HydratedDocument<
+  ExtraTypings.GuildProfileDocument,
+  ExtraTypings.GuildProfileOverrides
+>;
+
 export function ProfilePostFind(
   Data: ProfileDoc | ProfileDoc[],
   next: CallbackWithoutResultAndOptionalError = () => {}
@@ -25,7 +24,8 @@ export function ProfilePostFind(
 }
 
 export function UpdateAvgShiftPeriods(Data: ProfileDoc) {
-  const ShiftCount: number = Data.shifts.logs.length;
+  if (!Data.shifts) return;
+  const ShiftCount = Data.shifts.logs.length;
 
   if (ShiftCount === 0) {
     Data.shifts.average_periods.on_duty = 0;
@@ -48,21 +48,21 @@ export async function PreDelete(this: any, next = () => {}) {
 
   if (this instanceof Document) {
     await ShiftModel.deleteMany({
-      user: this._id,
+      user: (this as any).user_id,
       guild: (this as any).guild,
     });
   } else if (this instanceof Query) {
-    const { _id, guild } = this.getQuery();
-    if (_id && guild) {
+    const { user_id, guild } = this.getQuery();
+    if (user_id && guild) {
       await ShiftModel.deleteMany({
-        user: _id,
+        user: user_id,
         guild,
       });
     } else {
       const ProfileDoc = await this.model.findOne(this.getQuery()).exec();
       if (ProfileDoc) {
         await ShiftModel.deleteMany({
-          user: ProfileDoc._id,
+          user: ProfileDoc.user_id,
           guild: ProfileDoc.guild,
         });
       }

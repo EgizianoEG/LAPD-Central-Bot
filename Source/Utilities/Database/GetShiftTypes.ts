@@ -14,6 +14,6 @@ export default async function GetShiftTypes(
     .select("settings.shifts.types")
     .then((GuildData) => {
       if (!GuildData) return [] as any;
-      return GuildData?.settings.shifts.types;
+      return GuildData.settings.shifts.types;
     });
 }

@@ -1,11 +1,20 @@
 import { PreDelete, ProfilePostFind } from "./Functions/ProfileModel.js";
-import { Schema, model } from "mongoose";
+import { Model, Schema, model } from "mongoose";
+import { ExtraTypings } from "@Typings/Utilities/Database.js";
 import ShiftsDataSchema from "./Schemas/ShiftsData.js";
 
-const ProfileSchema = new Schema({
-  _id: {
+type ProfilePlainDoc = ExtraTypings.GuildProfileDocument;
+type ProfileModelType = Model<ProfilePlainDoc, unknown, ExtraTypings.GuildProfileOverrides>;
+
+const ProfileSchema = new Schema<
+  ExtraTypings.GuildProfileDocument,
+  ProfileModelType,
+  ExtraTypings.GuildProfileOverrides
+>({
+  user_id: {
     type: String,
     match: /^\d{15,22}$/,
+    index: true,
     required: true,
   },
 
@@ -36,9 +45,7 @@ const ProfileSchema = new Schema({
   },
 });
 
-ProfileSchema.set("_id", false);
 ProfileSchema.set("versionKey", false);
-
 ProfileSchema.post(/^find/, ProfilePostFind);
 ProfileSchema.pre("deleteOne", { query: false, document: true }, PreDelete);
 ProfileSchema.pre(
@@ -54,4 +61,4 @@ ProfileSchema.pre(
   PreDelete
 );
 
-export default model("GuildProfile", ProfileSchema, "profiles");
+export default model<ProfilePlainDoc, ProfileModelType>("GuildProfile", ProfileSchema, "profiles");

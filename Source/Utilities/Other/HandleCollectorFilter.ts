@@ -1,4 +1,4 @@
-import { MessageComponentInteraction } from "discord.js";
+import { ButtonInteraction, MessageComponentInteraction, ModalSubmitInteraction } from "discord.js";
 import { UnauthorizedEmbed } from "../Classes/ExtraEmbeds.js";
 
 /**
@@ -10,10 +10,14 @@ import { UnauthorizedEmbed } from "../Classes/ExtraEmbeds.js";
  * @returns A boolean indicating if the interaction is authorized or not
  */
 export default function HandleCollectorFiltering(
-  OriginalInteract: SlashCommandInteraction,
-  ReceivedInteract: MessageComponentInteraction
+  OriginalInteract: SlashCommandInteraction | ButtonInteraction,
+  ReceivedInteract: MessageComponentInteraction | ButtonInteraction | ModalSubmitInteraction
 ): boolean {
   if (OriginalInteract.user.id !== ReceivedInteract.user.id) {
+    if (ReceivedInteract instanceof ModalSubmitInteraction) {
+      return false;
+    }
+
     ReceivedInteract.reply({
       ephemeral: true,
       embeds: [

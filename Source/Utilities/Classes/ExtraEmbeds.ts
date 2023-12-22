@@ -1,4 +1,11 @@
-import { Message, EmbedBuilder, EmbedData, BaseInteraction, InteractionResponse } from "discord.js";
+import {
+  Message,
+  EmbedBuilder,
+  EmbedData,
+  BaseInteraction,
+  InteractionResponse,
+  CommandInteraction,
+} from "discord.js";
 import { format as FormatString } from "node:util";
 import SharedConfig from "@Config/Shared.js";
 
@@ -12,19 +19,25 @@ class BaseEmbed extends EmbedBuilder {
    * @param description - A tuple of data to format (by `util.format()`) and set as the description.
    */
   setDescription(...description: any[]): this {
-    return super.setDescription(FormatString(...description));
+    const Formatted = FormatString(...description);
+    return super.setDescription(Formatted.match(/^(?:\s*|NaN|null|undefined)$/) ? null : Formatted);
   }
 
   /**
    * Replies to a given *repliable* interaction with the current properties set.
    * @param interaction - The interaction to reply to.
-   * @param ephemeral - Either `true` or `false`; whether the reply should be ephemeral (private).
+   * @param ephemeral - Either `true` or `false`; whether the reply should be ephemeral (private); defaults to `false`.
    */
   replyToInteract(
-    interaction: BaseInteraction & { replied: boolean },
-    ephemeral?: boolean
+    interaction: BaseInteraction & { replied: boolean; reply; followUp; editReply },
+    ephemeral: boolean = false
   ): Promise<InteractionResponse<boolean>> | Promise<Message<boolean>> {
-    const ReplyMethod = interaction.replied ? "followUp" : "reply";
+    let ReplyMethod: "reply" | "editReply" | "followUp" = "reply";
+
+    if (interaction instanceof CommandInteraction && interaction.deferred)
+      ReplyMethod = "editReply";
+    else if (interaction.replied) ReplyMethod = "followUp";
+
     return interaction[ReplyMethod]({
       ephemeral,
       embeds: [this],

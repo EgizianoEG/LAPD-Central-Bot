@@ -12,6 +12,10 @@ const SharedData = {
       Success: "#28a745",
       Warning: "#E67E22",
       Error: "#ED4245",
+
+      ShiftEnd: "#E22635",
+      ShiftStart: "#2E8B57",
+      ShiftBreak: "#FCAE1E",
     },
 
     Thumbs: {
@@ -26,12 +30,26 @@ const SharedData = {
     },
   },
 
+  // Attribution;
+  // Some of the following emojis are made or distributed by flaticon (https://www.flaticon.com)
   Emojis: {
-    LosAngeles: "<:LosAngeles:1134606469828984873>",
-    NavNext: "<:ArrowForward:1146177481653624904>",
-    NavPrev: "<:ArrowBackward:1146177475945168997>",
-    NavFirst: "<:ArrowFirst:1146177479543881821>",
-    NavLast: "<:ArrowLast:1146177484702892082>",
+    Online: "<:Online:1185771482656297010>",
+    Offline: "<:Offline:1185771486460526714>",
+    Idle: "<:Idle:1185771485185445918>",
+
+    Warning: "<:Warn:1186171864343654513>",
+    FileEdit: "<:FileEdit:1185790827809738803>",
+    FileDelete: "<:FileDelete:1185785834058813480>",
+    Trash: "<:Trash:1185785496757088286>",
+
+    StopWatch: "<:Time:1185414712670826557>",
+    LosAngeles: "<:LosAngeles:1185406541709463652>",
+    HamburgerList: "<:Menu:1185793738212114484>",
+
+    NavNext: "<:ArrowForward:1185405403715084319>",
+    NavPrev: "<:ArrowBackward:1185405400489672816>",
+    NavFirst: "<:ArrowFirst:1185405401836040242>",
+    NavLast: "<:ArrowLast:1185405405409595423>",
   },
 
   Icons: {

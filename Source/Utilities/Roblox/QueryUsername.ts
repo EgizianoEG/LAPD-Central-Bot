@@ -1,4 +1,4 @@
-import { APICache } from "../Other/Cache.js";
+import { RobloxAPICache } from "../Other/Cache.js";
 import { APIResponses } from "@Typings/Utilities/Roblox.js";
 import { IsValidRobloxUsername } from "../Other/Validator.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
@@ -13,8 +13,8 @@ export default async function QueryUsername(
   Username: string
 ): Promise<APIResponses.Users.UserSearchResult[]> {
   if (!IsValidRobloxUsername(Username)) return [];
-  if (APICache.UsernameSearches.has(Username)) {
-    return APICache.UsernameSearches.get(Username) ?? [];
+  if (RobloxAPICache.UsernameSearches.has(Username)) {
+    return RobloxAPICache.UsernameSearches.get(Username) ?? [];
   }
 
   return Axios.get<APIResponses.Users.UserSearchQueryResponse>(
@@ -22,10 +22,10 @@ export default async function QueryUsername(
   )
     .then(({ data }) => {
       if (data.UserSearchResults) {
-        APICache.UsernameSearches.set(Username, data.UserSearchResults);
+        RobloxAPICache.UsernameSearches.set(Username, data.UserSearchResults);
         return data.UserSearchResults;
       } else {
-        APICache.UsernameSearches.set(Username, []);
+        RobloxAPICache.UsernameSearches.set(Username, []);
         return [];
       }
     })

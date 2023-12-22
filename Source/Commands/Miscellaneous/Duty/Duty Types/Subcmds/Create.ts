@@ -171,9 +171,9 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
 
   CompCollector.on("collect", async (CollectInteraction) => {
     if (CollectInteraction.isButton()) {
-      if (CollectInteraction.customId === "confirm-creation") {
+      if (CollectInteraction.customId.includes("confirm-creation")) {
         CompCollector.stop("confirmation");
-      } else {
+      } else if (CollectInteraction.customId.includes("cancel-creation")) {
         CompCollector.stop("cancellation");
       }
     } else if (CollectInteraction.isRoleSelectMenu()) {
@@ -215,7 +215,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
                   "**Permissible Roles:**\n",
                   ShiftTypePermittedRoles.length
                     ? ListFormatter.format(ShiftTypePermittedRoles.map((Id) => `<@&${Id}>`))
-                    : "*Usable by All Staff Identified Members*"
+                    : "*Usable by all staff identified members*"
                 ),
             ],
           });
@@ -250,7 +250,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
     } catch (Err: any) {
       AppLogger.error({
         message: "Could not query '%s' username;",
-        label: "Command:DutyTypes:Create",
+        label: "Commands:Miscellaneous:DutyTypes:Create",
         stack: Err.stack,
         details: { ...Err },
       });

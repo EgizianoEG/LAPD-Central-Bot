@@ -92,18 +92,20 @@ const GuildSettings = new Schema({
         _id: false,
         default: {},
         type: {
-          on_duty: {
-            type: String,
-            default: null,
-            required: false,
-            match: SnowflakeIDValidation,
-          },
-          on_break: {
-            type: String,
-            default: null,
-            required: false,
-            match: SnowflakeIDValidation,
-          },
+          on_duty: [
+            {
+              _id: false,
+              type: String,
+              match: SnowflakeIDValidation,
+            },
+          ],
+          on_break: [
+            {
+              _id: false,
+              type: String,
+              match: SnowflakeIDValidation,
+            },
+          ],
         },
       },
 

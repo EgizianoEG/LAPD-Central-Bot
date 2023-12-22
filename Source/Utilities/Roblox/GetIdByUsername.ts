@@ -1,5 +1,5 @@
 import { APIResponses } from "@Typings/Utilities/Roblox.js";
-import { APICache } from "../Other/Cache.js";
+import { RobloxAPICache } from "../Other/Cache.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import Axios from "axios";
 export type ReturnType<Input> = Input extends string[]
@@ -35,8 +35,8 @@ export default async function GetIdByUsername<Input extends string | string[]>(
   const RequestArray: string[] = Array.isArray(Usernames) ? Usernames : [Usernames];
   const Stringified: string = RequestArray.toString();
 
-  if (APICache.IdByUsername.has(Stringified)) {
-    return APICache.IdByUsername.get<any>(Stringified);
+  if (RobloxAPICache.IdByUsername.has(Stringified)) {
+    return RobloxAPICache.IdByUsername.get<any>(Stringified);
   }
 
   try {
@@ -56,7 +56,7 @@ export default async function GetIdByUsername<Input extends string | string[]>(
     }) as any;
 
     Results = Array.isArray(Usernames) ? Results : Results[0];
-    APICache.IdByUsername.set(Stringified, Results);
+    RobloxAPICache.IdByUsername.set(Stringified, Results);
 
     return Results;
   } catch (Err: any) {

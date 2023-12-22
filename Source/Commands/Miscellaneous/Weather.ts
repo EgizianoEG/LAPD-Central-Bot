@@ -26,7 +26,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
     .setFooter({ text: "Powered by OpenWeather", iconURL: Icons.OpenWeather })
     .setDescription("Current weather in city of Los Angeles, California\n")
     .setThumbnail(GetWeatherIcon(WeatherData.weather.id, WeatherData.is_day))
-    .setTimestamp()
+    .setTimestamp(Interaction.createdTimestamp)
     .setFields(
       {
         name: "Date and Time",

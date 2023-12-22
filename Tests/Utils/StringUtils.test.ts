@@ -383,7 +383,7 @@ describe("String Formatting Utilities", () => {
       id: 25041404840,
     };
 
-    it("Should return formatted string without Id when IncludeID is `false` or `undefined` (default behavior)", () => {
+    it("Should return formatted string without ID when IncludeID is `false` or `undefined` (default behavior)", () => {
       expect(FormatUsername(InputUserData)).toBe("Builderman (@builderman_spec)");
       expect(FormatUsername(InputUserData, false)).toBe("Builderman (@builderman_spec)");
       expect(FormatUsername(InputUserData, undefined)).toBe("Builderman (@builderman_spec)");
@@ -393,13 +393,13 @@ describe("String Formatting Utilities", () => {
       expect(FormatUsername({ name: "", display_name: "Builder" })).toBe("[Invalid]");
     });
 
-    it("Should return the formatted string without Id if the Id field is not specified or a falsy value even if the IncludeID is `true`", () => {
+    it("Should return the formatted string without ID if the ID field is not specified or a falsy value even if the IncludeID is `true`", () => {
       expect(FormatUsername({ name: InputUserData.name, display_name: "Builder" }, true)).toBe(
         "Builder (@builderman_spec)"
       );
     });
 
-    it("Should return formatted string with Id when IncludeID is `true`", () => {
+    it("Should return formatted string with ID when IncludeId parameter is `true`", () => {
       expect(FormatUsername(InputUserData, true)).toBe(
         "Builderman (@builderman_spec) [25041404840]"
       );

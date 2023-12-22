@@ -1,6 +1,7 @@
 import { ExtraTypings } from "@Typings/Utilities/Database.js";
 import { Falsey } from "utility-types";
 import ShiftModel from "@Models/Shift.js";
+import { ButtonInteraction } from "discord.js";
 
 /**
  * Retrieves and returns the active shifts (with the input ShiftType or with all by default)
@@ -21,7 +22,7 @@ import ShiftModel from "@Models/Shift.js";
     });
   });
  */
-export default async function ShiftActive<UOType extends boolean | undefined = false>({
+export default async function GetShiftActive<UOType extends boolean | undefined = false>({
   Interaction,
   ShiftType,
   UserOnly = false,
@@ -29,9 +30,12 @@ export default async function ShiftActive<UOType extends boolean | undefined = f
   /** Whether or not to return the active shift for the individual who initiated the interaction only. */
   UserOnly?: UOType;
   /** The types of duty shifts that will be retrieved; e.g. `"Default"`, `["Default", "Night Shift"]` */
-  ShiftType?: string | string[];
+  ShiftType?: null | string | string[];
   /** The received discord.js guild interaction */
-  Interaction: SlashCommandInteraction<"cached">;
+  Interaction:
+    | SlashCommandInteraction<"cached">
+    | ButtonInteraction<"cached">
+    | { user: { id: string }; guildId: string };
 }): Promise<
   UOType extends Falsey
     ? ExtraTypings.HydratedShiftDocument[]

@@ -14,12 +14,12 @@ const App = new Client({
     //
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildMessages,
   ],
 });
 
 App.commands = new Collection();
 App.cooldowns = new Collection();
+App.modalListeners = new Collection();
 
 (async function RunApplication() {
   const DirPath = Path.join(GetDirName(import.meta.url), "Handlers");

@@ -1,5 +1,6 @@
 import type * as DiscordJSMask from "discord.js";
 import type * as MongooseMask from "mongoose";
+import type * as UtilityTypesMask from "utility-types";
 import type {
   SlashCommandSubcommandsOnlyBuilder,
   SlashCommandSubcommandBuilder,
@@ -60,6 +61,7 @@ export interface CommandObjectOptions {
 declare global {
   export import DiscordJS = DiscordJSMask;
   export import Mongoose = MongooseMask;
+  export import UtilityTypes = UtilityTypesMask;
 
   type DiscordClient = Client<true>;
   type SlashCommandInteraction<Cached extends CacheType = CacheType> =

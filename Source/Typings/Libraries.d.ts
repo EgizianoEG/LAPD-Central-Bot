@@ -5,12 +5,27 @@ export declare module "discord.js" {
   export interface Client {
     commands: Collection<string, SlashCommandObject>;
     cooldowns: Collection<string, Collection<string, number>>;
+    modalListeners: Collection<string, (ModalSubmission: ModalSubmitInteraction) => any>;
   }
 }
 
 export declare module "utility-types" {
   export type NonEmptyArray<T> = [T, ...T[]];
   export type RangedArray<T, Min extends number, Max extends number> = TupleMinMax<T, Min, Max>;
+
+  /** Converts properties to strings in an object excluding any specified properties. */
+  export type PropertiesToString<T, Exclude extends keyof T> = {
+    [K in keyof T]: K extends Exclude ? T[K] : string;
+  };
+
+  /** Expands a type definition recursively. */
+  export type ExpandRecursively<T> = T extends (...args: infer A) => infer R
+    ? (...args: ExpandRecursively<A>) => ExpandRecursively<R>
+    : T extends object
+    ? T extends infer O
+      ? { [K in keyof O]: ExpandRecursively<O[K]> }
+      : never
+    : T;
 }
 
 declare global {

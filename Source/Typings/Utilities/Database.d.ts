@@ -1,16 +1,17 @@
-import AppError from "@Utilities/Classes/AppError.ts";
-import type { Falsey } from "utility-types";
-import type {
-  Types,
-  Schema,
-  Document,
-  InferSchemaType,
-  HydratedDocument,
-  HydratedDocumentFromSchema,
-} from "mongoose";
+import type { DeepPartial, Falsey, Overwrite } from "utility-types";
+import type { Types, HydratedDocument } from "mongoose";
 
 export namespace ExtraTypings {
   export type HydratedShiftDocument = HydratedDocument<ShiftDocument, ShiftDocOverrides>;
+  export interface TotalDurationsData {
+    /** A `get` virtual and cannot be set/modified. */
+    all: number;
+    /** All on-duty shift durations in milliseconds. */
+    on_duty: number;
+    /** All on-break shift durations in milliseconds. */
+    on_break: number;
+  }
+
   export interface ShiftDurations {
     /**
      * The total duration (on-duty and on-break sum) for the shift in milliseconds.
@@ -25,6 +26,11 @@ export namespace ExtraTypings {
 
   export interface ShiftDocOverrides {
     durations: Types.Subdocument<undefined> & ShiftDurations;
+
+    /**
+     * Returns `true` if there is an active break; otherwise, `false`.
+     */
+    isBreakActive(): boolean;
 
     /**
      * Updates the shift durations.
@@ -53,7 +59,7 @@ export namespace ExtraTypings {
      * @throws AppError if there is no active break.
      * @returns A promise that resolves to the saved shift.
      */
-    breakEnd(timestamp?: number): Promise<this>;
+    breakEnd(timestamp?: number): Promise<Overwrite<this, { events: ShiftEvents<false> }>>;
 
     /**
      * Ends the shift if it is still active.
@@ -71,7 +77,22 @@ export namespace ExtraTypings {
     $nor: boolean;
   }
 
-  export interface ShiftDocument {
+  export interface ShiftEvents<BPA extends boolean = true> {
+    /**
+     * An array of breaks logged during the shift.
+     * Each break is a tuple which has two values in the format: `[StartEpoch, EndEpoch]`
+     * where `EndEpoch` is `null` by default which indicates a non finished break.
+     */
+    breaks: [number, BPA extends true ? number | null : number][];
+
+    /** The number of arrests logged during this shift. */
+    arrests: number;
+
+    /** The number of citations logged during this shift. */
+    citations: number;
+  }
+
+  export interface ShiftDocument<BreaksPossiblyActive extends boolean = true> {
     /**
      * The unique identifier (15 digits) of this shift
      * where the first 13 digits indicates the timestamp
@@ -106,19 +127,36 @@ export namespace ExtraTypings {
     durations: ShiftDurations;
 
     /** Logged events during this shift. */
-    events: {
-      /**
-       * An array of breaks logged during the shift.
-       * Each break is a tuple which has two values in the format: `[StartEpoch, EndEpoch]`
-       * where `EndEpoch` is a falsey value by default (not finished break).
-       */
-      breaks: [number, number | 0 | null][];
+    events: ShiftEvents<BreaksPossiblyActive>;
+  }
 
-      /** The number of arrests logged during this shift. */
-      arrests: number;
+  export interface GuildProfileOverrides {
+    total_durations: Types.Subdocument<undefined> & TotalDurationsData;
+    average_periods: Types.Subdocument<undefined> & TotalDurationsData;
+  }
 
-      /** The number of citations logged during this shift. */
-      citations: number;
+  export interface GuildProfileDocument {
+    /** The Discord user's unique identifier. */
+    user_id: string;
+
+    /** The Discord guild's unique identifier for thi specific profile. */
+    guild: string;
+
+    // /** Profile state. Mainly used for determining if the profile can be deleted or not. */
+    // state: "active" | "inactive";
+
+    // /** The profile's creation date. */
+    // created_at: Date;
+
+    /** Roblox linked account information. */
+    linked_account: {
+      roblox_user_id: number;
+    };
+
+    shifts: {
+      total_durations: TotalDurationsData;
+      average_periods: TotalDurationsData;
+      logs: string[];
     };
   }
 

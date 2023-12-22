@@ -63,7 +63,7 @@ async function HandleInvalidUsername(
  * Checks whether or not the command runner is already logged into the application and if so, halts any further execution
  * @param Interaction - The interaction object.
  */
-async function HandleUserLoginStatus(Interaction: SlashCommandInteraction) {
+async function HandleUserLoginStatus(Interaction: SlashCommandInteraction<"cached">) {
   if (Interaction.replied) return;
   const UserLoggedIn = await IsUserLoggedIn(Interaction);
   if (UserLoggedIn) {
@@ -97,7 +97,7 @@ async function HandleUserLoginStatus(Interaction: SlashCommandInteraction) {
  *    - If "Cancel Login" is clicked, provide a cancellation message.
  * 10. Handle errors and timeouts with appropriate responses.
  */
-async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction) {
+async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
   const InputUsername = Interaction.options.getString("username", true);
 
   await HandleUserLoginStatus(Interaction);

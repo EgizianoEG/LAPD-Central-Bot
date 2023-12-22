@@ -1,11 +1,12 @@
 import { SlashCommandSubcommandBuilder } from "discord.js";
 import { ExtraTypings } from "@Typings/Utilities/Database.js";
 import { InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { Emojis } from "@Config/Shared.js";
 
-import DurationHumanizer from "humanize-duration";
+import DHumanizer from "humanize-duration";
 import GetActiveShifts from "@Utilities/Database/GetShiftActive.js";
 
-const ReadableDuration = DurationHumanizer.humanizer({
+const ReadableDuration = DHumanizer.humanizer({
   conjunction: " and ",
   largest: 4,
   round: true,
@@ -21,7 +22,7 @@ const ReadableDuration = DurationHumanizer.humanizer({
  */
 async function FormatActiveShifts(
   ActiveGroupedShifts: Record<string, Array<ExtraTypings.HydratedShiftDocument>>
-): Promise<InfoEmbed> {
+) {
   const Fields: Array<{ value: string; name: string; inline?: boolean }> = [];
   let IncludesAnnotations = false;
 
@@ -46,7 +47,7 @@ async function FormatActiveShifts(
   }
 
   return new InfoEmbed()
-    .setTitle("⏱️ Currently Active Shifts")
+    .setTitle(Emojis.StopWatch + "   Currently Active Shifts")
     .setDescription("**The server's current active shifts, categorized by type**")
     .setFooter(IncludesAnnotations ? { text: "[1]: Currently on break" } : null)
     .setFields(Fields)
@@ -60,7 +61,6 @@ async function FormatActiveShifts(
  */
 async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
   const ActiveShifts = await GetActiveShifts({ Interaction });
-
   const GAShifts = Object.groupBy(ActiveShifts, ({ type }) => type);
   const ASOrdered = Object.entries(GAShifts)
     .sort((a, b) => b[1].length - a[1].length)

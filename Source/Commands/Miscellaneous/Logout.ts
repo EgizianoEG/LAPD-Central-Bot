@@ -32,8 +32,8 @@ async function HandleLoggedInUser(Interaction: SlashCommandInteraction, IsLogged
       ephemeral: true,
       embeds: [
         new ErrorEmbed()
-          .setTitle(ErrorMessages.RobloxUserNotLinked.Title)
-          .setDescription(ErrorMessages.RobloxUserNotLinked.Description),
+          .setTitle(ErrorMessages.LORobloxUserNotLinked.Title)
+          .setDescription(ErrorMessages.LORobloxUserNotLinked.Description),
       ],
     });
   }
@@ -55,7 +55,7 @@ async function HandleLoggedInUser(Interaction: SlashCommandInteraction, IsLogged
  *    - If "Cancel" is clicked, disable the prompt and reply with a cancellation message.
  * 7. Handle errors, including timeouts, with appropriate responses.
  */
-async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction) {
+async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
   const UserLoggedIn = await IsUserLoggedIn(Interaction);
 
   await HandleLoggedInUser(Interaction, !!UserLoggedIn);

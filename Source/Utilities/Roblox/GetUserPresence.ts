@@ -1,5 +1,6 @@
 import { APIResponses } from "@Typings/Utilities/Roblox.js";
 import Axios, { AxiosResponse } from "axios";
+export type UserPresence = APIResponses.Presence.UserPresencesResponse["userPresences"][0];
 
 /**
  * Checks the presence of specific user(s).

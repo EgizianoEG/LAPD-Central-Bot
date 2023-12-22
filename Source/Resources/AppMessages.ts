@@ -20,6 +20,24 @@ export const ErrorMessages = {
   },
 
   /**
+   * Should be shown to the end user if any server/application/bot error has occurred.
+   */
+  AppError: {
+    Title: "Error",
+    Description:
+      "Apologies, a server/application error occurred while executing this command. Please attempt again at a later time.",
+  },
+
+  /**
+   * Can be shown to the end user if any database error has occurred.
+   */
+  DatabaseError: {
+    Title: "Database Error",
+    Description:
+      "An error occurred while accessing the database. Please try again later or contact support.",
+  },
+
+  /**
    * Malformed shift type name
    */
   MalformedShiftTypeName: {
@@ -78,7 +96,7 @@ export const ErrorMessages = {
    */
   UnauthorizedShiftTypeUsage: {
     Title: "Unauthorized",
-    Description: "You do not have permission to use this shift type.",
+    Description: "You do not have the necessary permission/role to use this shift type.",
   },
 
   /**
@@ -113,9 +131,45 @@ export const ErrorMessages = {
   /**
    * Roblox account not linked (for logging out)
    */
-  RobloxUserNotLinked: {
+  LORobloxUserNotLinked: {
     Title: "Hold on!",
     Description:
       "To log out of the application, you must be logged in and have linked your Roblox account already.",
+  },
+
+  /**
+   * Roblox account not linked (for shift management command; "duty manage")
+   */
+  SMRobloxUserNotLinked: {
+    Title: "Hold on!",
+    Description: "To mange shifts using the application, you must first link your Roblox account.",
+  },
+
+  /**
+   * Roblox account not in-game (for starting a shift using shift management command; "duty manage")
+   */
+  SMRobloxUserNotInGame: {
+    Title: "Hold on!",
+    Description:
+      "You cannot begin a new shift unless you are online and connected to the game server.",
+  },
+
+  /**
+   * Users cannot have two active shifts at the same time even if their shift types are different.
+   * @template ActiveShiftTypeName Type of the shift that currently active.
+   */
+  ShiftAlreadyActive: {
+    Title: "A Shift Already Active",
+    Description:
+      "You cannot begin a new shift while you have an active one, even if the shift type is different. You currently have an active shift of the `%s` type.",
+  },
+
+  /**
+   * Users cannot have two active shifts at the same time even if their shift types are different.
+   * @template ProvidedShiftId The shift Id provided by the user.
+   */
+  NoShiftFoundWithId: {
+    Title: "Shift Not Found",
+    Description: "A shift with the ID you provided, `%s`, was not found.",
   },
 };

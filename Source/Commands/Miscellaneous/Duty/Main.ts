@@ -1,8 +1,10 @@
 import { AutocompleteInteraction, SlashCommandBuilder } from "discord.js";
-import { UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { ErrorEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { ErrorMessages } from "@Resources/AppMessages.js";
 
 import DutyTypesSubcommandGroup from "./Duty Types/Main.js";
 import AutocompleteShiftType from "@Utilities/Autocompletion/ShiftType.js";
+import HasRobloxLinked from "@Utilities/Database/IsUserLoggedIn.js";
 import UserHasPerms from "@Utilities/Database/UserHasPermissions.js";
 
 const ManagementAuthorizedCmds = ["types", "wipe-all", "admin"];
@@ -20,6 +22,7 @@ const Subcommands = [
 /**
  * Authorize a management slash command usage; returns `true` is it is authorized or `false` otherwise.
  * All commands except management ones are usable by staff identified members.
+ * Users may not utilize the `duty manage` subcommand if they have no linked Roblox account.
  * @param Interaction
  */
 async function IsAuthorizedCmdUsage(Interaction: SlashCommandInteraction<"cached">) {
@@ -33,7 +36,7 @@ async function IsAuthorizedCmdUsage(Interaction: SlashCommandInteraction<"cached
     if (!(await UserHasPerms(Interaction, { management: true }))) {
       await new UnauthorizedEmbed()
         .setDescription(
-          "You do not have the necessary permissions to perform and use this command.\n",
+          "You do not have the necessary permissions to utilize this command.\n",
           "- Permissions Required:\n",
           " - Manage Server; or\n",
           " - Application (Bot) Management"
@@ -47,13 +50,22 @@ async function IsAuthorizedCmdUsage(Interaction: SlashCommandInteraction<"cached
   if (!(await UserHasPerms(Interaction, { staff: true }))) {
     await new UnauthorizedEmbed()
       .setDescription(
-        "You do not have the necessary permissions to perform and use this command.\n",
+        "You do not have the necessary permissions to utilize this command.\n",
         "- Permissions Required:\n",
         " - Manage Server; or\n",
         " - A Staff Role Associated With the Application"
       )
       .replyToInteract(Interaction, true);
     return false;
+  } else if (SubcmdName === "manage") {
+    const LinkedRobloxUser = await HasRobloxLinked(Interaction);
+    if (!LinkedRobloxUser) {
+      await new ErrorEmbed()
+        .setTitle(ErrorMessages.SMRobloxUserNotLinked.Title)
+        .setDescription(ErrorMessages.SMRobloxUserNotLinked.Description)
+        .replyToInteract(Interaction, true);
+      return false;
+    }
   }
 
   return true;
