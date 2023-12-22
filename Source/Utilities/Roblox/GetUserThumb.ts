@@ -11,10 +11,10 @@ type ThumbImgFormat<ImgFormat, CType> = CType extends "bust" ? "png" : ImgFormat
 type ThumbImgSizes<CType extends keyof typeof EndpointMapping> = CType extends "body" | undefined
   ? APITypes.Thumbnails.ThumbSizes["body"][number]
   : CType extends "bust"
-  ? APITypes.Thumbnails.ThumbSizes["bust"][number]
-  : CType extends "headshot"
-  ? APITypes.Thumbnails.ThumbSizes["headshot"][number]
-  : "";
+    ? APITypes.Thumbnails.ThumbSizes["bust"][number]
+    : CType extends "headshot"
+      ? APITypes.Thumbnails.ThumbSizes["headshot"][number]
+      : "";
 
 /**
  * **Retrieves and returns desired user thumbnail(s)**.

@@ -35,8 +35,8 @@ export type TupleMinMax<
     ? TupleMinMax<T, Min, Max, A, true>
     : TupleMinMax<T, Min, Max, [...A, T], false>
   : Max extends A["length"]
-  ? A
-  : TupleMinMax<T, Min, Max, [...A, T?], false>;
+    ? A
+    : TupleMinMax<T, Min, Max, [...A, T?], false>;
 
 export interface CommandObjectOptions {
   /** Whether or not this command will be removed if it already exists in the application or excluded from registration. */

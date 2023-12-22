@@ -3,7 +3,6 @@
 
 import {
   time,
-  Client,
   Collection,
   DiscordAPIError,
   PermissionsBitField,
@@ -35,7 +34,7 @@ const LogLabel = "Events:InteractionCreate:CommandHandler";
  * @param Interaction The command interaction
  */
 export default async function CommandHandler(
-  Client: Client,
+  Client: DiscordClient,
   Interaction: ChatInputCommandInteraction
 ) {
   if (!Interaction.isChatInputCommand()) return;
@@ -123,7 +122,7 @@ export default async function CommandHandler(
  * @param Interaction
  */
 async function HandleCooldowns(
-  Client: Client,
+  Client: DiscordClient,
   Interaction: ChatInputCommandInteraction,
   CommandObject: SlashCommandObject
 ) {

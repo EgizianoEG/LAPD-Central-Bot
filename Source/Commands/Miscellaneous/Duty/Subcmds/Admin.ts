@@ -680,8 +680,8 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
       ActiveShift?.isBreakActive()
         ? Embeds.Colors.ShiftBreak
         : ActiveShift
-        ? Embeds.Colors.ShiftStart
-        : Colors.DarkBlue
+          ? Embeds.Colors.ShiftStart
+          : Colors.DarkBlue
     );
 
   if (ActiveShift) {
