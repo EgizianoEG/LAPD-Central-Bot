@@ -27,6 +27,17 @@ const Data: Vehicles.VehicleData[] = [
           alt: "2020",
         },
       },
+      {
+        name: "Frontier Pro-4X",
+        alias: "Boundary",
+        style: "Pickup",
+        class: "Truck",
+        category: "Regular",
+        model_year: {
+          org: "2022",
+          alt: "2022",
+        },
+      },
     ],
   },
 
@@ -755,6 +766,17 @@ const Data: Vehicles.VehicleData[] = [
         model_year: {
           org: "2020",
           alt: "2020",
+        },
+      },
+      {
+        name: "Jeep Cherokee (XJ)",
+        alias: "Apache",
+        style: "SUV",
+        class: "SUV",
+        category: "Regular",
+        model_year: {
+          org: "1984-1996",
+          alt: "1995",
         },
       },
     ],
