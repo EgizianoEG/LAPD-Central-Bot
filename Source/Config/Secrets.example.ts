@@ -7,6 +7,7 @@ export const Discord: Secrets.Discord = {
   BotToken:
     Env.BOT_TOKEN ?? "MTA5Nzg3OTYxMTc0NjAyOTcxMA.G3NsSn.cqsdmmAmnqeUe_PT7ROQAzWzWZA3nzFfN_xHWI",
   BotDevs: EnvBotDevs ?? ["0000000000000"],
+  WLGuilds: null,
 };
 
 export const Roblox: Secrets.Roblox = {
@@ -22,6 +23,10 @@ export const MongoDB: Secrets.MongoDB = {
   DBName: Env.MONGO_DB ?? "bot-database",
   Username: Env.MONGO_USERNAME ?? "Data-Admin",
   UserPass: Env.MONGO_USERPASS ?? "jDnQiJ1DEz26L1fS",
+};
+
+export const ImgBB: Secrets.ImgBB = {
+  API_Key: "33cf14c3eb75cb58b36b7fca231da47f",
 };
 
 export const OpenWeather: Secrets.OpenWeather = {

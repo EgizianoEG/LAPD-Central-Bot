@@ -1,4 +1,5 @@
 import type { ButtonInteraction } from "discord.js";
+import HandleRoleAssignment from "./HandleShiftRoleAssignment.js";
 import ShiftActionLogger from "../Classes/ShiftActionLogger.js";
 import ShiftModel from "@Models/Shift.js";
 import IsLoggedIn from "@Utilities/Database/IsUserLoggedIn.js";
@@ -7,7 +8,6 @@ import AppLogger from "@Utilities/Classes/AppLogger.js";
 import GetUserPresence, {
   UserPresence as RobloxUserPresence,
 } from "@Utilities/Roblox/GetUserPresence.js";
-import HandleRoleAssignment from "./HandleShiftRoleAssignment.js";
 
 export const RobloxAPICache = {
   UsernameSearches: new NodeCache({ stdTTL: 5 * 60, useClones: false }),
@@ -29,6 +29,19 @@ export const ActiveShiftsCache = new NodeCache({
   deleteOnExpire: false,
 });
 
+export const DBRolePermsCache = new NodeCache({
+  stdTTL: 5 * 60,
+  useClones: false,
+  deleteOnExpire: true,
+});
+
+export const UserPermsCache = new NodeCache({
+  stdTTL: 5 * 60,
+  useClones: false,
+  deleteOnExpire: true,
+});
+
+// -----------------------------------------------------------------------
 const UserPresenceChecks: Record<string, number> = {};
 
 ActiveShiftsCache.on("del", (ShiftId) => delete UserPresenceChecks[ShiftId]);

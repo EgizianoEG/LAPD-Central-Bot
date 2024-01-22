@@ -8,6 +8,9 @@ export namespace Secrets {
     /** A container for all related MongoDB secret values. */
     MongoDB: MongoDB;
 
+    /** ImgBB related values */
+    ImgBB: ImgBB;
+
     /** A container for all related Roblox secret values. */
     Roblox: Roblox;
 
@@ -26,6 +29,19 @@ export namespace Secrets {
      * functionalities and special commands.
      */
     BotDevs: string[];
+
+    /**
+     * Whitelisted guilds that the bot will be able to join.
+     * A `null` or `undefined` value means that the bot will be able to join any server.
+     * An empty array means that the bot will not be able to join any server except the one declared in `TestGuildId`.
+     */
+    WLGuilds?: string[] | null;
+
+    /**
+     * The supporting server's snowflake Id.
+     * If not provided, the `TestGuildId` will be used as the support server, too.
+     */
+    SupportGuildId?: string | null;
 
     /**
      * The server’s snowflake ID; a server that will be used to test the bot and to allow
@@ -49,6 +65,10 @@ export namespace Secrets {
 
     /** Your MongoDB user’s password that will provide read and write access for the specified database. */
     UserPass: string;
+  }
+
+  interface ImgBB {
+    API_Key: string;
   }
 
   interface OpenWeather {

@@ -14,6 +14,7 @@ import { SendErrorReply } from "@Utilities/Other/SendReply.js";
 import { IsValidShiftTypeName } from "@Utilities/Other/Validator.js";
 import { InfoEmbed, WarnEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
+import HandleButtonCollectorExceptions from "@Utilities/Other/HandleButtonCollectorExceptions.js";
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
 import ShiftActionLogger from "@Utilities/Classes/ShiftActionLogger.js";
 import HumanizeDuration from "humanize-duration";
@@ -102,16 +103,6 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
     });
   };
 
-  const HandleCollectorExceptions = async (Err: Error) => {
-    if (Err.message.match(/reason: time/)) {
-      await DisablePrompt();
-    } else if (Err.message.match(/reason: \w+Delete/)) {
-      /* Ignore message/channel/guild deletion */
-    } else {
-      throw Err;
-    }
-  };
-
   await PromptMessage.awaitMessageComponent({
     filter: (ButtonInteract) => HandleCollectorFiltering(Interaction, ButtonInteract),
     componentType: ComponentType.Button,
@@ -136,7 +127,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
           .replyToInteract(ButtonInteract);
       }
     })
-    .catch(HandleCollectorExceptions);
+    .catch((Err) => HandleButtonCollectorExceptions(Err, DisablePrompt));
 }
 
 // ---------------------------------------------------------------------------------------

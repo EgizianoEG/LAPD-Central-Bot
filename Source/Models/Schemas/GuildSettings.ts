@@ -3,7 +3,7 @@ import ShiftTypeSchema from "./ShiftType.js";
 
 const SnowflakeIDValidation: [RegExp, string] = [
   /^\d{15,22}$/,
-  "Received an invalid snowflake Id provided; received '{VALUE}'.",
+  "Received an invalid snowflake Id; received '{VALUE}'.",
 ];
 
 const RolePermsValidator = {
@@ -23,22 +23,45 @@ const GuildSettings = new Schema({
 
   // The channel IDs for logging particular actions and data
   // (citations, arrests, and shift actions like starting a new shift)
+  // For citations and arrests, the format must be in the following format:
+  // [Joined guild Id]:[Available channel's Id In that guild]
+  // Which will allow the bot to log to multiple channels in different guilds (maximum of two).
   log_channels: {
     _id: false,
     default: {},
     type: {
       citations: {
-        type: String,
-        default: null,
-        required: false,
-        match: SnowflakeIDValidation,
+        validate: [(arr: string[]) => arr.length <= 2, "Maximum of 2 channels allowed"],
+        type: [
+          {
+            type: String,
+            _id: false,
+            default: null,
+            required: false,
+            match: [
+              /^(?:\d{15,22}|\d{15,22}:\d{15,22})$/,
+              "Invalid snowflake format. Received '{VALUE}'.",
+            ],
+          },
+        ],
       },
+
       arrests: {
-        type: String,
-        default: null,
-        required: false,
-        match: SnowflakeIDValidation,
+        validate: [(arr: string[]) => arr.length <= 2, "Maximum of 2 channels allowed"],
+        type: [
+          {
+            type: String,
+            _id: false,
+            default: null,
+            required: false,
+            match: [
+              /^(?:\d{15,22}|\d{15,22}:\d{15,22})$/,
+              "Invalid snowflake format. Received '{VALUE}'.",
+            ],
+          },
+        ],
       },
+
       shift_activities: {
         type: String,
         default: null,

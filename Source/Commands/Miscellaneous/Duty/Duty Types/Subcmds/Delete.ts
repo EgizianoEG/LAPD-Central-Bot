@@ -23,6 +23,7 @@ import Dedent from "dedent";
 import GetShiftTypes from "@Utilities/Database/GetShiftTypes.js";
 import DeleteShiftType from "@Utilities/Database/DeleteShiftType.js";
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
+import HandleButtonCollectorExceptions from "@Utilities/Other/HandleButtonCollectorExceptions.js";
 
 // ---------------------------------------------------------------------------------------
 // Functions:
@@ -131,16 +132,6 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
     });
   };
 
-  const HandleCollectorExceptions = async (Err: Error) => {
-    if (Err.message.match(/reason: time/)) {
-      await DisablePrompt();
-    } else if (Err.message.match(/reason: \w+Delete/)) {
-      /* Ignore message/channel/guild deletion */
-    } else {
-      throw Err;
-    }
-  };
-
   await PromptMessage.awaitMessageComponent({
     filter: (ButtonInteract) => HandleCollectorFiltering(Interaction, ButtonInteract),
     componentType: ComponentType.Button,
@@ -149,24 +140,15 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
     .then(async (ButtonInteract) => {
       await DisablePrompt();
       if (ButtonInteract.customId.includes("confirm-deletion")) {
-        const Response = await DeleteShiftType(ShiftTypeName, Interaction.guildId);
-
-        if (Response instanceof Error) {
-          return SendErrorReply({
-            Interaction: ButtonInteract,
-            Title: Response.title,
-            Message: Response.message,
-          });
-        } else {
-          return ButtonInteract.reply({
-            embeds: [
-              new SuccessEmbed().setDescription(
-                "Successfully deleted `%s` shift type.",
-                ShiftTypeName
-              ),
-            ],
-          });
-        }
+        await DeleteShiftType(ShiftTypeName, Interaction.guildId);
+        return ButtonInteract.reply({
+          embeds: [
+            new SuccessEmbed().setDescription(
+              "Successfully deleted `%s` shift type.",
+              ShiftTypeName
+            ),
+          ],
+        });
       } else {
         return ButtonInteract.reply({
           embeds: [
@@ -180,7 +162,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
         });
       }
     })
-    .catch(HandleCollectorExceptions);
+    .catch((Err) => HandleButtonCollectorExceptions(Err, DisablePrompt));
 }
 
 // ---------------------------------------------------------------------------------------

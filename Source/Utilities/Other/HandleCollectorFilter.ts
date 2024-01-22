@@ -1,5 +1,17 @@
-import { ButtonInteraction, MessageComponentInteraction, ModalSubmitInteraction } from "discord.js";
 import { UnauthorizedEmbed } from "../Classes/ExtraEmbeds.js";
+import {
+  ModalSubmitInteraction,
+  type AnySelectMenuInteraction,
+  type ButtonInteraction,
+  type MessageComponentInteraction,
+} from "discord.js";
+
+type FilterableInteraction =
+  | MessageComponentInteraction
+  | SlashCommandInteraction
+  | AnySelectMenuInteraction
+  | ModalSubmitInteraction
+  | ButtonInteraction;
 
 /**
  * A helper function that filters the component collector interactions to ensure authorization
@@ -10,8 +22,8 @@ import { UnauthorizedEmbed } from "../Classes/ExtraEmbeds.js";
  * @returns A boolean indicating if the interaction is authorized or not
  */
 export default function HandleCollectorFiltering(
-  OriginalInteract: SlashCommandInteraction | ButtonInteraction,
-  ReceivedInteract: MessageComponentInteraction | ButtonInteraction | ModalSubmitInteraction
+  OriginalInteract: FilterableInteraction,
+  ReceivedInteract: FilterableInteraction
 ): boolean {
   if (OriginalInteract.user.id !== ReceivedInteract.user.id) {
     if (ReceivedInteract instanceof ModalSubmitInteraction) {
@@ -25,7 +37,7 @@ export default function HandleCollectorFiltering(
           "You are not permitted to interact with a prompt that somebody else has initiated."
         ),
       ],
-    });
+    }).catch(() => null);
     return false;
   } else {
     return true;

@@ -761,7 +761,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
         stack: Err.stack,
       });
 
-      if (Err instanceof AppError) {
+      if (Err instanceof AppError && Err.is_showable) {
         return SendErrorReply({
           Interaction: ButtonInteract,
           Message: Err.message,

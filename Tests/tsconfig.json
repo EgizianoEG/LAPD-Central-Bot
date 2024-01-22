@@ -19,6 +19,7 @@
       //
     ],
     "paths": {
+      "@Cmds/*": ["./../Source/Commands/*"],
       "@Config/*": ["./../Source/Config/*"],
       "@Models/*": ["./../Source/Models/*"],
       "@Typings/*": ["./../Source/Typings/*"],

@@ -15,13 +15,8 @@ import AppError from "../Classes/AppError.js";
  * try {
  *   const result = await DeleteShiftType("Night Shift", "123456789012345678");
  *
- *   if (result instanceof Error) {
- *     // An error can be shown to the user
- *     console.log("an error has occurred:", result);
- *   } else {
- *     // deletion is successful
- *     console.log("Shift type deleted successfully:", result.settings);
- *   }
+ *   // deletion was successful
+ *   console.log("Shift type deleted successfully:", result.settings);
  * } catch (error) {
  *   // Server error:
  *   if (error instanceof AppError) {
@@ -37,17 +32,19 @@ export default async function DeleteShiftType(Name: string, GuildId: string) {
     GuildDoc?.settings.shifts.types.findIndex((ShiftType) => ShiftType.name === Name) ?? -1;
 
   if (!GuildDoc) {
-    throw new AppError(
-      "Database Error",
-      `Couldn't find the guild document for guild id:${GuildId}`
-    );
+    throw new AppError({
+      Title: "Database Error",
+      Message: `Couldn't find the guild document for guild id:${GuildId}`,
+      Showable: true,
+    });
   }
 
   if (ShiftTypeIndex === -1) {
-    return new AppError(
-      "Shift Type Not Found",
-      `The shift type \`${Name}\` does not exist in the server and cannot be deleted.`
-    );
+    throw new AppError({
+      Title: "Shift Type Not Found",
+      Message: `The shift type \`${Name}\` does not exist in the server and cannot be deleted.`,
+      Showable: true,
+    });
   } else {
     GuildDoc.settings.shifts.types.splice(ShiftTypeIndex, 1);
     return GuildDoc.save();

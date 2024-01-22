@@ -15,9 +15,9 @@ export default async function <Options extends Snowflake | GuildResolvable | und
   GuildId?: Options
 ): Promise<Options extends string ? GuildApplicationCommandManager : ApplicationCommandManager> {
   if (typeof GuildId === "string") {
-    const Guild = await Client.guilds.fetch(GuildId);
-    await Guild.commands.fetch();
-    return Guild.commands as any;
+    const Guild = Client.guilds.cache.get(GuildId);
+    await Guild?.commands.fetch();
+    return Guild?.commands as any;
   } else {
     await Client.application.commands.fetch();
     return Client.application.commands as any;

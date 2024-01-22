@@ -32,11 +32,16 @@ function CharactersFromSet(CharSet: string | RegExp): string[] {
  * @requires {@link CharactersFromSet `Random.CharactersFromSet()`}
  * @param Length - The desired length of the generated string; defaults to `10`.
  * @param CharSet - The desired range of generated characters; defaults to alphanumeric characters.
+ * @param NotIn - An array of strings that the generated random string can't be one of them.
  * @return The generated string
  */
-export function RandomString(Length: number = 10, CharSet: string | RegExp = /\w/): string {
+export function RandomString(
+  Length: number = 10,
+  CharSet: string | RegExp = /\w/,
+  NotIn?: string[]
+): string {
   if (!Length || !CharSet) return "";
-  const AvailableChars = Cache[String(CharSet)] ?? CharactersFromSet(CharSet);
+  const AvailableChars = Cache[CharSet.toString()] ?? CharactersFromSet(CharSet);
   const Randomized: string[] = [];
   const MaxRange = AvailableChars.length;
 
@@ -44,7 +49,15 @@ export function RandomString(Length: number = 10, CharSet: string | RegExp = /\w
     Randomized[CharIndex] = AvailableChars[Math.floor(Math.random() * MaxRange)];
   }
 
-  return Randomized.join("");
+  const Joined = Randomized.join("");
+  if (NotIn) {
+    if (NotIn.includes(Joined)) {
+      return RandomString(Length, CharSet, NotIn);
+    } else {
+      return Joined;
+    }
+  }
+  return Joined;
 }
 
 /**

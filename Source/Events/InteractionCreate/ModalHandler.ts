@@ -1,10 +1,10 @@
-import { BaseInteraction, Client } from "discord.js";
+import { BaseInteraction } from "discord.js";
 
 /**
  * @param Client
  * @param Interaction
  */
-export default async function (Client: Client, ModalInteract: BaseInteraction) {
+export default async function ModalHandler(Client: DiscordClient, ModalInteract: BaseInteraction) {
   if (!ModalInteract.isModalSubmit()) return;
 
   const ModalListener = Client.modalListeners.get(ModalInteract.customId);

@@ -25,7 +25,7 @@ export const ErrorMessages = {
   AppError: {
     Title: "Error",
     Description:
-      "Apologies, a server/application error occurred while executing this command. Please attempt again at a later time.",
+      "Apologies; a server/application error occurred while executing this command. Please attempt again at a later time.",
   },
 
   /**
@@ -35,6 +35,12 @@ export const ErrorMessages = {
     Title: "Database Error",
     Description:
       "An error occurred while accessing the database. Please try again later or contact support.",
+  },
+
+  UnauthorizedInteraction: {
+    Title: "Unauthorized",
+    Description:
+      "You are not permitted to interact with a prompt or process that somebody else has initiated.",
   },
 
   /**
@@ -51,7 +57,7 @@ export const ErrorMessages = {
    */
   PreservedShiftTypeDeletion: {
     Title: "Preserved Shift Type",
-    Description: "Cannot delete the preserved shift type `Default`.",
+    Description: "You cannot delete the preserved shift type `Default`.",
   },
 
   /**
@@ -96,7 +102,15 @@ export const ErrorMessages = {
    */
   UnauthorizedShiftTypeUsage: {
     Title: "Unauthorized",
-    Description: "You do not have the necessary permission/role to use this shift type.",
+    Description: "You do not have the necessary permission or role to use this shift type.",
+  },
+
+  /**
+   * Unauthorized shift type usage
+   */
+  ShiftMustBeActive: {
+    Title: "Shift Not Active",
+    Description: "You have to be in an active shift to perform this action.",
   },
 
   /**
@@ -146,6 +160,14 @@ export const ErrorMessages = {
   },
 
   /**
+   * Roblox account not linked (general usage)
+   */
+  RobloxUserNotLinked: {
+    Title: "Hold on!",
+    Description: "You must first link your Roblox account to be able to use this command.",
+  },
+
+  /**
    * Roblox account not in-game (for starting a shift using shift management command; "duty manage")
    */
   SMRobloxUserNotInGame: {
@@ -171,5 +193,20 @@ export const ErrorMessages = {
   NoShiftFoundWithId: {
     Title: "Shift Not Found",
     Description: "A shift with the ID you provided, `%s`, was not found.",
+  },
+
+  UnknownRadioCode: {
+    Title: "Unknown Radio Code",
+    Description:
+      "Could not find the typed radio code. Make sure you choose one from the autocomplete list.",
+  },
+};
+
+export const InfoMessages = {
+  /** General message to inform the user that a specific process/prompt has timed out. */
+  ProcessTimedOut: {
+    Title: "Timed Out",
+    Description:
+      "It looks like this process/prompt has timed out. Kindly reinstate if you'd like to continue.",
   },
 };

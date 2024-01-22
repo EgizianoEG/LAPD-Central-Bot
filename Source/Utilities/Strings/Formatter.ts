@@ -2,6 +2,7 @@
 import { format as FormatStr } from "node:util";
 import { TitleCase } from "./Converter.js";
 import { Vehicles } from "@Typings/Resources.js";
+import ERLCAgeGroups from "@Resources/ERLCAgeGroups.js";
 
 /**
  * Formats an input multiline string of charges into a properly formatted numbered list.
@@ -18,8 +19,20 @@ export function ListCharges<ReturnType extends boolean = false>(
       .replace(/[^\S\n\r]+/g, " ")
       .match(/([^\n\r]+)/g) ?? [];
 
-  if (Charges.length === 0 || Charges[0].trim() === "") {
+  if (!Charges.length || (Charges.length === 1 && Charges[0].trim() === "")) {
     return ReturnAsArray ? Charges : ("" as any);
+  }
+
+  if (
+    Charges.length === 1 &&
+    Charges[0].trim().match(/, *(?! *and )|(?:, *|(?<!hit *))and[\b ]/i)
+  ) {
+    const Modified = Charges[0]
+      .trim()
+      .replace(/(, *(?! *and )|(?:, *|(?<!hit *))and[\b ])/gi, "\n")
+      .match(/[^\n\r]+/g);
+    Charges.pop();
+    Charges.push(...(Modified as RegExpMatchArray));
   }
 
   const FormattedCharges = Charges.filter((Charge) => {
@@ -62,7 +75,11 @@ export function AddStatutes(this: any, Charges: Array<string>): Array<string> {
     return Charges;
   }
 
-  /** Creates a regular expression pattern that matches any of the given strings. */
+  /**
+   * Creates a regular expression pattern that matches any of the given strings.
+   * @param {string[]} Args - A rest parameter of type string[]. It allows the function to accept any number of string arguments.
+   * @returns A combined regular expression object.
+   */
   const ORRegExp = (...Args: string[]): RegExp => {
     return new RegExp(Args.join("|"), "i");
   };
@@ -74,11 +91,13 @@ export function AddStatutes(this: any, Charges: Array<string>): Array<string> {
     Assault: /A[su]{1,3}[alut]{2,4}|Stab(?:bing|bed)|\bADW(?:\b|[-+:#])/i,
     LERegex: /Officers?|Peace Officers?|\bPolice\b|\bLEO\b|\bPO\b/i,
     HitAndRun: /Hit(?: and | ?& ?)Run/i,
-    CRRobbery: /Cash Register Robber(?:y|ies)/i,
+    AnyRobbery: /(?:\w+) Robber(?:y|ies)|Robb(?:ing|ery) (?:of|of an?|an?) \w+/i,
+    // CRRobbery: /Cash Register Robber(?:y|ies)/i,
     Tampering: /(?:Damag(?:e|ing)|Tamper(?:ing)) (?:a |an |with )?(?:Car|Vehicle)s?/i,
     Vandalism: /Graffiti|Sabotage|Vandalism|Vandali[zs](?:ing|ed?|es) \w+|Defac(?:e|ing) \w+/i,
-    Threatening: /Threat[ei]n(?:ing)?|Threats to \\w+/i,
+    Threatening: /Threat[ei]n(?:ing)?|Threats (?:to|my|for|about) \\w+/i,
     DWeaponRegex: /Deadly|Weapon|Firearm|(?:Hand )?Gun|Pistol|Rifle|Bat|Knife|Hammer/i,
+    Impersonation: /Impersonating|False Personation/i,
 
     Kidnapping: ORRegExp("\\bKidnapp?(ing)?\\b", "Abduct(?:ion|ing)"),
     Burglary: ORRegExp("Burglary", "Breaking into (?:a |an )?(?:House|Residential)"),
@@ -87,20 +106,22 @@ export function AddStatutes(this: any, Charges: Array<string>): Array<string> {
     Evasion: ORRegExp(
       "(?:Evasion|Evading|Fleeing)",
       "Vehicle (?:Fleeing|Eluding|Evasion)",
+      "Fail(?:ing|ure|ed)? to (?:Stop|Pull|Pullover)",
       "(?:Running from|Elud(?:e|ing)|Evade) (?:an |a )?"
     ),
 
     Resisting: ORRegExp(
-      "Fail(?:ing|ure|ed)? to Comply",
+      "Refus(?:ing|ed|e) \\w+ Orders",
       "Resist(?:ing|ed)? (?:an |a )?Arrest",
       "Obstruct(?:ing|ion)(?: of)? Justice",
+      "Fail(?:ing|ure|ed)? to (?:Comply|Follow)",
       `Not (?:Listening|Complying) (?:to|with) (?:an |a )?${LEORegexString}`,
-      `(?:Resist(?:ing)?|Defy(?:ing)?|Obstruct(?:ing|ion)?|Interfer(?:e|ing)? with) (?:an |a )?${LEORegexString}`
+      `(?:Resist(?:ing)?|Defy(?:ing)?|Obstruct(?:ing|ion)?|Interfer(?:e|ing)? with) (?:an |a |of \\w{1,2}? ?|)?(?:${LEORegexString}|Investigation)`
     ),
 
     AAF: ORRegExp(
-      "Accessory (?:after|in) (?:the |a )?(?:Fact|Murder|Crime|Robbery)",
-      "(?:Helping|Helping out|Assisting) (?:a |an )?(?:Criminal|Offender|Lawbreaker)"
+      "(?:Helping|Helping out|Assisting) (?:a |an )?(?:Criminal|Offender|Lawbreaker)",
+      "(?:Accessory|Involved|Conspiracy) (?:after|to|in|with) (?:the |a |an )?(?:Fact|Murder|Homicide|Crime|Robbery|Hostage|Assault)"
     ),
 
     InvalidLicense: ORRegExp(
@@ -110,19 +131,21 @@ export function AddStatutes(this: any, Charges: Array<string>): Array<string> {
     ),
 
     RecklessDriving: ORRegExp(
+      "Speeding",
       "Traffic Crimes",
       "Crashing into \\w+",
       "Endangerment of \\w+",
       "Driving Reckless(?:ly)?",
       "Dangerous(?:ly)? Driving",
       "Reckless(?:ly)? (?:Driving|Endangerment)",
+      "(?:Public|Citizen|Resident) End[arng]+erment",
       "R[au]n(?:ning)? (?:Multiple )?(?:Red)? Lights",
       "(?:Disregard|Disregarding|Ignor(?:ed?|ing)?|No|W/o|Without) Safety"
     ),
 
     BrandishingFirearm: ORRegExp(
-      "(?:Brandish(?:ing|e?s)?|Point(?:ing|s)?|Draw(?:ing|s)?) (?:a |an )?(?:Gun|Firearm|Weapon|Pistol|Rifle)",
-      "(?:Brandish(?:ing|e?s)?|Point(?:ing|s)?|Draw(?:ing|s)?) (?:or )?(?:Exhibit(?:s|ing) )?(?:a |an )?(?:\\w+ )?(?:Gun|Firearm|Weapon|Pistol|Rifle)"
+      "(?:Brandish(?:ing|e?s)?|Point(?:ing|s)?|Draw(?:ing|s)?) (?:of )?(?:a |an )?(?:Gun|Firearm|Weapon|Pistol|Rifle)",
+      "(?:Brandish(?:ing|e?s)?|Point(?:ing|s)?|Draw(?:ing|s)?) (?:or |of )?(?:Exhibit(?:s|ing) )?(?:a |an )?(?:\\w+ )?(?:Gun|Firearm|Weapon|Pistol|Rifle)"
     ),
 
     Arson: ORRegExp(
@@ -135,7 +158,8 @@ export function AddStatutes(this: any, Charges: Array<string>): Array<string> {
 
     GrandTheft: ORRegExp(
       "Grand Theft",
-      "(?:Jewelry|Bank|Jewelery|jew[elar]ry|House|Residential|\\bATM\\b) (?:Store )?Robber(?:y|ies)"
+      "(?:Jewelry|Bank|Jewelery|jew[elar]ry|House|Residential|\\bATM\\b) (?:Store )?Robber(?:y|ies)",
+      "Robb(?:ing|ery) (?:of )?(?:a |an |the )?(?:)(?:Jewelry|Bank|Jewelery|jew[elar]ry|House|Residential|\\bATM\\b)"
     ),
 
     PBTools: ORRegExp(
@@ -233,7 +257,7 @@ export function AddStatutes(this: any, Charges: Array<string>): Array<string> {
     // Evasion and Fleeing
     if (Regexes.Evasion.test(Charge)) {
       let Continue = false;
-      if (Regexes.RecklessDriving.test(Charge)) {
+      if (Regexes.RecklessDriving.test(Charge) || /Felony/i.test(Charge)) {
         Charges[i] = AddChargeStatute(Charge, "2800.2(A)", "VC");
         Continue = true;
       } else {
@@ -301,9 +325,13 @@ export function AddStatutes(this: any, Charges: Array<string>): Array<string> {
       continue;
     }
 
-    // Cash Register Robbery (Considered Grand Theft If Was Done +2 Times)
-    if (Regexes.CRRobbery.test(Charge)) {
-      if (Charge.match(/Robberies/i) || Charge.match(/x[2-9]\d?/i)) {
+    // Any robbery charge
+    if (Regexes.AnyRobbery.test(Charge)) {
+      if (
+        Charge.match(/Robberies/i) ||
+        Charge.match(/Bank|\bATM\b/i) ||
+        Charge.match(/x[2-9]\d?/i)
+      ) {
         Charges[i] = AddChargeStatute(Charge, "487", "PC");
       } else {
         Charges[i] = AddChargeStatute(Charge, "211", "PC");
@@ -376,6 +404,16 @@ export function AddStatutes(this: any, Charges: Array<string>): Array<string> {
     // False Imprisonment
     if (Regexes.FImprisonment.test(Charge)) {
       Charges[i] = AddChargeStatute(Charge, "210.5", "PC");
+      continue;
+    }
+
+    // Impersonation of someone
+    if (Regexes.Impersonation.test(Charge)) {
+      if (Regexes.LERegex.test(Charge)) {
+        Charges[i] = AddChargeStatute(Charge, "538(D)", "PC");
+      } else {
+        Charges[i] = AddChargeStatute(Charge, "529(A)", "PC");
+      }
       continue;
     }
 
@@ -482,32 +520,20 @@ export function FormatHeight(Input: string): string {
  * @param AgeInteger - The age integer as a number or string; `1`, `2`, `3`, `4` or `5`.
  * @returns - The age category string if the input is within the enum range; `"[Unknown]"` otherwise.
  * @enum
- *  - [1]: Kid (1-12);
+ *  - [1]: Kid (<13);
  *  - [2]: Teen (13-19);
  *  - [3]: Young Adult (20-29);
  *  - [4]: Mid Adult (30-49);
  *  - [5]: Senior (50+);
  */
 export function FormatAge(AgeInteger: number | string): string {
-  switch (+AgeInteger) {
-    case 1:
-      return "Kid (1-12)";
-    case 2:
-      return "Teen (13-19)";
-    case 3:
-      return "Young Adult (20-29)";
-    case 4:
-      return "Mid Adult (30-49)";
-    case 5:
-      return "Senior (50+)";
-    default:
-      return "[Unknown]";
-  }
+  AgeInteger = +AgeInteger;
+  return ERLCAgeGroups.find((AG) => AG.value === AgeInteger)?.name || "[Unknown]";
 }
 
 /**
- * Converts a given multiline string or an array of lines into a flat unordered list.
- * @param Input
+ * Converts a given multiline string or an array of strings into a formatted unordered list where each line is prefixed with a hyphen.
+ * @param {string | string[]} Input
  * @returns
  */
 export function UnorderedList(Input: string | string[]): string {
@@ -517,7 +543,7 @@ export function UnorderedList(Input: string | string[]): string {
 }
 
 /**
- * Returns a formatted string representation of the user's username, display name as well as the id if requested
+ * Returns a formatted string representation of the user's username, display name as well as the id if requested.
  * @param UserData - The basic user data; display name if available, username, and id if also available.
  * @param IncludeId - Whether to include the user's id in the string (e.g. `"... [000000]"`).
  * @returns
@@ -537,7 +563,7 @@ export function UnorderedList(Input: string | string[]): string {
 export function FormatUsername(
   UserData: { name: string; display_name?: string; id?: string | number },
   IncludeId?: boolean
-): string | null {
+): string {
   if (UserData.name) {
     const Formatted = `${UserData.display_name ?? UserData.name} (@${UserData.name})`;
     if (IncludeId && UserData.id) {
@@ -574,7 +600,7 @@ export function FormatUsername(
 export function FormatVehicleName(
   Model: Omit<Vehicles.VehicleModel, "category" | "class" | "style">,
   Brand: { name: string; alias: string }
-) {
+): string {
   const OrgMYear = Model.model_year.org ? `${Model.model_year.org} ` : "";
   const AltMYear = Model.model_year.alt ? `${Model.model_year.alt} ` : "";
   const BrandName = Brand.name ? `${Brand.name} ` : "";

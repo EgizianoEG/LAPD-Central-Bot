@@ -8,7 +8,7 @@ import QueryUsername from "../Roblox/QueryUsername.js";
 export default async function AutocompleteUsername(
   Username: string
 ): Promise<Array<{ name: string; value: string }>> {
-  return (await QueryUsername(Username)).map((Result) => {
+  return (await QueryUsername(Username.trim())).map((Result) => {
     return { name: Result.Name, value: Result.Name };
   });
 }

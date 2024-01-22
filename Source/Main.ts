@@ -9,7 +9,7 @@ import AppLogger from "@Utilities/Classes/AppLogger.js";
 console.log(Chalk.grey("================================================"));
 // ----------------------------------------------------------------------------------
 
-const App = new Client({
+export const App = new Client({
   intents: [
     //
     GatewayIntentBits.Guilds,
@@ -20,6 +20,7 @@ const App = new Client({
 App.commands = new Collection();
 App.cooldowns = new Collection();
 App.modalListeners = new Collection();
+App.buttonListeners = new Collection();
 
 (async function RunApplication() {
   const DirPath = Path.join(GetDirName(import.meta.url), "Handlers");

@@ -46,7 +46,7 @@ export default async function CommandHandler(
     if (!CommandObject) {
       return new ErrorEmbed()
         .setDescription("Attempt execution of a non-existent command on the application.")
-        .replyToInteract(Interaction, true)
+        .replyToInteract(Interaction, true, true)
         .then(() => {
           AppLogger.warn({
             label: LogLabel,
@@ -58,7 +58,7 @@ export default async function CommandHandler(
         });
     }
 
-    await HandleCooldowns(Client, Interaction, CommandObject);
+    await HandleCommandCooldowns(Client, Interaction, CommandObject);
     await HandleDevOnlyCommands(CommandObject, Interaction);
     await HandleUserPermissions(CommandObject, Interaction);
     await HandleBotPermissions(CommandObject, Interaction);
@@ -66,33 +66,21 @@ export default async function CommandHandler(
 
     if (typeof CommandObject.callback === "function") {
       await CommandObject.callback(Client, Interaction);
-      if (!Interaction.replied) {
-        await Interaction.reply({
-          ephemeral: true,
-          embeds: [
-            new InfoEmbed()
-              .setTitle("Hold up!")
-              .setDescription("This command appears to be still being worked on."),
-          ],
-        }).catch((Err: { code: number }) => {
-          if (Err instanceof DiscordAPIError && (Err.code === 40_060 || Err.code === 10_062))
-            return;
-          throw Err;
-        });
-      }
+      if (Interaction.replied || Interaction.deferred) return;
+      await Interaction.reply({
+        ephemeral: true,
+        embeds: [
+          new InfoEmbed()
+            .setTitle("Hold up!")
+            .setDescription("This command appears to be still being worked on."),
+        ],
+      });
     } else {
-      throw new ReferenceError("The command's Callback function has not been found.");
+      throw new ReferenceError("The command's callback function has not been found.");
     }
   } catch (Err: any) {
-    if (Err instanceof DiscordAPIError && Err.code === 10_062) {
+    if (Err instanceof DiscordAPIError && (Err.code === 40_060 || Err.code === 10_062)) {
       // Most likely this error is due to high latency issues.
-      return;
-    } else if (Err instanceof AppError) {
-      await SendErrorReply({
-        Interaction,
-        Title: Err.title,
-        Message: Err.message,
-      });
       return;
     }
 
@@ -104,11 +92,19 @@ export default async function CommandHandler(
       cmd_options: Object(Interaction.options)._hoistedOptions,
     });
 
-    await SendErrorReply({
-      Interaction,
-      Ephemeral: true,
-      Template: "AppError",
-    });
+    if (Err instanceof AppError && Err.is_showable) {
+      await SendErrorReply({
+        Interaction,
+        Title: Err.title,
+        Message: Err.message,
+      });
+    } else {
+      await SendErrorReply({
+        Interaction,
+        Ephemeral: true,
+        Template: "AppError",
+      });
+    }
   }
 }
 
@@ -121,7 +117,7 @@ export default async function CommandHandler(
  * @param CommandObject
  * @param Interaction
  */
-async function HandleCooldowns(
+async function HandleCommandCooldowns(
   Client: DiscordClient,
   Interaction: ChatInputCommandInteraction,
   CommandObject: SlashCommandObject

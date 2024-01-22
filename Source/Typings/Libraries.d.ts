@@ -6,6 +6,7 @@ export declare module "discord.js" {
     commands: Collection<string, SlashCommandObject>;
     cooldowns: Collection<string, Collection<string, number>>;
     modalListeners: Collection<string, (ModalSubmission: ModalSubmitInteraction) => any>;
+    buttonListeners: Collection<string, (ButtonInteract: ButtonInteraction) => any>;
   }
 }
 

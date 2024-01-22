@@ -31,7 +31,7 @@ export default async function AutocompletionHandler(
       await CommandObj.autocomplete(Interaction);
     } else {
       throw new Error(
-        `Autocompletion failed for command '${FullCmdName}', field '${FieldName}'. No function for autocompletion was found on the command object.`
+        `Autocompletion failed for command '${FullCmdName}', field '${FieldName}'. No function for autocompletion was found in the command object.`
       );
     }
   } catch (Err: any) {

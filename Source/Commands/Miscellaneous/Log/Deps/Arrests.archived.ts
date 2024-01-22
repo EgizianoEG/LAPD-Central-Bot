@@ -1,3 +1,7 @@
+// Uses discord cdn for uploading mugshots instead of ImgBB.
+// Unsure of discord cdn behaviour (could delete mugshots due to recent cdn changes?)
+// @see https://www.reddit.com/r/discordapp/comments/17nsrhc
+// ---------------------------------------------------------------------------------------------------------
 // Dependencies:
 // -------------
 
@@ -17,6 +21,7 @@ import {
   UserSelectMenuBuilder,
   ModalSubmitInteraction,
   SlashCommandSubcommandBuilder,
+  AttachmentBuilder,
 } from "discord.js";
 
 import LogArrestReport, {
@@ -101,6 +106,7 @@ async function FilterAsstOfficers(
  */
 async function OnReportCancellation(ButtonInteract: ButtonInteraction<"cached">) {
   return ButtonInteract.editReply({
+    files: [],
     components: [],
     content: "",
     embeds: [
@@ -132,6 +138,7 @@ async function OnReportConfirmation(
 
   return ButtonInteract.editReply({
     embeds: [new SuccessEmbed().setTitle("Report Logged").setDescription(RSDescription)],
+    files: [],
     components: [],
     content: "",
   });
@@ -157,17 +164,18 @@ async function OnChargesModalSubmission(
   let AsstOfficers: string[] = [];
   const FCharges = FormatCharges(ModalInteraction.fields.getTextInputValue("charges-text"));
   const BookingNumber = GetBookingNumber(GuildDoc!.logs.arrests as any);
-  const BookingMugshotURL = await GetBookingMugshot<true>({
-    ReturnURL: true,
+  const MugshotBuffer = await GetBookingMugshot<false>({
+    ReturnURL: false,
     UserThumbURL: ThumbUrl,
     BookingNum: BookingNumber,
     UserGender: CmdOptions.Gender,
   });
 
+  const MugshotAttachment = new AttachmentBuilder(MugshotBuffer, { name: "mugshot.jpg" });
   const ConfirmationEmbed = new EmbedBuilder()
     .setTitle("Arrest Report - Confirmation")
     .setDescription("Assisting Officers: N/A")
-    .setThumbnail(BookingMugshotURL)
+    .setThumbnail(`attachment://${MugshotAttachment.name}`)
     .setColor(Colors.Gold)
     .setFields([
       {
@@ -224,6 +232,7 @@ async function OnChargesModalSubmission(
   const ConfirmationMsg = await ModalInteraction.editReply({
     content: `<@${CmdInteract.user.id}>, please review the following report information before submitting.`,
     components: [AsstOfficersMenu, ButtonsActionRow],
+    files: [MugshotAttachment],
     embeds: [ConfirmationEmbed],
   });
 
@@ -274,6 +283,7 @@ async function OnChargesModalSubmission(
     try {
       if (!LastInteraction?.isButton()) return;
       if (EndReason === "Report Confirmation") {
+        const BookingMugshotURL = ConfirmationMsg.embeds[0].thumbnail!.url ?? "";
         const ReporterRobloxUserInfo = await GetUserInfo(ReporterMainInfo.RobloxUserId);
         const ReporterInfo: ReporterInfoType = {
           ShiftActive: ReporterMainInfo.ActiveShift,

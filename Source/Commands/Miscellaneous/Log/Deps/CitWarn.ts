@@ -1,7 +1,23 @@
 import { SlashCommandSubcommandBuilder } from "discord.js";
+import type { ReporterInfo } from "../Log.js";
 
+// ---------------------------------------------------------------------------------------
+// Functions:
+// ----------
+/**
+ * @param Interaction
+ * @param UserData
+ */
+async function CmdCallback(
+  Interaction: SlashCommandInteraction<"cached">,
+  UserData: ReporterInfo
+) {}
+
+// ---------------------------------------------------------------------------------------
+// Command structure:
+// ------------------
 const CommandObject = {
-  callback: null,
+  callback: CmdCallback,
   data: new SlashCommandSubcommandBuilder()
     .setName("citation-warning")
     .setDescription("Creates a warning citation record for a person.")
@@ -15,21 +31,21 @@ const CommandObject = {
         .setAutocomplete(true)
     )
     .addStringOption((Option) =>
-      Option.setName("reason")
-        .setDescription("The reason of the given cite.")
+      Option.setName("cite-reason")
+        .setDescription("The reason of the cite given.")
         .setMinLength(5)
         .setRequired(true)
     )
     .addStringOption((Option) =>
       Option.setName("vehicle-plate")
-        .setDescription("The license plate of the cited person's vehicle.")
+        .setDescription("The license plate of the violator's car.")
         .setMinLength(3)
         .setMaxLength(7)
         .setRequired(true)
     )
     .addStringOption((Option) =>
       Option.setName("vehicle-model")
-        .setDescription("The cited person's vehicle model.")
+        .setDescription("The model of the violator's vehicle.")
         .setMinLength(5)
         .setMaxLength(100)
         .setRequired(true)
@@ -37,7 +53,7 @@ const CommandObject = {
     )
     .addStringOption((Option) =>
       Option.setName("vehicle-color")
-        .setDescription("The cited person's vehicle color.")
+        .setDescription("The color of the violator's vehicle.")
         .setMinLength(3)
         .setMaxLength(15)
         .setRequired(true)

@@ -5,6 +5,7 @@ import {
   TextBasedChannel,
   ButtonInteraction,
   time as FormatTime,
+  GuildMember,
 } from "discord.js";
 
 import { ExtraTypings } from "@Typings/Utilities/Database.js";
@@ -24,8 +25,11 @@ const ReadableDuration = HDuration.humanizer({
 // -----------------
 
 type ShiftLogAction = "start" | "break-start" | "break-end" | "end" | "auto-end" | "wipe";
-type DiscordUserInteract = SlashCommandInteraction<"cached"> | ButtonInteraction<"cached">;
 type HydratedShiftDocument = ExtraTypings.HydratedShiftDocument;
+type DiscordUserInteract =
+  | SlashCommandInteraction<"cached">
+  | ButtonInteraction<"cached">
+  | GuildMember;
 
 // TODO: Add support for logging administration actions on shifts.
 export default class ShiftActionLogger {
@@ -38,7 +42,7 @@ export default class ShiftActionLogger {
    */
   private static async GetLoggingChannel(UserInteract: DiscordUserInteract) {
     const ChannelId = await GuildModel.findOne({
-      _id: UserInteract.guildId,
+      _id: UserInteract instanceof GuildMember ? UserInteract.guild.id : UserInteract.guildId,
     })
       .select("settings")
       .then((GuildDoc) => {
@@ -49,7 +53,7 @@ export default class ShiftActionLogger {
       });
 
     if (!ChannelId) return null;
-    const ChannelExists = await UserInteract.guild.channels.fetch(ChannelId);
+    const ChannelExists = UserInteract.guild.channels.cache.get(ChannelId);
     const AbleToSendMsgs =
       ChannelExists?.viewable &&
       ChannelExists.isTextBased() &&

@@ -79,7 +79,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
     .setDescription(
       `Are you sure that you want to log out and unlink your Roblox account, \`${RobloxUsername}\`, from the application?\n` +
         "- To confirm your log out, press the `Confirm and Log Out` button\n" +
-        "- To cancel the logout, press the `Cancel` button\n" +
+        "- To cancel the logout, press the `Cancel` button\n\n" +
         "*This prompt will automatically cancel after 5 minutes of inactivity.*"
     );
 
@@ -102,10 +102,11 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
   })
     .then(async (ButtonAction) => {
       await DisablePrompt();
+      await ButtonAction.deferUpdate();
+
       if (ButtonAction.customId === "confirm-logout") {
         await UpdateLinkedRobloxUser(Interaction);
-        return ButtonAction.reply({
-          ephemeral: true,
+        return ButtonAction.editReply({
           embeds: [
             new SuccessEmbed().setDescription(
               "Successfully unlinked Roblox account and logged out of the application for user `%s`.",
@@ -114,8 +115,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
           ],
         });
       } else {
-        return ButtonAction.reply({
-          ephemeral: true,
+        return ButtonAction.editReply({
           embeds: [
             new InfoEmbed()
               .setTitle("Process Cancellation")

@@ -33,7 +33,7 @@ export function IsValidCmdObject(
   Exceptions: Array<string> = []
 ): boolean {
   return !!(
-    CmdObject.data instanceof SlashCommandBuilder &&
+    CmdObject?.data instanceof SlashCommandBuilder &&
     CmdObject.data.name &&
     CmdObject.data.description &&
     !Exceptions.includes(CmdObject.data?.name)

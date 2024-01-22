@@ -1,8 +1,5 @@
-// Dependencies:
-// -------------
-import Humanizer from "humanize-duration";
-import { SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { SlashCommandBuilder } from "discord.js";
+import { SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 // ---------------------------------------------------------------------------------------
 
 /**
@@ -11,26 +8,18 @@ import { SlashCommandBuilder } from "discord.js";
  */
 async function Callback(Client: DiscordClient, Interaction: SlashCommandInteraction) {
   await Interaction.deferReply({ ephemeral: true });
-
   const Reply = await Interaction.fetchReply();
   const ClientPing = Reply.createdTimestamp - Interaction.createdTimestamp;
-  const AppUptime = Humanizer(Client.uptime, {
-    conjunction: " and ",
-    largest: 3,
-    round: true,
-  });
 
-  const Response = new SuccessEmbed()
+  const ResponseEmbed = new SuccessEmbed()
     .setTimestamp(Reply.createdTimestamp)
-    .setFooter({ text: "Application developed by @egiziano" })
     .setDescription(
-      "RT Latency: `%i`ms\n" + "Websocket: `%i`ms\n" + "Application Uptime: `%s`",
+      "RT Latency: `%i`ms\n" + "Websocket: `%i`ms\n",
       ClientPing,
-      Client.ws.ping >= 0 ? Client.ws.ping : 0,
-      AppUptime
+      Client.ws.ping >= 0 ? Client.ws.ping : 0
     );
 
-  return Interaction.editReply({ embeds: [Response] });
+  return Interaction.editReply({ embeds: [ResponseEmbed] });
 }
 
 // ---------------------------------------------------------------------------------------
@@ -40,9 +29,7 @@ const CommandObject: SlashCommandObject = {
   callback: Callback,
   data: new SlashCommandBuilder()
     .setName("ping")
-    .setDescription(
-      "Provides the current latency (ping) for both the client and websocket, as well as the bot's uptime."
-    ),
+    .setDescription("Provides the current latency (ping) for both the bot and websocket."),
 };
 
 // ---------------------------------------------------------------------------------------

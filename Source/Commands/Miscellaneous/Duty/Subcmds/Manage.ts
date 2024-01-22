@@ -16,13 +16,14 @@ import {
   SlashCommandSubcommandBuilder,
 } from "discord.js";
 
-import { ErrorEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { Types } from "mongoose";
 import { ExtraTypings } from "@Typings/Utilities/Database.js";
 import { ErrorMessages } from "@Resources/AppMessages.js";
 import { SendErrorReply } from "@Utilities/Other/SendReply.js";
 import { Embeds, Emojis } from "@Config/Shared.js";
 import { ActiveShiftsCache } from "@Utilities/Other/Cache.js";
 import { NavButtonsActionRow } from "@Utilities/Other/GetNavButtons.js";
+import { ErrorEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import GetUserPresence, { UserPresence } from "@Utilities/Roblox/GetUserPresence.js";
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
@@ -30,15 +31,14 @@ import HandleRoleAssignment from "@Utilities/Other/HandleShiftRoleAssignment.js"
 import GetLinkedRobloxUser from "@Utilities/Database/IsUserLoggedIn.js";
 import GetMainShiftsData from "@Utilities/Database/GetShiftsData.js";
 import ShiftActionLogger from "@Utilities/Classes/ShiftActionLogger.js";
+import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
 import GetShiftActive from "@Utilities/Database/GetShiftActive.js";
+import UserHasPerms from "@Utilities/Database/UserHasPermissions.js";
 import ShiftModel from "@Models/Shift.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import DHumanize from "humanize-duration";
 import Dedent from "dedent";
 import Util from "node:util";
-import { Types } from "mongoose";
-import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
-import UserHasPerms from "@Utilities/Database/UserHasPermissions.js";
 
 const HumanizeDuration = DHumanize.humanizer({
   conjunction: " and ",
@@ -498,7 +498,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
 
   const RespEmbed = new EmbedBuilder()
     .setColor(Embeds.Colors.ShiftStart)
-    .setTitle(BaseEmbedTitle)
+    .setTitle(!ShiftActive ? BaseEmbedTitle : `Shift Management: \`${ShiftActive.type}\` Type`)
     .setFields(
       {
         name: "All Time Info:",
@@ -514,7 +514,9 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
       }
     );
 
-  const Reply = await Interaction.reply({
+  const Reply = await (
+    Interaction[Interaction.deferred ? "editReply" : "reply"] as typeof Interaction.reply
+  )({
     components: [ButtonsActionRow.updateButtons({ start: false, break: true, end: true })],
     embeds: [RespEmbed],
   });

@@ -27,7 +27,7 @@ export default async function HandleEmbedPagination(
   // Do not paginate if there is only one page.
   if (Pages.length === 1) return;
   const ComponentCollector = ResponseMessage.createMessageComponentCollector({
-    filter: (BI) => HandleCollectorFiltering(Interact, BI),
+    filter: (Btn) => HandleCollectorFiltering(Interact, Btn),
     componentType: ComponentType.Button,
     time: 5 * 60_000,
   });

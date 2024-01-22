@@ -27,6 +27,8 @@ const SharedData = {
 
       AvatarMale: "https://i.ibb.co/m0fyKh1/Male-Avatar-Placeholder.png",
       AvatarFemale: "https://i.ibb.co/Lr37RGx/Female-Avatar-Placeholder.png",
+
+      UnknownImage: "https://placehold.co/254x254/F7F8F9/202428/png?text=%3F",
     },
   },
 

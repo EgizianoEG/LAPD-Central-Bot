@@ -27,6 +27,7 @@ import IsUserLoggedIn from "@Utilities/Database/IsUserLoggedIn.js";
 import GetIdByUsername from "@Utilities/Roblox/GetIdByUsername.js";
 import AutocompleteUsername from "@Utilities/Autocompletion/Username.js";
 import UpdateLinkedRobloxUser from "@Utilities/Database/UpdateLinkedUser.js";
+import HandleButtonCollectorExceptions from "@Utilities/Other/HandleButtonCollectorExceptions.js";
 
 // ---------------------------------------------------------------------------------------
 // Functions:
@@ -146,23 +147,6 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
     });
   };
 
-  const HandleCollectorExceptions = async (Err) => {
-    if (Err.message.match(/reason: time/)) {
-      await DisablePrompt();
-      return SendErrorReply({
-        Ephemeral: true,
-        Interaction,
-        Title: "Process Cancelled",
-        Message:
-          "The login process has been terminated due to no response being received within five minutes.",
-      });
-    } else if (Err.message.match(/reason: \w+Delete/)) {
-      /* Ignore message/channel/guild deletion */
-    } else {
-      throw Err;
-    }
-  };
-
   await ProcessPrompt.awaitMessageComponent({
     componentType: ComponentType.Button,
     time: 5 * 60_000,
@@ -195,7 +179,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
           .replyToInteract(ButtonInteract, true);
       }
     })
-    .catch(HandleCollectorExceptions);
+    .catch((Err) => HandleButtonCollectorExceptions(Err, DisablePrompt));
 }
 
 /**
@@ -220,6 +204,7 @@ async function Autocomplete(Interaction: AutocompleteInteraction): Promise<void>
 // Command structure:
 // ------------------
 const CommandObject: SlashCommandObject<any> = {
+  options: { cooldown: 30 },
   data: new SlashCommandBuilder()
     .setName("log-in")
     .setDescription("Log into the application and get access to restricted actions.")
@@ -235,9 +220,6 @@ const CommandObject: SlashCommandObject<any> = {
 
   callback: Callback,
   autocomplete: Autocomplete,
-  options: {
-    cooldown: 30,
-  },
 };
 
 // ---------------------------------------------------------------------------------------

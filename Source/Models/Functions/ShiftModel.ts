@@ -19,10 +19,12 @@ export function ShiftEventAdd(this: ThisType, type: "arrests" | "citations") {
 export function ShiftBreakStart(this: ThisType, timestamp: number = Date.now()) {
   if (this.isBreakActive()) {
     return Promise.reject(
-      new AppError(
-        ErrorTitle,
-        "There is already an active break. Please end the current break before starting another."
-      )
+      new AppError({
+        Title: ErrorTitle,
+        Message:
+          "There is already an active break. Please end the current break before starting another.",
+        Showable: true,
+      })
     );
   }
 
@@ -42,20 +44,23 @@ export function ShiftBreakEnd(this: ThisType, timestamp: number = Date.now()) {
   }
 
   return Promise.reject(
-    new AppError(
-      ErrorTitle,
-      "There is no active break to end. Make sure to start a break before ending it."
-    )
+    new AppError({
+      Title: ErrorTitle,
+      Message: "There is no active break to end. Make sure to start a break before ending it.",
+      Showable: true,
+    })
   );
 }
 
 export async function ShiftEnd(this: ThisType, timestamp: Date | number = new Date()) {
   if (this.end_timestamp)
     return Promise.reject(
-      new AppError(
-        ErrorTitle,
-        "It appears that this shift has already ended. Make sure you start a new shift before you attempt to end it."
-      )
+      new AppError({
+        Title: ErrorTitle,
+        Message:
+          "It appears that this shift has already ended. Make sure you start a new shift before you attempt to end it.",
+        Showable: true,
+      })
     );
   else this.end_timestamp = new Date(timestamp);
   this.durations.on_duty = this.end_timestamp.valueOf() - this.start_timestamp.valueOf();

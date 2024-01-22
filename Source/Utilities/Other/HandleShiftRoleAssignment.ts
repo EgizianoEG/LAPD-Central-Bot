@@ -21,8 +21,8 @@ export default async function HandleRoleAssignment(
 
   if (!RASettings) return;
   try {
-    const Guild = await Client.guilds.fetch(GuildId);
-    const GuildMember = await Guild?.members.fetch(UserId);
+    const Guild = Client.guilds.cache.get(GuildId);
+    const GuildMember = Guild?.members.cache.get(UserId);
     if (!GuildMember) return;
 
     if (CurrentStatus === "on-duty") {

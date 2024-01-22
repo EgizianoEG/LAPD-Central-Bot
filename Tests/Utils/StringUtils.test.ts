@@ -3,6 +3,7 @@
 // ---------------------------------------------------------------------------------------
 import { UpperFirst, TitleCase, CamelCase, PascalToNormal } from "@Utilities/Strings/Converter.js";
 import { DummyText, RandomString } from "@Utilities/Strings/Random.js";
+import { faker as Faker } from "@faker-js/faker";
 import {
   FormatAge,
   FormatHeight,
@@ -15,7 +16,6 @@ import {
   AddStatutes,
 } from "@Utilities/Strings/Formatter.js";
 
-import { faker as Faker } from "@faker-js/faker";
 import SampleTexts from "@Resources/SampleTexts.js";
 import Dedent from "dedent";
 
@@ -319,7 +319,7 @@ describe("String Formatting Utilities", () => {
     });
 
     it("Should return a human-readable string indicating the age category/range (Roblox ER:LC)", () => {
-      expect(FormatAge(1)).toBe("Kid (1-12)");
+      expect(FormatAge(1)).toBe("Kid (<13)");
       expect(FormatAge(2)).toBe("Teen (13-19)");
       expect(FormatAge(3)).toBe("Young Adult (20-29)");
       expect(FormatAge(4)).toBe("Mid Adult (30-49)");

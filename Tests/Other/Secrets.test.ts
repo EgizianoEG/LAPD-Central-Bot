@@ -42,7 +42,7 @@ describe("Secrets.Roblox", () => {
 describe("Secrets.Discord", () => {
   it(`Should only contain key-value pairs of type string except for ${Cyanish(
     "TestGuildId"
-  )}; which is an array of snowflakes`, () => {
+  )} and ${Cyanish("WLGuilds")}; which are of type Array.`, () => {
     for (const [Key, Value] of Object.entries(Discord)) {
       expect(typeof Key).toBe("string");
       if (Key === "BotDevs") {
@@ -50,6 +50,15 @@ describe("Secrets.Discord", () => {
         for (const DevId of Value) {
           expect(typeof DevId).toBe("string");
         }
+      } else if (Key === "WLGuilds") {
+        expect(Value == null || Array.isArray(Value)).toBeTruthy();
+        if (Array.isArray(Value)) {
+          for (const GuildId of Value) {
+            expect(typeof GuildId).toBe("string");
+          }
+        }
+      } else if (Key === "SupportGuildId") {
+        expect(Value == null || typeof Value === "string").toBeTruthy();
       } else {
         expect(typeof Value).toBe("string");
       }

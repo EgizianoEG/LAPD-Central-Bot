@@ -1,8 +1,5 @@
 import { SlashCommandBuilder, SlashCommandSubcommandsOnlyBuilder } from "discord.js";
-const SubCommands = [
-  (await import("./Deps/Embed.js")).default,
-  (await import("./Deps/ArrestReport.js")).default,
-];
+const SubCommands = [(await import("./Deps/Embed.js")).default];
 
 // ---------------------------------------------------------------------------------------
 /**
@@ -30,8 +27,7 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
   data: new SlashCommandBuilder()
     .setName("send")
     .setDescription("Sends a specific information.")
-    .addSubcommand(SubCommands[0].data)
-    .addSubcommand(SubCommands[1].data),
+    .addSubcommand(SubCommands[0].data),
 };
 
 // ---------------------------------------------------------------------------------------

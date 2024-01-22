@@ -1,5 +1,5 @@
-import { ActiveShiftsCache } from "@Utilities/Other/Cache.js";
 import { GuildMember } from "discord.js";
+import ShiftActionLogger from "@Utilities/Classes/ShiftActionLogger.js";
 import GetShiftActive from "@Utilities/Database/GetShiftActive.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 
@@ -8,17 +8,20 @@ import AppLogger from "@Utilities/Classes/AppLogger.js";
  * @param _
  * @param Member
  */
-export default async function (_: DiscordClient, Member: GuildMember) {
-  const CurrDate = new Date();
+export default async function UpdateDatabase(_: DiscordClient, Member: GuildMember) {
   const ShiftActive = await GetShiftActive({
     Interaction: { user: { id: Member.id }, guildId: Member.guild.id },
     UserOnly: true,
-  });
+  }).catch(() => null);
 
   if (ShiftActive) {
     try {
-      await ShiftActive.end(CurrDate);
-      ActiveShiftsCache.del(ShiftActive._id);
+      await ShiftActive.end(new Date());
+      await ShiftActionLogger.LogShiftAutomatedEnd(
+        ShiftActive,
+        Member,
+        "User has left the server."
+      );
     } catch (Err: any) {
       AppLogger.error({
         label: "Events:GuildMemberRemove",

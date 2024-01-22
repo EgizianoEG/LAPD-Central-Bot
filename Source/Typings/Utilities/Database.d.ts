@@ -1,5 +1,6 @@
 import type { DeepPartial, Falsey, Overwrite } from "utility-types";
-import type { Types, HydratedDocument } from "mongoose";
+import type { Types, HydratedDocument, HydratedDocumentFromSchema } from "mongoose";
+import ArrestSchema from "@Models/Schemas/Arrest.ts";
 
 export namespace ExtraTypings {
   export type HydratedShiftDocument = HydratedDocument<ShiftDocument, ShiftDocOverrides>;
@@ -10,6 +11,54 @@ export namespace ExtraTypings {
     on_duty: number;
     /** All on-break shift durations in milliseconds. */
     on_break: number;
+  }
+
+  export interface ArrestRecord {
+    _id: string;
+    gender: "Male" | "Female";
+    height: string;
+    weight: string;
+    charges: string;
+    age_group: 1 | 2 | 3 | 4 | 5;
+    defendant_roblox_id: number;
+    defendant_roblox_name: string;
+    arresting_officer_roblox_id: string;
+    arresting_officer_discord_id: string;
+    arresting_officer_roblox_name: string;
+  }
+
+  export interface GuildLogs {
+    arrests: ArrestRecord[];
+    citations: [];
+    callsigns: [];
+  }
+
+  export interface GuildSettings {
+    require_authorization: boolean;
+
+    log_channels: {
+      citations: string | null;
+      arrests: string | null;
+      shift_activities: string | null;
+    };
+
+    role_perms: {
+      staff: string[];
+      management: string[];
+    };
+
+    shifts: {
+      types: GuildShiftType[];
+      role_assignment: {
+        on_duty: string[];
+        on_break: string[];
+      };
+    };
+
+    durations: {
+      total_max: number;
+      on_break_max: number;
+    };
   }
 
   export interface ShiftDurations {
@@ -184,7 +233,7 @@ export namespace ExtraTypings {
    * meaning that if the object is `{ management: true }`; then the check will succeed
    * if the user has one of the permissions for management (guild scope or app scope); otherwise it will fail.
    */
-  export interface UserPermissionsConfig {
+  export interface UserPermissionsConfig extends Pick<LogicalOperations, "$and" | "$or"> {
     management:
       | boolean
       | ({

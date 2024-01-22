@@ -36,7 +36,7 @@ export default async function EventHandler(Client: DiscordClient) {
         FuncsToExecute.forEach((Func) => Func(Client, ...Args));
       });
     } else {
-      AppLogger.error({
+      AppLogger.warn({
         label: "Handlers:EventHandler",
         message:
           "Listening to event '%s' was skipped as it does not exist in DiscordJS Client instance.",
@@ -52,7 +52,10 @@ export default async function EventHandler(Client: DiscordClient) {
   AppLogger.info({
     label: "Handlers:EventHandler",
     message:
-      "Successfully loaded all event listeners. Listening for the following events with total listeners of each: %o",
-    splat: [ListenersData],
+      "Successfully loaded all event listeners. Listening for the %o events with %o total listeners.",
+    splat: [
+      Object.entries(ListenersData).length,
+      Object.values(ListenersData).reduce((prev, curr) => prev + curr, 0),
+    ],
   });
 }

@@ -214,7 +214,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
                   `**Is Default:** \`${Response.is_default ? "Yes" : "No"}\`\n`,
                   "**Permissible Roles:**\n",
                   ShiftTypePermittedRoles.length
-                    ? ListFormatter.format(ShiftTypePermittedRoles.map((Id) => `<@&${Id}>`))
+                    ? ListFormatter.format(ShiftTypePermittedRoles.map((RoleId) => `<@&${RoleId}>`))
                     : "*Usable by all staff identified members*"
                 ),
             ],

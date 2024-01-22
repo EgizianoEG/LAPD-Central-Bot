@@ -14,22 +14,25 @@ export default async function CreateShiftType(Data: ExtraTypings.CreateShiftType
   );
 
   if (!GuildDoc) {
-    throw new AppError(
-      "Database Error",
-      `Couldn't find the guild document for guild id:${Data.guild_id}`
-    );
+    throw new AppError({
+      Title: "Database Error",
+      Message: `Couldn't find the guild document for guild id:${Data.guild_id}`,
+      Showable: true,
+    });
   }
 
   if (ShiftTypeExists) {
-    return new AppError(
-      "Shift Type Already Exists",
-      `A shift type with the name \`${Data.name}\` does already exist. Please make sure you're creating a distinct shift type.`
-    );
+    return new AppError({
+      Title: "Shift Type Already Exists",
+      Message: `A shift type with the name \`${Data.name}\` does already exist. Please make sure you're creating a distinct shift type.`,
+      Showable: true,
+    });
   } else if (GuildDoc.settings.shifts.types.length > 9) {
-    return new AppError(
-      "Maximum Shift Types Reached",
-      "The limit of ten shift types has been reached, and you cannot create any further."
-    );
+    return new AppError({
+      Title: "Maximum Shift Types Reached",
+      Message: "The limit of ten shift types has been reached, and you cannot create any further.",
+      Showable: true,
+    });
   } else {
     if (Data.is_default) {
       GuildDoc.settings.shifts.types.forEach((Type) => {
