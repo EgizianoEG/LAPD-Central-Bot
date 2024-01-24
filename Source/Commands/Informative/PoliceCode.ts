@@ -19,9 +19,24 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction) 
     return new ErrorEmbed().useErrTemplate("UnknownRadioCode").replyToInteract(Interaction, true);
   }
 
-  const ResponseEmbed = new InfoEmbed()
-    .setTitle(CodeFound.title)
-    .setDescription(CodeFound.description);
+  const Title = CodeFound.title.match(/\w+/) ? CodeFound.title : CodeFound.code;
+  const ResponseEmbed = new InfoEmbed().setTitle(Title).setDescription(CodeFound.description);
+
+  if (CodeFound.usage_contexts?.length) {
+    const UContexts = CodeFound.usage_contexts.map((u) => {
+      if (typeof u === "string") {
+        return `- ${u}`;
+      } else {
+        return `- ${u.title}\n ${u.description}`;
+      }
+    });
+
+    ResponseEmbed.addFields({
+      name: "Usage Contexts",
+      value: UContexts.join("\n"),
+      inline: false,
+    });
+  }
 
   if (CodeFound.notes?.length) {
     const Notes = CodeFound.notes.map((n) => {
