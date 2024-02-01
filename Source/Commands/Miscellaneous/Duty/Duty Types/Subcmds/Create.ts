@@ -15,7 +15,7 @@ import {
 } from "discord.js";
 
 import { InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import { IsValidShiftTypeName } from "@Utilities/Other/Validator.js";
+import { IsValidShiftTypeName } from "@Utilities/Other/Validators.js";
 import { SendErrorReply } from "@Utilities/Other/SendReply.js";
 import { ErrorMessages } from "@Resources/AppMessages.js";
 

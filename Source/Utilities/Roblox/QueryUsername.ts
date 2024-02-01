@@ -1,6 +1,6 @@
 import { RobloxAPICache } from "../Other/Cache.js";
 import { APIResponses } from "@Typings/Utilities/Roblox.js";
-import { IsValidRobloxUsername } from "../Other/Validator.js";
+import { IsValidRobloxUsername } from "../Other/Validators.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import Axios from "axios";
 

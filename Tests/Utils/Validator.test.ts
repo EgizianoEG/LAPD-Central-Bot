@@ -6,7 +6,7 @@ import {
   IsValidCmdObject,
   IsPlainObject,
   IsEmptyObject,
-} from "@Utilities/Other/Validator";
+} from "@Utilities/Other/Validators";
 
 describe("IsValidRobloxUsername", () => {
   it("Should return false for strings of less than 3 or more than 20 characters in length", () => {

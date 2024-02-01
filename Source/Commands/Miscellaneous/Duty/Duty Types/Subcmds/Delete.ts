@@ -15,7 +15,7 @@ import {
 
 import { ErrorMessages } from "@Resources/AppMessages.js";
 import { SendErrorReply } from "@Utilities/Other/SendReply.js";
-import { IsValidShiftTypeName } from "@Utilities/Other/Validator.js";
+import { IsValidShiftTypeName } from "@Utilities/Other/Validators.js";
 import { InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import Util from "node:util";

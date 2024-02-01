@@ -19,7 +19,7 @@ export function IsValidRobloxUsername(Str: string): boolean {
  * @returns
  */
 export function IsValidShiftTypeName(Str: string): boolean {
-  return !!Str.trim().match(/^[\w\-. ]{3,20}$/);
+  return !!(Str.trim().match(/^[\w\-. ]{3,20}$/) && !Str.trim().match(/^[-.]+$/));
 }
 
 /**

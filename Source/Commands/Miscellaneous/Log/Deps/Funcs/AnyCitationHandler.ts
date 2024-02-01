@@ -48,7 +48,7 @@ import {
   IsValidLicensePlate,
   IsValidPersonHeight,
   IsValidRobloxUsername,
-} from "@Utilities/Other/Validator.js";
+} from "@Utilities/Other/Validators.js";
 
 const CmdFileLabel = "Commands:Miscellaneous:Log:CitWarn";
 const ColorNames = BrickColors.map((BC) => BC.name);

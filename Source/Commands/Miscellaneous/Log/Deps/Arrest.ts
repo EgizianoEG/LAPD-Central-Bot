@@ -32,7 +32,7 @@ import { ReporterInfo } from "../Log.js";
 import { UserHasPermsV2 } from "@Utilities/Database/UserHasPermissions.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { FormatCharges, FormatHeight, FormatAge } from "@Utilities/Strings/Formatters.js";
-import { IsValidPersonHeight, IsValidRobloxUsername } from "@Utilities/Other/Validator.js";
+import { IsValidPersonHeight, IsValidRobloxUsername } from "@Utilities/Other/Validators.js";
 
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
 import GetBookingMugshot from "@Utilities/Other/ThumbToMugshot.js";

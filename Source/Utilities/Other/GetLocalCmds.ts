@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "discord.js";
-import { IsValidCmdObject } from "./Validator.js";
+import { IsValidCmdObject } from "./Validators.js";
 import { GetDirName } from "./Paths.js";
 import GetFiles from "./GetFilesFrom.js";
 import Path from "node:path";

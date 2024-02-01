@@ -1,6 +1,6 @@
 import { EmbedBuilder, SlashCommandSubcommandBuilder } from "discord.js";
 import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import { IsValidShiftTypeName } from "@Utilities/Other/Validator.js";
+import { IsValidShiftTypeName } from "@Utilities/Other/Validators.js";
 import { ErrorMessages } from "@Resources/AppMessages.js";
 import { ExtraTypings } from "@Typings/Utilities/Database.js";
 
