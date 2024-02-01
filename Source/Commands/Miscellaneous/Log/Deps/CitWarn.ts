@@ -1,5 +1,20 @@
+// Dependencies:
+// -------------
 import { SlashCommandSubcommandBuilder } from "discord.js";
-import type { ReporterInfo } from "../Log.js";
+import { EyeColors, HairColors } from "@Resources/ERLCPDColors.js";
+import { ReporterInfo } from "../Log.js";
+
+import ERLCAgeGroups from "@Resources/ERLCAgeGroups.js";
+import AnyCitationCallback from "./Funcs/AnyCitationHandler.js";
+
+const CmdFileLabel = "Commands:Miscellaneous:Log:CitWarn";
+const EyeColorChoices = EyeColors.map((Color) => {
+  return { name: `${Color.name} (${Color.abbreviation})`, value: Color.name };
+});
+
+const HairColorChoices = HairColors.map((Color) => {
+  return { name: `${Color.name} (${Color.abbreviation})`, value: Color.name };
+});
 
 // ---------------------------------------------------------------------------------------
 // Functions:
@@ -8,19 +23,21 @@ import type { ReporterInfo } from "../Log.js";
  * @param Interaction
  * @param UserData
  */
-async function CmdCallback(
+async function CitWrnCmdCallback(
   Interaction: SlashCommandInteraction<"cached">,
-  UserData: ReporterInfo
-) {}
+  CitingOfficer: ReporterInfo
+) {
+  return AnyCitationCallback(Interaction, CitingOfficer, CmdFileLabel);
+}
 
 // ---------------------------------------------------------------------------------------
 // Command structure:
 // ------------------
 const CommandObject = {
-  callback: CmdCallback,
+  callback: CitWrnCmdCallback,
   data: new SlashCommandSubcommandBuilder()
     .setName("citation-warning")
-    .setDescription("Creates a warning citation record for a person.")
+    .setDescription("Creates and logs a traffic warning citation record for a person.")
 
     .addStringOption((Option) =>
       Option.setName("name")
@@ -31,14 +48,64 @@ const CommandObject = {
         .setAutocomplete(true)
     )
     .addStringOption((Option) =>
-      Option.setName("cite-reason")
-        .setDescription("The reason of the cite given.")
-        .setMinLength(5)
+      Option.setName("gender")
+        .setDescription("The gender of the violator; either male or female.")
+        .setRequired(true)
+        .setChoices({ name: "Male", value: "Male" }, { name: "Female", value: "Female" })
+    )
+    .addIntegerOption((Option) =>
+      Option.setName("age")
+        .setDescription("The violator's age group as stated in the license.")
+        .setRequired(true)
+        .setChoices(...ERLCAgeGroups)
+    )
+    .addStringOption((Option) =>
+      Option.setName("height")
+        .setDescription("The violator's height in feet and inches.")
+        .setMinLength(4)
+        .setMaxLength(5)
+        .setRequired(true)
+        .setAutocomplete(true)
+    )
+    .addIntegerOption((Option) =>
+      Option.setName("weight")
+        .setDescription("The violator's weight in pounds (lbs).")
+        .setMinValue(25)
+        .setMaxValue(700)
+        .setRequired(true)
+        .setAutocomplete(true)
+    )
+    .addStringOption((Option) =>
+      Option.setName("eye-color")
+        .setDescription("The violator's eye color.")
+        .setMinLength(3)
+        .setMaxLength(14)
+        .setRequired(true)
+        .setChoices(...EyeColorChoices)
+    )
+    .addStringOption((Option) =>
+      Option.setName("hair-color")
+        .setDescription("The violator's hair color.")
+        .setMinLength(3)
+        .setMaxLength(14)
+        .setRequired(true)
+        .setChoices(...HairColorChoices)
+    )
+    .addIntegerOption((Option) =>
+      Option.setName("license-num")
+        .setDescription("The violator's driving license number.")
+        .setMinValue(99999999)
+        .setMaxValue(999999999999)
+        .setRequired(true)
+    )
+    .addBooleanOption((Option) =>
+      Option.setName("commercial-lic")
+        .setDescription("Whether the driving license is commercial or not.")
         .setRequired(true)
     )
     .addStringOption((Option) =>
       Option.setName("vehicle-plate")
-        .setDescription("The license plate of the violator's car.")
+        .setDescription("The license plate of the violator's vehicle.")
         .setMinLength(3)
         .setMaxLength(7)
         .setRequired(true)
@@ -55,7 +122,7 @@ const CommandObject = {
       Option.setName("vehicle-color")
         .setDescription("The color of the violator's vehicle.")
         .setMinLength(3)
-        .setMaxLength(15)
+        .setMaxLength(30)
         .setRequired(true)
         .setAutocomplete(true)
     ),

@@ -2,6 +2,8 @@ import { type Canvas, createCanvas, loadImage } from "@napi-rs/canvas/index.js";
 import { Embeds } from "@Config/Shared.js";
 import { ImgBB } from "@Config/Secrets.js";
 import Axios from "axios";
+
+let BgCanvas: Canvas | null = null;
 export interface GetBookingMugshotOptions {
   UserThumbURL: string;
   BookingNum: string | number;
@@ -9,40 +11,6 @@ export interface GetBookingMugshotOptions {
   ReturnURL?: boolean;
   /** For choosing the appropriate fallback thumbnail if the user thumbnail image could not be retrieved */
   UserGender?: "Male" | "Female" | 1 | 2;
-}
-
-let BgCanvas: Canvas | null = null;
-
-/**
- * Returns a canvas for the background of the mugshot.
- * @returns The background canvas.
- */
-function GetBackgroundCanvas() {
-  if (BgCanvas) return BgCanvas;
-  BgCanvas = createCanvas(180, 180);
-  const BgCTX = BgCanvas.getContext("2d");
-
-  const StripeCount = 18;
-  const StripeWidth = BgCanvas.width;
-  const StripeHeight = BgCanvas.height / StripeCount;
-
-  for (let i = 0; i < StripeCount; i++) {
-    BgCTX.fillStyle = i % 2 === 0 ? "#2D2D2D" : "#6E6E6E";
-    BgCTX.fillRect(0, i * StripeHeight + 1, StripeWidth, StripeHeight);
-    if (i % 2 === 0) {
-      BgCTX.fillStyle = "#6E6E6E";
-      BgCTX.fillRect(0, i * StripeHeight, StripeWidth, StripeHeight);
-      BgCTX.fillStyle = "#EBEBEB";
-      BgCTX.fillRect(0, i * StripeHeight + 1, StripeWidth, StripeHeight);
-    } else {
-      BgCTX.fillStyle = "#EBEBEB";
-      BgCTX.fillRect(0, i * StripeHeight, StripeWidth, StripeHeight);
-      BgCTX.fillStyle = "#2D2D2D";
-      BgCTX.fillRect(0, i * StripeHeight - 1, StripeWidth, StripeHeight / 3);
-    }
-  }
-
-  return BgCanvas;
 }
 
 /**
@@ -81,7 +49,7 @@ export default async function GetBookingMugshot<AsURL extends boolean | undefine
   ImgCTX.strokeRect(ImgCanvas.width / 1.333333, ImgCanvas.height / 1.090909, 46, 16);
 
   // Draw the booking number text
-  ImgCTX.font = "bold 10px Consolas";
+  ImgCTX.font = "bold 10px Bahnschrift";
   ImgCTX.fillStyle = "#141414";
   ImgCTX.fillText(`#${Options.BookingNum}`, ImgCanvas.width / 1.245, ImgCanvas.height / 1.019);
 
@@ -101,4 +69,36 @@ export default async function GetBookingMugshot<AsURL extends boolean | undefine
   } else {
     return ImgBuffer as any;
   }
+}
+
+/**
+ * Returns a canvas for the background of the mugshot.
+ * @returns The background canvas.
+ */
+function GetBackgroundCanvas() {
+  if (BgCanvas) return BgCanvas;
+  BgCanvas = createCanvas(180, 180);
+  const BgCTX = BgCanvas.getContext("2d");
+
+  const StripeCount = 18;
+  const StripeWidth = BgCanvas.width;
+  const StripeHeight = BgCanvas.height / StripeCount;
+
+  for (let i = 0; i < StripeCount; i++) {
+    BgCTX.fillStyle = i % 2 === 0 ? "#2D2D2D" : "#6E6E6E";
+    BgCTX.fillRect(0, i * StripeHeight + 1, StripeWidth, StripeHeight);
+    if (i % 2 === 0) {
+      BgCTX.fillStyle = "#6E6E6E";
+      BgCTX.fillRect(0, i * StripeHeight, StripeWidth, StripeHeight);
+      BgCTX.fillStyle = "#EBEBEB";
+      BgCTX.fillRect(0, i * StripeHeight + 1, StripeWidth, StripeHeight);
+    } else {
+      BgCTX.fillStyle = "#EBEBEB";
+      BgCTX.fillRect(0, i * StripeHeight, StripeWidth, StripeHeight);
+      BgCTX.fillStyle = "#2D2D2D";
+      BgCTX.fillRect(0, i * StripeHeight - 1, StripeWidth, StripeHeight / 3);
+    }
+  }
+
+  return BgCanvas;
 }

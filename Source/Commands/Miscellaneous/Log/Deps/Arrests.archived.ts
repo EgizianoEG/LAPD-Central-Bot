@@ -34,7 +34,7 @@ import { ExtraTypings } from "@Typings/Utilities/Database.js";
 import { ReporterInfo } from "../Log.js";
 import { UserHasPermsV2 } from "@Utilities/Database/UserHasPermissions.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import { FormatCharges, FormatHeight, FormatAge } from "@Utilities/Strings/Formatter.js";
+import { FormatCharges, FormatHeight, FormatAge } from "@Utilities/Strings/Formatters.js";
 
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
 import GetBookingMugshot from "@Utilities/Other/ThumbToMugshot.js";
@@ -53,7 +53,7 @@ export type CmdOptionsType = {
   AgeGroup: (typeof ERLCAgeGroups)[number]["name"];
   Gender: "Male" | "Female";
   Height: `${number}'${number}"`;
-  Weight: `${number} lbs`;
+  Weight: number;
 };
 
 // ---------------------------------------------------------------------------------------
@@ -200,7 +200,7 @@ async function OnChargesModalSubmission(
       },
       {
         name: "Weight",
-        value: CmdOptions.Weight,
+        value: CmdOptions.Weight + " lbs",
         inline: true,
       },
       {
@@ -348,7 +348,7 @@ async function CmdCallback(Interaction: SlashCommandInteraction<"cached">, Repor
     AgeGroup: FormatAge(Interaction.options.getInteger("arrest-age", true)),
     Gender: Interaction.options.getInteger("gender", true) === 1 ? "Male" : "Female",
     Height: FormatHeight(Interaction.options.getString("height", true)),
-    Weight: Interaction.options.getInteger("weight", true) + " lbs",
+    Weight: Interaction.options.getInteger("weight", true),
   } as CmdOptionsType;
 
   const [, , WasUserFound] = await GetIdByUsername(CmdOptions.Arrestee, true);

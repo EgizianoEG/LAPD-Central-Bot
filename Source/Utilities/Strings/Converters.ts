@@ -9,7 +9,23 @@
  * TitleCase("testing X3")  // returns "Testing x3"
  */
 export function TitleCase(Str: string, Strict: boolean = true): string {
-  const Uppers = ["id", "po", "leo", "adw", "atm", "lapd", "lasd", "fbi", "dea", "lc"];
+  if (!Str) return "";
+
+  const Uppers = [
+    "id",
+    "po",
+    "leo",
+    "adw",
+    "atm",
+    "lapd",
+    "lasd",
+    "fbi",
+    "dea",
+    "lc",
+    "mph",
+    "lbs",
+  ];
+
   const Lowers = [
     "a",
     "an",
@@ -150,4 +166,44 @@ export function PascalToNormal(Str: string): string {
   return Str.replace(/(?<!\s+)[A-Z]/g, " $&")
     .replace(/\s+/, " ")
     .trim();
+}
+
+/**
+ * Attempts converting an input string into snake case format.
+ * @see {@link https://stackoverflow.com/a/69878219 Stack Overflow Reference}
+ * @param Str - The input string to convert.
+ * @returns The input string in snake case format if succeeded.
+ */
+export function SnakeCase(Str: string): string {
+  return SplitCaps(Str)
+    .replace(/\W+/g, " ")
+    .split(/ |\B(?=[A-Z])/)
+    .map((Word) => Word.toLowerCase())
+    .join("_");
+}
+
+/**
+ * Converts a given object property names into a snake case representation.
+ * @param Obj
+ * @returns
+ */
+export function ObjKeysToSnakeCase(Obj: object): object {
+  if (Array.isArray(Obj)) {
+    return Obj.map((v) => ObjKeysToSnakeCase(v));
+  } else if (Obj != null && Obj.constructor === Object) {
+    return Object.keys(Obj).reduce(
+      (result, key) => ({
+        ...result,
+        [SnakeCase(key)]: ObjKeysToSnakeCase(Obj[key]),
+      }),
+      {}
+    );
+  }
+  return Obj;
+}
+
+function SplitCaps(Str: string): string {
+  return Str.replace(/([a-z])([A-Z]+)/g, (_, s1, s2) => s1 + " " + s2)
+    .replace(/([A-Z])([A-Z]+)([^a-zA-Z0-9]*)$/, (_, s1, s2, s3) => s1 + s2.toLowerCase() + s3)
+    .replace(/([A-Z]+)([A-Z][a-z])/g, (_, s1, s2) => s1.toLowerCase() + " " + s2);
 }

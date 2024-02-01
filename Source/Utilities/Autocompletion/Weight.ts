@@ -1,4 +1,4 @@
-import { EscapeRegExp } from "@Utilities/Strings/Formatter.js";
+import { EscapeRegExp } from "@Utilities/Strings/Formatters.js";
 
 const WeightOptions: string[] = [];
 const Cache: Record<string, { name: string; value: string }[]> = {};

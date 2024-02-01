@@ -30,7 +30,7 @@ const ArrestSchema = new Schema({
     type: String,
     trim: true,
     required: true,
-    enum: ["Male", "Female"],
+    enum: ["Male", "Female", "M", "F"],
   },
 
   height: {
@@ -40,7 +40,7 @@ const ArrestSchema = new Schema({
   },
 
   weight: {
-    type: String,
+    type: Number,
     trim: true,
     required: true,
   },

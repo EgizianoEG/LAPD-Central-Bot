@@ -4,6 +4,7 @@
 import {
   User,
   Colors,
+  Message,
   Collection,
   userMention,
   ButtonStyle,
@@ -14,6 +15,7 @@ import {
   ActionRowBuilder,
   TextInputBuilder,
   ButtonInteraction,
+  InteractionResponse,
   UserSelectMenuBuilder,
   ModalSubmitInteraction,
   SlashCommandSubcommandBuilder,
@@ -29,7 +31,8 @@ import { ExtraTypings } from "@Typings/Utilities/Database.js";
 import { ReporterInfo } from "../Log.js";
 import { UserHasPermsV2 } from "@Utilities/Database/UserHasPermissions.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import { FormatCharges, FormatHeight, FormatAge } from "@Utilities/Strings/Formatter.js";
+import { FormatCharges, FormatHeight, FormatAge } from "@Utilities/Strings/Formatters.js";
+import { IsValidPersonHeight, IsValidRobloxUsername } from "@Utilities/Other/Validator.js";
 
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
 import GetBookingMugshot from "@Utilities/Other/ThumbToMugshot.js";
@@ -48,7 +51,7 @@ export type CmdOptionsType = {
   AgeGroup: (typeof ERLCAgeGroups)[number]["name"];
   Gender: "Male" | "Female";
   Height: `${number}'${number}"`;
-  Weight: `${number} lbs`;
+  Weight: number;
 };
 
 // ---------------------------------------------------------------------------------------
@@ -62,6 +65,38 @@ export type CmdOptionsType = {
 function GetBookingNumber(ArrestRecords: ExtraTypings.ArrestRecord[]) {
   const RecordedBookingNums = ArrestRecords.map((Record) => Record._id);
   return RandomString(4, /\d/, RecordedBookingNums);
+}
+
+/**
+ * Handles the validation of the slash command inputs.
+ * @param Interaction
+ * @param CmdOptions
+ * @returns
+ */
+async function HandleCmdOptsValidation(
+  Interaction: SlashCommandInteraction<"cached">,
+  CmdOptions: CmdOptionsType
+): Promise<ReturnType<ErrorEmbed["replyToInteract"]> | null> {
+  if (!IsValidPersonHeight(CmdOptions.Height)) {
+    return new ErrorEmbed()
+      .useErrTemplate("MalformedPersonHeight")
+      .replyToInteract(Interaction, true, true);
+  }
+
+  if (!IsValidRobloxUsername(CmdOptions.Arrestee)) {
+    return new ErrorEmbed()
+      .useErrTemplate("MalformedRobloxUsername", CmdOptions.Arrestee)
+      .replyToInteract(Interaction, true, true);
+  }
+
+  const [, , WasUserFound] = await GetIdByUsername(CmdOptions.Arrestee, true);
+  if (!WasUserFound) {
+    return new ErrorEmbed()
+      .useErrTemplate("NonexistentRobloxUsername", CmdOptions.Arrestee)
+      .replyToInteract(Interaction, true, true);
+  }
+
+  return null;
 }
 
 /**
@@ -192,7 +227,7 @@ async function OnChargesModalSubmission(
       },
       {
         name: "Weight",
-        value: CmdOptions.Weight,
+        value: CmdOptions.Weight + " lbs",
         inline: true,
       },
       {
@@ -330,25 +365,18 @@ async function OnChargesModalSubmission(
  * @param UserData
  */
 async function CmdCallback(Interaction: SlashCommandInteraction<"cached">, Reporter: ReporterInfo) {
-  // Can't defer reply and then show modal.
-  // await Interaction.deferReply({ ephemeral: true }).catch(() => null);
-
   const CmdOptions = {
     Arrestee: Interaction.options.getString("name", true),
-    AgeGroup: FormatAge(Interaction.options.getInteger("arrest-age", true)),
-    Gender: Interaction.options.getInteger("gender", true) === 1 ? "Male" : "Female",
+    Gender: Interaction.options.getString("gender", true),
     Height: FormatHeight(Interaction.options.getString("height", true)),
-    Weight: Interaction.options.getInteger("weight", true) + " lbs",
+    Weight: Interaction.options.getInteger("weight", true),
+    AgeGroup: FormatAge(Interaction.options.getInteger("arrest-age", true)),
   } as CmdOptionsType;
 
-  const [, , WasUserFound] = await GetIdByUsername(CmdOptions.Arrestee, true);
-  if (!WasUserFound) {
-    return new ErrorEmbed()
-      .useErrTemplate("NonexistentRobloxUsername", CmdOptions.Arrestee)
-      .replyToInteract(Interaction, true, true);
-  }
+  const Response = await HandleCmdOptsValidation(Interaction, CmdOptions);
+  if (Response instanceof Message || Response instanceof InteractionResponse) return;
 
-  const ExtraDataModal = new ModalBuilder()
+  const AdditionalDataModal = new ModalBuilder()
     .setTitle("Arrest Report - Additional Information")
     .setCustomId(`arrest-report:${Interaction.user.id}:${Interaction.guildId}:${RandomString(4)}`)
     .setComponents(
@@ -374,11 +402,11 @@ async function CmdCallback(Interaction: SlashCommandInteraction<"cached">, Repor
     );
 
   const ModalFilter = (MS) => {
-    return MS.user.id === Interaction.user.id && MS.customId === ExtraDataModal.data.custom_id;
+    return MS.user.id === Interaction.user.id && MS.customId === AdditionalDataModal.data.custom_id;
   };
 
   try {
-    await Interaction.showModal(ExtraDataModal);
+    await Interaction.showModal(AdditionalDataModal);
     await Interaction.awaitModalSubmit({ time: 5 * 60_000, filter: ModalFilter }).then(
       async (Submission) => {
         await OnChargesModalSubmission(Interaction, CmdOptions, Reporter, Submission);
@@ -409,11 +437,11 @@ const CommandObject = {
         .setMaxLength(20)
         .setAutocomplete(true)
     )
-    .addIntegerOption((Option) =>
+    .addStringOption((Option) =>
       Option.setName("gender")
         .setDescription("The gender of the apprehended suspect; either male or female.")
         .setRequired(true)
-        .addChoices({ name: "Male", value: 1 }, { name: "Female", value: 2 })
+        .addChoices({ name: "Male", value: "Male" }, { name: "Female", value: "Female" })
     )
     .addIntegerOption((Option) =>
       Option.setName("arrest-age")

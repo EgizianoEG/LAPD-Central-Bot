@@ -1,6 +1,6 @@
 import type { Vehicles } from "@Typings/Resources.js";
 
-const Data: Vehicles.VehicleData[] = [
+export const ERLCVehiclesData: Vehicles.VehicleData[] = [
   {
     brand: "Nissan",
     counterpart: "Navara",
@@ -1122,4 +1122,12 @@ const Data: Vehicles.VehicleData[] = [
   },
 ];
 
-export default Data;
+export default ERLCVehiclesData;
+export const AllVehicleModels: (Vehicles.VehicleModel & { brand: string; counterpart: string })[] =
+  [];
+
+for (const Brand of ERLCVehiclesData) {
+  for (const Model of Brand.models) {
+    AllVehicleModels.push({ brand: Brand.brand, counterpart: Brand.counterpart, ...Model });
+  }
+}

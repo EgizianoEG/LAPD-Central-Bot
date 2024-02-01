@@ -1,4 +1,4 @@
-import { EscapeRegExp } from "@Utilities/Strings/Formatter.js";
+import { EscapeRegExp } from "@Utilities/Strings/Formatters.js";
 import GuildModel from "@Models/Guild.js";
 
 const DefaultSuggestion = {

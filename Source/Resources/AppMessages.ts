@@ -200,6 +200,28 @@ export const ErrorMessages = {
     Description:
       "Could not find the typed radio code. Make sure you choose one from the autocomplete list.",
   },
+
+  ACUnknownColor: {
+    Title: "Unknown Color",
+    Description: "Please choose and input a valid color from the autocomplete list provided.",
+  },
+
+  ACUnknownVehicle: {
+    Title: "Unknown Vehicle",
+    Description:
+      "Please choose and input a valid vehicle model from the autocomplete list provided.",
+  },
+
+  MalformedPersonHeight: {
+    Title: "Malformed Person Height",
+    Description: "Please input a valid height in feet and inches (e.g., `5'7\"`).",
+  },
+
+  InvalidLicensePlate: {
+    Title: "Invalid License Plate",
+    Description:
+      "A vehicle license plate must be 3 to 7 characters long and may consist of only letters, numerals, and a single hyphen in between.",
+  },
 };
 
 export const InfoMessages = {

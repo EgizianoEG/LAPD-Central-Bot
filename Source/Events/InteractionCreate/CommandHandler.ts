@@ -18,8 +18,8 @@ import {
 } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import { Discord } from "@Config/Secrets.js";
-import { UnorderedList } from "@Utilities/Strings/Formatter.js";
-import { PascalToNormal } from "@Utilities/Strings/Converter.js";
+import { UnorderedList } from "@Utilities/Strings/Formatters.js";
+import { PascalToNormal } from "@Utilities/Strings/Converters.js";
 import { SendErrorReply } from "@Utilities/Other/SendReply.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import AppError from "@Utilities/Classes/AppError.js";

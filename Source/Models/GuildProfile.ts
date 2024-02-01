@@ -7,7 +7,7 @@ type ProfilePlainDoc = ExtraTypings.GuildProfileDocument;
 type ProfileModelType = Model<ProfilePlainDoc, unknown, ExtraTypings.GuildProfileOverrides>;
 
 const ProfileSchema = new Schema<
-  ExtraTypings.GuildProfileDocument,
+  ProfilePlainDoc,
   ProfileModelType,
   ExtraTypings.GuildProfileOverrides
 >({

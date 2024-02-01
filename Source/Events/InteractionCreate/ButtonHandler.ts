@@ -61,7 +61,7 @@ export default async function ButtonHandler(Client: DiscordClient, Interaction: 
         return;
       }
 
-      if (Interaction.user.id !== OriginalUserId) {
+      if (OriginalUserId && Interaction.user.id !== OriginalUserId) {
         await new UnauthorizedEmbed()
           .useErrTemplate("UnauthorizedInteraction")
           .replyToInteract(Interaction, true, true);

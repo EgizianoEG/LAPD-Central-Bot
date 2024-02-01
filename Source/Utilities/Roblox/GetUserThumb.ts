@@ -1,4 +1,5 @@
 import { APIResponses, APITypes } from "@Typings/Utilities/Roblox.js";
+import GetPlaceholderImgURL from "@Utilities/Other/GetPlaceholderImg.js";
 import Axios from "axios";
 
 const EndpointMapping = {
@@ -73,9 +74,7 @@ export default async function GetUserThumbnail<
     },
   }).then((Resp) => {
     return Resp.data.data.map((ThumbData) => {
-      return ThumbData.state === "Completed"
-        ? ThumbData.imageUrl
-        : `https://placehold.co/${Size}/F7F8F9/202428/${Format}?text=%3F`;
+      return ThumbData.state === "Completed" ? ThumbData.imageUrl : GetPlaceholderImgURL(Size, "?");
     });
   });
 

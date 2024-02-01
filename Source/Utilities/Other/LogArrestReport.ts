@@ -1,6 +1,6 @@
 import { ButtonInteraction, Colors, EmbedBuilder, userMention } from "discord.js";
 import { CmdOptionsType } from "@Cmds/Miscellaneous/Log/Deps/Arrest.js";
-import { FormatUsername } from "@Utilities/Strings/Formatter.js";
+import { FormatUsername } from "@Utilities/Strings/Formatters.js";
 import { Images, Icons } from "@Config/Shared.js";
 import { ExtraTypings } from "@Typings/Utilities/Database.js";
 
@@ -124,7 +124,7 @@ export default async function LogArrestReport(
       },
       {
         name: "Weight",
-        value: ArresteeInfo.Weight,
+        value: ArresteeInfo.Weight + " lbs",
         inline: true,
       },
       {

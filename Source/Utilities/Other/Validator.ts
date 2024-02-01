@@ -1,3 +1,4 @@
+import { FormatHeight } from "@Utilities/Strings/Formatters.js";
 import { SlashCommandBuilder } from "discord.js";
 
 /**
@@ -7,7 +8,7 @@ import { SlashCommandBuilder } from "discord.js";
  * @returns
  */
 export function IsValidRobloxUsername(Str: string): boolean {
-  return !!Str.match(/^(?=^[^_\n]+_?[^_\n]+$)\w{3,20}$/);
+  return !!(!Str.startsWith("_") && !Str.endsWith("_") && Str.match(/^\w{3,20}$/i));
 }
 
 /**
@@ -19,6 +20,25 @@ export function IsValidRobloxUsername(Str: string): boolean {
  */
 export function IsValidShiftTypeName(Str: string): boolean {
   return !!Str.trim().match(/^[\w\-. ]{3,20}$/);
+}
+
+/**
+ * Checks if a given string is a valid license plate by ensuring it does not start or end with
+ * a hyphen and consists of 3 to 7 characters that are either letters, digits, or one hyphen between.
+ * @param {string} Str - A string that represents a license plate.
+ * @returns
+ */
+export function IsValidLicensePlate(Str: string): boolean {
+  return !!(!Str.startsWith("-") && !Str.endsWith("-") && Str.match(/^[A-Z\d-]{3,7}$/i));
+}
+
+/**
+ * Checks if a given string represents a valid height in feet and inches format (5'11") after also using `FormatHeight` function.
+ * @param {string} Str - A string that represents a person's height in feet and inches.
+ * @returns
+ */
+export function IsValidPersonHeight(Str: string): boolean {
+  return !!FormatHeight(Str).match(/^[1-7]'(?:\d|1[01]?)"$/);
 }
 
 /**

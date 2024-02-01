@@ -1,4 +1,4 @@
-import { EscapeRegExp } from "@Utilities/Strings/Formatter.js";
+import { EscapeRegExp } from "@Utilities/Strings/Formatters.js";
 import DummyTexts from "@Resources/SampleTexts.js";
 
 const Cache: Record<string, string[]> = { ".": [] };

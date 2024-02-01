@@ -55,11 +55,11 @@ class BaseEmbed extends EmbedBuilder {
    * @param ephemeral - Either `true` or `false`; whether the reply should be ephemeral (private); defaults to `false`.
    * @param silent - Whether to catch any errors that might occur and ignore them.
    */
-  replyToInteract(
+  async replyToInteract(
     interaction: BaseInteraction & { replied: boolean; reply; followUp; editReply },
     ephemeral: boolean = false,
     silent?: boolean
-  ): Promise<InteractionResponse<boolean>> | Promise<Message<boolean>> {
+  ): Promise<InteractionResponse<boolean> | Message<boolean>> {
     let ReplyMethod: "reply" | "editReply" | "followUp" = "reply";
     let RemoveComponents: boolean = false;
 

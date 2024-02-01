@@ -49,6 +49,7 @@ const ShiftSchema = new Schema<
 
   type: {
     type: String,
+    trim: true,
     default: "Default",
   },
 

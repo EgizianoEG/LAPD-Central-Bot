@@ -1,19 +1,23 @@
 /* eslint-disable sonarjs/cognitive-complexity */
 import { format as FormatStr } from "node:util";
-import { TitleCase } from "./Converter.js";
+import { Citations } from "@Typings/Utilities/Generic.js";
+import { TitleCase } from "./Converters.js";
 import { Vehicles } from "@Typings/Resources.js";
 import ERLCAgeGroups from "@Resources/ERLCAgeGroups.js";
 
 /**
  * Formats an input multiline string of charges into a properly formatted numbered list.
  * @param Input - The input string to format and formalize.
- * @param ReturnAsArray - If the returned value should be as an array or a string.
+ * @param [Ordered=true] - Whether the list should be ordered and number listed or not; defaults to `true`.
+ * @param [ReturnAsArray=true] - If the returned value should be as an array or a string; defaults to `true`.
  * @returns The list of charges either a string or an array depending on the value of `ReturnAsArray` parameter.
  */
-export function ListCharges<ReturnType extends boolean = false>(
+export function ListCharges<ReturnType extends boolean = true>(
   Input: string,
+  Ordered: boolean = true,
   ReturnAsArray?: ReturnType
 ): ReturnType extends true ? string[] : string {
+  ReturnAsArray = (ReturnAsArray === undefined || ReturnAsArray === true) as any;
   const Charges: string[] =
     Input.trim()
       .replace(/[^\S\n\r]+/g, " ")
@@ -39,7 +43,7 @@ export function ListCharges<ReturnType extends boolean = false>(
     return !Charge.match(/^\s*[-+=#*] Statute/i);
   }).map((Charge, Index) => {
     const Modified = Charge.trim().match(/^(?:\d+\W|\*|-|#\d+:?)?\s?(.+)$/)?.[1];
-    return `${Index + 1}. ${Modified}`;
+    return Ordered ? `${Index + 1}. ${Modified}` : Modified;
   });
 
   return ReturnAsArray ? FormattedCharges : (FormattedCharges.join("\n") as any);
@@ -470,7 +474,228 @@ export function AddStatutes(this: any, Charges: Array<string>): Array<string> {
       }
     }
   }
+
   return Charges;
+}
+
+/**
+ * Formats a user input of traffic violations text for a traffic citation to be made.
+ * @param Input - The input text to format and formalize.
+ * @returns An array of formatted traffic violations.
+ */
+export function AddTrafficViolationCodes(
+  this: any,
+  Violations: string[]
+): (Citations.Violation | string)[] {
+  /**
+   * Creates a regular expression pattern that matches any of the given strings.
+   * @param {string[]} Args - A rest parameter of type string[]. It allows the function to accept any number of string arguments.
+   * @returns A combined regular expression object.
+   */
+  const ORRegExp = (...Args: string[]): RegExp => {
+    return new RegExp(Args.join("|"), "i");
+  };
+
+  const ModifiedViolations: (Citations.Violation | string)[] = [];
+  const AddVehCode = FormatStr.bind(this, "%s CVC - %s");
+  const DLRegexStr = /Driv(?:ing|er|er[’']s) License|License|DL/i.source;
+  const Regexes = {
+    DUI: /Driving Under (?:the )?Influence|\bDUI\b|Drunk Driving/i,
+    Jaywalking: /Jaywalking|(?:Unlawful|Illegal) Cross/i,
+    Tailgating: /Tailgating|Following Too Closely|Unsafe Following/i,
+    MSLViolation: /(?:Impeding|Clogging|Obstructing|Blocking|Slowing(?: Down)?) (?:\w* )Traffic/i,
+    UnsafeLaneChange: /(?:Unsafe|Dangerous|Reckless) Lane Change/i,
+
+    Speeding:
+      /Spee*ding|(?:Unsafe|Dangerous|Reckless|Excessive) Spee*d|Going Over (?:the )?(?:Speed|Limit)/i,
+    IllegalParking:
+      /(?:Unlawful|Illegal|Improper)(?:ly)? Parking|Parking (?:in|at) (?:a |an )(?:Prohibited|Red) \w+/i,
+    NoRegistration:
+      /Driving (?:Without|W\/o) (?:\w+ )?Registration|(?:Not Valid|Invalid|No|Not Having) Registration/i,
+
+    DefectiveEquipment: ORRegExp(
+      "Unsafe (?:Vehicle|Car)",
+      "(?:Popped|Blown|Bad|Defective|Damaged) (?:\\w+ )?(?:Wheel|Tyre|Tire)",
+      "(?:Unlawfully|Unlawful|Illegal|Illegally|Broken) Equipped (?:Vehicle|Car)",
+      "(?:Broken|Faulty|Bad|Defective|Damaged|Broken) (?:\\w+ )?(?:Vehicle|Car|Equipment|Light|Tail ?light|Headlight|Brake|Break|Steering)"
+    ),
+
+    SuspendedDL: ORRegExp(
+      `(?:Suspended|Revoked) ${DLRegexStr}`,
+      `${DLRegexStr} (?:Suspended|Revoked)`
+    ),
+
+    FTSAStopSign: ORRegExp(
+      "(?:Fail(?:ed|ing|ure)|Did(?:not|n['’]?t)) (?:to )?Stop at (?:a |an )?Stop \\w+",
+      "(?:Running|Ran|Skipped|Skipping|Not Stopping) (?:\\w* )?(?:a |an )?Stop \\w+"
+    ),
+
+    FTSARedSignal: ORRegExp(
+      "(?:Fail(?:ed|ing|ure)|Did(?:not|n['’]?t)) (?:to )?Stop at (?:a |an )?Red \\w+",
+      "(?:Running|Ran|Skipped|Skipping|Not Stopping) (?:\\w* )?(?:a |an )?Red \\w+"
+    ),
+
+    UnlicensedDriver: ORRegExp(
+      "Unlicensed Driver",
+      `(?:In|Not? )valid ${DLRegexStr}`,
+      `Not having (?:a |an )?${DLRegexStr}`,
+      `(?:No|No[tn][ -]Present) ${DLRegexStr}`,
+      `Fail(?:ed|ing|ure) (?:To )?Renew\\w* ${DLRegexStr}`,
+      `Driving (?:\\w+ )?(?:Without|W/o|W\\o) (?:Possessing)?(?:a |an )?${DLRegexStr}`
+    ),
+
+    FTPDrivingLicense: ORRegExp(
+      `(?:Refus|Fail)(?:ed|ing|ure|e|al)? (?:To )?(?:Present|Show|Display|Give) ${DLRegexStr}`
+    ),
+  };
+
+  for (let i = 0; i < Violations.length; i++) {
+    const Violation = Violations[i];
+
+    // Speeding or going over the speed limit.
+    if (Regexes.Speeding.test(Violation)) {
+      ModifiedViolations[i] = {
+        violation: AddVehCode("2235[012]", Violation),
+        correctable: false,
+        type: "I",
+      };
+      continue;
+    }
+
+    // Minimum speed laws.
+    if (Regexes.MSLViolation.test(Violation)) {
+      ModifiedViolations[i] = {
+        violation: AddVehCode("22400", Violation),
+        correctable: false,
+        type: "I",
+      };
+      continue;
+    }
+
+    // Running a red signal (red light).
+    if (Regexes.FTSARedSignal.test(Violation)) {
+      ModifiedViolations[i] = {
+        violation: AddVehCode("21453", Violation),
+        correctable: false,
+        type: "I",
+      };
+      continue;
+    }
+
+    // ...
+    if (Regexes.UnsafeLaneChange.test(Violation)) {
+      ModifiedViolations[i] = {
+        violation: AddVehCode("22107", Violation),
+        correctable: undefined,
+        type: "I",
+      };
+      continue;
+    }
+
+    // ...
+    if (Regexes.IllegalParking.test(Violation)) {
+      ModifiedViolations[i] = {
+        violation: AddVehCode("22500", Violation),
+        correctable: true,
+        type: "I",
+      };
+      continue;
+    }
+
+    // Failure to Yield - At a stop sign or yield sign.
+    if (Regexes.FTSAStopSign.test(Violation)) {
+      ModifiedViolations[i] = {
+        violation: AddVehCode("22450(a)", Violation),
+        correctable: false,
+        type: "I",
+      };
+      continue;
+    }
+
+    // ...
+    if (Regexes.Tailgating.test(Violation)) {
+      ModifiedViolations[i] = {
+        violation: AddVehCode("21703", Violation),
+        correctable: true,
+        type: "I",
+      };
+      continue;
+    }
+
+    // ...
+    if (Regexes.DefectiveEquipment.test(Violation)) {
+      ModifiedViolations[i] = {
+        violation: AddVehCode("24002", Violation),
+        correctable: true,
+        type: "I",
+      };
+      continue;
+    }
+
+    // ...
+    if (Regexes.Jaywalking.test(Violation)) {
+      ModifiedViolations[i] = {
+        violation: AddVehCode("21955", Violation),
+        correctable: false,
+        type: "I",
+      };
+      continue;
+    }
+
+    // Unlicensed driver or no driver's license present.
+    if (Regexes.UnlicensedDriver.test(Violation)) {
+      ModifiedViolations[i] = {
+        violation: AddVehCode("12500(a)", Violation),
+        correctable: false,
+        type: "I",
+      };
+      continue;
+    }
+
+    // Failing to Present or Display or Give a Driving License to a Peace Officer.
+    if (Regexes.FTPDrivingLicense.test(Violation)) {
+      ModifiedViolations[i] = {
+        violation: AddVehCode("12951(b)", Violation),
+        correctable: true,
+        type: "M",
+      };
+      continue;
+    }
+
+    // ...
+    if (Regexes.SuspendedDL.test(Violation)) {
+      ModifiedViolations[i] = {
+        violation: AddVehCode("14601.1(a)", Violation),
+        correctable: false,
+        type: "M",
+      };
+      continue;
+    }
+
+    // ...
+    if (Regexes.NoRegistration.test(Violation)) {
+      ModifiedViolations[i] = {
+        violation: AddVehCode("4000(a)", Violation),
+        correctable: true,
+        type: "I",
+      };
+      continue;
+    }
+
+    // ...
+    if (Regexes.DUI.test(Violation)) {
+      ModifiedViolations[i] = {
+        violation: AddVehCode("23152(a)", Violation),
+        correctable: false,
+        type: "M",
+      };
+      continue;
+    }
+
+    ModifiedViolations[i] = Violation;
+  }
+
+  return ModifiedViolations;
 }
 
 /**
@@ -480,8 +705,19 @@ export function AddStatutes(this: any, Charges: Array<string>): Array<string> {
  */
 export function FormatCharges(Input: string): string {
   const Titled = TitleCase(Input, true);
-  const Listed = ListCharges(Titled, true);
+  const Listed = ListCharges(Titled, true, true);
   return AddStatutes(Listed).join("\n");
+}
+
+/**
+ * Takes an input string, formats it to title case, lists the violations, and adds traffic violation codes.
+ * @param {string} Input - A string that represents a text of violations.
+ * @returns
+ */
+export function FormatCitViolations(Input: string) {
+  const TitleCased = TitleCase(Input, true);
+  const ListedViolations = ListCharges(TitleCased, false, true);
+  return AddTrafficViolationCodes(ListedViolations);
 }
 
 /**
@@ -495,7 +731,7 @@ export function FormatCharges(Input: string): string {
  */
 export function FormatHeight(Input: string): string {
   const Sanitized = Input.trim().replace(/\s+/g, " ");
-  if (Sanitized.match(/^[1-9]+'(\d|1[01])"$/)) {
+  if (Sanitized.match(/^[1-9]+'(?:\d|1[01]?)"$/)) {
     return Sanitized.match(/^(?:[8-9]|[1-9]\d+)/) ? "7'11\"" : Sanitized;
   }
 
@@ -561,11 +797,13 @@ export function UnorderedList(Input: string | string[]): string {
  * FormatUsername(UserData, true);
  */
 export function FormatUsername(
-  UserData: { name: string; display_name?: string; id?: string | number },
+  UserData: { name: string; display_name?: string; displayName?: string; id?: string | number },
   IncludeId?: boolean
 ): string {
   if (UserData.name) {
-    const Formatted = `${UserData.display_name ?? UserData.name} (@${UserData.name})`;
+    const Formatted = `${UserData.display_name ?? UserData.displayName ?? UserData.name} (@${
+      UserData.name
+    })`;
     if (IncludeId && UserData.id) {
       return `${Formatted} [${UserData.id}]`;
     } else {
