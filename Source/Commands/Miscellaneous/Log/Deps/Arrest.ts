@@ -75,7 +75,8 @@ function GetBookingNumber(ArrestRecords: ExtraTypings.ArrestRecord[]) {
  */
 async function HandleCmdOptsValidation(
   Interaction: SlashCommandInteraction<"cached">,
-  CmdOptions: CmdOptionsType
+  CmdOptions: CmdOptionsType,
+  Reporter: ReporterInfo
 ): Promise<ReturnType<ErrorEmbed["replyToInteract"]> | null> {
   if (!IsValidPersonHeight(CmdOptions.Height)) {
     return new ErrorEmbed()
@@ -89,10 +90,14 @@ async function HandleCmdOptsValidation(
       .replyToInteract(Interaction, true, true);
   }
 
-  const [, , WasUserFound] = await GetIdByUsername(CmdOptions.Arrestee, true);
+  const [ARobloxId, , WasUserFound] = await GetIdByUsername(CmdOptions.Arrestee, true);
   if (!WasUserFound) {
     return new ErrorEmbed()
       .useErrTemplate("NonexistentRobloxUsername", CmdOptions.Arrestee)
+      .replyToInteract(Interaction, true, true);
+  } else if (Reporter.RobloxUserId === ARobloxId) {
+    return new ErrorEmbed()
+      .useErrTemplate("SelfArrestAttempt")
       .replyToInteract(Interaction, true, true);
   }
 
@@ -373,7 +378,7 @@ async function CmdCallback(Interaction: SlashCommandInteraction<"cached">, Repor
     AgeGroup: FormatAge(Interaction.options.getInteger("arrest-age", true)),
   } as CmdOptionsType;
 
-  const Response = await HandleCmdOptsValidation(Interaction, CmdOptions);
+  const Response = await HandleCmdOptsValidation(Interaction, CmdOptions, Reporter);
   if (Response instanceof Message || Response instanceof InteractionResponse) return;
 
   const AdditionalDataModal = new ModalBuilder()

@@ -23,6 +23,12 @@ import {
   FormatCitViolations,
 } from "@Utilities/Strings/Formatters.js";
 
+import {
+  IsValidLicensePlate,
+  IsValidPersonHeight,
+  IsValidRobloxUsername,
+} from "@Utilities/Other/Validators.js";
+
 import { CitationImgDimensions, GetFilledCitation } from "@Utilities/Other/GetFilledCitation.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { EyeColors, HairColors } from "@Resources/ERLCPDColors.js";
@@ -44,11 +50,6 @@ import Dedent from "dedent";
 
 import AppError from "@Utilities/Classes/AppError.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
-import {
-  IsValidLicensePlate,
-  IsValidPersonHeight,
-  IsValidRobloxUsername,
-} from "@Utilities/Other/Validators.js";
 
 const CmdFileLabel = "Commands:Miscellaneous:Log:CitWarn";
 const ColorNames = BrickColors.map((BC) => BC.name);
@@ -90,7 +91,7 @@ export default async function AnyCitationCallback(
     },
   } as Citations.AnyCitationData;
 
-  const ValidationVars = await HandleCmdOptsValidation(Interaction, CitationInfo);
+  const ValidationVars = await HandleCmdOptsValidation(Interaction, CitationInfo, CitingOfficer);
   if (ValidationVars instanceof Message || ValidationVars instanceof InteractionResponse) return;
 
   try {
@@ -270,7 +271,8 @@ function GetAdditionalInputsModal(CmdInteract: SlashCommandInteraction<"cached">
  */
 async function HandleCmdOptsValidation(
   Interaction: SlashCommandInteraction<"cached">,
-  CitationInfo: Citations.CitPartialData
+  CitationInfo: Citations.CitPartialData,
+  CitingOfficer: ReporterInfo
 ): Promise<
   | {
       violator_id: number;
@@ -320,6 +322,10 @@ async function HandleCmdOptsValidation(
   if (!WasUserFound) {
     return new ErrorEmbed()
       .useErrTemplate("NonexistentRobloxUsername", CitationInfo.violator_info.name)
+      .replyToInteract(Interaction, true, true);
+  } else if (CitingOfficer.RobloxUserId === ViolatorID) {
+    return new ErrorEmbed()
+      .useErrTemplate("SelfCitationAttempt")
       .replyToInteract(Interaction, true, true);
   }
 

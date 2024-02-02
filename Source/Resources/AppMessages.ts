@@ -128,7 +128,7 @@ export const ErrorMessages = {
    * @template InputUsername The username provided by the user.
    */
   NonexistentRobloxUsername: {
-    Title: "Hold up!",
+    Title: "Hold Up!",
     Description:
       "The input user, `%s`, cannot be found on Roblox. Please double-check the username and try again.",
   },
@@ -138,7 +138,7 @@ export const ErrorMessages = {
    * @template RobloxUsername The logged in Roblox account's username.
    */
   RobloxUserAlreadyLinked: {
-    Title: "Hold up!",
+    Title: "Hold Up!",
     Description: "You are already logged in as `%s`.\nDid you mean to log out instead?",
   },
 
@@ -146,7 +146,7 @@ export const ErrorMessages = {
    * Roblox account not linked (for logging out)
    */
   LORobloxUserNotLinked: {
-    Title: "Hold on!",
+    Title: "Hold On!",
     Description:
       "To log out of the application, you must be logged in and have linked your Roblox account already.",
   },
@@ -155,7 +155,7 @@ export const ErrorMessages = {
    * Roblox account not linked (for shift management command; "duty manage")
    */
   SMRobloxUserNotLinked: {
-    Title: "Hold on!",
+    Title: "Hold On!",
     Description: "To mange shifts using the application, you must first link your Roblox account.",
   },
 
@@ -163,7 +163,7 @@ export const ErrorMessages = {
    * Roblox account not linked (general usage)
    */
   RobloxUserNotLinked: {
-    Title: "Hold on!",
+    Title: "Hold On!",
     Description: "You must first link your Roblox account to be able to use this command.",
   },
 
@@ -171,7 +171,7 @@ export const ErrorMessages = {
    * Roblox account not in-game (for starting a shift using shift management command; "duty manage")
    */
   SMRobloxUserNotInGame: {
-    Title: "Hold on!",
+    Title: "Hold On!",
     Description:
       "You cannot begin a new shift unless you are online and connected to the game server.",
   },
@@ -221,6 +221,18 @@ export const ErrorMessages = {
     Title: "Invalid License Plate",
     Description:
       "A vehicle license plate must be 3 to 7 characters long and may consist of only letters, numerals, and a single hyphen in between.",
+  },
+
+  SelfArrestAttempt: {
+    Title: "Hold On!",
+    Description:
+      "It appears like you're attempting to file an arrest report or report yourself. Please provide a valid suspect name and try again.",
+  },
+
+  SelfCitationAttempt: {
+    Title: "Hang On!",
+    Description:
+      "The violator name must be someone other than the officer issuing the citation. Please double-check and input the correct violator's name to proceed.",
   },
 };
 
