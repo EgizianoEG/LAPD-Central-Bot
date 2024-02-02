@@ -499,20 +499,32 @@ export function AddTrafficViolationCodes(
   const ModifiedViolations: (Citations.Violation | string)[] = [];
   const AddVehCode = FormatStr.bind(this, "%s CVC - %s");
   const DLRegexStr = /Driv(?:ing|er|er[’']s) License|License|DL/i.source;
+  const UnsafeSynonyms = /Unsafe|Not? Safe|Dangerous|Reckless|Risky/i;
+  const FActionRegex = /(?:Not Using|Fail(?:ing|ure|ed) (?:to )Use|Did(?: not|n['’]?t Use))/i
+    .source;
+
   const Regexes = {
-    DUI: /Driving Under (?:the )?Influence|\bDUI\b|Drunk Driving/i,
+    DUI: /Driving Under (?:the )?Influ[eai]nce|\bDUI\b|Dr[uai]nk Driving|Driving (?:While )?Dr[uai]nk/i,
     Jaywalking: /Jaywalking|(?:Unlawful|Illegal) Cross/i,
     Tailgating: /Tailgating|Following Too Closely|Unsafe Following/i,
-    MSLViolation: /(?:Impeding|Clogging|Obstructing|Blocking|Slowing(?: Down)?) (?:\w* )Traffic/i,
-    UnsafeLaneChange: /(?:Unsafe|Dangerous|Reckless) Lane Change/i,
+    MSLViolation: /(?:Impeding|Clogging|Obstructing|Blocking|Slowing(?: Down)?) (?:\w+ )Traffic/i,
+    SpeedContest: /Speed(?:ing)? Conte[xs]t|(?:Car|Vehicle|Street|Drag|Illegal|Unlawful) Racing/i,
 
+    SidewalkDriving:
+      /(?:Dr[io]v(?:ed?|ing)|Operat(?:ed?|ing)) On (?:\w+ )?(?:Side?walk|Pavement|Footway)/i,
+    NoHazardSignals:
+      /(?:Not Using|Fail(?:ing|ure|ed) (?:to )Use|Did(?: not|n['’]?t Use)) Hazard (?:Signal|Amber|Light)s?\b|Stop(?:ped|ping)? Sudd[eu]nly/i,
+    NoTurningSignal:
+      /(?:Not Using|Fail(?:ing|ure|ed) (?:to )Use|Did(?: not|n['’]?t Use)) Turn(?:ing)? (?:Signal|Amber|Light)s?\b|Not Signaling\b/i,
     Speeding:
       /Spee*ding|(?:Unsafe|Dangerous|Reckless|Excessive) Spee*d|Going Over (?:the )?(?:Speed|Limit)/i,
     IllegalParking:
       /(?:Unlawful|Illegal|Improper)(?:ly)? Parking|Parking (?:in|at) (?:a |an )(?:Prohibited|Red) \w+/i,
     NoRegistration:
-      /Driving (?:Without|W\/o) (?:\w+ )?Registration|(?:Not Valid|Invalid|No|Not Having) Registration/i,
+      /Driving (?:Without|W\/o) (?:\w+ )?Registration|(?:Not Valid|Invalid|No|Not Having) Registration|Unregistered (?:Car|Vehicle|Truck|Sedan)/i,
 
+    UnsafeLaneChange: ORRegExp(`${UnsafeSynonyms} Lane Change`),
+    UnsafePassing: ORRegExp(`${UnsafeSynonyms} (?:\\w+ )?(?:Pass|Overtak)(?:ed?|ing)?`),
     DefectiveEquipment: ORRegExp(
       "Unsafe (?:Vehicle|Car)",
       "(?:Popped|Blown|Bad|Defective|Damaged) (?:\\w+ )?(?:Wheel|Tyre|Tire)",
@@ -526,13 +538,21 @@ export function AddTrafficViolationCodes(
     ),
 
     FTSAStopSign: ORRegExp(
-      "(?:Fail(?:ed|ing|ure)|Did(?:not|n['’]?t)) (?:to )?Stop at (?:a |an )?Stop \\w+",
-      "(?:Running|Ran|Skipped|Skipping|Not Stopping) (?:\\w* )?(?:a |an )?Stop \\w+"
+      "(?:Fail(?:ed|ing|ure)|Did(?: not|n['’]?t)|Ignor(?:e|ed|ing)) (?:to )?Stop(?:ing|ped)? at (?:a |an )?Stop \\w+",
+      "(?:Running|Ran|Skipped|Ignor(?:e|ed|ing)|Skipping|Not Stopping) (?:\\w* )?(?:a |an )?Stop \\w+",
+      "Stop (?:Sign|Signal) Violation"
     ),
 
     FTSARedSignal: ORRegExp(
-      "(?:Fail(?:ed|ing|ure)|Did(?:not|n['’]?t)) (?:to )?Stop at (?:a |an )?Red \\w+",
-      "(?:Running|Ran|Skipped|Skipping|Not Stopping) (?:\\w* )?(?:a |an )?Red \\w+"
+      "(?:Fail(?:ed|ing|ure)|Ignor(?:e|ed|ing)|Did(?:not|n['’]?t)) (?:to )?Stop(?:ing|ped)? at (?:a |an )?Red \\w+",
+      "(?:Running|Ran|Skipped|Ignor(?:e|ed|ing)|Skipping|Not Stopping) (?:\\w* )?(?:a |an )?Red \\w+",
+      "Red (?:Light|Signal) Violation"
+    ),
+
+    NoHeadlights: ORRegExp(
+      "Dr[io]v(?:e|ing) (?:Without|W[/\\]o|With No) (?:Light|Headlight)s?",
+      "(?:Head)lights Not (?:Being )?Used",
+      `${FActionRegex} (?:Head)?lights`
     ),
 
     UnlicensedDriver: ORRegExp(
@@ -582,11 +602,64 @@ export function AddTrafficViolationCodes(
       continue;
     }
 
+    // Not using a turn signal.
+    if (Regexes.NoTurningSignal.test(Violation)) {
+      ModifiedViolations[i] = {
+        violation: AddVehCode("22108", Violation),
+        type: "I",
+      };
+      continue;
+    }
+
+    // ...
+    if (Regexes.NoHazardSignals.test(Violation)) {
+      ModifiedViolations[i] = {
+        violation: AddVehCode("22109", Violation),
+        type: "I",
+      };
+      continue;
+    }
+
+    // ...
+    if (Regexes.NoHeadlights.test(Violation)) {
+      ModifiedViolations[i] = {
+        violation: AddVehCode("24250", Violation),
+        type: "I",
+      };
+      continue;
+    }
+
+    // ...
+    if (Regexes.SidewalkDriving.test(Violation)) {
+      ModifiedViolations[i] = {
+        violation: AddVehCode("21663", Violation),
+        type: "I",
+      };
+      continue;
+    }
+
+    // ...
+    if (Regexes.UnsafePassing.test(Violation)) {
+      ModifiedViolations[i] = {
+        violation: AddVehCode("21750-21759", Violation),
+        type: "I",
+      };
+      continue;
+    }
+
+    // ...
+    if (Regexes.SpeedContest.test(Violation)) {
+      ModifiedViolations[i] = {
+        violation: AddVehCode("23109", Violation),
+        type: "M",
+      };
+      continue;
+    }
+
     // ...
     if (Regexes.UnsafeLaneChange.test(Violation)) {
       ModifiedViolations[i] = {
         violation: AddVehCode("22107", Violation),
-        correctable: undefined,
         type: "I",
       };
       continue;
