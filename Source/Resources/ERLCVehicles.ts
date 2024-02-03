@@ -149,14 +149,25 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
 
   {
     brand: "Audi",
-    counterpart: "Avantismo",
+    counterpart: "Averon",
     models: [
+      {
+        name: "Q8 e-tron",
+        alias: "Anodic",
+        style: "SUV",
+        class: "SUV",
+        category: "Electric",
+        model_year: {
+          org: "2024",
+          alt: "2024",
+        },
+      },
       {
         name: "Q8",
         alias: "Q8",
         style: "SUV",
         class: "SUV",
-        category: "Luxury",
+        category: "Prestige",
         model_year: {
           org: "2022",
           alt: "2022",
@@ -167,7 +178,7 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         alias: "R8",
         style: "Coupe",
         class: "Car",
-        category: "Exotic",
+        category: "Prestige",
         model_year: {
           org: "2017",
           alt: "2017",
@@ -178,7 +189,7 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         alias: "RS3",
         style: "Sedan",
         class: "Car",
-        category: "Luxury",
+        category: "Prestige",
         model_year: {
           org: "2020",
           alt: "2020",
@@ -189,7 +200,7 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         alias: "S5 Cabriolet",
         style: "Coupe",
         class: "Car",
-        category: "Luxury",
+        category: "Prestige",
         model_year: {
           org: "2010",
           alt: "2010",
@@ -203,14 +214,43 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
     counterpart: "BKM",
     models: [
       {
+        name: "i8 Roadster",
+        alias: "Risen Roadster",
+        style: "Convertible",
+        class: "SUV",
+        category: "Electric",
+        model_year: {
+          org: "2020",
+          alt: "2020",
+        },
+      },
+      {
         name: "X5 M50i",
         alias: "Munich",
         style: "SUV",
         class: "SUV",
-        category: "Luxury",
+        category: "Prestige",
         model_year: {
           org: "2020",
           alt: "2020",
+        },
+      },
+    ],
+  },
+
+  {
+    brand: "Tesla",
+    counterpart: "Celestial",
+    models: [
+      {
+        name: "Model Y",
+        alias: "Type-6",
+        style: "SUV",
+        class: "SUV",
+        category: "Electric",
+        model_year: {
+          org: "2020",
+          alt: "2023",
         },
       },
     ],
@@ -225,7 +265,7 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         alias: "Executive",
         style: "Sedan",
         class: "Car",
-        category: "Luxury",
+        category: "Prestige",
         model_year: {
           org: "2021",
           alt: "2021",
@@ -236,7 +276,7 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         alias: "Vierturig",
         style: "Sedan",
         class: "Car",
-        category: "Luxury",
+        category: "Prestige",
         model_year: {
           org: "2021",
           alt: "2021",
@@ -375,7 +415,7 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         alias: "Corbeta TZ",
         style: "Coupe",
         class: "Car",
-        category: "Exotic",
+        category: "Prestige",
         model_year: {
           org: "2014",
           alt: "2014",
@@ -386,7 +426,7 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         alias: "Corbeta 8",
         style: "Coupe",
         class: "Car",
-        category: "Exotic",
+        category: "Prestige",
         model_year: {
           org: "2023",
           alt: "2023",
@@ -455,6 +495,28 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
     counterpart: "Falcon",
     models: [
       {
+        name: "Mustang Mach-E",
+        alias: "eStallion",
+        style: "SUV",
+        class: "SUV",
+        category: "Electric",
+        model_year: {
+          org: "2021",
+          alt: "2024",
+        },
+      },
+      {
+        name: "F-150 Lightning",
+        alias: "Advance Bolt",
+        style: "Pickup",
+        class: "Truck",
+        category: "Electric",
+        model_year: {
+          org: "2024",
+          alt: "2024",
+        },
+      },
+      {
         name: "F-150",
         alias: "Advance",
         style: "Pickup",
@@ -503,7 +565,7 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         alias: "Heritage",
         style: "Coupe",
         class: "Car",
-        category: "Exotic",
+        category: "Prestige",
         model_year: {
           org: "2020",
           alt: "2021",
@@ -602,7 +664,7 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         alias: "Traveller",
         style: "SUV",
         class: "SUV",
-        category: "Luxury",
+        category: "Prestige",
         model_year: {
           org: "2022",
           alt: "2022",
@@ -704,7 +766,7 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         alias: "Ettore",
         style: "Coupe",
         class: "Car",
-        category: "Exotic",
+        category: "Prestige",
         model_year: {
           org: "2020",
           alt: "2020",
@@ -722,7 +784,7 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         alias: "650S",
         style: "Coupe",
         class: "Car",
-        category: "Exotic",
+        category: "Prestige",
         model_year: {
           org: "2016",
           alt: "2016",
@@ -791,7 +853,7 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         alias: "F8",
         style: "Coupe",
         class: "Car",
-        category: "Exotic",
+        category: "Prestige",
         model_year: {
           org: "2020",
           alt: "2020",
@@ -809,7 +871,7 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         alias: "LTS",
         style: "Sedan",
         class: "Car",
-        category: "Luxury",
+        category: "Prestige",
         model_year: {
           org: "2010",
           alt: "2010",
@@ -820,7 +882,7 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         alias: "Vault",
         style: "SUV",
         class: "SUV",
-        category: "Luxury",
+        category: "Prestige",
         model_year: {
           org: "2020",
           alt: "2020",
@@ -831,7 +893,7 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         alias: "LTS5-V Blackwing",
         style: "Sedan",
         class: "Car",
-        category: "Luxury",
+        category: "Prestige",
         model_year: {
           org: "2022",
           alt: "2023",
@@ -842,7 +904,7 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         alias: "Limo",
         style: "Sedan",
         class: "Car",
-        category: "Luxury",
+        category: "Prestige",
         model_year: {
           org: "2018",
           alt: "2018",
@@ -860,7 +922,7 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         alias: "Jalapeno Turbo",
         style: "SUV",
         class: "SUV",
-        category: "Luxury",
+        category: "Prestige",
         model_year: {
           org: "2022",
           alt: "2022",
@@ -878,7 +940,7 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         alias: "Experience",
         style: "Coupe",
         class: "Car",
-        category: "Exotic",
+        category: "Prestige",
         model_year: {
           org: "2021",
           alt: "2021",
@@ -932,7 +994,7 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         alias: "Champion",
         style: "Sedan",
         class: "Car",
-        category: "Luxury",
+        category: "Prestige",
         model_year: {
           org: "2005",
           alt: "2005",
@@ -968,7 +1030,7 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         alias: "Carbon",
         style: "Coupe",
         class: "Car",
-        category: "Exotic",
+        category: "Prestige",
         model_year: {
           org: "2011",
           alt: "2011",
@@ -986,7 +1048,7 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         alias: "Traveller",
         style: "SUV",
         class: "SUV",
-        category: "Luxury",
+        category: "Prestige",
         model_year: {
           org: "2023",
           alt: "2022",

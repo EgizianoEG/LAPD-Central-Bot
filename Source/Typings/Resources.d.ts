@@ -25,8 +25,8 @@ export namespace Vehicles {
     /** The in-game alias of the vehicle model */
     alias: string;
 
-    /** The category of the vehicle in the game (e.g., Regular, Luxury) */
-    category: "Regular" | "Luxury" | "Exotic" | "Classic";
+    /** The category/type of the vehicle in the game (e.g., Regular, Prestige) */
+    category: "Regular" | "Prestige" | "Electric" | "Classic";
 
     /** The class of the vehicle in the game (e.g., Car, SUV) */
     class: "Car" | "SUV" | "Truck" | "Industrial";
