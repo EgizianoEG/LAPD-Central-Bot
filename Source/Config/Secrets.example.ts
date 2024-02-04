@@ -26,7 +26,7 @@ export const MongoDB: Secrets.MongoDB = {
 };
 
 export const ImgBB: Secrets.ImgBB = {
-  API_Key: "33cf14c3eb75cb58b36b7fca231da47f",
+  API_Key: Env.IMGBB_API_KEY ?? "33cf14c3eb75cb58b36b7fca231da47f",
 };
 
 export const OpenWeather: Secrets.OpenWeather = {
