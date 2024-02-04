@@ -4,11 +4,21 @@ import { GetDirName } from "@Utilities/Other/Paths.js";
 
 import Path from "node:path";
 import Chalk from "chalk";
+import Express from "express";
 import GetFiles from "@Utilities/Other/GetFilesFrom.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 console.log(Chalk.grey("================================================"));
 // ----------------------------------------------------------------------------------
 
+const ExpressApp = Express();
+ExpressApp.get("/", (_, res) => {
+  res.send("OK");
+});
+const ExpressServer = ExpressApp.listen(10000, () =>
+  console.log(`Express app listening on port ${10000}!`)
+);
+
+// ----------------------------------------------------------------------------------
 export const App = new Client({
   intents: [
     //
