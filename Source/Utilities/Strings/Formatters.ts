@@ -499,7 +499,7 @@ export function AddTrafficViolationCodes(
   const ModifiedViolations: (Citations.Violation | string)[] = [];
   const AddVehCode = FormatStr.bind(this, "%s CVC - %s");
   const DLRegexStr = /Driv(?:ing|er|er[’']s) License|License|DL/i.source;
-  const UnsafeSynonyms = /Unsafe|Not? Safe|Dangerous|Reckless|Risky/i;
+  const UnsafeSynonyms = /Unsafe|Not? Safe|Dangerous|Reckless|Risky/i.source;
   const FActionRegex = /(?:Not Using|Fail(?:ing|ure|ed) (?:to )Use|Did(?: not|n['’]?t Use))/i
     .source;
 
@@ -550,7 +550,7 @@ export function AddTrafficViolationCodes(
     ),
 
     NoHeadlights: ORRegExp(
-      "Dr[io]v(?:e|ing) (?:Without|W[/\\]o|With No) (?:Light|Headlight)s?",
+      "Dr[io]v(?:e|ing) (?:Without|W[/\\\\]o|With No) (?:Light|Headlight)s?",
       "(?:Head)lights Not (?:Being )?Used",
       `${FActionRegex} (?:Head)?lights`
     ),

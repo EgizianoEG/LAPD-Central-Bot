@@ -1,9 +1,7 @@
 import { createCanvas, loadImage } from "@napi-rs/canvas/index.js";
-import { GetDirName } from "./Paths.js";
 import { Citations } from "@Typings/Utilities/Generic.js";
 import { ImgBB } from "@Config/Secrets.js";
 
-import Path from "node:path";
 import Axios from "axios";
 import GetPlaceholderImgURL from "./GetPlaceholderImg.js";
 
