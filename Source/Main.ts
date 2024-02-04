@@ -10,13 +10,14 @@ import AppLogger from "@Utilities/Classes/AppLogger.js";
 console.log(Chalk.grey("================================================"));
 // ----------------------------------------------------------------------------------
 
+const EAppPort = process.env.PORT ?? 10_000;
 const ExpressApp = Express();
-ExpressApp.get("/", (_, res) => {
-  res.send("OK");
+ExpressApp.get("/", (_, Res) => {
+  Res.setHeader("Content-Type", "application/json");
+  Res.end(JSON.stringify({ message: "OK" }, null, 2));
 });
-const ExpressServer = ExpressApp.listen(10000, () =>
-  console.log(`Express app listening on port ${10000}!`)
-);
+
+ExpressApp.listen(EAppPort, () => AppLogger.info("Express app listening on port %o.", EAppPort));
 
 // ----------------------------------------------------------------------------------
 export const App = new Client({
