@@ -12,13 +12,8 @@ export enum CitationImgDimensions {
   Width = 700,
 }
 
-const FineTemplate = await loadImage(
-  Path.join(GetDirName(import.meta.url), "../../Resources/Imgs/TFCTemplate.jpg")
-);
-
-const WarnTemplate = await loadImage(
-  Path.join(GetDirName(import.meta.url), "../../Resources/Imgs/TWCTemplate.jpg")
-);
+const FineTemplate = await loadImage("https://i.ibb.co/nC2ncjH/TFCTemplate.jpg");
+const WarnTemplate = await loadImage("https://i.ibb.co/x5b9vhS/TWCTemplate.jpg");
 
 export async function GetFilledCitation<
   Type extends "Warning" | "Fine",

@@ -27,14 +27,14 @@ App.buttonListeners = new Collection();
   const Files = GetFiles(DirPath);
 
   for (const File of Files) {
-    await import(File).then(async (Module) => {
+    await import(File).then((Module) => {
       if (typeof Module.default === "function") {
-        await Module.default(App);
+        return Module.default(App);
       }
     });
   }
 
-  App.login(DiscordSecrets.BotToken)
+  await App.login(DiscordSecrets.BotToken)
     .then(() => {
       if (!App.user) throw new Error("`App.user` is not accessible.");
       AppLogger.info({
