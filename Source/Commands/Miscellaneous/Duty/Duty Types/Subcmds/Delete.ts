@@ -23,7 +23,7 @@ import Dedent from "dedent";
 import GetShiftTypes from "@Utilities/Database/GetShiftTypes.js";
 import DeleteShiftType from "@Utilities/Database/DeleteShiftType.js";
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
-import HandleButtonCollectorExceptions from "@Utilities/Other/HandleButtonCollectorExceptions.js";
+import HandleActionCollectorExceptions from "@Utilities/Other/HandleButtonCollectorExceptions.js";
 
 // ---------------------------------------------------------------------------------------
 // Functions:
@@ -162,7 +162,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
         });
       }
     })
-    .catch((Err) => HandleButtonCollectorExceptions(Err, DisablePrompt));
+    .catch((Err) => HandleActionCollectorExceptions(Err, DisablePrompt));
 }
 
 // ---------------------------------------------------------------------------------------

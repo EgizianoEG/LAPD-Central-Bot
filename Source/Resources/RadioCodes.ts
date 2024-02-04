@@ -1057,7 +1057,7 @@ export const LiteralCodes: CodeType[] = [
 
 // ---------------------------------------------------------------------------------------
 // NOTE:
-// LAPD does is not using the Ten or Eleven Codes like other agencies (at least not usually), but plain English.
+// LAPD does not use the Ten or Eleven Codes like other agencies (at least not usually), but plain English.
 // Sources include:
 // https://qr.ae/pK3mvq
 // https://www.reddit.com/r/lapd/comments/osuqbv

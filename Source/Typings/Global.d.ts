@@ -1,6 +1,7 @@
 import type * as DiscordJSMask from "discord.js";
 import type * as MongooseMask from "mongoose";
 import type * as UtilityTypesMask from "utility-types";
+import type { ExtraTypings } from "./Utilities/Database.js";
 import type {
   SlashCommandSubcommandsOnlyBuilder,
   SlashCommandSubcommandBuilder,
@@ -52,7 +53,9 @@ export interface CommandObjectOptions {
   cooldown?: number;
 
   /** The required user permissions to run this command */
-  userPerms?: PermissionResolvable[];
+  userPerms?:
+    | PermissionResolvable[]
+    | UtilityTypesMask.DeepPartial<ExtraTypings.UserPermissionsConfig>;
 
   /** Bot permissions that are required to run this command */
   botPerms?: PermissionResolvable[];
@@ -64,6 +67,7 @@ declare global {
   export import UtilityTypes = UtilityTypesMask;
 
   type DiscordClient = Client<true>;
+  type SlashCommandWithOptions = Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">;
   type SlashCommandInteraction<Cached extends CacheType = CacheType> =
     ChatInputCommandInteraction<Cached>;
 

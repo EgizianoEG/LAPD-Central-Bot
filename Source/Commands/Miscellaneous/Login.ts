@@ -27,7 +27,7 @@ import IsUserLoggedIn from "@Utilities/Database/IsUserLoggedIn.js";
 import GetIdByUsername from "@Utilities/Roblox/GetIdByUsername.js";
 import AutocompleteUsername from "@Utilities/Autocompletion/Username.js";
 import UpdateLinkedRobloxUser from "@Utilities/Database/UpdateLinkedUser.js";
-import HandleButtonCollectorExceptions from "@Utilities/Other/HandleButtonCollectorExceptions.js";
+import HandleActionCollectorExceptions from "@Utilities/Other/HandleButtonCollectorExceptions.js";
 
 // ---------------------------------------------------------------------------------------
 // Functions:
@@ -179,7 +179,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
           .replyToInteract(ButtonInteract, true);
       }
     })
-    .catch((Err) => HandleButtonCollectorExceptions(Err, DisablePrompt));
+    .catch((Err) => HandleActionCollectorExceptions(Err, DisablePrompt));
 }
 
 /**

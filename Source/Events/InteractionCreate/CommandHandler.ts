@@ -21,6 +21,8 @@ import { Discord } from "@Config/Secrets.js";
 import { UnorderedList } from "@Utilities/Strings/Formatters.js";
 import { PascalToNormal } from "@Utilities/Strings/Converters.js";
 import { SendErrorReply } from "@Utilities/Other/SendReply.js";
+
+import UserHasPerms from "@Utilities/Database/UserHasPermissions.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import AppError from "@Utilities/Classes/AppError.js";
 
@@ -180,38 +182,47 @@ function HandleDevOnlyCommands(
  * @param CommandObject
  * @param Interaction
  */
-function HandleUserPermissions(
+async function HandleUserPermissions(
   CommandObject: SlashCommandObject,
   Interaction: ChatInputCommandInteraction
 ) {
   if (Interaction.replied || !Interaction.inCachedGuild()) return;
-  if (!CommandObject.options?.userPerms?.length) {
+  if (
+    !CommandObject.options?.userPerms ||
+    (Array.isArray(CommandObject.options?.userPerms) && !CommandObject.options?.userPerms.length)
+  ) {
     return;
   }
 
-  const MissingPerms: string[] = [];
-  for (const Permission of CommandObject.options.userPerms) {
-    if (!Interaction.member.permissions.has(Permission)) {
-      const LiteralPerm =
-        Object.keys(PermissionFlagsBits).find((Key) => PermissionFlagsBits[Key] === Permission) ??
-        "[Unknown]";
-      MissingPerms.push(PascalToNormal(LiteralPerm));
+  if (Array.isArray(CommandObject.options.userPerms)) {
+    const MissingPerms: string[] = [];
+    for (const Permission of CommandObject.options.userPerms) {
+      if (!Interaction.member.permissions.has(Permission)) {
+        const LiteralPerm =
+          Object.keys(PermissionFlagsBits).find((Key) => PermissionFlagsBits[Key] === Permission) ??
+          "[Unknown]";
+        MissingPerms.push(PascalToNormal(LiteralPerm));
+      }
     }
-  }
 
-  if (MissingPerms.length) {
-    const Plural = MissingPerms.length === 1 ? "" : "s";
-    return Interaction.reply({
-      ephemeral: true,
-      embeds: [
-        new UnauthorizedEmbed().setDescription(
-          "Missing user permission%s.\nYou do not have the following permission%s to run this command:\n%s",
-          Plural,
-          Plural,
-          UnorderedList(MissingPerms)
-        ),
-      ],
-    });
+    if (MissingPerms.length) {
+      const Plural = MissingPerms.length === 1 ? "" : "s";
+      return Interaction.reply({
+        ephemeral: true,
+        embeds: [
+          new UnauthorizedEmbed().setDescription(
+            "Missing user permission%s.\nYou do not have the following permission%s to run this command:\n%s",
+            Plural,
+            Plural,
+            UnorderedList(MissingPerms)
+          ),
+        ],
+      });
+    }
+  } else if (!(await UserHasPerms(Interaction, CommandObject.options.userPerms))) {
+    return new UnauthorizedEmbed()
+      .setDescription("You do not have the necessary app permissions to utilize this command.")
+      .replyToInteract(Interaction, true, true);
   }
 }
 

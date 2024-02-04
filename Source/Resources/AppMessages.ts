@@ -234,6 +234,56 @@ export const ErrorMessages = {
     Description:
       "The violator name must be someone other than the officer issuing the citation. Please double-check and input the correct violator's name to proceed.",
   },
+
+  UnknownConfigTopic: {
+    Title: "Error",
+    Description: "An unknown configuration topic was received.",
+  },
+
+  GuildConfigNotFound: {
+    Title: "Guild Configuration Not Found",
+    Description: "Something went wrong and the guild's current configuration could not be fetched.",
+  },
+
+  InvalidGuildChannelFormat: {
+    Title: "Malformed Format",
+    Description:
+      "Kindly provide a valid channel format that consists of a server ID followed by a channel ID, and both are separated by a colon (:).",
+  },
+
+  /** For specifying citations/arrests external/outside log channels */
+  NotJoinedInGuild: {
+    Title: "Not Joined In Server",
+    Description:
+      "You cannot set up an external logging channel on a server on which you are not joined.",
+  },
+
+  /** For specifying citations/arrests external/outside log channels */
+  InsufficientAdminPerms: {
+    Title: "Insufficient Admin Perms",
+    Description:
+      "You lack administrative access to that server to configure one of its channels as an external logging channel. You must be an administrator on that server to proceed.",
+  },
+
+  /**
+   * For specifying citations/arrests external/outside log channels
+   * @template {String} GuildId The guild identifier provided.
+   */
+  DiscordGuildNotFound: {
+    Title: "Server Not Found",
+    Description:
+      "The server with the ID `%s` is either not found, or the application does not have access to it.",
+  },
+
+  /**
+   * For specifying citations/arrests external/outside log channels
+   * @template {String} ChannelId The channel identifier provided.
+   */
+  DiscordChannelNotFound: {
+    Title: "Channel Not Found",
+    Description:
+      "The channel with the `%s` ID couldn't be found on the specified server, or the channel is inaccessible by the application.",
+  },
 };
 
 export const InfoMessages = {
@@ -242,5 +292,19 @@ export const InfoMessages = {
     Title: "Timed Out",
     Description:
       "It looks like this process/prompt has timed out. Kindly reinstate if you'd like to continue.",
+  },
+
+  /**
+   * @template {String} ConfigurationTopic
+   */
+  ConfigTopicNoChangesMade: {
+    Title: "No Changes Made",
+    Description: "There have been no alterations to the %s configuration of the app.",
+  },
+
+  TimedOutConfigPrompt: {
+    Title: "Timed Out",
+    Description:
+      "This configuration prompt has timed out. Kindly rerun the configuration command to continue the process.",
   },
 };

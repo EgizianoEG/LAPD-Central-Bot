@@ -39,7 +39,7 @@ import { TitleCase } from "@Utilities/Strings/Converters.js";
 import { Citations } from "@Typings/Utilities/Generic.js";
 import { Vehicles } from "@Typings/Resources.js";
 
-import HandleButtonCollectorExceptions from "@Utilities/Other/HandleButtonCollectorExceptions.js";
+import HandleActionCollectorExceptions from "@Utilities/Other/HandleButtonCollectorExceptions.js";
 import GetPlaceholderImgURL from "@Utilities/Other/GetPlaceholderImg.js";
 import LogTrafficCitation from "@Utilities/Other/LogCitation.js";
 import GetIdByUsername from "@Utilities/Roblox/GetIdByUsername.js";
@@ -441,7 +441,7 @@ async function OnModalSubmission(
     filter: (BI) => BI.user.id === CmdInteract.user.id,
     componentType: ComponentType.Button,
     time: 5 * 60_000,
-  }).catch((Err) => HandleButtonCollectorExceptions(Err, DisablePrompt));
+  }).catch((Err) => HandleActionCollectorExceptions(Err, DisablePrompt));
 
   try {
     if (!ButtonResponse) return;

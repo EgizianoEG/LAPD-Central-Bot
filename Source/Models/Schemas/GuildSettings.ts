@@ -23,8 +23,9 @@ const GuildSettings = new Schema({
 
   // The channel IDs for logging particular actions and data
   // (citations, arrests, and shift actions like starting a new shift)
-  // For citations and arrests, the format must be in the following format:
-  // [Joined guild Id]:[Available channel's Id In that guild]
+  // For citations and arrests, the format must be in the following formats:
+  // - [Joined guild Id]:[Available channel's Id In that guild] for outside channels;
+  // - [Channel Id] for local channels (where the app is configured).
   // Which will allow the bot to log to multiple channels in different guilds (maximum of two).
   log_channels: {
     _id: false,

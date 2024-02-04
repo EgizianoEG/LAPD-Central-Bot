@@ -14,7 +14,7 @@ import { SendErrorReply } from "@Utilities/Other/SendReply.js";
 import { IsValidShiftTypeName } from "@Utilities/Other/Validators.js";
 import { InfoEmbed, WarnEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
-import HandleButtonCollectorExceptions from "@Utilities/Other/HandleButtonCollectorExceptions.js";
+import HandleActionCollectorExceptions from "@Utilities/Other/HandleButtonCollectorExceptions.js";
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
 import ShiftActionLogger from "@Utilities/Classes/ShiftActionLogger.js";
 import HumanizeDuration from "humanize-duration";
@@ -127,7 +127,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
           .replyToInteract(ButtonInteract);
       }
     })
-    .catch((Err) => HandleButtonCollectorExceptions(Err, DisablePrompt));
+    .catch((Err) => HandleActionCollectorExceptions(Err, DisablePrompt));
 }
 
 // ---------------------------------------------------------------------------------------

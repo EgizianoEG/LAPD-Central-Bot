@@ -1,12 +1,13 @@
 import {
   Message,
-  EmbedBuilder,
   EmbedData,
+  EmbedBuilder,
   BaseInteraction,
   InteractionResponse,
   CommandInteraction,
   ButtonInteraction,
 } from "discord.js";
+
 import { ErrorMessages, InfoMessages } from "@Resources/AppMessages.js";
 import { format as FormatString } from "node:util";
 import SharedConfig from "@Config/Shared.js";
@@ -32,9 +33,15 @@ class BaseEmbed extends EmbedBuilder {
    * @returns The modified instance of the error embed.
    */
   useErrTemplate(templateName: keyof typeof ErrorMessages, ...args: any[]) {
-    return super
-      .setTitle(ErrorMessages[templateName].Title)
-      .setDescription(FormatString(ErrorMessages[templateName].Description, ...args));
+    if (ErrorMessages[templateName].Description.match(/%[scdjifoO%]/)) {
+      return super
+        .setTitle(ErrorMessages[templateName].Title)
+        .setDescription(FormatString(ErrorMessages[templateName].Description, ...args));
+    } else {
+      return super
+        .setTitle(ErrorMessages[templateName].Title)
+        .setDescription(ErrorMessages[templateName].Description);
+    }
   }
 
   /**
@@ -44,9 +51,15 @@ class BaseEmbed extends EmbedBuilder {
    * @returns The modified instance of the info embed.
    */
   useInfoTemplate(templateName: keyof typeof InfoMessages, ...args: any[]) {
-    return super
-      .setTitle(InfoMessages[templateName].Title)
-      .setDescription(FormatString(InfoMessages[templateName].Description, ...args));
+    if (InfoMessages[templateName].Description.match(/%[scdjifoO%]/)) {
+      return super
+        .setTitle(InfoMessages[templateName].Title)
+        .setDescription(FormatString(InfoMessages[templateName].Description, ...args));
+    } else {
+      return super
+        .setTitle(InfoMessages[templateName].Title)
+        .setDescription(InfoMessages[templateName].Description);
+    }
   }
 
   /**
@@ -58,20 +71,27 @@ class BaseEmbed extends EmbedBuilder {
   async replyToInteract(
     interaction: BaseInteraction & { replied: boolean; reply; followUp; editReply },
     ephemeral: boolean = false,
-    silent?: boolean
+    silent?: boolean,
+    replyMethod?: "reply" | "editReply" | "followUp"
   ): Promise<InteractionResponse<boolean> | Message<boolean>> {
-    let ReplyMethod: "reply" | "editReply" | "followUp" = "reply";
+    let ReplyMethod = replyMethod ?? "reply";
     let RemoveComponents: boolean = false;
 
-    if (interaction instanceof CommandInteraction && interaction.deferred)
+    if (
+      !replyMethod &&
+      (interaction instanceof CommandInteraction || interaction instanceof ButtonInteraction) &&
+      (interaction.deferred || interaction.replied)
+    ) {
       ReplyMethod = "editReply";
-    else if (interaction instanceof ButtonInteraction && interaction.deferred)
-      ReplyMethod = "editReply";
-    else if (interaction.replied) ReplyMethod = "followUp";
+    }
 
     // If the reply is about error messages, removing components of a message is necessary
     // (only if the reply method is 'edit' or 'editReply')
-    if (this.data.description?.match(/error/) || this.data.title?.match(/error/)) {
+    if (
+      this.data.description?.match(/error/) ||
+      this.data.title?.match(/error/) ||
+      interaction.replied
+    ) {
       RemoveComponents = true;
     }
 
@@ -81,10 +101,17 @@ class BaseEmbed extends EmbedBuilder {
       content: RemoveComponents ? "" : undefined,
       components: RemoveComponents ? [] : undefined,
       files: RemoveComponents ? [] : undefined,
-    }).catch((err: UtilityTypes.Class<Error>) => {
-      if (silent) return null;
-      else throw err;
-    });
+    })
+      .catch(() => {
+        return interaction.followUp({
+          ephemeral,
+          embeds: [this],
+        });
+      })
+      .catch((err: UtilityTypes.Class<Error>) => {
+        if (silent) return null;
+        else throw err;
+      });
   }
 }
 

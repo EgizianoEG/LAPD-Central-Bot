@@ -1,4 +1,4 @@
-export default async function HandleButtonCollectorExceptions(
+export default async function HandleActionCollectorExceptions(
   Err: unknown,
   PromptDisabler: () => Promise<any> = () => Promise.resolve()
 ) {
