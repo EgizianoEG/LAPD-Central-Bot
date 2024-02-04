@@ -8,16 +8,6 @@ import Express from "express";
 import GetFiles from "@Utilities/Other/GetFilesFrom.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 console.log(Chalk.grey("================================================"));
-// ----------------------------------------------------------------------------------
-
-const EAppPort = process.env.PORT ?? 10_000;
-const ExpressApp = Express();
-ExpressApp.get("/", (_, Res) => {
-  Res.setHeader("Content-Type", "application/json");
-  Res.end(JSON.stringify({ message: "OK" }, null, 2));
-});
-
-ExpressApp.listen(EAppPort, () => AppLogger.info("Express app listening on port %o.", EAppPort));
 
 // ----------------------------------------------------------------------------------
 export const App = new Client({
@@ -61,3 +51,14 @@ App.buttonListeners = new Collection();
       });
     });
 })();
+
+// ----------------------------------------------------------------------------------
+
+const EAppPort = process.env.PORT ?? 10_000;
+const ExpressApp = Express();
+ExpressApp.get("/", (_, Res) => {
+  Res.setHeader("Content-Type", "application/json");
+  Res.end(JSON.stringify({ message: "OK", client_ready: App.isReady() }, null, 2));
+});
+
+ExpressApp.listen(EAppPort, () => AppLogger.info("Express app listening on port %o.", EAppPort));
