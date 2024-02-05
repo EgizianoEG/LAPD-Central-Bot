@@ -182,6 +182,7 @@ const CitationSchema = new Schema<CitationPlainDoc, CitationModelType>({
       lic_num: {
         type: String,
         required: true,
+        uppercase: true,
       },
       year: {
         type: String,

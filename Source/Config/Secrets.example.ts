@@ -27,15 +27,17 @@ export const MongoDB: Secrets.MongoDB = {
   UserPass: Env.MONGO_USERPASS ?? "jDnQiJ1DEz26L1fS",
 };
 
-export const ImgBB: Secrets.ImgBB = {
-  API_Key: Env.IMGBB_API_KEY ?? "33cf14c3eb75cb58b36b7fca231da47f",
+export const Other: Secrets.Other = {
+  Environment: (process.env.ENV as Secrets.Other["Environment"]) ?? "PROD",
+  ImgBB_API_Key: Env.IMGBB_API_KEY ?? "33cf14c3eb75cb58b36b7fca231da47f",
+  LogTailSourceToken: Env.LOGTAIL_SOURCE_TOKEN ?? "EsQFV7RVhjHKUdrRzM3uvfbX",
 };
 
 export const OpenWeather: Secrets.OpenWeather = {
   API_Key: Env.OPEN_WEATHER_API_KEY ?? "095350bf11438685a23221485e7d3b8e",
   WeatherGeoCoordinates: {
-    lat: Env.OPEN_WEATHER_LAT ?? 34.0393,
-    lon: Env.OPEN_WEATHER_LON ?? -118.2693,
+    lat: Env.OPEN_WEATHER_LAT || 34.0393,
+    lon: Env.OPEN_WEATHER_LON || -118.2693,
   },
 };
 

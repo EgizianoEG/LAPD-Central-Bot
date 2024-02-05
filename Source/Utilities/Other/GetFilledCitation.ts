@@ -1,8 +1,11 @@
 import { createCanvas, loadImage } from "@napi-rs/canvas/index.js";
+import { GetDirName } from "./Paths.js";
 import { Citations } from "@Typings/Utilities/Generic.js";
-import { ImgBB } from "@Config/Secrets.js";
+import { Other } from "@Config/Secrets.js";
 
+import Path from "node:path";
 import Axios from "axios";
+import FileSystem from "node:fs/promises";
 import GetPlaceholderImgURL from "./GetPlaceholderImg.js";
 
 export enum CitationImgDimensions {
@@ -10,8 +13,15 @@ export enum CitationImgDimensions {
   Width = 700,
 }
 
-const FineTemplate = await loadImage("https://i.ibb.co/nC2ncjH/TFCTemplate.jpg");
-const WarnTemplate = await loadImage("https://i.ibb.co/x5b9vhS/TWCTemplate.jpg");
+const TFCTemplateImgBuffer = await FileSystem.readFile(
+  Path.join(GetDirName(import.meta.url), "..", "..", "Resources", "Imgs", "TFCTemplate.jpg")
+);
+const TWCTemplateImgBuffer = await FileSystem.readFile(
+  Path.join(GetDirName(import.meta.url), "..", "..", "Resources", "Imgs", "TWCTemplate.jpg")
+);
+
+const FineTemplate = await loadImage(TFCTemplateImgBuffer);
+const WarnTemplate = await loadImage(TWCTemplateImgBuffer);
 
 export async function GetFilledCitation<
   Type extends "Warning" | "Fine",
@@ -240,7 +250,7 @@ export async function GetFilledCitation<
 
     const Resp = await Axios.post("https://api.imgbb.com/1/upload", Payload, {
       params: {
-        key: ImgBB.API_Key,
+        key: Other.ImgBB_API_Key,
         name: `traffic_citation_#${CitData.num}`,
       },
     }).catch(() => null);

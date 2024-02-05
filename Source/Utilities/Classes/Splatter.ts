@@ -125,6 +125,6 @@ class Splatter {
  * which performs string interpolation from `info` objects. This was
  * previously exposed implicitly in `winston < 3.0.0`.
  */
-export default function splat(opts: util.InspectOptions) {
+export default function splat(opts?: util.InspectOptions) {
   return new Splatter(opts);
 }

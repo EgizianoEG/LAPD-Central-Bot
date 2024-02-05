@@ -120,7 +120,7 @@ export default async function AnyCitationCallback(
               make: ValidationVars.vehicle.brand,
               model: ValidationVars.vehicle.name,
               body_style: ValidationVars.vehicle.style,
-              lic_num: CitationInfo.vehicle_info.lic_num,
+              lic_num: CitationInfo.vehicle_info.lic_num.toUpperCase(),
             };
             await OnModalSubmission(Interaction, CitationInfo, CitingOfficer, Submission);
           }
@@ -135,9 +135,9 @@ export default async function AnyCitationCallback(
       }
     });
 
-    ActionCollector.on("end", async (CIs, EndReason) => {
+    ActionCollector.on("end", async (_, EndReason) => {
       ActionCollector.removeAllListeners();
-      if (EndReason.match(/\w+Delete/)) return;
+      if (EndReason.match(/reason: (?:\w+Delete|time)/)) return;
 
       try {
         RespMsgButtons.components.forEach((Btn) => Btn.setDisabled(true));

@@ -67,8 +67,15 @@ export namespace Secrets {
     UserPass: string;
   }
 
-  interface ImgBB {
-    API_Key: string;
+  interface Other {
+    /* An optional property that specifies the environment in which the code is running. */
+    Environment?: "development" | "production" | "testing" | "DEV" | "PROD" | "TEST";
+
+    /** ImgBB API key to upload images */
+    ImgBB_API_Key: string;
+
+    /** Logtail source token to send any outputted logs; see {@link https://betterstack.com/logtail} */
+    LogTailSourceToken?: string | null;
   }
 
   interface OpenWeather {

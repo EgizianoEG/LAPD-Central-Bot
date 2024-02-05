@@ -24,7 +24,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
     .setTitle(Emojis.LosAngeles + "\u{2000}" + "Weather")
     .setColor(Colors.Greyple)
     .setFooter({ text: "Powered by OpenWeather", iconURL: Icons.OpenWeather })
-    .setDescription("Current weather in city of Los Angeles, California\n")
+    .setDescription("Current weather in the city of Los Angeles, California\n")
     .setThumbnail(GetWeatherIcon(WeatherData.weather.id, WeatherData.is_day))
     .setTimestamp(Interaction.createdTimestamp)
     .setFields(

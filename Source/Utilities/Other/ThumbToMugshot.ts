@@ -1,6 +1,6 @@
 import { type Canvas, createCanvas, loadImage } from "@napi-rs/canvas/index.js";
 import { Embeds } from "@Config/Shared.js";
-import { ImgBB } from "@Config/Secrets.js";
+import { Other } from "@Config/Secrets.js";
 import Axios from "axios";
 
 let BgCanvas: Canvas | null = null;
@@ -60,7 +60,7 @@ export default async function GetBookingMugshot<AsURL extends boolean | undefine
 
     const Resp = await Axios.post("https://api.imgbb.com/1/upload", Payload, {
       params: {
-        key: ImgBB.API_Key,
+        key: Other.ImgBB_API_Key,
         name: `booking_mugshot_#${Options.BookingNum}`,
       },
     });

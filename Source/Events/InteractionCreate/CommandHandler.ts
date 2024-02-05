@@ -18,9 +18,9 @@ import {
 } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import { Discord } from "@Config/Secrets.js";
+import { RandomString } from "@Utilities/Strings/Random.js";
 import { UnorderedList } from "@Utilities/Strings/Formatters.js";
 import { PascalToNormal } from "@Utilities/Strings/Converters.js";
-import { SendErrorReply } from "@Utilities/Other/SendReply.js";
 
 import UserHasPerms from "@Utilities/Database/UserHasPermissions.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
@@ -86,26 +86,27 @@ export default async function CommandHandler(
       return;
     }
 
+    const ErrId = RandomString(6, /[\dA-Z]/i);
     AppLogger.error({
+      message: "An error occurred while executing slash command '%s';",
       label: LogLabel,
+      error_id: ErrId,
       stack: Err.stack,
       splat: [FullCmdName],
-      message: "An error occurred while executing slash command '%s';",
       cmd_options: Object(Interaction.options)._hoistedOptions,
     });
 
     if (Err instanceof AppError && Err.is_showable) {
-      await SendErrorReply({
-        Interaction,
-        Title: Err.title,
-        Message: Err.message,
-      });
+      await new ErrorEmbed()
+        .setTitle(Err.title)
+        .setDescription(Err.message)
+        .setFooter({ text: `Error ID: ${ErrId}` })
+        .replyToInteract(Interaction);
     } else {
-      await SendErrorReply({
-        Interaction,
-        Ephemeral: true,
-        Template: "AppError",
-      });
+      await new ErrorEmbed()
+        .useErrTemplate("AppError")
+        .setFooter({ text: `Error ID: ${ErrId}` })
+        .replyToInteract(Interaction);
     }
   }
 }

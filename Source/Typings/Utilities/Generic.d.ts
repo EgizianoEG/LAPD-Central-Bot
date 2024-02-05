@@ -1,8 +1,8 @@
+import type { ExpandRecursively, Optional, OptionalKeys } from "utility-types";
 import type { Snowflake, FetchGuildOptions } from "discord.js";
-import type ERLCAgeGroups from "@Resources/ERLCAgeGroups.js";
 import type { EyeColors, HairColors } from "@Resources/ERLCPDColors.ts";
-import { OptionalPathKeys } from "mongoose/types/inferschematype.js";
-import { ExpandRecursively, Optional, OptionalKeys } from "utility-types";
+import type { OptionalPathKeys } from "mongoose/types/inferschematype.js";
+import type ERLCAgeGroups from "@Resources/ERLCAgeGroups.js";
 
 export namespace Citations {
   type CitationType = "Warning" | "Fine";
@@ -115,6 +115,53 @@ export namespace Citations {
     make: string;
     model: string;
     color: string;
+  }
+}
+
+export namespace OSMetrics {
+  interface OSMetricsData<HR extends boolean = false> {
+    /** Running node version */
+    node_ver: string;
+
+    /** Process uptime in seconds or in a human-readable format if specified. */
+    process_uptime: HR extends true ? string : number;
+
+    system: {
+      /** Running OS type. See {@link https://en.wikipedia.org/wiki/Uname#Examples}. */
+      type: string;
+
+      /** Running OS platform */
+      platform: "aix" | "darwin" | "freebsd" | "linux" | "openbsd" | "sunos" | "win32";
+
+      /** Running OS version */
+      version: string;
+
+      /** System uptime in seconds or in a human-readable format if specified. */
+      uptime: HR extends true ? string : number;
+    };
+
+    /** Process CPU usage */
+    cpu: {
+      /** CPU utilization in general */
+      utilization: number;
+
+      /** CPU model */
+      model: string;
+    };
+
+    memory: {
+      /** OS memory size in Megabytes */
+      total: HR extends true ? string : number;
+
+      /** Free OS memory in Bytes Megabytes */
+      free: HR extends true ? string : number;
+
+      /** OS memory usage in Megabytes */
+      used: HR extends true ? string : number;
+
+      /** Process memory rss in Megabytes */
+      rss: HR extends true ? string : number;
+    };
   }
 }
 

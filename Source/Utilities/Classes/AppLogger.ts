@@ -1,17 +1,21 @@
+import { LogtailTransport } from "@logtail/winston";
 import { OmitByValue } from "utility-types";
+import { Logtail } from "@logtail/node";
+import { Other } from "@Config/Secrets.js";
+
 import SplatFormat from "./Splatter.js";
 import Winston from "winston";
 import Chalk from "chalk";
 import Util from "node:util";
 
+// --------------------------------------------------------------------------------------
 type CustomLogger<Levels> = OmitByValue<Winston.Logger, Winston.LeveledLogMethod> & {
   // eslint-disable-next-line no-unused-vars
   readonly [Level in keyof Levels]: Winston.LeveledLogMethod;
 } & { log(level: keyof Levels, message: any): Winston.Logger };
 
-const LogLevel = process.env.LOG_LEVEL ?? "info";
+const LogLevel = process.env.LOG_LEVEL?.toLowerCase() || "info";
 const LogLabels = Boolean(process.env.LOG_LABELS);
-
 const LevelsData = {
   Levels: {
     fatal: 0,
@@ -19,6 +23,7 @@ const LevelsData = {
     warn: 2,
     info: 3,
     debug: 4,
+    metrics: 5,
   },
   Colors: {
     fatal: "black redBG",
@@ -26,37 +31,30 @@ const LevelsData = {
     warn: "yellow",
     info: "blue",
     debug: "cyan",
+    metrics: "green",
   },
 };
 
 const Format = Winston.format;
 const Transports = Winston.transports;
 const ColorizeLevel = Format.colorize({ colors: LevelsData.Colors }).colorize;
-const IgnorePrivateLogs = Format((Info) => {
-  if (Info.private) {
-    return false;
-  }
-  return Info;
-});
+const IgnorePrivateLogs = Format((Msg) => (Msg.private ? false : Msg));
+const IgnoreSpecificConsoleLogs = Format((Msg) =>
+  Msg.ignore_console || Msg.level === "metrics" ? false : Msg
+);
 
-// TODO: Add transport for a cloud logging service
+// --------------------------------------------------------------------------------------
+// Logger Instance:
+// ----------------
+Winston.addColors(LevelsData.Colors);
 const AppLogger = Winston.createLogger({
   level: LogLevel,
   levels: LevelsData.Levels,
   format: Format.errors({ stack: true }),
   transports: [
-    new Transports.Http({
-      level: "warn",
-      format: Format.combine(
-        IgnorePrivateLogs(),
-        Format.timestamp(),
-        Format.metadata(),
-        Format.json({ space: 2 })
-      ),
-    }),
-
     new Transports.Console({
       format: Format.combine(
+        IgnoreSpecificConsoleLogs(),
         SplatFormat({ colors: true }),
         Format.timestamp({ format: "hh:mm:ss A" }),
         Format.metadata(),
@@ -102,6 +100,25 @@ const AppLogger = Winston.createLogger({
     }),
   ],
 }) as unknown as CustomLogger<typeof LevelsData.Levels>;
+
+// --------------------------------------------------------------------------------------
+// Cloud Logging on Production:
+// ----------------------------
+if (Other.Environment?.trim().match(/^Prod(?:uction)?$/i) && Other.LogTailSourceToken) {
+  const LogTailInst = new Logtail(Other.LogTailSourceToken);
+  AppLogger.add(
+    new LogtailTransport(LogTailInst, {
+      level: LogLevel,
+      format: Format.combine(
+        IgnorePrivateLogs(),
+        SplatFormat({ colors: true }),
+        Format.timestamp(),
+        Format.metadata(),
+        Format.json({ space: 2 })
+      ),
+    })
+  );
+}
 
 // --------------------------------------------------------------------------------------
 export type LogLevels = typeof LevelsData.Levels;
