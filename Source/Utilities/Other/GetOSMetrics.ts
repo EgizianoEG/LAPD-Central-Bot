@@ -63,10 +63,17 @@ function GetMemoryDetails<Readable extends boolean = false>(
   Unit: Convert.Unit,
   HR: Readable
 ): MData<Readable>["memory"] {
+  const PMU = Process.memoryUsage();
+  for (const [K, V] of Object.entries(PMU)) {
+    PMU[K] = Math.round(Convert(V).from("B").to(Unit));
+  }
+
   const MemoryDetails: Record<keyof MData["memory"], number | string> = {
     total: Math.round(Convert(OS.totalmem()).from("B").to(Unit)),
-    free: Math.round(Convert(OS.freemem()).from("B").to(Unit)),
-    rss: Math.round(Convert(Process.memoryUsage.rss()).from("B").to(Unit)),
+    available: Math.round(Convert(OS.freemem()).from("B").to(Unit)),
+    rss: PMU.rss,
+    heap_total: PMU.heapTotal,
+    heap_used: PMU.heapUsed,
     used: Math.round(
       Convert(OS.totalmem() - OS.freemem())
         .from("B")

@@ -154,13 +154,16 @@ export namespace OSMetrics {
       total: HR extends true ? string : number;
 
       /** Free OS memory in Bytes Megabytes */
-      free: HR extends true ? string : number;
+      available: HR extends true ? string : number;
 
       /** OS memory usage in Megabytes */
       used: HR extends true ? string : number;
 
       /** Process memory rss in Megabytes */
       rss: HR extends true ? string : number;
+
+      heap_total: HR extends true ? string : number;
+      heap_used: HR extends true ? string : number;
     };
   }
 }
