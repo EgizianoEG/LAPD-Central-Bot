@@ -11,10 +11,10 @@ import AppLogger from "@Utilities/Classes/AppLogger.js";
 import GetOSMetrics from "@Utilities/Other/GetOSMetrics.js";
 import DurHumanizer from "humanize-duration";
 AppLogger.info(Chalk.grey("=========================== New Run ==========================="));
+
 // -------------------------------------------------------------------------------------------
 // Discord Application:
 // --------------------
-
 export const App = new Client({
   intents: [
     //
@@ -63,7 +63,11 @@ App.buttonListeners = new Collection();
 const EAppPort = process.env.PORT ?? 10_000;
 const ExpressApp = Express();
 
-ExpressApp.get("/", (_, Res) => Res.redirect("/status"));
+ExpressApp.get("/", (_, Res) => {
+  Res.setHeader("Content-Type", "application/json");
+  Res.end(JSON.stringify({ message: "OK" }, null, 2));
+});
+
 ExpressApp.get("/status", (_, Res) => {
   GetOSMetrics(true).then((Metrics) => {
     Res.setHeader("Content-Type", "application/json");
