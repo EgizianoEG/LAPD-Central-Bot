@@ -24,21 +24,6 @@ export type CommandObjectDataType =
   | undefined
   | any;
 
-/** @see {@link https://stackoverflow.com/a/72522221} */
-export type TupleMinMax<
-  T,
-  Min extends number,
-  Max extends number,
-  A extends (T | undefined)[] = [],
-  O extends boolean = false,
-> = O extends false
-  ? Min extends A["length"]
-    ? TupleMinMax<T, Min, Max, A, true>
-    : TupleMinMax<T, Min, Max, [...A, T], false>
-  : Max extends A["length"]
-    ? A
-    : TupleMinMax<T, Min, Max, [...A, T?], false>;
-
 export interface CommandObjectOptions {
   /** Whether or not this command will be removed if it already exists in the application or excluded from registration. */
   deleted?: boolean;
@@ -65,6 +50,34 @@ declare global {
   export import DiscordJS = DiscordJSMask;
   export import Mongoose = MongooseMask;
   export import UtilityTypes = UtilityTypesMask;
+
+  type UnPartial<T> = T extends Partial<infer R> ? R : T;
+  type NonEmptyArray<T> = [T, ...T[]];
+  type RangedArray<T, Min extends number, Max extends number> = TupleMinMax<T, Min, Max>;
+
+  /** Expands a type definition recursively. */
+  type ExpandRecursively<T> = T extends (...args: infer A) => infer R
+    ? (...args: ExpandRecursively<A>) => ExpandRecursively<R>
+    : T extends object
+      ? T extends infer O
+        ? { [K in keyof O]: ExpandRecursively<O[K]> }
+        : never
+      : T;
+
+  /** @see {@link https://stackoverflow.com/a/72522221} */
+  type TupleMinMax<
+    T,
+    Min extends number,
+    Max extends number,
+    A extends (T | undefined)[] = [],
+    O extends boolean = false,
+  > = O extends false
+    ? Min extends A["length"]
+      ? TupleMinMax<T, Min, Max, A, true>
+      : TupleMinMax<T, Min, Max, [...A, T], false>
+    : Max extends A["length"]
+      ? A
+      : TupleMinMax<T, Min, Max, [...A, T?], false>;
 
   type DiscordClient = Client<true>;
   type SlashCommandWithOptions = Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">;
