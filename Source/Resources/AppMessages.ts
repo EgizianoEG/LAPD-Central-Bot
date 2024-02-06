@@ -284,6 +284,34 @@ export const ErrorMessages = {
     Description:
       "The channel with the `%s` ID couldn't be found on the specified server, or the channel is inaccessible by the application.",
   },
+
+  MemberNotFound: {
+    Title: "Member Not Found",
+    Description:
+      "The specified member could not be discovered on the server. Make sure you're entering a valid member.",
+  },
+
+  DBGuildDocumentNotFound: {
+    Title: "Database Error",
+    Description: "It seems like the guild document was not found in the database.",
+  },
+
+  BotMemberSelected: {
+    Title: "Bot Member",
+    Description: "You cannot select a bot member as a target. Please select a person instead.",
+  },
+
+  UnknownDateFormat: {
+    Title: "Unknown Date Format",
+    Description:
+      "The date format entered is incorrect and/or unsupported. Please provide another relevant format.",
+  },
+
+  DateInFuture: {
+    Title: "Date In The Future",
+    Description:
+      "It looks like the date you provided is in the future. Please provide a date from the past.",
+  },
 };
 
 export const InfoMessages = {
