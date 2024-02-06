@@ -79,7 +79,6 @@ export default async function GetMainShiftsData(
       },
     },
   ]).then((Resp: UserMainShiftsData[]) => {
-    console.log(Resp);
     if (Resp.length === 0) {
       Resp[0] = {
         shift_count: 0,
