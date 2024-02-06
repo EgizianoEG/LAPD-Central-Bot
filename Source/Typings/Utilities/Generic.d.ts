@@ -51,8 +51,10 @@ export namespace Citations {
   }
 
   interface CitingOfficerInfo {
+    /** Discord user Id */
+    discord_id: string;
     /** Roblox user Id */
-    id: number;
+    roblox_id: number;
     /** Roblox username */
     name: string;
     /** Roblox display name */

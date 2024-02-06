@@ -20,7 +20,9 @@ type ThumbImgSizes<CType extends keyof typeof EndpointMapping> = CType extends "
 
 /**
  * **Retrieves and returns desired user thumbnail(s)**.
- * @notice A fallback placeholder thumbnail will be returned if the API request fails or an error is encountered.
+ * @notice
+ * - If provided an array with duplicate user ids, the result array could be disordered.
+ * - A fallback placeholder thumbnail will be returned if the API request fails or an error is encountered.
  *
  * @param UserIds - A single user id or an array of user ids to fetch the thumbnail(s) for.
  * If an array, it must be a maximum of `100` user ids and a minimum of `1` user id.
@@ -54,12 +56,16 @@ export default async function GetUserThumbnail<
   IsCircular: boolean = false
 ): Promise<UserIdsType extends number[] ? string[] : string> {
   const Endpoint = EndpointMapping[CropType].endpoint;
-  const UserIdsArray = Array.isArray(UserIds) ? [...new Set(UserIds)] : [UserIds];
+  const UserIdsArray: number[] = Array.isArray(UserIds) ? [...new Set(UserIds)] : [UserIds];
 
   if (UserIdsArray.length > 100 || UserIdsArray.length === 0) {
     throw new RangeError(
       `UserIds parameter must be between 1 and 100 entries; received ${UserIdsArray.length}.`
     );
+  }
+
+  if (UserIdsArray.length === 1 && UserIdsArray[0] <= 0) {
+    return GetPlaceholderImgURL(Size, "?") as any;
   }
 
   const Thumbnails = await Axios.request<APIResponses.Thumbnails.ThumbnailResponse>({
@@ -73,10 +79,16 @@ export default async function GetUserThumbnail<
     },
   })
     .then((Resp) => {
-      return Resp.data.data.map((ThumbData) => {
-        return ThumbData.state === "Completed"
-          ? ThumbData.imageUrl
-          : GetPlaceholderImgURL(Size, "?");
+      return UserIdsArray.map((UserId) => {
+        const CorrespondingThumbnail = Resp.data.data.find((data) => data.targetId === UserId);
+        if (CorrespondingThumbnail) {
+          return CorrespondingThumbnail.state === "Completed"
+            ? CorrespondingThumbnail.imageUrl
+            : GetPlaceholderImgURL(Size, "?");
+        } else {
+          // Placeholder for missing or invalid user Ids
+          return GetPlaceholderImgURL(Size, "?");
+        }
       });
     })
     .catch((Err) => {
@@ -88,12 +100,13 @@ export default async function GetUserThumbnail<
           ...Err,
         },
       });
-      return ([] as string[]).fill(GetPlaceholderImgURL(Size, "?"), 0, UserIdsArray.length);
+      const PlaceholderThumb = GetPlaceholderImgURL(Size, "?");
+      return new Array(UserIdsArray.length).fill(PlaceholderThumb);
     });
 
   if (Array.isArray(UserIds)) {
     return Thumbnails as any;
   } else {
-    return Thumbnails[0] as any;
+    return Thumbnails[0];
   }
 }

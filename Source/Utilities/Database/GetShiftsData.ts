@@ -34,7 +34,7 @@ export default async function GetMainShiftsData(
 ) {
   QueryFilter.end_timestamp = { $ne: null };
   QueryFilter.type =
-    QueryFilter.type === null || QueryFilter === undefined ? { $exists: true } : QueryFilter.type;
+    QueryFilter.type == null || QueryFilter === undefined ? { $exists: true } : QueryFilter.type;
 
   return ShiftModel.aggregate([
     { $match: QueryFilter },
@@ -79,6 +79,7 @@ export default async function GetMainShiftsData(
       },
     },
   ]).then((Resp: UserMainShiftsData[]) => {
+    console.log(Resp);
     if (Resp.length === 0) {
       Resp[0] = {
         shift_count: 0,

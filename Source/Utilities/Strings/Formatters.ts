@@ -854,7 +854,11 @@ export function UnorderedList(Input: string | string[]): string {
 /**
  * Returns a formatted string representation of the user's username, display name as well as the id if requested.
  * @param UserData - The basic user data; display name if available, username, and id if also available.
- * @param IncludeId - Whether to include the user's id in the string (e.g. `"... [000000]"`).
+ * @param [IncludeId=false] - Whether to include the user's id in the string (e.g. `"... [000000]"`).
+ * @param [UsernameLinked=false] - Whether to mask link with markdown the username
+ * (e.g. `Builderman ([@builderman](https://www.roblox.com/users/156/profile))`).
+ * Notice that this parameter can only work if the user data received has the user Id, too.
+ *
  * @returns
  * @example
  * const UserData = {
@@ -871,12 +875,16 @@ export function UnorderedList(Input: string | string[]): string {
  */
 export function FormatUsername(
   UserData: { name: string; display_name?: string; displayName?: string; id?: string | number },
-  IncludeId?: boolean
+  IncludeId?: boolean,
+  UsernameLinked: boolean = false
 ): string {
   if (UserData.name) {
-    const Formatted = `${UserData.display_name ?? UserData.displayName ?? UserData.name} (@${
-      UserData.name
+    const Formatted = `${UserData.display_name ?? UserData.displayName ?? UserData.name} (${
+      UsernameLinked && UserData.id
+        ? `[@${UserData.name}](https://www.roblox.com/users/${UserData.id}/profile)`
+        : UserData.name
     })`;
+
     if (IncludeId && UserData.id) {
       return `${Formatted} [${UserData.id}]`;
     } else {

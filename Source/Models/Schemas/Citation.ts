@@ -76,8 +76,13 @@ const CitationSchema = new Schema<CitationPlainDoc, CitationModelType>({
 
   citing_officer: {
     _id: false,
+    required: true,
     type: {
-      id: {
+      discord_id: {
+        type: String,
+        required: true,
+      },
+      roblox_id: {
         type: Number,
         required: true,
       },
@@ -94,6 +99,7 @@ const CitationSchema = new Schema<CitationPlainDoc, CitationModelType>({
 
   violator: {
     _id: false,
+    required: true,
     type: {
       id: {
         type: Number,
@@ -174,6 +180,7 @@ const CitationSchema = new Schema<CitationPlainDoc, CitationModelType>({
 
   vehicle: {
     _id: false,
+    required: true,
     type: {
       body_style: {
         type: String,
