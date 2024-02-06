@@ -1,5 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle } from "discord.js";
 import { Emojis } from "@Config/Shared.js";
+import { RandomString } from "@Utilities/Strings/Random.js";
 
 export type NavButtonsActionRow = ActionRowBuilder<
   ButtonBuilder & { data: { custom_id: string } }
@@ -23,7 +24,8 @@ export type NavButtonsActionRow = ActionRowBuilder<
 /**
  * Returns a DiscordJS ActionRow instance contains five predefined navigation buttons.
  * @param Interaction - The command interaction initiated the execution.
- * @param TotalPages - The total number of pages could be shown; defaults to `1`.
+ * @param [TotalPages=1] - The total number of pages could be shown; defaults to `1`.
+ * @param [AddUniqueIds=false] - Should the function add an additional unique identifier to the end of the buttons' custom ids?
  * @returns A DiscordJS ActionRow instance that contains five predefined navigation buttons as the following:
  * - All disabled buttons;
  * - All primary buttons except the page number button;
@@ -31,7 +33,8 @@ export type NavButtonsActionRow = ActionRowBuilder<
  */
 export default function GetPredefinedNavButtons(
   Interaction: SlashCommandInteraction | ButtonInteraction,
-  TotalPages: number = 1
+  TotalPages: number = 1,
+  AddUniqueIds: boolean = false
 ) {
   const ARInstance = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -62,9 +65,16 @@ export default function GetPredefinedNavButtons(
   ) as NavButtonsActionRow;
 
   ARInstance.components.forEach((Button) => {
-    Button.setCustomId(
-      `nav-${Button.data.custom_id}:${Interaction.user.id}:${Interaction?.guild?.id}`
-    );
+    if (AddUniqueIds) {
+      Button.setCustomId(
+        `nav-${Button.data.custom_id}:${Interaction.user.id}:${Interaction?.guild
+          ?.id}:${RandomString(4)}`
+      );
+    } else {
+      Button.setCustomId(
+        `nav-${Button.data.custom_id}:${Interaction.user.id}:${Interaction?.guild?.id}`
+      );
+    }
   });
 
   ARInstance.updateButtons = function UpdateNavigationButtons(

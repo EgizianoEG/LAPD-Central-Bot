@@ -1,4 +1,12 @@
-import { ButtonInteraction, ComponentType, DiscordAPIError, EmbedBuilder } from "discord.js";
+import {
+  InteractionResponse,
+  ButtonInteraction,
+  DiscordAPIError,
+  ComponentType,
+  EmbedBuilder,
+  Message,
+} from "discord.js";
+
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import GetPredefinedNavButtons from "./GetNavButtons.js";
 import HandleCollectorFiltering from "./HandleCollectorFilter.js";
@@ -6,6 +14,7 @@ const Clamp = (Value: number, Min: number, Max: number) => Math.min(Math.max(Val
 
 /**
  * Handles the pagination process for a given embeds array.
+ * @notice Some bugs may appear if not using the `fetchReply: true` field in message options.
  * @param Pages - The embeds to paginate between; i.e. embeds representing pages. This should be an array of at least one embed.
  * @param Interact - The interaction that triggered the pagination. Should be repliable either by `followUp` or `reply`.
  * @param Context - The context of which triggered the pagination handling (used for logging errors and such). e.g. `Commands:Miscellaneous:Duty:Leaderboard`.
@@ -17,10 +26,11 @@ export default async function HandleEmbedPagination(
   Context?: string
 ): Promise<void> {
   let CurrPageIndex = 0;
-  const NavigationButtons = GetPredefinedNavButtons(Interact, Pages.length);
+  const NavigationButtons = GetPredefinedNavButtons(Interact, Pages.length, true);
   const ReplyMethod = Interact.deferred ? "editReply" : Interact.replied ? "followUp" : "reply";
-  const ResponseMessage = await Interact[ReplyMethod as any]({
+  const ResponseMessage: Message | InteractionResponse = await Interact[ReplyMethod as any]({
     components: Pages.length > 1 ? [NavigationButtons] : undefined,
+    fetchReply: true,
     embeds: [Pages[0]],
   });
 
@@ -29,7 +39,7 @@ export default async function HandleEmbedPagination(
   const ComponentCollector = ResponseMessage.createMessageComponentCollector({
     filter: (Btn) => HandleCollectorFiltering(Interact, Btn),
     componentType: ComponentType.Button,
-    time: 5 * 60_000,
+    time: 5 * 60 * 1000,
   });
 
   ComponentCollector.on("collect", async (NavInteraction: ButtonInteraction<"cached">) => {

@@ -1,4 +1,5 @@
 import { APIResponses, APITypes } from "@Typings/Utilities/Roblox.js";
+import AppLogger from "@Utilities/Classes/AppLogger.js";
 import GetPlaceholderImgURL from "@Utilities/Other/GetPlaceholderImg.js";
 import Axios from "axios";
 
@@ -19,9 +20,7 @@ type ThumbImgSizes<CType extends keyof typeof EndpointMapping> = CType extends "
 
 /**
  * **Retrieves and returns desired user thumbnail(s)**.
- * @notice
- * 1. This function could return a placeholder thumbnail as a result of an error that is not related to the API request itself.
- * 2.
+ * @notice A fallback placeholder thumbnail will be returned if the API request fails or an error is encountered.
  *
  * @param UserIds - A single user id or an array of user ids to fetch the thumbnail(s) for.
  * If an array, it must be a maximum of `100` user ids and a minimum of `1` user id.
@@ -72,11 +71,25 @@ export default async function GetUserThumbnail<
       userIds: UserIdsArray.join(),
       isCircular: IsCircular,
     },
-  }).then((Resp) => {
-    return Resp.data.data.map((ThumbData) => {
-      return ThumbData.state === "Completed" ? ThumbData.imageUrl : GetPlaceholderImgURL(Size, "?");
+  })
+    .then((Resp) => {
+      return Resp.data.data.map((ThumbData) => {
+        return ThumbData.state === "Completed"
+          ? ThumbData.imageUrl
+          : GetPlaceholderImgURL(Size, "?");
+      });
+    })
+    .catch((Err) => {
+      AppLogger.error({
+        label: "Utilities:Roblox:GetUserThumbnail",
+        message: "Failed to fetch user thumbnail(s);",
+        stack: Err.stack,
+        details: {
+          ...Err,
+        },
+      });
+      return ([] as string[]).fill(GetPlaceholderImgURL(Size, "?"), 0, UserIdsArray.length);
     });
-  });
 
   if (Array.isArray(UserIds)) {
     return Thumbnails as any;

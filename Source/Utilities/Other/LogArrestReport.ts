@@ -63,21 +63,25 @@ export default async function LogArrestReport(
 
   const ArrestLogData: Partial<(typeof GuildDoc.logs.arrests)[number]> = {
     _id: ArresteeInfo.BookingNumber,
-    arrestee_formatted_name: FArresteeName,
-    arrestee_roblox_id: Number(ArresteeInfo.RobloxUser.id),
-
     made_at: ReporterInfo.ReportDate,
     arrest_assisting_officers: ReporterInfo.AsstOfficers,
-    arresting_officer_formatted_name: FReporterName,
-    arresting_officer_discord_id: ReporterInfo.DiscordUserId,
-    arresting_officer_roblox_id: Number(ReporterInfo.RobloxUser.id),
 
-    charges: ArresteeInfo.FormattedCharges,
-    gender: ArresteeInfo.Gender,
-    height: ArresteeInfo.Height,
-    weight: ArresteeInfo.Weight,
-    age_group: ArresteeInfo.AgeGroup,
-    mugshot_url: ArresteeInfo.BookingMugshotURL,
+    arrestee: {
+      roblox_id: Number(ArresteeInfo.RobloxUser.id),
+      formatted_name: FArresteeName,
+      charges: ArresteeInfo.FormattedCharges,
+      gender: ArresteeInfo.Gender,
+      height: ArresteeInfo.Height,
+      weight: ArresteeInfo.Weight,
+      age_group: ArresteeInfo.AgeGroup,
+      mugshot_url: ArresteeInfo.BookingMugshotURL,
+    },
+
+    arresting_officer: {
+      formatted_name: FReporterName,
+      discord_id: ReporterInfo.DiscordUserId,
+      roblox_id: Number(ReporterInfo.RobloxUser.id),
+    },
   };
 
   GuildDoc.logs.arrests.addToSet(ArrestLogData);

@@ -6,7 +6,13 @@ export declare module "discord.js" {
     commands: Collection<string, SlashCommandObject>;
     cooldowns: Collection<string, Collection<string, number>>;
     modalListeners: Collection<string, (ModalSubmission: ModalSubmitInteraction) => any>;
-    buttonListeners: Collection<string, (ButtonInteract: ButtonInteraction) => any>;
+
+    /**
+     * A collection of button listeners for a specific button custom id;
+     * the value could be either a function or a boolean which indicates
+     * if the button is actually being listened for.
+     */
+    buttonListeners: Collection<string, ((ButtonInteract: ButtonInteraction) => any) | boolean>;
   }
 }
 

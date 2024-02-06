@@ -69,6 +69,11 @@ const CitationSchema = new Schema<CitationPlainDoc, CitationModelType>({
     min: 0,
   },
 
+  violations: {
+    type: [Schema.Types.Mixed],
+    required: true,
+  },
+
   citing_officer: {
     _id: false,
     type: {
@@ -87,12 +92,7 @@ const CitationSchema = new Schema<CitationPlainDoc, CitationModelType>({
     },
   },
 
-  violations: {
-    type: [Schema.Types.Mixed],
-    required: true,
-  },
-
-  violator_info: {
+  violator: {
     _id: false,
     type: {
       id: {
@@ -172,7 +172,7 @@ const CitationSchema = new Schema<CitationPlainDoc, CitationModelType>({
     },
   },
 
-  vehicle_info: {
+  vehicle: {
     _id: false,
     type: {
       body_style: {

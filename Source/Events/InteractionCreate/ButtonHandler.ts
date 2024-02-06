@@ -1,5 +1,6 @@
 import { BaseInteraction, ActionRowBuilder, createComponentBuilder } from "discord.js";
 import { InfoEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import AppLogger from "@Utilities/Classes/AppLogger.js";
 
 /**
  * For handling & responding to buttons that have been abandoned activated.
@@ -12,7 +13,14 @@ import { InfoEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js"
 export default async function ButtonHandler(Client: DiscordClient, Interaction: BaseInteraction) {
   if (!Interaction.isButton()) return;
   if (Client.buttonListeners.has(Interaction.customId)) {
-    await Client.buttonListeners.get(Interaction.customId)!(Interaction);
+    const Listener = Client.buttonListeners.get(Interaction.customId);
+    if (typeof Listener === "function") {
+      return Listener(Interaction);
+    } else if (typeof Listener === "boolean" && Listener === true) {
+      // The button interaction is being listened to
+      // and should be handled by another module/function.
+      return;
+    }
   }
 
   // Making sure that the interaction is not being processed
@@ -21,8 +29,14 @@ export default async function ButtonHandler(Client: DiscordClient, Interaction: 
     async function OnUnhandledButtonInteraction() {
       const OriginalUserId = Interaction.customId.split(":")?.[1];
       const TimeGap = Interaction.createdAt.getTime() - Interaction.message.createdAt.getTime();
-
       if (Interaction.replied || Interaction.deferred) return;
+
+      AppLogger.debug({
+        label: "Events:InteractionCreate:ButtonHandler",
+        message: "Handling an unhandled button interaction after around 2 seconds of no response.",
+        custom_id: Interaction.customId,
+      });
+
       if (TimeGap >= 5 * 60 * 1000) {
         const DisabledMsgComponents = Interaction.message.components.map((AR) => {
           return ActionRowBuilder.from({

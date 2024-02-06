@@ -777,7 +777,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
     }
   });
 
-  ActionCollector.on("end", async (Collected, EndReason) => {
+  ActionCollector.on("end", async (_, EndReason) => {
     ActionCollector.removeAllListeners();
     if (EndReason.match(/\w+Delete/)) return;
     try {

@@ -95,62 +95,62 @@ export async function GetFilledCitation<
   CitCTX.stroke();
 
   // Violator's Name
-  CitCTX.fillText(CitData.violator_info.name, Width / 42, Height / 3.945);
+  CitCTX.fillText(CitData.violator.name, Width / 42, Height / 3.945);
 
   // Violator's Residence Address
-  CitCTX.fillText(CitData.violator_info.address, Width / 41.176, Height / 3.325);
+  CitCTX.fillText(CitData.violator.address, Width / 41.176, Height / 3.325);
 
   // Violator's Residence City
-  CitCTX.fillText(CitData.violator_info.city, Width / 42, Height / 2.91);
+  CitCTX.fillText(CitData.violator.city, Width / 42, Height / 2.91);
 
   // Violator's Driver License Number
-  fillTextWithSpacing(CitCTX, CitData.violator_info.lic_num, Width / 41.176, Height / 2.575, 2);
+  fillTextWithSpacing(CitCTX, CitData.violator.lic_num, Width / 41.176, Height / 2.575, 2);
 
   // Violator's Driver License Class
-  CitCTX.fillText(CitData.violator_info.lic_class, Width / 2.24, Height / 2.575);
+  CitCTX.fillText(CitData.violator.lic_class, Width / 2.24, Height / 2.575);
 
   // Commercial Driver License Check
-  if (CitData.violator_info.lic_is_comm) {
+  if (CitData.violator.lic_is_comm) {
     CitCTX.fillText("X", Width / 1.926, Height / 2.565);
   } else {
     CitCTX.fillText("X", Width / 1.65, Height / 2.565);
   }
 
   // Violator's Age Group
-  CitCTX.fillText(CitData.violator_info.age, Width / 1.448, Height / 2.575);
+  CitCTX.fillText(CitData.violator.age, Width / 1.448, Height / 2.575);
 
   // Violator's Gender
-  CitCTX.fillText(CitData.violator_info.gender, Width / 42, Height / 2.305);
+  CitCTX.fillText(CitData.violator.gender, Width / 42, Height / 2.305);
 
   // Violator's Hair Color
-  CitCTX.fillText(CitData.violator_info.hair_color, Width / 6.25, Height / 2.305);
+  CitCTX.fillText(CitData.violator.hair_color, Width / 6.25, Height / 2.305);
 
   // Violator's Eyes Color
-  CitCTX.fillText(CitData.violator_info.eye_color, Width / 3.91, Height / 2.305);
+  CitCTX.fillText(CitData.violator.eye_color, Width / 3.91, Height / 2.305);
 
   // Violator's Height
-  CitCTX.fillText(CitData.violator_info.height, Width / 2.74, Height / 2.305);
+  CitCTX.fillText(CitData.violator.height, Width / 2.74, Height / 2.305);
 
   // Violator's Weight
-  CitCTX.fillText(CitData.violator_info.weight.toString(), Width / 2.07, Height / 2.305);
+  CitCTX.fillText(CitData.violator.weight.toString(), Width / 2.07, Height / 2.305);
 
   // Vehicle License Number
-  fillTextWithSpacing(CitCTX, CitData.vehicle_info.lic_num, Width / 42, Height / 2.09, 3);
+  fillTextWithSpacing(CitCTX, CitData.vehicle.lic_num, Width / 42, Height / 2.09, 3);
 
   // Vehicle Year of Manufacture
-  fillTextWithSpacing(CitCTX, CitData.vehicle_info.year, Width / 42, Height / 1.912, 1);
+  fillTextWithSpacing(CitCTX, CitData.vehicle.year, Width / 42, Height / 1.912, 1);
 
   // Vehicle Make
-  CitCTX.fillText(CitData.vehicle_info.make, Width / 5.08, Height / 1.918);
+  CitCTX.fillText(CitData.vehicle.make, Width / 5.08, Height / 1.918);
 
   // Vehicle Model
-  CitCTX.fillText(CitData.vehicle_info.model, Width / 44, Height / 1.765);
+  CitCTX.fillText(CitData.vehicle.model, Width / 44, Height / 1.765);
 
   // Vehicle Body Style
-  CitCTX.fillText(CitData.vehicle_info.body_style, Width / 1.838, Height / 1.76);
+  CitCTX.fillText(CitData.vehicle.body_style, Width / 1.838, Height / 1.76);
 
   // Vehicle Color
-  CitCTX.fillText(CitData.vehicle_info.color, Width / 1.412, Height / 1.76);
+  CitCTX.fillText(CitData.vehicle.color, Width / 1.412, Height / 1.76);
 
   // ------------------------------------------------------------------------------------------------
   // Violations

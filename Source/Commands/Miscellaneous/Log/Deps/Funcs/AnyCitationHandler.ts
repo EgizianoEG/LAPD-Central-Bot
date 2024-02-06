@@ -71,7 +71,7 @@ export default async function AnyCitationCallback(
   await Interaction.deferReply({ ephemeral: true });
   const CitationInfo = {
     fine_amount: Interaction.options.getInteger("fine-amount", false),
-    violator_info: {
+    violator: {
       name: Interaction.options.getString("name", true),
       gender: Interaction.options.getString("gender", true),
       age: FormatAge(Interaction.options.getInteger("age", true)),
@@ -84,7 +84,7 @@ export default async function AnyCitationCallback(
       lic_class: "A",
       city: "Los Angeles",
     },
-    vehicle_info: {
+    vehicle: {
       lic_num: Interaction.options.getString("vehicle-plate", true),
       model: Interaction.options.getString("vehicle-model", true),
       color: Interaction.options.getString("vehicle-color", true),
@@ -113,14 +113,14 @@ export default async function AnyCitationCallback(
         await BInteract.awaitModalSubmit({ time: 5 * 60_000, filter: ModalFilter }).then(
           async (Submission) => {
             ActionCollector.stop("ModalSubmitted");
-            CitationInfo.violator_info.id = ValidationVars.violator_id;
-            CitationInfo.vehicle_info = {
-              color: CitationInfo.vehicle_info.color,
+            CitationInfo.violator.id = ValidationVars.violator_id;
+            CitationInfo.vehicle = {
+              color: CitationInfo.vehicle.color,
               year: ValidationVars.vehicle.model_year.org,
               make: ValidationVars.vehicle.brand,
               model: ValidationVars.vehicle.name,
               body_style: ValidationVars.vehicle.style,
-              lic_num: CitationInfo.vehicle_info.lic_num.toUpperCase(),
+              lic_num: CitationInfo.vehicle.lic_num.toUpperCase(),
             };
             await OnModalSubmission(Interaction, CitationInfo, CitingOfficer, Submission);
           }
@@ -280,29 +280,26 @@ async function HandleCmdOptsValidation(
     }
   | ReturnType<ErrorEmbed["replyToInteract"]>
 > {
-  if (!ColorNames.includes(CitationInfo.vehicle_info.color)) {
+  if (!ColorNames.includes(CitationInfo.vehicle.color)) {
     return new ErrorEmbed()
       .useErrTemplate("ACUnknownColor")
       .replyToInteract(Interaction, true, true);
   }
 
   // Validate the Roblox username. Notice that the `name` property only reflects the Roblox username yet.
-  if (!IsValidRobloxUsername(CitationInfo.violator_info.name)) {
+  if (!IsValidRobloxUsername(CitationInfo.violator.name)) {
     return new ErrorEmbed()
-      .useErrTemplate("MalformedRobloxUsername", CitationInfo.violator_info.name)
+      .useErrTemplate("MalformedRobloxUsername", CitationInfo.violator.name)
       .replyToInteract(Interaction, true, true);
   }
 
-  if (!IsValidLicensePlate(CitationInfo.vehicle_info.lic_num)) {
+  if (!IsValidLicensePlate(CitationInfo.vehicle.lic_num)) {
     return new ErrorEmbed()
       .useErrTemplate("InvalidLicensePlate")
       .replyToInteract(Interaction, true, true);
   }
 
-  if (
-    CitationInfo.violator_info?.height &&
-    !IsValidPersonHeight(CitationInfo.violator_info.height)
-  ) {
+  if (CitationInfo.violator?.height && !IsValidPersonHeight(CitationInfo.violator.height)) {
     return new ErrorEmbed()
       .useErrTemplate("MalformedPersonHeight")
       .replyToInteract(Interaction, true, true);
@@ -318,10 +315,10 @@ async function HandleCmdOptsValidation(
       .replyToInteract(Interaction, true, true);
   }
 
-  const [ViolatorID, , WasUserFound] = await GetIdByUsername(CitationInfo.violator_info.name, true);
+  const [ViolatorID, , WasUserFound] = await GetIdByUsername(CitationInfo.violator.name, true);
   if (!WasUserFound) {
     return new ErrorEmbed()
-      .useErrTemplate("NonexistentRobloxUsername", CitationInfo.violator_info.name)
+      .useErrTemplate("NonexistentRobloxUsername", CitationInfo.violator.name)
       .replyToInteract(Interaction, true, true);
   } else if (CitingOfficer.RobloxUserId === ViolatorID) {
     return new ErrorEmbed()
@@ -349,7 +346,7 @@ async function OnModalSubmission(
   ModalSubmission: ModalSubmitInteraction<"cached">
 ) {
   await ModalSubmission.deferUpdate().catch(() => null);
-  const ViolatorRobloxInfo = await GetUserInfo(PCitationData.violator_info.id);
+  const ViolatorRobloxInfo = await GetUserInfo(PCitationData.violator.id);
   const OfficerRobloxInfo = await GetUserInfo(CitingOfficer.RobloxUserId);
   const QueryFilter = { _id: CmdInteract.guildId };
   const GuildDoc = await GuildModel.findOneAndUpdate(QueryFilter, QueryFilter, {
@@ -382,7 +379,7 @@ async function OnModalSubmission(
     ampm: TimeInfo!.groups!.day_period as any,
     num: GenerateCitationNumber(GuildDoc.logs.citations),
 
-    vehicle_info: PCitationData.vehicle_info,
+    vehicle: PCitationData.vehicle,
     fine_amount: PCitationData.fine_amount,
     violations: FormatCitViolations(ModalSubmission.fields.getTextInputValue("traffic-violations")),
     violation_loc: TitleCase(
@@ -390,10 +387,10 @@ async function OnModalSubmission(
       true
     ),
 
-    violator_info: {
-      ...PCitationData.violator_info,
-      id: PCitationData.violator_info.id,
-      age: PCitationData.violator_info.age,
+    violator: {
+      ...PCitationData.violator,
+      id: PCitationData.violator.id,
+      age: PCitationData.violator.age,
       name: FormatUsername(ViolatorRobloxInfo),
       city: "Los Angeles",
       address:

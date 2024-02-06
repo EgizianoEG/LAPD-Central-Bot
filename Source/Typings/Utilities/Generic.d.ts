@@ -34,8 +34,8 @@ export namespace Citations {
      */
     violations: (string | Violation)[];
 
-    violator_info: ViolatorInfo;
-    vehicle_info: VehicleInfo;
+    violator: ViolatorInfo;
+    vehicle: VehicleInfo;
   }
 
   interface FineCitationData extends WarningCitationData {
@@ -46,8 +46,8 @@ export namespace Citations {
   interface AnyCitationData extends WarningCitationData, Partial<FineCitationData> {}
 
   interface CitPartialData {
-    violator_info: Pick<ViolatorInfo, "name" | "id"> & Partial<ViolatorInfo>;
-    vehicle_info: VehicleInfo;
+    violator: Pick<ViolatorInfo, "name" | "id"> & Partial<ViolatorInfo>;
+    vehicle: VehicleInfo;
   }
 
   interface CitingOfficerInfo {
