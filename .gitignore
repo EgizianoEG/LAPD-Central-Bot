@@ -24,6 +24,10 @@ logs
 npm-debug.log
 yarn-error.log
 
+# Archived files
+*.archived.*
+*.archived
+
 # dotenv environment variable files
 .env
 .env.development.local
