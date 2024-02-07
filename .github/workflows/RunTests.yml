@@ -1,4 +1,4 @@
-name: Run Code Tests & Code Linting
+name: Code Tests & Linting
 
 on:
   push:
