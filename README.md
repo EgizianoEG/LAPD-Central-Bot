@@ -32,6 +32,6 @@
 <div id="License" align="center">
   <h2><b>License</b></h2>
   <p>
-    This project/bot is licensed under the terms of the <a href="https://github.com/EgizianoEG/String-Plus/blob/main/LICENSE" title="Repository License">MIT license</a>, which allows for free use, distribution, and modification of the code as long as the original copyright and license notice are included.
+    This project/bot is licensed under the terms of the <a href="https://github.com/EgizianoEG/LAPD-Central-Bot/blob/main/LICENSE.md" title="Repository License">MIT license</a>, which allows for free use, distribution, and modification of the code as long as the original copyright and license notice are included.
   </p>
 </div>
