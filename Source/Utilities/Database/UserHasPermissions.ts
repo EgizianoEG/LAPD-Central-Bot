@@ -48,7 +48,7 @@ export async function UserHasPermsV2<UType extends string | string[]>(
   }
 
   if (UseCache && typeof User === "string") {
-    const Cached = UserPermsCache.get(`${GuildId}:${User}:${Perms}`);
+    const Cached = UserPermsCache.get(`${GuildId}:${User}:${JSON.stringify(Perms)}`);
     if (typeof Cached === "boolean") return Cached as any;
   }
 
@@ -58,13 +58,13 @@ export async function UserHasPermsV2<UType extends string | string[]>(
     if (!GuildMember) return false as any;
 
     const Result = CheckPerms(await GetDBRolePerms(GuildId, UseCache), Perms, GuildMember);
-    UserPermsCache.set(`${GuildId}:${User}:${Perms}`, Result);
+    UserPermsCache.set(`${GuildId}:${User}:${JSON.stringify(Perms)}`, Result);
     return Result as any;
   } else if (Array.isArray(User)) {
     const Result = {};
     for (const UserId of User) {
       if (UseCache) {
-        const Cached = UserPermsCache.get(`${GuildId}:${UserId}:${Perms}`);
+        const Cached = UserPermsCache.get(`${GuildId}:${UserId}:${JSON.stringify(Perms)}`);
         if (typeof Cached === "boolean") {
           Result[UserId] = Cached;
           continue;
@@ -78,7 +78,7 @@ export async function UserHasPermsV2<UType extends string | string[]>(
       }
 
       Result[UserId] = CheckPerms(await GetDBRolePerms(GuildId, UseCache), Perms, GuildMember);
-      UserPermsCache.set(`${GuildId}:${User}:${Perms}`, Result[UserId]);
+      UserPermsCache.set(`${GuildId}:${User}:${JSON.stringify(Perms)}`, Result[UserId]);
     }
 
     return Result as any;
