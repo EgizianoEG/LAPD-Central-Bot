@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/no-duplicate-string */
 /**
  * A collection of error messages used throughout the application.
  *
@@ -95,6 +96,15 @@ export const ErrorMessages = {
   NonexistentShiftTypeDeletion: {
     Title: "Shift Type Not Found",
     Description: "The shift type `%s` does not exist in the server and cannot be deleted.",
+  },
+
+  /**
+   *
+   */
+  MaximumShiftTypesReached: {
+    Title: "Maximum Shift Types Reached",
+    Description:
+      "The limit of ten shift types has been reached, and you cannot create any further.",
   },
 
   /**
@@ -241,7 +251,7 @@ export const ErrorMessages = {
   },
 
   GuildConfigNotFound: {
-    Title: "Guild Configuration Not Found",
+    Title: "Database Error",
     Description: "Something went wrong and the guild's current configuration could not be fetched.",
   },
 

@@ -1,6 +1,5 @@
 import { AutocompleteInteraction, SlashCommandBuilder } from "discord.js";
 import { ErrorEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import { ErrorMessages } from "@Resources/AppMessages.js";
 
 import DutyTypesSubcommandGroup from "./Duty Types/Main.js";
 import AutocompleteShiftType from "@Utilities/Autocompletion/ShiftType.js";
@@ -61,8 +60,7 @@ async function IsAuthorizedCmdUsage(Interaction: SlashCommandInteraction<"cached
     const LinkedRobloxUser = await HasRobloxLinked(Interaction);
     if (!LinkedRobloxUser) {
       await new ErrorEmbed()
-        .setTitle(ErrorMessages.SMRobloxUserNotLinked.Title)
-        .setDescription(ErrorMessages.SMRobloxUserNotLinked.Description)
+        .useErrTemplate("SMRobloxUserNotLinked")
         .replyToInteract(Interaction, true);
       return false;
     }

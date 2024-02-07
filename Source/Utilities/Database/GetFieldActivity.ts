@@ -23,7 +23,6 @@ export default async function GetStaffFieldActivity(
   StaffMember: GuildMember,
   After?: Date | null
 ): Promise<StaffFieldActivityReturn> {
-  After = (After ? After.toISOString() : null) as any;
   return GuildModel.aggregate([
     {
       $match: {

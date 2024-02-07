@@ -3,22 +3,17 @@
 
 import {
   Colors,
-  Message,
   ButtonStyle,
   EmbedBuilder,
   ButtonBuilder,
   ComponentType,
   ActionRowBuilder,
-  InteractionResponse,
   SlashCommandSubcommandBuilder,
 } from "discord.js";
 
-import { ErrorMessages } from "@Resources/AppMessages.js";
-import { SendErrorReply } from "@Utilities/Other/SendReply.js";
 import { IsValidShiftTypeName } from "@Utilities/Other/Validators.js";
-import { InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
-import Util from "node:util";
 import Dedent from "dedent";
 import GetShiftTypes from "@Utilities/Database/GetShiftTypes.js";
 import DeleteShiftType from "@Utilities/Database/DeleteShiftType.js";
@@ -34,24 +29,20 @@ import HandleActionCollectorExceptions from "@Utilities/Other/HandleButtonCollec
  * @param ShiftTypeName - The provided name from the user
  * @returns The interaction reply (an error reply) if validation failed; otherwise `undefined`
  */
-async function HandleNameValidation(
+async function HandleSTNameValidation(
   Interaction: SlashCommandInteraction<"cached">,
   ShiftTypeName: string
-): Promise<Message<boolean> | InteractionResponse<boolean> | undefined> {
+): Promise<boolean> {
   if (!IsValidShiftTypeName(ShiftTypeName)) {
-    return SendErrorReply({
-      Interaction,
-      Ephemeral: true,
-      Title: ErrorMessages.MalformedShiftTypeName.Title,
-      Message: ErrorMessages.MalformedShiftTypeName.Description,
-    });
+    return new ErrorEmbed()
+      .useErrTemplate("MalformedShiftTypeName")
+      .replyToInteract(Interaction, true)
+      .then(() => true);
   } else if (ShiftTypeName.match(/Default/i)) {
-    return SendErrorReply({
-      Interaction,
-      Ephemeral: true,
-      Title: ErrorMessages.PreservedShiftTypeDeletion.Title,
-      Message: ErrorMessages.PreservedShiftTypeDeletion.Description,
-    });
+    return new ErrorEmbed()
+      .useErrTemplate("PreservedShiftTypeDeletion")
+      .replyToInteract(Interaction, true)
+      .then(() => true);
   } else {
     const ShiftTypeExists = await GetShiftTypes(Interaction.guildId).then((ShiftTypes) => {
       for (const ShiftType of ShiftTypes) {
@@ -60,13 +51,12 @@ async function HandleNameValidation(
       return false;
     });
     if (!ShiftTypeExists)
-      return SendErrorReply({
-        Interaction,
-        Ephemeral: true,
-        Title: ErrorMessages.NonexistentShiftTypeDeletion.Title,
-        Message: Util.format(ErrorMessages.NonexistentShiftTypeDeletion.Description, ShiftTypeName),
-      });
+      return new ErrorEmbed()
+        .useErrTemplate("NonexistentShiftTypeDeletion", ShiftTypeName)
+        .replyToInteract(Interaction, true)
+        .then(() => true);
   }
+  return false;
 }
 
 /**
@@ -91,30 +81,27 @@ async function HandleNameValidation(
  */
 async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
   const ShiftTypeName = Interaction.options.getString("name", true);
-
-  await HandleNameValidation(Interaction, ShiftTypeName);
-  if (Interaction.replied) return;
+  if (await HandleSTNameValidation(Interaction, ShiftTypeName)) return;
 
   const PromptEmbed = new EmbedBuilder()
     .setColor(Colors.Orange)
-    .setTitle("Shift Type Deletion")
+    .setTitle("Confirmation Required")
+    .setFooter({ text: "This prompt will automatically cancel after five minutes of inactivity." })
     .setDescription(
       Dedent(`
         **Are you sure you want to delete the shift type named \`${ShiftTypeName}\`?**
-        **Note:** Deleting a shift type does not erase the logged shift data associated with it, and those records can still be recovered by re-creating it using the same name.
-        \u200b
-        *This prompt will automatically cancel after five minutes of inactivity.*
+        **Note:** Deleting the shift type will not erase the logged shift data associated with it. This data can still be accessed by recreating the shift type with the same name.
       `)
     );
 
   const PromptComponents = [
     new ActionRowBuilder().addComponents(
       new ButtonBuilder()
-        .setCustomId(`confirm-deletion:${Interaction.user.id}`)
+        .setCustomId(`std-confirm:${Interaction.user.id}:${Interaction.guildId}`)
         .setLabel("Confirm and Delete")
-        .setStyle(ButtonStyle.Primary),
+        .setStyle(ButtonStyle.Danger),
       new ButtonBuilder()
-        .setCustomId(`cancel-deletion:${Interaction.user.id}`)
+        .setCustomId(`std-cancel:${Interaction.user.id}:${Interaction.guildId}`)
         .setLabel("Cancel Deletion")
         .setStyle(ButtonStyle.Secondary)
     ) as ActionRowBuilder<ButtonBuilder>,

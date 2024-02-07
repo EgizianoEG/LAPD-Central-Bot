@@ -47,7 +47,7 @@ async function FormatActiveShifts(
   }
 
   return new InfoEmbed()
-    .setTitle(Emojis.StopWatch + "   Currently Active Shifts")
+    .setTitle(`${Emojis.StopWatch}   Currently Active Shifts`)
     .setDescription("**The server's current active shifts, categorized by type**")
     .setFooter(IncludesAnnotations ? { text: "[1]: Currently on break" } : null)
     .setFields(Fields)
@@ -62,7 +62,7 @@ async function FormatActiveShifts(
 async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
   const ActiveShifts = await GetActiveShifts({ Interaction });
   const GAShifts = Object.groupBy(ActiveShifts, ({ type }) => type);
-  const ASOrdered = Object.entries(GAShifts)
+  const ASOrdered = Object.entries(GAShifts as unknown as UnPartial<typeof GAShifts>)
     .sort((a, b) => b[1].length - a[1].length)
     .reduce((obj, [key, value]) => {
       obj[key] = value.toSorted(

@@ -106,11 +106,10 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
 // Command structure:
 // ------------------
 const CommandObject = {
+  callback: Callback,
   data: new SlashCommandSubcommandBuilder()
     .setName("view")
     .setDescription("Lists all present server-created duty types."),
-
-  callback: Callback,
 };
 
 // ---------------------------------------------------------------------------------------

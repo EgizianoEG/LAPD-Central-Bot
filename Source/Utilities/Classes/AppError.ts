@@ -1,3 +1,4 @@
+import type { ErrorMessages } from "@Resources/AppMessages.js";
 export interface AppErrorOptions {
   /** [Currently Unused] Error code; defaults to `0`.
    *   - `0`: Normal/Generic error,
@@ -17,6 +18,9 @@ export interface AppErrorOptions {
 
   /** Custom stack trace to set. */
   Stack?: string;
+
+  /** A predefined template to use for title and message properties. */
+  Template?: keyof typeof ErrorMessages;
 }
 
 export default class AppError extends Error {

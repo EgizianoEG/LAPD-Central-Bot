@@ -33,16 +33,14 @@ export default async function DeleteShiftType(Name: string, GuildId: string) {
 
   if (!GuildDoc) {
     throw new AppError({
-      Title: "Database Error",
-      Message: `Couldn't find the guild document for guild id:${GuildId}`,
+      Template: "GuildConfigNotFound",
       Showable: true,
     });
   }
 
   if (ShiftTypeIndex === -1) {
     throw new AppError({
-      Title: "Shift Type Not Found",
-      Message: `The shift type \`${Name}\` does not exist in the server and cannot be deleted.`,
+      Template: "NonexistentShiftTypeDeletion",
       Showable: true,
     });
   } else {

@@ -18,8 +18,6 @@ import {
 
 import { Types } from "mongoose";
 import { ExtraTypings } from "@Typings/Utilities/Database.js";
-import { ErrorMessages } from "@Resources/AppMessages.js";
-import { SendErrorReply } from "@Utilities/Other/SendReply.js";
 import { Embeds, Emojis } from "@Config/Shared.js";
 import { ActiveShiftsCache } from "@Utilities/Other/Cache.js";
 import { NavButtonsActionRow } from "@Utilities/Other/GetNavButtons.js";
@@ -38,7 +36,6 @@ import ShiftModel from "@Models/Shift.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import DHumanize from "humanize-duration";
 import Dedent from "dedent";
-import Util from "node:util";
 
 const HumanizeDuration = DHumanize.humanizer({
   conjunction: " and ",
@@ -182,13 +179,11 @@ async function HandleNonActiveShift(
 
     if (UserPresence.userPresenceType !== 2) {
       await new ErrorEmbed()
-        .setTitle(ErrorMessages.SMRobloxUserNotInGame.Title)
-        .setDescription(ErrorMessages.SMRobloxUserNotInGame.Description)
+        .useErrTemplate("SMRobloxUserNotInGame")
         .replyToInteract(ButtonInteract, true);
     } else if (ShiftActive) {
       await new ErrorEmbed()
-        .setTitle(ErrorMessages.ShiftAlreadyActive.Title)
-        .setDescription(Util.format(ErrorMessages.ShiftAlreadyActive.Description, ShiftActive.type))
+        .useErrTemplate("ShiftAlreadyActive", ShiftActive.type)
         .replyToInteract(ButtonInteract, true);
     } else {
       ComponentCollector.stop("confirm-start");
@@ -244,10 +239,9 @@ async function HandleNonActiveShift(
         stack: Err.stack,
       });
 
-      SendErrorReply({
-        Interaction: Collected.last() ?? Interaction,
-        Template: "AppError",
-      });
+      await new ErrorEmbed()
+        .useErrTemplate("AppError")
+        .replyToInteract(Collected.last() ?? Interaction);
     }
   });
 }
@@ -401,31 +395,50 @@ async function HandleShiftEnd(
  */
 async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
   const GuildSettings = await GetGuildSettings(Interaction.guildId);
-  const ShiftTypes = GuildSettings?.shifts.types ?? ([] as any);
-  const CmdShiftType = Interaction.options.getString("type");
-  const ShiftTypeExists =
-    CmdShiftType === null || ShiftTypes.some((ShiftType) => ShiftType.name === CmdShiftType);
-
-  // Early return if the input shift type is not found.
-  // Or if the user is not allowed to use a specific shift type.
-  if (!ShiftTypeExists) {
+  if (!GuildSettings) {
     return new ErrorEmbed()
-      .setTitle(ErrorMessages.NonexistentShiftTypeUsage.Title)
-      .setDescription(ErrorMessages.NonexistentShiftTypeUsage.Description)
+      .useErrTemplate("GuildConfigNotFound")
       .replyToInteract(Interaction, true);
-  } else {
-    const IsUsageAllowed = await HandleShiftTypeRestrictions(Interaction, ShiftTypes, CmdShiftType);
-    if (!IsUsageAllowed) {
-      return new UnauthorizedEmbed()
-        .setTitle(ErrorMessages.UnauthorizedShiftTypeUsage.Title)
-        .setDescription(ErrorMessages.UnauthorizedShiftTypeUsage.Description)
-        .replyToInteract(Interaction, true);
-    }
+  }
+
+  const ShiftTypes = GuildSettings.shifts.types;
+  const CmdShiftType = Interaction.options.getString("type")?.trim();
+  const CmdShiftTypeMDef = CmdShiftType?.match(/^Default$/i);
+  const GuildDefaultST = ShiftTypes.findIndex((ShiftType) => ShiftType.is_default);
+  const CustomSTIndex = ShiftTypes.findIndex((ShiftType) => ShiftType.name === CmdShiftType);
+  let TargetShiftType = "";
+
+  if (CmdShiftTypeMDef) {
+    TargetShiftType = "Default";
+  } else if (CustomSTIndex !== -1) {
+    TargetShiftType = ShiftTypes[CustomSTIndex].name;
+  } else if (!CmdShiftType) {
+    TargetShiftType = ShiftTypes[GuildDefaultST]?.name || "Default";
+  }
+
+  // Early return if the input shift type inputted is not found as a custom shift type;
+  if (CmdShiftType && !CmdShiftTypeMDef && CustomSTIndex === -1) {
+    return new ErrorEmbed()
+      .useErrTemplate("NonexistentShiftTypeUsage")
+      .replyToInteract(Interaction, true);
+  }
+
+  const IsUsageAllowed = await HandleShiftTypeRestrictions(
+    Interaction,
+    ShiftTypes,
+    TargetShiftType
+  );
+
+  // Or if the user is not allowed to use a specific shift type.
+  if (!IsUsageAllowed) {
+    return new UnauthorizedEmbed()
+      .useErrTemplate("UnauthorizedShiftTypeUsage")
+      .replyToInteract(Interaction, true);
   }
 
   await Interaction.deferReply();
   const ShiftActive = await GetShiftActive({
-    ShiftType: CmdShiftType,
+    ShiftType: TargetShiftType,
     UserOnly: true,
     Interaction,
   });
@@ -434,7 +447,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
     {
       user: Interaction.user.id,
       guild: Interaction.guildId,
-      type: CmdShiftType,
+      type: TargetShiftType,
     },
     !!ShiftActive
   );
@@ -445,9 +458,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
       **Average On-Duty Time:** ${UserShiftsData.avg_onduty}
     `);
 
-  const ManagementType =
-    CmdShiftType ?? ShiftTypes.find((Type) => Type.is_default)?.name ?? "Default";
-  const BaseEmbedTitle = `Shift Management: \`${ManagementType}\` Type`;
+  const BaseEmbedTitle = `Shift Management: \`${TargetShiftType}\` Type`;
   const ButtonsActionRow = GetManagementButtons(Interaction, ShiftActive);
   const DisablePrompt = async (Prompt: InteractionResponse<true>) => {
     return Prompt.edit({
@@ -477,11 +488,11 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
       ShiftsInfo,
       Interaction,
       ButtonsActionRow,
-      ManagementType
+      TargetShiftType
     );
   }
 
-  if (ShiftActive.events.breaks.some(([, end]) => end === null)) {
+  if (ShiftActive.isBreakActive()) {
     return HandleOnBreakShift(
       ShiftActive,
       BaseEmbedTitle,

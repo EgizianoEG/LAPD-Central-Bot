@@ -398,7 +398,8 @@ async function OnModalSubmission(
     },
 
     citing_officer: {
-      id: CitingOfficer.RobloxUserId,
+      discord_id: CmdInteract.user.id,
+      roblox_id: CitingOfficer.RobloxUserId,
       name: OfficerRobloxInfo.name,
       display_name: OfficerRobloxInfo.displayName,
     },

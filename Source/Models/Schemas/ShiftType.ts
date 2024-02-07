@@ -1,8 +1,15 @@
-import { Schema } from "mongoose";
+import { Schema, mongo } from "mongoose";
 
 const ShiftTypeSchema = new Schema({
+  _id: {
+    required: true,
+    type: Schema.Types.ObjectId,
+    default: () => new mongo.ObjectId(),
+  },
+
   name: {
     type: String,
+    trim: true,
     required: true,
     minLength: 3,
     maxLength: 20,

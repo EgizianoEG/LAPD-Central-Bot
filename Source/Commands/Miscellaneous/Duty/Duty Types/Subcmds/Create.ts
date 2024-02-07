@@ -14,12 +14,10 @@ import {
   Colors,
 } from "discord.js";
 
-import { InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { IsValidShiftTypeName } from "@Utilities/Other/Validators.js";
 import { SendErrorReply } from "@Utilities/Other/SendReply.js";
-import { ErrorMessages } from "@Resources/AppMessages.js";
 
-import Util from "util";
 import Dedent from "dedent";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import GetShiftTypes from "@Utilities/Database/GetShiftTypes.js";
@@ -41,19 +39,13 @@ async function HandleNameValidation(
   ShiftTypeName: string
 ): Promise<Message<boolean> | InteractionResponse<boolean> | undefined> {
   if (!IsValidShiftTypeName(ShiftTypeName)) {
-    return SendErrorReply({
-      Ephemeral: true,
-      Interaction,
-      Title: ErrorMessages.MalformedShiftTypeName.Title,
-      Message: ErrorMessages.MalformedShiftTypeName.Description,
-    });
+    return new ErrorEmbed()
+      .useErrTemplate("MalformedShiftTypeName")
+      .replyToInteract(Interaction, true);
   } else if (ShiftTypeName.match(/Default/i)) {
-    return SendErrorReply({
-      Ephemeral: true,
-      Interaction,
-      Title: ErrorMessages.PreservedShiftTypeCreation.Title,
-      Message: ErrorMessages.PreservedShiftTypeCreation.Description,
-    });
+    return new ErrorEmbed()
+      .useErrTemplate("PreservedShiftTypeCreation")
+      .replyToInteract(Interaction, true);
   } else {
     const ShiftTypeExists = await GetShiftTypes(Interaction.guildId).then((ShiftTypes) => {
       for (const ShiftType of ShiftTypes) {
@@ -63,12 +55,9 @@ async function HandleNameValidation(
     });
 
     if (ShiftTypeExists)
-      return SendErrorReply({
-        Ephemeral: true,
-        Interaction,
-        Title: ErrorMessages.ShiftTypeAlreadyExists.Title,
-        Message: Util.format(ErrorMessages.ShiftTypeAlreadyExists.Description, ShiftTypeName),
-      });
+      return new ErrorEmbed()
+        .useErrTemplate("ShiftTypeAlreadyExists", ShiftTypeName)
+        .replyToInteract(Interaction, true);
   }
 }
 

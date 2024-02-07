@@ -31,11 +31,10 @@ async function Callback(Client: DiscordClient, Interaction: SlashCommandInteract
 // Command structure:
 // ------------------
 const SubcommandGroupObject = {
+  callback: Callback,
   data: new SlashCommandSubcommandGroupBuilder()
     .setName("types")
     .setDescription("Duty shift type and its related actions."),
-
-  callback: Callback,
 };
 
 for (const Subcommand of Subcommands) {

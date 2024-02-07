@@ -1,4 +1,4 @@
-import type { PropertiesToString, ExpandRecursively } from "utility-types";
+import type { PropertiesToString } from "utility-types";
 import type { ExtraTypings } from "@Typings/Utilities/Database.js";
 import type { FilterQuery } from "mongoose";
 import DHumanize from "humanize-duration";

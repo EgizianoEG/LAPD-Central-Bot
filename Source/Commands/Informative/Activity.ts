@@ -1,8 +1,8 @@
 // Dependencies:
 // -------------
 import { SlashCommandBuilder, userMention } from "discord.js";
+import { formatDistance, isAfter } from "date-fns";
 import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import { formatDistance } from "date-fns";
 import { FormatUsername } from "@Utilities/Strings/Formatters.js";
 
 import * as Chrono from "chrono-node";
@@ -42,7 +42,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
       return new ErrorEmbed()
         .useErrTemplate("UnknownDateFormat")
         .replyToInteract(Interaction, true, false);
-    } else if (DateAfterParsed > Interaction.createdAt) {
+    } else if (isAfter(DateAfterParsed, Interaction.createdAt)) {
       return new ErrorEmbed()
         .useErrTemplate("DateInFuture")
         .replyToInteract(Interaction, true, false);
@@ -66,7 +66,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
   const ShiftsData = await GetMainShiftsData({
     user: OfficerSelected.id,
     guild: Interaction.guildId,
-    start_timestamp: DateAfterParsed ? { $gte: DateAfterParsed.toISOString() } : { $exists: true },
+    start_timestamp: DateAfterParsed ? { $gte: DateAfterParsed } : { $exists: true },
   });
 
   const RespEmbed = new InfoEmbed()

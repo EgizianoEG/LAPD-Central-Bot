@@ -216,7 +216,7 @@ export namespace ExtraTypings {
     permissible_roles?: string[];
   }
 
-  export interface GuildShiftType {
+  export interface GuildShiftType<ExcludeId extends boolean = false> {
     _id: Types.ObjectId;
     /** The unique shift type name. */
     name: string;

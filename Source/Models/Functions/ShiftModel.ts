@@ -1,8 +1,8 @@
 import { CallbackWithoutResultAndOptionalError, Query } from "mongoose";
+import { ActiveShiftsCache } from "@Utilities/Other/Cache.js";
 import { ExtraTypings } from "@Typings/Utilities/Database.js";
 import ProfileModel from "@Models/GuildProfile.js";
 import AppError from "@Utilities/Classes/AppError.js";
-import { ActiveShiftsCache } from "@Utilities/Other/Cache.js";
 
 const ErrorTitle = "Invalid Action";
 type ThisType = ExtraTypings.HydratedShiftDocument;

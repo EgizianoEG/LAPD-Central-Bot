@@ -76,6 +76,7 @@ function GetPaginatedDurations(ShiftsData: ExtraTypings.HydratedShiftDocument[])
 
   // Calculate total on duty durations for each user.
   for (const [User, Shifts] of Object.entries(UserGroupedDocs)) {
+    if (!Shifts) continue;
     MappedData.set(
       User,
       Shifts.reduce((OnDutySum, CurrDoc) => {

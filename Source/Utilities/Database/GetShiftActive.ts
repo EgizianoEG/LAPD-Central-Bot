@@ -44,7 +44,7 @@ export default async function GetShiftActive<UOType extends boolean | undefined 
   const ActiveShifts = await ShiftModel.find({
     guild: Interaction.guildId,
     user: UserOnly ? Interaction.user.id : { $exists: true },
-    type: ShiftType ?? { $exists: true },
+    type: ShiftType || { $exists: true },
     end_timestamp: null,
   }).exec();
 

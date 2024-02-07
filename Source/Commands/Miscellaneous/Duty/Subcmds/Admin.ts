@@ -18,11 +18,8 @@ import {
 } from "discord.js";
 
 import { ExtraTypings } from "@Typings/Utilities/Database.js";
-import { ErrorMessages } from "@Resources/AppMessages.js";
-import { SendErrorReply } from "@Utilities/Other/SendReply.js";
 import { Embeds, Emojis } from "@Config/Shared.js";
-import { ActiveShiftsCache } from "@Utilities/Other/Cache.js";
-import { SuccessEmbed, InfoEmbed, WarnEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { SuccessEmbed, InfoEmbed, WarnEmbed, ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
 import HandleEmbedPagination from "@Utilities/Other/HandleEmbedPagination.js";
@@ -34,7 +31,6 @@ import AppLogger from "@Utilities/Classes/AppLogger.js";
 import AppError from "@Utilities/Classes/AppError.js";
 import Chunks from "@Utilities/Other/SliceIntoChunks.js";
 import Dedent from "dedent";
-import Util from "node:util";
 
 const FileLabel = "Commands:Miscellaneous:Duty:Admin";
 const HumanizeDuration = DHumanize.humanizer({
@@ -537,7 +533,6 @@ async function HandleUserShiftEnd(
       ? `**Total Break Time:** ${HumanizeDuration(EndedShift.durations.on_break)}`
       : null;
 
-  ActiveShiftsCache.del(EndedShift._id);
   const UserShiftsData = await GetMainShiftsData({
     user: TargetUser.id,
     guild: BInteract.guildId,
@@ -620,19 +615,17 @@ async function HandleUserShiftDelete(BInteract: ButtonInteraction<"cached">, Tar
   }).catch(() => null);
 
   if (!ModalSubmission) return;
+
   const ShiftId = ModalSubmission.fields.getTextInputValue("da-shift-id");
   const ShiftFound = await ShiftModel.findById(ShiftId);
 
   if (!ShiftFound) {
-    return SendErrorReply({
-      Interaction: ModalSubmission,
-      Title: ErrorMessages.NoShiftFoundWithId.Title,
-      Message: Util.format(ErrorMessages.NoShiftFoundWithId.Description, ShiftId),
-    });
+    return new ErrorEmbed()
+      .useErrTemplate("NoShiftFoundWithId", ShiftId)
+      .replyToInteract(ModalSubmission, false, false);
   }
 
   await ShiftFound.deleteOne();
-  ActiveShiftsCache.del(ShiftId);
   await new SuccessEmbed()
     .setTitle("Shift Deleted")
     .setDescription(`Shift with the identifier \`${ShiftId}\` was successfully deleted.`)
@@ -646,6 +639,13 @@ async function HandleUserShiftDelete(BInteract: ButtonInteraction<"cached">, Tar
 async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
   const CmdShiftType = Interaction.options.getString("type", false);
   const TargetUser = Interaction.options.getUser("member", true);
+
+  if (TargetUser.bot) {
+    return new ErrorEmbed()
+      .useErrTemplate("BotMemberSelected")
+      .replyToInteract(Interaction, true, false);
+  }
+
   const ActiveShift = await ShiftModel.findOne({
     end_timestamp: null,
     user: TargetUser.id,
@@ -762,18 +762,15 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
       });
 
       if (Err instanceof AppError && Err.is_showable) {
-        return SendErrorReply({
-          Interaction: ButtonInteract,
-          Message: Err.message,
-          Title: Err.title,
-        });
+        await new ErrorEmbed()
+          .setTitle(Err.title)
+          .setDescription(Err.message)
+          .replyToInteract(ButtonInteract);
       }
 
-      SendErrorReply({
-        Interaction: ButtonInteract,
-        Template: "AppError",
-        Ephemeral: true,
-      });
+      await new ErrorEmbed()
+        .useErrTemplate("AppError")
+        .replyToInteract(ButtonInteract, true, false);
     }
   });
 

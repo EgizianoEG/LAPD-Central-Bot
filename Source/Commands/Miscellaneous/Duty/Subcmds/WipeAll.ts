@@ -2,6 +2,7 @@
 // -------------
 
 import {
+  time,
   ButtonStyle,
   ButtonBuilder,
   ComponentType,
@@ -9,16 +10,16 @@ import {
   SlashCommandSubcommandBuilder,
 } from "discord.js";
 
-import { ErrorMessages } from "@Resources/AppMessages.js";
-import { SendErrorReply } from "@Utilities/Other/SendReply.js";
+import { isAfter } from "date-fns";
 import { IsValidShiftTypeName } from "@Utilities/Other/Validators.js";
-import { InfoEmbed, WarnEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { InfoEmbed, WarnEmbed, SuccessEmbed, ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import HandleActionCollectorExceptions from "@Utilities/Other/HandleButtonCollectorExceptions.js";
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
 import ShiftActionLogger from "@Utilities/Classes/ShiftActionLogger.js";
 import HumanizeDuration from "humanize-duration";
 import ShiftModel from "@Models/Shift.js";
+import * as Chrono from "chrono-node";
 
 // ---------------------------------------------------------------------------------------
 // Functions:
@@ -29,18 +30,15 @@ import ShiftModel from "@Models/Shift.js";
  * @param Interaction - The user command interaction
  * @returns If the interaction has been handled, returns `true`, otherwise returns `false`
  */
-async function HandleNameValidation(
-  Interaction: SlashCommandInteraction<"cached">,
+async function HandleSTNameValidation(
+  CmdInteraction: SlashCommandInteraction<"cached">,
   ShiftTypeName: string
 ): Promise<boolean> {
   if (!IsValidShiftTypeName(ShiftTypeName)) {
-    await SendErrorReply({
-      Interaction,
-      Ephemeral: true,
-      Title: ErrorMessages.MalformedShiftTypeName.Title,
-      Message: ErrorMessages.MalformedShiftTypeName.Description,
-    });
-    return true;
+    return new ErrorEmbed()
+      .useErrTemplate("MalformedShiftTypeName")
+      .replyToInteract(CmdInteraction, true)
+      .then(() => true);
   }
   return false;
 }
@@ -51,24 +49,50 @@ async function HandleNameValidation(
  */
 async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
   const ShiftType = Interaction.options.getString("type");
-  if (ShiftType && (await HandleNameValidation(Interaction, ShiftType))) return;
+  const DateSpecified = Interaction.options.getString("before");
+  const DateSpecifiedParsed = DateSpecified
+    ? Chrono.parseDate(DateSpecified, Interaction.createdAt)
+    : null;
 
-  const QueryMatch = { guild: Interaction.guildId, type: ShiftType ?? { $exists: true } };
+  if (ShiftType && (await HandleSTNameValidation(Interaction, ShiftType))) return;
+  if (DateSpecified && !DateSpecifiedParsed) {
+    return new ErrorEmbed()
+      .useErrTemplate("UnknownDateFormat")
+      .replyToInteract(Interaction, true, false);
+  } else if (
+    DateSpecified &&
+    DateSpecifiedParsed &&
+    isAfter(DateSpecifiedParsed, Interaction.createdAt)
+  ) {
+    return new ErrorEmbed()
+      .useErrTemplate("DateInFuture")
+      .replyToInteract(Interaction, true, false);
+  }
+
+  const QueryMatch = {
+    guild: Interaction.guildId,
+    type: ShiftType ?? { $exists: true },
+    end_timestamp: DateSpecifiedParsed ? { $lt: DateSpecifiedParsed } : { $ne: null },
+  };
+
   const ShiftData = await ShiftModel.aggregate([
     { $match: QueryMatch },
     { $group: { _id: null, totalTime: { $sum: "$durations.on_duty" }, count: { $sum: 1 } } },
     { $unset: ["_id"] },
   ]);
 
+  const HRBeforeDate = DateSpecifiedParsed ? `${time(DateSpecifiedParsed, "D")}, ` : "";
   const PromptEmbed = new WarnEmbed()
+    .setTitle("Confirmation Required")
     .setFooter({
       iconURL: "https://i.ibb.co/d7mdTRY/Info-Orange-Outlined-28.png",
       text: "This prompt will automatically cancel after five minutes of inactivity.",
     })
     .setDescription(
-      "**Are you certain you want to delete all recorded and active shifts for %s?**\n\n" +
-        "A total number of `%i` shifts with total duration of `%s` will be deleted.\n\n" +
-        "**Note:** This action is ***irreversible***, and data cannot be restored after confirmation, and you take responsibility for it.",
+      "**Are you certain you want to delete all shifts recorded before %sfor %s?**\n\n" +
+        "This will permanently erase `%i` shifts totalling `%s`.\n\n" +
+        "**Note:** This action is ***irreversible***, and data cannot be restored after confirmation. By confirming, you accept full responsibility for this action.",
+      HRBeforeDate,
       ShiftType ? `\`${ShiftType}\` duty shift type` : "all duty shift types",
       ShiftData[0]?.count ?? 0,
       HumanizeDuration(ShiftData[0]?.totalTime ?? 0, { round: true, conjunction: " and " })
@@ -144,6 +168,15 @@ const CommandObject = {
         .setMaxLength(20)
         .setRequired(false)
         .setAutocomplete(true)
+    )
+    .addStringOption((Option) =>
+      Option.setName("before")
+        .setDescription(
+          "A date or time expression to only erase shifts that were recorded before it."
+        )
+        .setMinLength(4)
+        .setMaxLength(40)
+        .setRequired(false)
     ),
 
   callback: Callback,
