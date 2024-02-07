@@ -20,10 +20,10 @@ export function ShiftBreakStart(this: ThisType, timestamp: number = Date.now()) 
   if (this.isBreakActive()) {
     return Promise.reject(
       new AppError({
-        Title: ErrorTitle,
-        Message:
+        title: ErrorTitle,
+        message:
           "There is already an active break. Please end the current break before starting another.",
-        Showable: true,
+        showable: true,
       })
     );
   }
@@ -45,9 +45,9 @@ export function ShiftBreakEnd(this: ThisType, timestamp: number = Date.now()) {
 
   return Promise.reject(
     new AppError({
-      Title: ErrorTitle,
-      Message: "There is no active break to end. Make sure to start a break before ending it.",
-      Showable: true,
+      title: ErrorTitle,
+      message: "There is no active break to end. Make sure to start a break before ending it.",
+      showable: true,
     })
   );
 }
@@ -56,10 +56,10 @@ export async function ShiftEnd(this: ThisType, timestamp: Date | number = new Da
   if (this.end_timestamp)
     return Promise.reject(
       new AppError({
-        Title: ErrorTitle,
-        Message:
+        title: ErrorTitle,
+        message:
           "It appears that this shift has already ended. Make sure you start a new shift before you attempt to end it.",
-        Showable: true,
+        showable: true,
       })
     );
   else this.end_timestamp = new Date(timestamp);

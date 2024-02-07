@@ -198,10 +198,10 @@ async function OnChargesModalSubmission(
   const FCharges = FormatCharges(ModalInteraction.fields.getTextInputValue("charges-text"));
   const BookingNumber = GetBookingNumber(GuildDoc!.logs.arrests as any);
   const BookingMugshotURL = await GetBookingMugshot<true>({
-    ReturnURL: true,
-    UserThumbURL: ThumbUrl,
-    BookingNum: BookingNumber,
-    UserGender: CmdOptions.Gender,
+    return_url: true,
+    user_thumb_url: ThumbUrl,
+    booking_num: BookingNumber,
+    user_gender: CmdOptions.Gender,
   });
 
   const ConfirmationEmbed = new EmbedBuilder()
@@ -316,11 +316,11 @@ async function OnChargesModalSubmission(
       if (EndReason === "Report Confirmation") {
         const ReporterRobloxUserInfo = await GetUserInfo(ReporterMainInfo.RobloxUserId);
         const ReporterInfo: ReporterInfoType = {
-          ShiftActive: ReporterMainInfo.ActiveShift,
-          DiscordUserId: CmdInteract.user.id,
-          ReportDate: CmdInteract.createdAt,
-          AsstOfficers,
-          RobloxUser: {
+          shift_active: ReporterMainInfo.ActiveShift,
+          discord_user_id: CmdInteract.user.id,
+          report_date: CmdInteract.createdAt,
+          asst_officers: AsstOfficers,
+          roblox_user: {
             display_name: ReporterRobloxUserInfo.displayName,
             name: ReporterRobloxUserInfo.name,
             id: ReporterMainInfo.RobloxUserId,
@@ -328,14 +328,14 @@ async function OnChargesModalSubmission(
         };
 
         const ArresteeInfo: ArresteeInfoType = {
-          BookingNumber,
-          BookingMugshotURL,
+          booking_num: BookingNumber,
+          booking_mugshot: BookingMugshotURL,
           Gender: CmdOptions.Gender,
           Height: CmdOptions.Height,
           Weight: CmdOptions.Weight,
           AgeGroup: CmdOptions.AgeGroup,
-          FormattedCharges: FCharges,
-          RobloxUser: {
+          formatted_charges: FCharges,
+          roblox_user: {
             display_name: ARUserInfo.displayName,
             name: ARUserInfo.name,
             id: ArresteeId,
@@ -419,7 +419,7 @@ async function CmdCallback(Interaction: SlashCommandInteraction<"cached">, Repor
     );
   } catch (Err: any) {
     if (Err instanceof Error && !Err.message.match(/reason: (?:\w+Delete|time)/)) {
-      throw new AppError({ Message: Err.message, Stack: Err.stack });
+      throw new AppError({ message: Err.message, stack: Err.stack });
     }
   }
 }

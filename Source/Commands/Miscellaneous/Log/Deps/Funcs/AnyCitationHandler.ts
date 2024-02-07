@@ -157,7 +157,7 @@ export default async function AnyCitationCallback(
     });
   } catch (Err: any) {
     if (Err instanceof Error && !Err.message.match(/reason: (?:\w+Delete|time)/)) {
-      throw new AppError({ Message: Err.message, Stack: Err.stack });
+      throw new AppError({ message: Err.message, stack: Err.stack });
     }
   }
 }

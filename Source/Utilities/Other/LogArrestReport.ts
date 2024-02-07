@@ -11,19 +11,19 @@ const ListFormatter = new Intl.ListFormat("en");
 
 export type ReporterInfoType = {
   /** Shift currently active for the reporting officer */
-  ShiftActive: ExtraTypings.HydratedShiftDocument | null;
+  shift_active: ExtraTypings.HydratedShiftDocument | null;
 
   /** Arresting/Reporting officer's Discord Id */
-  DiscordUserId: string;
+  discord_user_id: string;
 
   /** Discord Ids of the arrest assisting officers if applicable */
-  AsstOfficers?: string[];
+  asst_officers?: string[];
 
   /** The date of the report/arrest; defaults to the CMD interaction created at date */
-  ReportDate?: Date;
+  report_date?: Date;
 
   /** Arresting/Reporting officer's roblox user details */
-  RobloxUser: {
+  roblox_user: {
     display_name: string;
     name: string;
     id: string | number;
@@ -31,10 +31,10 @@ export type ReporterInfoType = {
 };
 
 export type ArresteeInfoType = Omit<CmdOptionsType, "Arrestee"> & {
-  FormattedCharges: string;
-  BookingMugshotURL: string;
-  BookingNumber: string;
-  RobloxUser: {
+  formatted_charges: string;
+  booking_mugshot: string;
+  booking_num: string;
+  roblox_user: {
     display_name: string;
     name: string;
     id: string | number;
@@ -46,8 +46,8 @@ export default async function LogArrestReport(
   ArresteeInfo: ArresteeInfoType,
   ReporterInfo: ReporterInfoType
 ) {
-  ReporterInfo.ReportDate = ReporterInfo.ReportDate ?? CachedInteract.createdAt;
-  ReporterInfo.AsstOfficers = ReporterInfo.AsstOfficers ?? [];
+  ReporterInfo.report_date = ReporterInfo.report_date ?? CachedInteract.createdAt;
+  ReporterInfo.asst_officers = ReporterInfo.asst_officers ?? [];
 
   const QueryFilter = { _id: CachedInteract.guildId };
   const GuildDoc = await GuildModel.findOneAndUpdate(QueryFilter, QueryFilter, {
@@ -55,32 +55,32 @@ export default async function LogArrestReport(
     new: true,
   });
 
-  const FArresteeName = FormatUsername(ArresteeInfo.RobloxUser);
-  const FReporterName = FormatUsername(ReporterInfo.RobloxUser);
-  const FAsstOfficers = ReporterInfo.AsstOfficers.length
-    ? ListFormatter.format(Array.from(ReporterInfo.AsstOfficers, (Id) => userMention(Id)))
+  const FArresteeName = FormatUsername(ArresteeInfo.roblox_user);
+  const FReporterName = FormatUsername(ReporterInfo.roblox_user);
+  const FAsstOfficers = ReporterInfo.asst_officers.length
+    ? ListFormatter.format(Array.from(ReporterInfo.asst_officers, (Id) => userMention(Id)))
     : "N/A";
 
   const ArrestLogData: Partial<(typeof GuildDoc.logs.arrests)[number]> = {
-    _id: ArresteeInfo.BookingNumber,
-    made_at: ReporterInfo.ReportDate,
-    arrest_assisting_officers: ReporterInfo.AsstOfficers,
+    _id: ArresteeInfo.booking_num,
+    made_at: ReporterInfo.report_date,
+    arrest_assisting_officers: ReporterInfo.asst_officers,
 
     arrestee: {
-      roblox_id: Number(ArresteeInfo.RobloxUser.id),
+      roblox_id: Number(ArresteeInfo.roblox_user.id),
       formatted_name: FArresteeName,
-      charges: ArresteeInfo.FormattedCharges,
+      charges: ArresteeInfo.formatted_charges,
       gender: ArresteeInfo.Gender,
       height: ArresteeInfo.Height,
       weight: ArresteeInfo.Weight,
       age_group: ArresteeInfo.AgeGroup,
-      mugshot_url: ArresteeInfo.BookingMugshotURL,
+      mugshot_url: ArresteeInfo.booking_mugshot,
     },
 
     arresting_officer: {
       formatted_name: FReporterName,
-      discord_id: ReporterInfo.DiscordUserId,
-      roblox_id: Number(ReporterInfo.RobloxUser.id),
+      discord_id: ReporterInfo.discord_user_id,
+      roblox_id: Number(ReporterInfo.roblox_user.id),
     },
   };
 
@@ -88,17 +88,17 @@ export default async function LogArrestReport(
   await GuildDoc.save();
 
   const ReportDescription = Dedent(`
-    Arrest report submitted by <@${ReporterInfo.DiscordUserId}>.
+    Arrest report submitted by <@${ReporterInfo.discord_user_id}>.
     Arrest assisting officers: ${FAsstOfficers}
-    Booking number: \`${ArresteeInfo.BookingNumber}\`
+    Booking number: \`${ArresteeInfo.booking_num}\`
   `);
 
   const FormattedReport = new EmbedBuilder()
     .setTitle("LAPD — Arrest Report")
     .setDescription(ReportDescription)
     .setTimestamp(CachedInteract.createdTimestamp)
-    .setThumbnail(ArresteeInfo.BookingMugshotURL)
-    .setTimestamp(ReporterInfo.ReportDate)
+    .setThumbnail(ArresteeInfo.booking_mugshot)
+    .setTimestamp(ReporterInfo.report_date)
     .setImage(Images.LAPD_Header)
     .setColor(Colors.DarkBlue)
     .setFooter({
@@ -133,7 +133,7 @@ export default async function LogArrestReport(
       },
       {
         name: "Convicted Charges",
-        value: ArresteeInfo.FormattedCharges,
+        value: ArresteeInfo.formatted_charges,
         inline: false,
       },
     ]);
@@ -148,6 +148,6 @@ export default async function LogArrestReport(
 
   return {
     main_msg_link: MainMsgLink,
-    booking_number: ArresteeInfo.BookingNumber,
+    booking_number: ArresteeInfo.booking_num,
   };
 }

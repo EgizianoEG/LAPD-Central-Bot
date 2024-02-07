@@ -15,20 +15,20 @@ export default async function CreateShiftType(Data: ExtraTypings.CreateShiftType
 
   if (!GuildDoc) {
     throw new AppError({
-      Template: "GuildConfigNotFound",
-      Showable: true,
+      template: "GuildConfigNotFound",
+      showable: true,
     });
   }
 
   if (ShiftTypeExists) {
     return new AppError({
-      Template: "ShiftTypeAlreadyExists",
-      Showable: true,
+      template: "ShiftTypeAlreadyExists",
+      showable: true,
     });
   } else if (GuildDoc.settings.shifts.types.length > 9) {
     return new AppError({
-      Template: "MaximumShiftTypesReached",
-      Showable: true,
+      template: "MaximumShiftTypesReached",
+      showable: true,
     });
   } else {
     if (Data.is_default) {

@@ -11,6 +11,7 @@ import {
 import { ErrorMessages, InfoMessages } from "@Resources/AppMessages.js";
 import { format as FormatString } from "node:util";
 import SharedConfig from "@Config/Shared.js";
+import AppError from "./AppError.js";
 
 const EmbedThumbs = SharedConfig.Embeds.Thumbs;
 const EmbedColors = SharedConfig.Embeds.Colors;
@@ -41,6 +42,19 @@ class BaseEmbed extends EmbedBuilder {
       return super
         .setTitle(ErrorMessages[templateName].Title)
         .setDescription(ErrorMessages[templateName].Description);
+    }
+  }
+
+  /**
+   * Uses the specified error object for the embed's title and description.
+   * @param {AppError | Error} Err - The error object to use.
+   * @returns The modified instance of the error embed.
+   */
+  useErrClass(Err: AppError | Error) {
+    if (Err instanceof AppError) {
+      return this.setTitle(Err.title).setDescription(Err.message);
+    } else {
+      return this.setTitle("Error").setDescription(Err.message);
     }
   }
 

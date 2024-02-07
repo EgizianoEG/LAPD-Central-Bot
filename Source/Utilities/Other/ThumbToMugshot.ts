@@ -5,12 +5,12 @@ import Axios from "axios";
 
 let BgCanvas: Canvas | null = null;
 export interface GetBookingMugshotOptions {
-  UserThumbURL: string;
-  BookingNum: string | number;
+  user_thumb_url: string;
+  booking_num: string | number;
   /** Whether to upload the mugshot on ImgBB and return it's direct URL; defaults to `false` */
-  ReturnURL?: boolean;
+  return_url?: boolean;
   /** For choosing the appropriate fallback thumbnail if the user thumbnail image could not be retrieved */
-  UserGender?: "Male" | "Female" | 1 | 2;
+  user_gender?: "Male" | "Female" | "M" | "F";
 }
 
 /**
@@ -23,19 +23,19 @@ export default async function GetBookingMugshot<AsURL extends boolean | undefine
 ): Promise<AsURL extends true ? string : AsURL extends false ? Buffer : Buffer | string> {
   const ImgCanvas = createCanvas(180, 180);
   const ImgCTX = ImgCanvas.getContext("2d");
-  const ThumbImage = await loadImage(Options.UserThumbURL).catch(() => {
-    if (Options.UserGender) {
-      Options.UserGender = (
-        typeof Options.UserGender === "string"
-          ? typeof Options.UserGender === "number"
-          : Options.UserGender === 1
+  const ThumbImage = await loadImage(Options.user_thumb_url).catch(() => {
+    if (Options.user_gender) {
+      Options.user_gender = (
+        typeof Options.user_gender === "string"
+          ? typeof Options.user_gender === "number"
+          : Options.user_gender === 1
             ? "Male"
             : "Female"
       ) as any;
     } else {
-      Options.UserGender = "Male";
+      Options.user_gender = "Male";
     }
-    return Embeds.Thumbs[`Avatar${Options.UserGender}`];
+    return Embeds.Thumbs[`Avatar${Options.user_gender}`];
   });
 
   // Draw the background & received user thumbnail
@@ -51,17 +51,17 @@ export default async function GetBookingMugshot<AsURL extends boolean | undefine
   // Draw the booking number text
   ImgCTX.font = "bold 10px Bahnschrift";
   ImgCTX.fillStyle = "#141414";
-  ImgCTX.fillText(`#${Options.BookingNum}`, ImgCanvas.width / 1.245, ImgCanvas.height / 1.019);
+  ImgCTX.fillText(`#${Options.booking_num}`, ImgCanvas.width / 1.245, ImgCanvas.height / 1.019);
 
   const ImgBuffer = ImgCanvas.toBuffer("image/jpeg", 100);
-  if (Options.ReturnURL) {
+  if (Options.return_url) {
     const Payload = new FormData();
     Payload.append("image", ImgBuffer.toString("base64"));
 
     const Resp = await Axios.post("https://api.imgbb.com/1/upload", Payload, {
       params: {
         key: Other.ImgBB_API_Key,
-        name: `booking_mugshot_#${Options.BookingNum}`,
+        name: `booking_mugshot_#${Options.booking_num}`,
       },
     });
 

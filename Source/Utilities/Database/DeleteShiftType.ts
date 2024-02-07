@@ -33,15 +33,15 @@ export default async function DeleteShiftType(Name: string, GuildId: string) {
 
   if (!GuildDoc) {
     throw new AppError({
-      Template: "GuildConfigNotFound",
-      Showable: true,
+      template: "GuildConfigNotFound",
+      showable: true,
     });
   }
 
   if (ShiftTypeIndex === -1) {
     throw new AppError({
-      Template: "NonexistentShiftTypeDeletion",
-      Showable: true,
+      template: "NonexistentShiftTypeDeletion",
+      showable: true,
     });
   } else {
     GuildDoc.settings.shifts.types.splice(ShiftTypeIndex, 1);

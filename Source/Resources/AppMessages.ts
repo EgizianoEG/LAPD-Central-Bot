@@ -153,6 +153,16 @@ export const ErrorMessages = {
   },
 
   /**
+   *
+   * @template RobloxUsername The username of the account.
+   */
+  RobloxUserVerificationFailed: {
+    Title: "Verification Failed",
+    Description:
+      "Login verification as `%s` failed.\nPlease rerun the command and ensure you follow the appropriate instructions.",
+  },
+
+  /**
    * Roblox account not linked (for logging out)
    */
   LORobloxUserNotLinked: {
