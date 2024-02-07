@@ -67,8 +67,9 @@ export default function GetPredefinedNavButtons(
   ARInstance.components.forEach((Button) => {
     if (AddUniqueIds) {
       Button.setCustomId(
-        `nav-${Button.data.custom_id}:${Interaction.user.id}:${Interaction?.guild
-          ?.id}:${RandomString(4)}`
+        `nav-${Button.data.custom_id}:${Interaction.user.id}:${
+          Interaction?.guild?.id
+        }:${RandomString(4)}`
       );
     } else {
       Button.setCustomId(
