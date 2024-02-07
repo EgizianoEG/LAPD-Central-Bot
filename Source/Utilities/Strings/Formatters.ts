@@ -882,7 +882,7 @@ export function FormatUsername(
     const Formatted = `${UserData.display_name ?? UserData.displayName ?? UserData.name} (${
       UsernameLinked && UserData.id
         ? `[@${UserData.name}](https://www.roblox.com/users/${UserData.id}/profile)`
-        : UserData.name
+        : `@${UserData.name}`
     })`;
 
     if (IncludeId && UserData.id) {
