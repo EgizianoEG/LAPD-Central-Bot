@@ -871,9 +871,9 @@ async function HandleConfigShowSelection(CmdInteract: SlashCommandInteraction<"c
   const ShiftConfigFieldDesc = Dedent(`
     **Role Assignment:**
     - **On-Duty Roles:**
-      > ${OnDutyRoles ? ListFormatter.format(OnDutyRoles) : "*None*"}
+      > ${OnDutyRoles.length ? ListFormatter.format(OnDutyRoles) : "*None*"}
     - **On-Break Roles:**
-      > ${OnBreakRoles ? ListFormatter.format(OnBreakRoles) : "*None*"}
+      > ${OnBreakRoles.length ? ListFormatter.format(OnBreakRoles) : "*None*"}
   `);
 
   const ShiftActivitiesChannel = GuildSettings.log_channels.shift_activities
@@ -887,11 +887,11 @@ async function HandleConfigShowSelection(CmdInteract: SlashCommandInteraction<"c
   );
 
   const LoggingConfigFieldDesc = Dedent(`
-    - **Shift Activities Channel:**
+    - **Shift Activities Channel:** 
       ${ShiftActivitiesChannel}
-    - **Citation Log Channels:**
+    - **Citation Log Channels:** 
       ${CitationLogChannels.length ? ListFormatter.format(CitationLogChannels) : "*None*"}
-    - **Arrest Log Channels:**
+    - **Arrest Log Channels:** 
       ${ArrestLogChannels.length ? ListFormatter.format(ArrestLogChannels) : "*None*"}
   `);
 
