@@ -72,7 +72,7 @@ export default async function HandleEmbedPagination(
       Pages.length
     );
 
-    ResponseMessage.edit({
+    NavInteraction.editReply({
       embeds: [Pages[NewPageIndex]],
       components: [NavigationButtons],
     })
