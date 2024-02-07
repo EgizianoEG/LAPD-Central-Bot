@@ -3,7 +3,6 @@
 
 import {
   Colors,
-  Message,
   ButtonStyle,
   EmbedBuilder,
   ComponentType,
@@ -11,23 +10,19 @@ import {
   escapeMarkdown,
   ActionRowBuilder,
   SlashCommandBuilder,
-  InteractionResponse,
   AutocompleteInteraction,
 } from "discord.js";
 
 import { DummyText } from "@Utilities/Strings/Random.js";
-import { ErrorMessages } from "@Resources/AppMessages.js";
-import { SendErrorReply } from "@Utilities/Other/SendReply.js";
 import { IsValidRobloxUsername } from "@Utilities/Other/Validators.js";
-import { InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
-import Util from "node:util";
-import GetUserInfo from "@Utilities/Roblox/GetUserInfo.js";
-import IsUserLoggedIn from "@Utilities/Database/IsUserLoggedIn.js";
-import GetIdByUsername from "@Utilities/Roblox/GetIdByUsername.js";
-import AutocompleteUsername from "@Utilities/Autocompletion/Username.js";
-import UpdateLinkedRobloxUser from "@Utilities/Database/UpdateLinkedUser.js";
 import HandleActionCollectorExceptions from "@Utilities/Other/HandleButtonCollectorExceptions.js";
+import UpdateLinkedRobloxUser from "@Utilities/Database/UpdateLinkedUser.js";
+import AutocompleteUsername from "@Utilities/Autocompletion/Username.js";
+import GetIdByUsername from "@Utilities/Roblox/GetIdByUsername.js";
+import IsUserLoggedIn from "@Utilities/Database/IsUserLoggedIn.js";
+import GetUserInfo from "@Utilities/Roblox/GetUserInfo.js";
 
 // ---------------------------------------------------------------------------------------
 // Functions:
@@ -41,41 +36,37 @@ import HandleActionCollectorExceptions from "@Utilities/Other/HandleButtonCollec
 async function HandleInvalidUsername(
   Interaction: SlashCommandInteraction,
   InputUsername: string
-): Promise<Message<boolean> | InteractionResponse<boolean> | undefined> {
-  if (Interaction.replied) return;
+): Promise<boolean> {
   if (!IsValidRobloxUsername(InputUsername)) {
-    return SendErrorReply({
-      Ephemeral: true,
-      Interaction,
-      Title: ErrorMessages.MalformedRobloxUsername.Title,
-      Message: Util.format(ErrorMessages.MalformedRobloxUsername.Description, InputUsername),
-    });
+    return new ErrorEmbed()
+      .useErrTemplate("MalformedRobloxUsername", InputUsername)
+      .replyToInteract(Interaction, true)
+      .then(() => true);
   } else if ((await GetIdByUsername(InputUsername))[2] === false) {
-    return SendErrorReply({
-      Ephemeral: true,
-      Interaction,
-      Title: ErrorMessages.NonexistentRobloxUsername.Title,
-      Message: Util.format(ErrorMessages.NonexistentRobloxUsername.Description, InputUsername),
-    });
+    return new ErrorEmbed()
+      .useErrTemplate("NonexistentRobloxUsername", InputUsername)
+      .replyToInteract(Interaction, true)
+      .then(() => true);
   }
+  return false;
 }
 
 /**
  * Checks whether or not the command runner is already logged into the application and if so, halts any further execution
  * @param Interaction - The interaction object.
  */
-async function HandleUserLoginStatus(Interaction: SlashCommandInteraction<"cached">) {
-  if (Interaction.replied) return;
+async function HandleUserLoginStatus(
+  Interaction: SlashCommandInteraction<"cached">
+): Promise<boolean> {
   const UserLoggedIn = await IsUserLoggedIn(Interaction);
   if (UserLoggedIn) {
     const LoggedUsername = (await GetUserInfo(UserLoggedIn)).name;
-    return SendErrorReply({
-      Ephemeral: true,
-      Interaction,
-      Title: ErrorMessages.RobloxUserAlreadyLinked.Title,
-      Message: Util.format(ErrorMessages.RobloxUserAlreadyLinked.Description, LoggedUsername),
-    });
+    return new ErrorEmbed()
+      .useErrTemplate("RobloxUserAlreadyLinked", LoggedUsername)
+      .replyToInteract(Interaction, true)
+      .then(() => true);
   }
+  return false;
 }
 
 /**
@@ -100,10 +91,12 @@ async function HandleUserLoginStatus(Interaction: SlashCommandInteraction<"cache
  */
 async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
   const InputUsername = Interaction.options.getString("username", true);
-
-  await HandleUserLoginStatus(Interaction);
-  await HandleInvalidUsername(Interaction, InputUsername);
-  if (Interaction.replied) return;
+  if (
+    (await HandleUserLoginStatus(Interaction)) ||
+    (await HandleInvalidUsername(Interaction, InputUsername))
+  ) {
+    return;
+  }
 
   const SampleText = DummyText();
   const [RobloxUserId, RobloxUsername] = await GetIdByUsername(InputUsername);
@@ -162,15 +155,9 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
             .setDescription("Successfully verified and logged in as `%s`.", RobloxUsername)
             .replyToInteract(ButtonInteract, true);
         } else {
-          return SendErrorReply({
-            Ephemeral: true,
-            Interaction: ButtonInteract,
-            Title: "Verification Failed",
-            Message: Util.format(
-              "Login verification as `%s` failed.\nPlease rerun the command and ensure you follow the appropriate instructions.",
-              RobloxUsername
-            ),
-          });
+          return new ErrorEmbed()
+            .useErrTemplate("RobloxUserVerificationFailed", InputUsername)
+            .replyToInteract(Interaction, true);
         }
       } else {
         return new InfoEmbed()

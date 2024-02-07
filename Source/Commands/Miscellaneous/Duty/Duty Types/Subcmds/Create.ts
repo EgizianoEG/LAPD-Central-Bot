@@ -16,7 +16,6 @@ import {
 
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { IsValidShiftTypeName } from "@Utilities/Other/Validators.js";
-import { SendErrorReply } from "@Utilities/Other/SendReply.js";
 
 import Dedent from "dedent";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
@@ -188,11 +187,9 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
         });
 
         if (Response instanceof Error) {
-          SendErrorReply({
-            Title: Response.title,
-            Message: Response.message,
-            Interaction: LastInteraction,
-          });
+          await new ErrorEmbed()
+            .useErrClass(Response)
+            .replyToInteract(LastInteraction, false, false);
         } else {
           LastInteraction.reply({
             embeds: [
@@ -244,10 +241,9 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
         details: { ...Err },
       });
 
-      SendErrorReply({
-        Interaction: LastInteraction,
-        Template: "AppError",
-      });
+      await new ErrorEmbed()
+        .useErrTemplate("AppError")
+        .replyToInteract(LastInteraction, false, true);
     }
   });
 }
