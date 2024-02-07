@@ -5,7 +5,7 @@ import AppLogger from "@Utilities/Classes/AppLogger.js";
 import Cron from "node-cron";
 
 export default async function MetricsLogger(Client: DiscordClient) {
-  if (!Other.Environment?.trim().match(/^Pro(?:duction)?$/i)) return;
+  if (!Other.Environment?.trim().match(/^Prod(?:uction)?$/i)) return;
 
   AppLogger.info({
     label: "Handlers:MetricsLogger",
