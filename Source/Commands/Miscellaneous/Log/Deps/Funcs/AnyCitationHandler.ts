@@ -305,8 +305,10 @@ async function HandleCmdOptsValidation(
       .replyToInteract(Interaction, true, true);
   }
 
-  const VehicleFound = AllVehicleModels.find((Model) =>
-    FormatVehicleName(Model, { name: Model.brand, alias: Model.counterpart })
+  const VehicleFound = AllVehicleModels.find(
+    (Model) =>
+      FormatVehicleName(Model, { name: Model.brand, alias: Model.counterpart }) ===
+      CitationInfo.vehicle.model.trim()
   );
 
   if (!VehicleFound) {
