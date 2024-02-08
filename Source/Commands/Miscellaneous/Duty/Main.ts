@@ -117,10 +117,10 @@ async function Autocomplete(Interaction: AutocompleteInteraction<"cached">) {
 // Command structure:
 // ------------------
 const CommandObject: SlashCommandObject = {
-  options: { cooldown: 5, devOnly: true },
+  options: { cooldown: 5 },
   data: new SlashCommandBuilder()
     .setName("duty")
-    .setDescription("Duty related actions.")
+    .setDescription("Duty and shifts related actions.")
     .addSubcommandGroup(DutyTypesSubcommandGroup.data)
     .setDMPermission(false),
 
