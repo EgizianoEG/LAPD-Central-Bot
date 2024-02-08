@@ -142,7 +142,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
 
   await ProcessPrompt.awaitMessageComponent({
     componentType: ComponentType.Button,
-    time: 5 * 60_000,
+    time: 10 * 60 * 1000,
   })
     .then(async (ButtonInteract) => {
       await DisablePrompt();
