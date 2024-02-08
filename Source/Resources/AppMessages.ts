@@ -124,6 +124,15 @@ export const ErrorMessages = {
   },
 
   /**
+   * An error message to show when attempting to wipe shift records while there aren't any records to delete.
+   */
+  WipeAllNoShiftsFound: {
+    Title: "No Shifts Found",
+    Description:
+      "It looks that there are currently no recorded shifts that match your search to be deleted.",
+  },
+
+  /**
    * Malformed Roblox username
    * @template InputUsername The username provided by the user.
    */

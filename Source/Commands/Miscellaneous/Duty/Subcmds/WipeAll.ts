@@ -81,6 +81,12 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
     { $unset: ["_id"] },
   ]);
 
+  if (!ShiftData[0]?.count) {
+    return new ErrorEmbed()
+      .useErrTemplate("WipeAllNoShiftsFound")
+      .replyToInteract(Interaction, true, false);
+  }
+
   const HRBeforeDate = DateSpecifiedParsed ? `${time(DateSpecifiedParsed, "D")}, ` : "";
   const PromptEmbed = new WarnEmbed()
     .setTitle("Confirmation Required")
@@ -137,6 +143,13 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
       if (ButtonInteract.customId.includes("confirm-wipe")) {
         const Response = (await ShiftModel.deleteMany(QueryMatch).exec()) as any;
         Response.allTime = ShiftData[0]?.allTime;
+
+        if (!ShiftData[0]?.count) {
+          return new InfoEmbed()
+            .setTitle("No Shifts Deleted")
+            .setDescription("Shifts wipe wasn't necessary. There were no shifts to be deleted.")
+            .replyToInteract(Interaction, true, false);
+        }
 
         return Promise.all([
           ShiftActionLogger.LogShiftsWipe(ButtonInteract, Response, ShiftType),

@@ -355,9 +355,9 @@ export default class ShiftActionLogger {
         Dedent(`
         ${TargettedUser ? `**User:** <@${TargettedUser.id}>\n` : ""}
         **Shifts Deleted:** \`${DeleteResult.deletedCount}\`
-        **Shifts of Type:** ${ShiftType ? `\`${ShiftType}\`` : "*All Types*"}
+        **Shifts of Type:** ${ShiftType ? `\`${ShiftType}\`` : "*All Shift Types*"}
         **Total Shifts Time:** ${ReadableDuration(DeleteResult.totalTime ?? 0)}
-        **Deleted AdminUser:** <@${UserInteract.user.id}>
+        **Deleted by Management User:** <@${UserInteract.user.id}>
       `)
       );
 
