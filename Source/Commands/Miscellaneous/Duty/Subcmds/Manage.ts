@@ -389,11 +389,10 @@ async function HandleShiftEnd(
 }
 
 /**
- * @param _
  * @param Interaction
  * @returns
  */
-async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
+async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const GuildSettings = await GetGuildSettings(Interaction.guildId);
   if (!GuildSettings) {
     return new ErrorEmbed()

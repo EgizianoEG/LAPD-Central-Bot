@@ -317,7 +317,7 @@ async function HandleConfirmBackBtnsInteracts(
     ActionCollector.stop("ConfirmConfig");
   } else if (BtnInteract.customId.match(/^app-config-\w+-bck/)) {
     ActionCollector.stop("Back");
-    return Callback(CmdInteract.client, CmdInteract) as any;
+    return Callback(CmdInteract) as any;
   } else {
     return ActionCollector.stop("UnknownBtn");
   }
@@ -354,7 +354,7 @@ async function HandleBasicConfigPageInteracts(
         BCCompActionCollector.stop("ConfirmConfig");
       } else if (Interact.customId.startsWith("app-config-bc-bck")) {
         BCCompActionCollector.stop("Back");
-        return Callback(CmdInteract.client, CmdInteract) as any;
+        return Callback(CmdInteract) as any;
       }
     } else if (Interact.isRoleSelectMenu()) {
       if (Interact.customId.startsWith("app-config-bc-sr")) {
@@ -952,10 +952,9 @@ async function HandleInitialRespActions(
 }
 
 /**
- * @param _
  * @param Interaction
  */
-async function Callback(_: DiscordClient, CmdInteract: SlashCommandInteraction<"cached">) {
+async function Callback(CmdInteract: SlashCommandInteraction<"cached">) {
   const CmdRespEmbed = new EmbedBuilder()
     .setColor(EmbedColor)
     .setTitle("App Configuration")

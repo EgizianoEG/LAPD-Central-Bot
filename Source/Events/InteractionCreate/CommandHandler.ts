@@ -67,7 +67,12 @@ export default async function CommandHandler(
     if (Interaction.replied) return;
 
     if (typeof CommandObject.callback === "function") {
-      await CommandObject.callback(Client, Interaction);
+      if (CommandObject.callback.length > 1) {
+        await (CommandObject.callback as AnySlashCmdCallback)(Client, Interaction);
+      } else {
+        await (CommandObject.callback as AnySlashCmdCallback)(Interaction);
+      }
+
       if (Interaction.replied || Interaction.deferred) return;
       await Interaction.reply({
         ephemeral: true,

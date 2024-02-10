@@ -56,10 +56,9 @@ async function FormatActiveShifts(
 }
 
 /**
- * @param _
  * @param Interaction
  */
-async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
+async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const ActiveShifts = await GetActiveShifts({ Interaction });
   const GAShifts = Object.groupBy(ActiveShifts, ({ type }) => type);
   const ASOrdered = Object.entries(GAShifts as unknown as UnPartial<typeof GAShifts>)

@@ -84,12 +84,16 @@ declare global {
   type SlashCommandInteraction<Cached extends CacheType = CacheType> =
     ChatInputCommandInteraction<Cached>;
 
+  type AnySlashCmdCallback = (
+    arg0: DiscordClient | SlashCommandInteraction,
+    arg1?: SlashCommandInteraction
+  ) => Promise<any>;
+
   interface SlashCommandObject<ClassType extends CommandObjectDataType = SlashCommandBuilder> {
     /** The callback function or the `run` function which will be executed on command call */
-    callback: (
-      arg0: DiscordClient,
-      arg1: SlashCommandInteraction<Cached | undefined>
-    ) => Promise<any>;
+    callback:
+      | ((arg0: DiscordClient, arg1: SlashCommandInteraction<Cached | undefined>) => Promise<any>)
+      | ((arg0: SlashCommandInteraction<Cached | undefined>) => Promise<any>);
 
     /** The autocomplete function which will handle and process autocomplete interactions if applicable */
     autocomplete?: (arg0: AutocompleteInteraction<Cached | undefined>) => Promise<any>;

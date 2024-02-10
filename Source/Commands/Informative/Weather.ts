@@ -7,10 +7,9 @@ import { Colors, EmbedBuilder, SlashCommandBuilder } from "discord.js";
 // ---------------------------------------------------------------------------------------
 
 /**
- * @param _
  * @param Interaction
  */
-async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"raw">) {
+async function Callback(Interaction: SlashCommandInteraction<"raw">) {
   const Units: any = Interaction.options.getString("units") ?? "imperial";
   const WeatherData = await GetCurrentWeather({ Formatted: true, Units });
   const LocalDateTime = new Date().toLocaleString(["en-US"], {

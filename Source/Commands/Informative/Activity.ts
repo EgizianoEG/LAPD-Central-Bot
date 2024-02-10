@@ -16,10 +16,9 @@ import Dedent from "dedent";
 // ---------------------------------------------------------------------------------------
 /**
  * Officer activity show command.
- * @param _
  * @param Interaction
  */
-async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
+async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const OfficerSelected = Interaction.options.getMember("officer");
   const HRDateAfter = Interaction.options.getString("since");
   let DateAfterParsed: Date | null = null;

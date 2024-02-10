@@ -82,7 +82,9 @@ async function Callback(Client: DiscordClient, Interaction: SlashCommandInteract
   for (const SubCommand of Subcommands) {
     if (SubCommand.data.name === SubCommandName) {
       if (typeof SubCommand.callback === "function") {
-        return SubCommand.callback(Client, Interaction);
+        return SubCommand.callback.length > 1
+          ? (SubCommand.callback as AnySlashCmdCallback)(Client, Interaction)
+          : (SubCommand.callback as AnySlashCmdCallback)(Interaction);
       } else {
         return;
       }
@@ -90,7 +92,9 @@ async function Callback(Client: DiscordClient, Interaction: SlashCommandInteract
   }
 
   if (SubCommandGroupName === "types" && typeof DutyTypesSubcommandGroup.callback === "function") {
-    return DutyTypesSubcommandGroup.callback(Client, Interaction);
+    return DutyTypesSubcommandGroup.callback.length > 1
+      ? (DutyTypesSubcommandGroup.callback as AnySlashCmdCallback)(Client, Interaction)
+      : (DutyTypesSubcommandGroup.callback as AnySlashCmdCallback)(Interaction);
   }
 }
 

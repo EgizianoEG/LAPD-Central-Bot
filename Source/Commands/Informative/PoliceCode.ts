@@ -6,10 +6,9 @@ const AllCodes = [...TenCodes, ...ElevenCodes, ...LiteralCodes];
 // ---------------------------------------------------------------------------------------
 
 /**
- * @param _
  * @param Interaction
  */
-async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction) {
+async function Callback(Interaction: SlashCommandInteraction) {
   const CodeTyped = Interaction.options.getString("code", true);
   const CodeFound = AllCodes.find(
     (Code) => Code.code.toLowerCase() === CodeTyped.match(/(.+) \(.+\)/)?.[1].toLowerCase()

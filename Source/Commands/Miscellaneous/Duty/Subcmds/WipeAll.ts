@@ -44,10 +44,9 @@ async function HandleSTNameValidation(
 }
 
 /**
- * @param _
  * @param Interaction
  */
-async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
+async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const ShiftType = Interaction.options.getString("type");
   const DateSpecified = Interaction.options.getString("before");
   const DateSpecifiedParsed = DateSpecified

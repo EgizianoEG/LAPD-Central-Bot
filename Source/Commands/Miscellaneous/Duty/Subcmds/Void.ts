@@ -17,10 +17,9 @@ import HandleActionCollectorExceptions from "@Utilities/Other/HandleButtonCollec
 // Functions:
 // ----------
 /**
- * @param _
  * @param Interaction
  */
-async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
+async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const ActiveShift = await GetActiveShifts({ Interaction, UserOnly: true });
   if (!ActiveShift) {
     return new ErrorEmbed()

@@ -93,10 +93,9 @@ function GetPaginatedDurations(ShiftsData: ExtraTypings.HydratedShiftDocument[])
 }
 
 /**
- * @param _
  * @param Interaction
  */
-async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
+async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const CmdShiftType = Interaction.options.getString("type", false);
 
   // Always return if the shift type provided is malformed.

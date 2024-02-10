@@ -633,10 +633,9 @@ async function HandleUserShiftDelete(BInteract: ButtonInteraction<"cached">, Tar
 }
 
 /**
- * @param _
  * @param Interaction
  */
-async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
+async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const CmdShiftType = Interaction.options.getString("type", false);
   const TargetUser = Interaction.options.getUser("member", true);
 
