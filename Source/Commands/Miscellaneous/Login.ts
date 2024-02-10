@@ -71,7 +71,6 @@ async function HandleUserLoginStatus(
 
 /**
  * Handles command execution logic
- * @param _ - The Discord.js client object.
  * @param Interaction - The interaction object.
  * @todo - Add verification by following user or by joining a game.
  * @execution
@@ -89,7 +88,7 @@ async function HandleUserLoginStatus(
  *    - If "Cancel Login" is clicked, provide a cancellation message.
  * 10. Handle errors and timeouts with appropriate responses.
  */
-async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
+async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const InputUsername = Interaction.options.getString("username", true);
   if (
     (await HandleUserLoginStatus(Interaction)) ||
@@ -145,15 +144,21 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
     time: 10 * 60 * 1000,
   })
     .then(async (ButtonInteract) => {
-      await DisablePrompt();
+      await ButtonInteract.deferUpdate();
       if (ButtonInteract.customId === "confirm-login") {
         const CurrentAbout = (await GetUserInfo(RobloxUserId)).description;
-
         if (CurrentAbout.includes(SampleText)) {
           await UpdateLinkedRobloxUser(Interaction, RobloxUserId);
-          return new SuccessEmbed()
-            .setDescription("Successfully verified and logged in as `%s`.", RobloxUsername)
-            .replyToInteract(ButtonInteract, true);
+          return ButtonInteract.editReply({
+            components: [],
+            embeds: [
+              new SuccessEmbed()
+                .setTitle("Successfully Verified")
+                .setDescription(
+                  "You have successfully verified your Roblox username and linked it to your Discord account."
+                ),
+            ],
+          });
         } else {
           return new ErrorEmbed()
             .useErrTemplate("RobloxUserVerificationFailed", InputUsername)

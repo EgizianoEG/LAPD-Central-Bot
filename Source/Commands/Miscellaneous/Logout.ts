@@ -25,8 +25,12 @@ import UpdateLinkedRobloxUser from "@Utilities/Database/UpdateLinkedUser.js";
  * Handles the case where the command runner is not logged in
  * @param Interaction
  * @param IsLoggedIn
+ * @returns A boolean indication if the interaction was handled or not.
  */
-async function HandleLoggedInUser(Interaction: SlashCommandInteraction, IsLoggedIn: boolean) {
+async function HandleLoggedInUser(
+  Interaction: SlashCommandInteraction,
+  IsLoggedIn: boolean
+): Promise<boolean> {
   if (!IsLoggedIn) {
     return Interaction.reply({
       ephemeral: true,
@@ -35,13 +39,13 @@ async function HandleLoggedInUser(Interaction: SlashCommandInteraction, IsLogged
           .setTitle(ErrorMessages.LORobloxUserNotLinked.Title)
           .setDescription(ErrorMessages.LORobloxUserNotLinked.Description),
       ],
-    });
+    }).then(() => true);
   }
+  return false;
 }
 
 /**
  * Handles the logic for the command interaction to log out and unlink a Roblox account.
- * @param _
  * @param Interaction
  * @execution
  * This function executes the following steps:
@@ -55,11 +59,9 @@ async function HandleLoggedInUser(Interaction: SlashCommandInteraction, IsLogged
  *    - If "Cancel" is clicked, disable the prompt and reply with a cancellation message.
  * 7. Handle errors, including timeouts, with appropriate responses.
  */
-async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
+async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const UserLoggedIn = await IsUserLoggedIn(Interaction);
-
-  await HandleLoggedInUser(Interaction, !!UserLoggedIn);
-  if (Interaction.replied) return;
+  if (await HandleLoggedInUser(Interaction, !!UserLoggedIn)) return;
 
   const RobloxUsername = (await GetUserInfo(UserLoggedIn)).name;
   const ButtonsActionRow = new ActionRowBuilder().setComponents(
@@ -101,12 +103,11 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
     time: 5 * 60_000,
   })
     .then(async (ButtonAction) => {
-      await DisablePrompt();
       await ButtonAction.deferUpdate();
-
       if (ButtonAction.customId === "confirm-logout") {
         await UpdateLinkedRobloxUser(Interaction);
         return ButtonAction.editReply({
+          components: [],
           embeds: [
             new SuccessEmbed().setDescription(
               "Successfully unlinked Roblox account and logged out of the application for user `%s`.",
@@ -116,6 +117,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
         });
       } else {
         return ButtonAction.editReply({
+          components: [],
           embeds: [
             new InfoEmbed()
               .setTitle("Process Cancellation")
