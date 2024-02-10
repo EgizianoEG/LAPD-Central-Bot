@@ -1,6 +1,7 @@
 import type * as DiscordJSMask from "discord.js";
 import type * as MongooseMask from "mongoose";
 import type * as UtilityTypesMask from "utility-types";
+import type { ScheduleOptions } from "node-cron";
 import type { ExtraTypings } from "./Utilities/Database.js";
 import type {
   SlashCommandSubcommandsOnlyBuilder,
@@ -23,6 +24,12 @@ export type CommandObjectDataType =
   | SlashCommandSubcommandsOnlyBuilder
   | undefined
   | any;
+
+export interface CronJobFileDefReturn {
+  cron_exp: string;
+  cron_opts?: ScheduleOptions;
+  cron_func?: (arg0?: Date | "manual" | "init", arg1?: DiscordClient) => void;
+}
 
 export interface CommandObjectOptions {
   /** Whether or not this command will be removed if it already exists in the application or excluded from registration. */
