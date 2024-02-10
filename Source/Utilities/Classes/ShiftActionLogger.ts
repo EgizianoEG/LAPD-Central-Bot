@@ -333,6 +333,57 @@ export default class ShiftActionLogger {
   }
 
   /**
+   * Logs a shift void action to the appropriate and specified channel of a guild.
+   * @param ShiftDoc - The latest/updated shift document.
+   * @param UserInteract - The received discordjs interaction (button/cmd).
+   * @param [AdminUser] - The user who voided the shift, if any.
+   * @param [TargetUser] - The user whose shift was voided, if any. Should be passed if `AdminUser` is also passed.
+   * @returns A promise that resolves to the logging message sent or `undefined` if it wasn't.
+   */
+  public static async LogShiftVoid(
+    ShiftDoc: HydratedShiftDocument,
+    UserInteract: DiscordUserInteract,
+    AdminUser?: User,
+    TargetUser?: User
+  ) {
+    const BaseData = await this.GetBaseData(ShiftDoc, UserInteract);
+    const OnDutyTime = ReadableDuration(ShiftDoc.durations.on_duty);
+    const OnBreakTime = ShiftDoc.durations.on_duty
+      ? ReadableDuration(ShiftDoc.durations.on_break)
+      : null;
+
+    const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Voided")
+      .setColor(SharedData.Embeds.Colors.ShiftEnd)
+      .setDescription(
+        Dedent(`
+              **Officer:** <@${ShiftDoc.user}>
+              **Shift Type:** \`${ShiftDoc.type}\`
+              **Shift Started:** ${BaseData.ShiftStartedRT}
+              **On-Duty Time:** ${OnDutyTime}
+              ${OnBreakTime ? `**On-Break Time:** ${OnBreakTime}` : ""}
+              
+              **Arrests Made:** \`${ShiftDoc.events.arrests}\`
+              **Citations Issued:** \`${ShiftDoc.events.citations}\`
+          `)
+      );
+
+    if (AdminUser) {
+      LogEmbed.setFooter({
+        text: `Ended by: @${AdminUser.username}; ${LogEmbed.data.footer?.text}`,
+      });
+
+      if (TargetUser) {
+        LogEmbed.setAuthor({
+          name: `@${TargetUser.username}`,
+          iconURL: TargetUser.displayAvatarURL(this.AvatarIconOpts),
+        });
+      }
+    }
+
+    return BaseData.LoggingChannel?.send({ embeds: [LogEmbed] });
+  }
+
+  /**
    * Logs a shift wipe-all action to the appropriate and specified channel of a guild.
    * @param UserInteract - The received discordjs interaction (button/cmd).
    * @param DeleteResult - The deletion result of mongoose/mongodb.

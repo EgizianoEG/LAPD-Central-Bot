@@ -8,6 +8,7 @@ import UserHasPerms from "@Utilities/Database/UserHasPermissions.js";
 
 const ManagementAuthorizedCmds = ["types", "wipe-all", "admin"];
 const Subcommands = [
+  (await import("./Subcmds/Void.js")).default,
   (await import("./Subcmds/Admin.js")).default,
   (await import("./Subcmds/Manage.js")).default,
   (await import("./Subcmds/Active.js")).default,

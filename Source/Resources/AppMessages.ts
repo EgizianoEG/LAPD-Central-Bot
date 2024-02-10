@@ -120,7 +120,7 @@ export const ErrorMessages = {
    */
   ShiftMustBeActive: {
     Title: "Shift Not Active",
-    Description: "You have to be in an active shift to perform this action.",
+    Description: "You have to be on an active shift to perform this action.",
   },
 
   /**
@@ -340,6 +340,17 @@ export const ErrorMessages = {
     Title: "Date In The Future",
     Description:
       "It looks like the date you provided is in the future. Please provide a date from the past.",
+  },
+
+  FailedToVoidShift: {
+    Title: "Shift Void Failed",
+    Description:
+      "It looks like the shift could not be voided. Please try again later or contact support.",
+  },
+
+  ShiftVoidMismatch: {
+    Title: "Shift Mismatch",
+    Description: "The current active shift does not match the shift being requested to be void.",
   },
 };
 
