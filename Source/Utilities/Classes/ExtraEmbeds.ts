@@ -102,8 +102,8 @@ class BaseEmbed extends EmbedBuilder {
     // If the reply is about error messages, removing components of a message is necessary
     // (only if the reply method is 'edit' or 'editReply')
     if (
-      this.data.description?.match(/error|cancel(?:lation|ed)/i) ||
-      this.data.title?.match(/error|cancel(?:lation|ed)/i) ||
+      this.data.description?.match(/error|cancel(?:lation|l?ed)/i) ||
+      this.data.title?.match(/error|cancel(?:lation|l?ed)/i) ||
       interaction.replied
     ) {
       RemoveComponents = true;
