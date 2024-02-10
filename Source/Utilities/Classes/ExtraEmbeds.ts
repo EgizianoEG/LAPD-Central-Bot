@@ -17,6 +17,9 @@ const EmbedThumbs = SharedConfig.Embeds.Thumbs;
 const EmbedColors = SharedConfig.Embeds.Colors;
 
 class BaseEmbed extends EmbedBuilder {
+  private static readonly ComponentRemovalRegex =
+    /success(?:ful(?:ly)?)?|error|cancel(?:lation|l?ed)/i;
+
   /**
    * Sets the description of this embed using node `util.format()`.
    * @requires {@link FormatString `node:util.format()`}
@@ -102,8 +105,8 @@ class BaseEmbed extends EmbedBuilder {
     // If the reply is about error messages, removing components of a message is necessary
     // (only if the reply method is 'edit' or 'editReply')
     if (
-      this.data.description?.match(/error|cancel(?:lation|l?ed)/i) ||
-      this.data.title?.match(/error|cancel(?:lation|l?ed)/i) ||
+      this.data.description?.match(BaseEmbed.ComponentRemovalRegex) ||
+      this.data.title?.match(BaseEmbed.ComponentRemovalRegex) ||
       interaction.replied
     ) {
       RemoveComponents = true;
