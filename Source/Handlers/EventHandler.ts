@@ -13,7 +13,7 @@ export default async function EventHandler(Client: DiscordClient) {
 
   for (const EventFolder of EventFolders) {
     const FuncsToExecute: ((Client: DiscordClient, ...Args: any[]) => any)[] = [];
-    const EventName = CamelCase(Path.basename(EventFolder) ?? "");
+    const EventName = CamelCase(Path.basename(EventFolder));
     const EventFiles = GetFiles(EventFolder).sort((a, b) => {
       const a_pos = a.match(/\[(\d+)\]/)?.[1];
       const b_pos = b.match(/\[(\d+)\]/)?.[1];
