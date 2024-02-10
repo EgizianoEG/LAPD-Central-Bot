@@ -3,7 +3,7 @@ import { differenceInMilliseconds } from "date-fns";
 import GuildModel from "@Models/Guild.js";
 
 async function AutodeleteGuildLogs() {
-  const CurrDate = new Date();
+  const CurrentDate = new Date();
   const GuildDocuments = await GuildModel.find(
     { logs: { $exists: true } },
     { logs: 1, settings: { log_deletion_interval: 1 } }
@@ -16,13 +16,13 @@ async function AutodeleteGuildLogs() {
     if (!LogDeletionInterval) continue;
 
     for (const ArrestReport of GuildDoc.logs.arrests) {
-      if (differenceInMilliseconds(ArrestReport.made_at, CurrDate) >= LogDeletionInterval) {
+      if (differenceInMilliseconds(ArrestReport.made_at, CurrentDate) >= LogDeletionInterval) {
         ArrestLogIdsToRemove.push(ArrestReport._id);
       }
     }
 
     for (const CitationLog of GuildDoc.logs.citations) {
-      if (differenceInMilliseconds(CitationLog.issued_at, CurrDate) >= LogDeletionInterval) {
+      if (differenceInMilliseconds(CitationLog.issued_at, CurrentDate) >= LogDeletionInterval) {
         CitationLogIdsToRemove.push(CitationLog.num);
       }
     }
