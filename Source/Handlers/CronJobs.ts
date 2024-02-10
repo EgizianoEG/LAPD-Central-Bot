@@ -48,6 +48,6 @@ export default async function CronJobsHandler(Client: DiscordClient) {
   AppLogger.info({
     label: HandlerLabel,
     splat: [CronJobsScheduled],
-    message: "Successfully scheduled %s cron jobs.",
+    message: "Successfully scheduled %o cron job(s).",
   });
 }

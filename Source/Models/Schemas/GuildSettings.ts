@@ -21,6 +21,14 @@ const GuildSettings = new Schema({
     required: true,
   },
 
+  // The interval in milliseconds that the application will delete logged data (citations and arrests)
+  // if  the current date minus the creation timestamp/date is greater than this value
+  // Defaults to 0, which means that no data will be deleted
+  log_deletion_interval: {
+    type: Number,
+    default: 0,
+  },
+
   // The channel IDs for logging particular actions and data
   // (citations, arrests, and shift actions like starting a new shift)
   // For citations and arrests, the format must be in the following formats:
