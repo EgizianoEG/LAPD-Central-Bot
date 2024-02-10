@@ -105,7 +105,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
     );
 
   const PromptComponents = [
-    new ActionRowBuilder().addComponents(
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId(`confirm-wipe:${Interaction.user.id}`)
         .setLabel("Confirm and Wipe")
@@ -114,7 +114,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
         .setCustomId(`cancel-wipe:${Interaction.user.id}`)
         .setLabel("Cancel Deletion")
         .setStyle(ButtonStyle.Secondary)
-    ) as ActionRowBuilder<ButtonBuilder>,
+    ),
   ];
 
   const PromptMessage = await Interaction.reply({
