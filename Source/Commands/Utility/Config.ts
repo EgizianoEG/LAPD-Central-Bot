@@ -934,8 +934,9 @@ async function HandleAddConfigSelection(CmdInteract: SlashCommandInteraction<"ca
     .setDescription(
       Dedent(`
         1. **Log Deletion Interval**
-          Specifies the interval in which logs (citations and arrest records) will be deleted. The default setting is to never delete the logs.
-      `)
+          Specifies the interval in which logs (citations and arrest records) will be deleted. \
+          The default setting is to never delete the logs. Notice that changing this setting will have an effect on the old logs and not only the new ones. 
+      `).replace(/(\.)(\s{2,})(\w)/g, ". $3")
     );
 
   if (GuildConfig) {
