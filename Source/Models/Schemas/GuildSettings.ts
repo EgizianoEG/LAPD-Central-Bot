@@ -22,11 +22,13 @@ const GuildSettings = new Schema({
   },
 
   // The interval in milliseconds that the application will delete logged data (citations and arrests)
-  // if  the current date minus the creation timestamp/date is greater than this value
+  // if the current date minus the creation timestamp/date is greater than this value
   // Defaults to 0, which means that no data will be deleted
+  // Can be one of: [0 days, 3 days, 7 days, 30 days]
   log_deletion_interval: {
     type: Number,
     default: 0,
+    enum: [0, 86400000, 259200000, 604800000, 1209600000, 2592000000],
   },
 
   // The channel IDs for logging particular actions and data

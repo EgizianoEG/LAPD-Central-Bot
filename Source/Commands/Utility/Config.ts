@@ -33,17 +33,30 @@ import Dedent from "dedent";
 
 // ---------------------------------------------------------------------------------------
 const ListFormatter = new Intl.ListFormat("en");
+const MillisInDay = 86_400_000;
 const EmbedColor = "#5f9ea0";
 enum ConfigTopics {
+  LogConfiguration = "LC",
   ShowConfigurations = "SH",
   BasicConfiguration = "BC",
   ShiftConfiguration = "SC",
-  LogConfiguration = "LC",
+  AdditionalConfiguration = "AC",
 }
 
 // ---------------------------------------------------------------------------------------
 // Functions:
 // ----------
+function GetHumanReadableLogDeletionInterval(Interval: number) {
+  const IntervalInDays = Interval / MillisInDay;
+  if (IntervalInDays > 1) {
+    return `${IntervalInDays} Days`;
+  } else if (IntervalInDays === 1) {
+    return "One Day";
+  } else {
+    return "Never";
+  }
+}
+
 function GetConfigTopicConfirmBackBtns(
   CmdInteract: SlashCommandInteraction<"cached">,
   ConfigTopic: ConfigTopics
@@ -84,6 +97,10 @@ function GetConfigTopicsDropdownMenu(CmdInteract: SlashCommandInteraction<"cache
           .setLabel("Log Configuration")
           .setDescription("The app's log settings.")
           .setValue(ConfigTopics.LogConfiguration),
+        new StringSelectMenuOptionBuilder()
+          .setLabel("Additional Configurations")
+          .setDescription("Additional app settings.")
+          .setValue(ConfigTopics.AdditionalConfiguration),
         new StringSelectMenuOptionBuilder()
           .setLabel("Show All Configurations")
           .setDescription("Shows the app's current configuration for all available topics.")
@@ -136,6 +153,54 @@ function GetBasicConfigComponents(
   );
 
   return [RobloxAuthorizationAR, StaffRolesAR, ManagementRolesAR] as const;
+}
+
+function GetAddConfigComponents(
+  CmdInteract: SlashCommandInteraction<"cached">,
+  GuildConfig: NonNullable<Awaited<ReturnType<typeof GetGuildSettings>>>
+) {
+  const SetIntervalInDays = GuildConfig.log_deletion_interval / MillisInDay;
+  const LogDelIntervalSMAR = new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(
+    new StringSelectMenuBuilder()
+      .setCustomId(`app-config-ac-ldi:${CmdInteract.user.id}:${CmdInteract.guildId}`)
+      .setPlaceholder("Log Deletion Interval")
+      .setMinValues(1)
+      .setMaxValues(1)
+      .setOptions(
+        new StringSelectMenuOptionBuilder()
+          .setLabel("Disable Log Deletion")
+          .setValue("0d")
+          .setDescription("Never delete logs."),
+        new StringSelectMenuOptionBuilder()
+          .setLabel("1 Day")
+          .setValue("1d")
+          .setDescription("Delete logs one day after they are made."),
+        new StringSelectMenuOptionBuilder()
+          .setLabel("3 Days")
+          .setValue("3d")
+          .setDescription("Delete logs three days after they are made."),
+        new StringSelectMenuOptionBuilder()
+          .setLabel("7 Days")
+          .setValue("7d")
+          .setDescription("Delete logs seven days after they are made."),
+        new StringSelectMenuOptionBuilder()
+          .setLabel("14 Days")
+          .setValue("14d")
+          .setDescription("Delete logs fourteen days after they are made."),
+        new StringSelectMenuOptionBuilder()
+          .setLabel("30 Days")
+          .setValue("30d")
+          .setDescription("Delete logs thirty days after they are made.")
+      )
+  );
+
+  LogDelIntervalSMAR.components[0].options.forEach((Option) => {
+    if (Option.data.value === `${SetIntervalInDays}d`) {
+      Option.setDefault(true);
+    }
+  });
+
+  return [LogDelIntervalSMAR] as const;
 }
 
 function GetShiftConfigComponents(
@@ -203,11 +268,11 @@ function GetLogConfigComponents(
     new ButtonBuilder()
       .setCustomId(`app-config-lc-oac:${CmdInteract.user}`)
       .setLabel("Set Outside Arrest Logs Channel")
-      .setStyle(ButtonStyle.Primary),
+      .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId(`app-config-lc-occ:${CmdInteract.user}`)
       .setLabel("Set Outside Citation Logs Channel")
-      .setStyle(ButtonStyle.Primary)
+      .setStyle(ButtonStyle.Secondary)
   );
 
   if (SALogChannel) ShiftActivitiesLogChannel.components[0].setDefaultChannels(SALogChannel);
@@ -427,6 +492,103 @@ async function HandleBasicConfigPageInteracts(
           > ${StaffSetRoles.length ? ListFormatter.format(StaffSetRoles) : "*None*"}
         - **Management Role(s):**
           > ${MgmtSetRoles.length ? ListFormatter.format(MgmtSetRoles) : "*None*"}
+      `);
+
+      await new SuccessEmbed().setDescription(FormattedDesc).replyToInteract(CmdInteract);
+    } else {
+      await new ErrorEmbed().useErrTemplate("UnknownError").replyToInteract(CmdInteract);
+    }
+  });
+}
+
+async function HandleAddConfigPageInteracts(
+  CmdInteract: SlashCommandInteraction<"cached">,
+  BCConfigPrompt: Message<true>,
+  AddConfigComps: ReturnType<typeof GetAddConfigComponents>,
+  CurrentConfiguration: NonNullable<Awaited<ReturnType<typeof GetGuildSettings>>>
+) {
+  let LogIntervalChosen = CurrentConfiguration.log_deletion_interval;
+
+  const BCCompActionCollector = BCConfigPrompt.createMessageComponentCollector<
+    ComponentType.Button | ComponentType.RoleSelect | ComponentType.StringSelect
+  >({
+    filter: (Interact) => Interact.user.id === CmdInteract.user.id,
+    time: 10 * 60 * 1000,
+  });
+
+  const PromptDisabler = () => {
+    AddConfigComps.forEach((AR) => AR.components.forEach((C) => C.setDisabled(true)));
+    return CmdInteract.editReply({
+      components: [...AddConfigComps],
+    });
+  };
+
+  BCCompActionCollector.on("collect", async (Interact) => {
+    await Interact.deferUpdate();
+    if (Interact.isButton()) {
+      if (Interact.customId.startsWith("app-config-ac-cfm")) {
+        BCCompActionCollector.stop("ConfirmConfig");
+      } else if (Interact.customId.startsWith("app-config-ac-bck")) {
+        BCCompActionCollector.stop("Back");
+        return Callback(CmdInteract) as any;
+      }
+    } else if (Interact.isRoleSelectMenu() && Interact.customId.startsWith("app-config-ac-ldi")) {
+      LogIntervalChosen = Number(Interact.values[0].slice(0, -1)) || 0;
+    }
+  });
+
+  BCCompActionCollector.on("end", async (_, EndReason) => {
+    BCCompActionCollector.removeAllListeners();
+    if (EndReason.match(/\w+Delete/)) return;
+    if (EndReason !== "ConfirmConfig") {
+      if (EndReason.includes("time")) {
+        await new InfoEmbed()
+          .useInfoTemplate("TimedOutConfigPrompt")
+          .setTitle("Timed Out - Additional Configuration")
+          .replyToInteract(CmdInteract)
+          .catch(() => PromptDisabler())
+          .catch(() => null);
+      } else {
+        await PromptDisabler();
+      }
+      return;
+    }
+
+    if (CurrentConfiguration.log_deletion_interval === LogIntervalChosen) {
+      await new InfoEmbed()
+        .useInfoTemplate("ConfigTopicNoChangesMade", "additional")
+        .replyToInteract(CmdInteract)
+        .catch(() => PromptDisabler())
+        .catch(() => null);
+      return;
+    }
+
+    const UpdatedGuild = await GuildModel.findByIdAndUpdate(
+      CmdInteract.guildId,
+      {
+        $set: {
+          "settings.log_deletion_interval": LogIntervalChosen,
+        },
+      },
+      {
+        new: true,
+        upsert: true,
+        strict: true,
+        runValidators: true,
+        projection: {
+          settings: 1,
+        },
+      }
+    );
+
+    if (UpdatedGuild) {
+      const LDIFormatted = GetHumanReadableLogDeletionInterval(
+        UpdatedGuild.settings.log_deletion_interval
+      );
+
+      const FormattedDesc = Dedent(`
+        Successfully set/updated the app's additional configuration.
+        - **Log Deletion Interval:** ${LDIFormatted}
       `);
 
       await new SuccessEmbed().setDescription(FormattedDesc).replyToInteract(CmdInteract);
@@ -731,13 +893,13 @@ async function HandleBasicConfigSelection(CmdInteract: SlashCommandInteraction<"
     .setColor(EmbedColor)
     .setDescription(
       Dedent(`
-        1. **Roblox Authorization Required:**
+        1. **Roblox Authorization Required**
           Enable or disable the app's Roblox authorization requirement. If enabled, \
           the app requires the user to have a Roblox account linked before utilizing \
           specific staff commands such as \`log\` and \`duty\` commands. This option is currently enabled by default.
-        2. **Staff Roles:**
+        2. **Staff Roles**
           The roles for which holders will be considered staff members and will be able to execute staff-specific commands.
-        3. **Management Roles:**
+        3. **Management Roles**
           The roles for which holders will be able to execute management-specific commands, such as \`duty admin\`, as well as staff-specific commands.
       `)
     );
@@ -764,6 +926,40 @@ async function HandleBasicConfigSelection(CmdInteract: SlashCommandInteraction<"
   }
 }
 
+async function HandleAddConfigSelection(CmdInteract: SlashCommandInteraction<"cached">) {
+  const GuildConfig = await GetGuildSettings(CmdInteract.guildId);
+  const ResponseEmbed = new EmbedBuilder()
+    .setTitle("Additional App Configurations")
+    .setColor(EmbedColor)
+    .setDescription(
+      Dedent(`
+        1. **Log Deletion Interval**
+          Specifies the interval in which logs (citations and arrest records) will be deleted. The default setting is to never delete the logs.
+      `)
+    );
+
+  if (GuildConfig) {
+    const BasicConfigComps = GetAddConfigComponents(CmdInteract, GuildConfig);
+    const ConfirmBackBtns = GetConfigTopicConfirmBackBtns(
+      CmdInteract,
+      ConfigTopics.AdditionalConfiguration
+    );
+    const BasicConfigRespMsg = await CmdInteract.editReply({
+      components: [...BasicConfigComps, ConfirmBackBtns],
+      embeds: [ResponseEmbed],
+    });
+
+    return HandleAddConfigPageInteracts(
+      CmdInteract,
+      BasicConfigRespMsg,
+      BasicConfigComps,
+      GuildConfig
+    );
+  } else {
+    return new ErrorEmbed().useErrTemplate("GuildConfigNotFound").replyToInteract(CmdInteract);
+  }
+}
+
 async function HandleShiftConfigSelection(CmdInteract: SlashCommandInteraction<"cached">) {
   const GuildConfig = await GetGuildSettings(CmdInteract.guildId);
   const ResponseEmbed = new EmbedBuilder()
@@ -771,10 +967,10 @@ async function HandleShiftConfigSelection(CmdInteract: SlashCommandInteraction<"
     .setColor(EmbedColor)
     .setDescription(
       Dedent(`
-        1. **Role Assignment:**
-          - **On-Duty:**
+        1. **Role Assignment**
+          - **On-Duty**
             The role(s) that will be assigned to staff members while being on duty.
-          - **On-Break:**
+          - **On-Break**
             The role(s) that will be assigned to staff members while being on break.
      `)
     );
@@ -809,16 +1005,16 @@ async function HandleLogConfigSelection(CmdInteract: SlashCommandInteraction<"ca
     .setColor(EmbedColor)
     .setDescription(
       Dedent(`
-        1. **Shift Activities Channel:**
+        1. **Shift Activities Channel**
           The channel that will be used to log any shift activity or action made by staff such as \`start\`, \`end\`, \`break-start\`, and \`break-end\`.
-        2. **Citation Logs Channel:**
+        2. **Citation Logs Channel**
           The local channel (inside this server) that will be used to log any citations issued by staff members.
-        3. **Arrest Logs Channel:**
+        3. **Arrest Logs Channel**
           The local channel (inside this server) that will be used to log any arrests reported by staff members.
-        4. **Outside Server Connections Buttons:**
-          - **Set Outside Citation Logs Channel:**
+        4. **Outside Server Connections Buttons**
+          - **Set Outside Citation Logs Channel**
             A button to add an outside citation logs channel (other server's channel) to be also used alongside the local set one.
-          - **Set Outside Arrest Logs Channel:**
+          - **Set Outside Arrest Logs Channel**
             A button to add an outside arrest logs channel (other server's channel) to be also used alongside the local set one.
      `)
     );
@@ -869,11 +1065,11 @@ async function HandleConfigShowSelection(CmdInteract: SlashCommandInteraction<"c
     roleMention(Role)
   );
   const ShiftConfigFieldDesc = Dedent(`
-    **Role Assignment:**
-    - **On-Duty Roles:**
-      > ${OnDutyRoles.length ? ListFormatter.format(OnDutyRoles) : "*None*"}
-    - **On-Break Roles:**
-      > ${OnBreakRoles.length ? ListFormatter.format(OnBreakRoles) : "*None*"}
+    - **Role Assignment:**
+     - **On-Duty Roles:**
+       > ${OnDutyRoles.length ? ListFormatter.format(OnDutyRoles) : "*None*"}
+     - **On-Break Roles:**
+       > ${OnBreakRoles.length ? ListFormatter.format(OnBreakRoles) : "*None*"}
   `);
 
   const ShiftActivitiesChannel = GuildSettings.log_channels.shift_activities
@@ -895,6 +1091,10 @@ async function HandleConfigShowSelection(CmdInteract: SlashCommandInteraction<"c
       ${ArrestLogChannels.length ? ListFormatter.format(ArrestLogChannels) : "*None*"}
   `);
 
+  const AdditionalConfigFieldDesc = Dedent(`
+    - **Log Deletion Interval:** ${GetHumanReadableLogDeletionInterval(GuildSettings.log_deletion_interval)}
+  `);
+
   const ResponseEmbed = new EmbedBuilder()
     .setTitle("Current App Configuration")
     .setColor(EmbedColor)
@@ -911,6 +1111,10 @@ async function HandleConfigShowSelection(CmdInteract: SlashCommandInteraction<"c
       {
         name: "**Logging Configuration**",
         value: LoggingConfigFieldDesc,
+      },
+      {
+        name: "**Additional Configuration**",
+        value: AdditionalConfigFieldDesc,
       }
     );
 
@@ -942,6 +1146,8 @@ async function HandleInitialRespActions(
         return HandleLogConfigSelection(CmdInteract);
       } else if (SelectedConfigTopic === ConfigTopics.ShowConfigurations) {
         return HandleConfigShowSelection(CmdInteract);
+      } else if (SelectedConfigTopic === ConfigTopics.AdditionalConfiguration) {
+        return HandleAddConfigSelection(CmdInteract);
       } else {
         return new ErrorEmbed()
           .useErrTemplate("UnknownConfigTopic")
@@ -951,9 +1157,6 @@ async function HandleInitialRespActions(
     .catch((Err) => HandleActionCollectorExceptions(Err, SMenuDisabler));
 }
 
-/**
- * @param Interaction
- */
 async function Callback(CmdInteract: SlashCommandInteraction<"cached">) {
   const CmdRespEmbed = new EmbedBuilder()
     .setColor(EmbedColor)
