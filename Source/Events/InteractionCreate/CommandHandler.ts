@@ -25,6 +25,7 @@ import { PascalToNormal } from "@Utilities/Strings/Converters.js";
 import UserHasPerms from "@Utilities/Database/UserHasPermissions.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import AppError from "@Utilities/Classes/AppError.js";
+import Dedent from "dedent";
 
 const DefaultCmdCooldownDuration = 3;
 const LogLabel = "Events:InteractionCreate:CommandHandler";
@@ -226,6 +227,19 @@ async function HandleUserPermissions(
       });
     }
   } else if (!(await UserHasPerms(Interaction, CommandObject.options.userPerms))) {
+    if (CommandObject.options.userPerms.management) {
+      return new UnauthorizedEmbed()
+        .setDescription(
+          Dedent(`
+            You do not have the necessary app permissions to utilize this command.
+            - Permissions Required:
+             - Manage Server; or/and
+             - Application (Bot) Management"
+          `)
+        )
+        .replyToInteract(Interaction, true, true);
+    }
+
     return new UnauthorizedEmbed()
       .setDescription("You do not have the necessary app permissions to utilize this command.")
       .replyToInteract(Interaction, true, true);
