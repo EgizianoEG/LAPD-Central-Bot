@@ -4,9 +4,11 @@
 import {
   time,
   Collection,
+  GuildMember,
   DiscordAPIError,
   PermissionsBitField,
   PermissionFlagsBits,
+  PermissionResolvable,
   ChatInputCommandInteraction,
 } from "discord.js";
 
@@ -21,6 +23,7 @@ import { Discord } from "@Config/Secrets.js";
 import { RandomString } from "@Utilities/Strings/Random.js";
 import { UnorderedList } from "@Utilities/Strings/Formatters.js";
 import { PascalToNormal } from "@Utilities/Strings/Converters.js";
+import { IsValidUserPermsObj } from "@Utilities/Other/Validators.js";
 
 import UserHasPerms from "@Utilities/Database/UserHasPermissions.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
@@ -172,7 +175,7 @@ async function HandleCommandCooldowns(
  * @param CommandObject
  * @param Interaction
  */
-function HandleDevOnlyCommands(
+async function HandleDevOnlyCommands(
   CommandObject: SlashCommandObject,
   Interaction: ChatInputCommandInteraction
 ) {
@@ -185,9 +188,10 @@ function HandleDevOnlyCommands(
 }
 
 /**
- * Checks if the user has the necessary permissions to run the command
+ * Checks if the user has the necessary permissions to run the command.
  * @param CommandObject
  * @param Interaction
+ * @returns
  */
 async function HandleUserPermissions(
   CommandObject: SlashCommandObject,
@@ -202,47 +206,40 @@ async function HandleUserPermissions(
   }
 
   if (Array.isArray(CommandObject.options.user_perms)) {
-    const MissingPerms: string[] = [];
-    for (const Permission of CommandObject.options.user_perms) {
-      if (!Interaction.member.permissions.has(Permission)) {
-        const LiteralPerm =
-          Object.keys(PermissionFlagsBits).find((Key) => PermissionFlagsBits[Key] === Permission) ??
-          "[Unknown]";
-        MissingPerms.push(PascalToNormal(LiteralPerm));
-      }
-    }
+    return ValidateUserPermissionsArray(CommandObject.options.user_perms, Interaction);
+  }
 
-    if (MissingPerms.length) {
-      const Plural = MissingPerms.length === 1 ? "" : "s";
-      return Interaction.reply({
-        ephemeral: true,
-        embeds: [
-          new UnauthorizedEmbed().setDescription(
-            "Missing user permission%s.\nYou do not have the following permission%s to run this command:\n%s",
-            Plural,
-            Plural,
-            UnorderedList(MissingPerms)
-          ),
-        ],
-      });
-    }
-  } else if (!(await UserHasPerms(Interaction, CommandObject.options.user_perms))) {
+  if (
+    IsValidUserPermsObj(CommandObject.options.user_perms) &&
+    !(await UserHasPerms(Interaction, CommandObject.options.user_perms))
+  ) {
     if (CommandObject.options.user_perms.management) {
       return new UnauthorizedEmbed()
         .setDescription(
           Dedent(`
-            You do not have the necessary app permissions to utilize this command.
-            - Permissions Required:
-             - Manage Server; or/and
-             - Application (Bot) Management"
-          `)
+              You do not have the necessary app permissions to utilize this command.
+              - Permissions Required:
+               - Manage Server; or/and
+               - Application (Bot) Management
+            `)
         )
         .replyToInteract(Interaction, true, true);
+    } else {
+      return new UnauthorizedEmbed()
+        .useErrTemplate("UnauthorizedCmdUsage")
+        .replyToInteract(Interaction, true, true);
     }
+  }
 
-    return new UnauthorizedEmbed()
-      .setDescription("You do not have the necessary app permissions to utilize this command.")
-      .replyToInteract(Interaction, true, true);
+  const SubCmdGroup = Interaction.options.getSubcommandGroup(false);
+  const SubCommand = Interaction.options.getSubcommand(false);
+
+  if (SubCmdGroup && Object.hasOwn(CommandObject.options.user_perms, SubCmdGroup)) {
+    return HandleSubcommandUserPerms(CommandObject.options.user_perms[SubCmdGroup], Interaction);
+  }
+
+  if (SubCommand && Object.hasOwn(CommandObject.options.user_perms, SubCommand)) {
+    return HandleSubcommandUserPerms(CommandObject.options.user_perms[SubCommand], Interaction);
   }
 }
 
@@ -251,19 +248,99 @@ async function HandleUserPermissions(
  * @param CommandObject
  * @param Interaction
  */
-function HandleBotPermissions(
+async function HandleBotPermissions(
   CommandObject: SlashCommandObject,
   Interaction: ChatInputCommandInteraction
 ) {
   if (Interaction.replied || !Interaction.inCachedGuild()) return;
-  if (!CommandObject.options?.bot_perms?.length) {
+  if (!CommandObject.options?.bot_perms || !Object.keys(CommandObject.options.bot_perms).length) {
     return;
   }
 
-  const BotInGuild = Interaction.guild.members.me;
-  const MissingPerms: string[] = [];
+  const BotInGuild = await Interaction.guild.members.fetch(Interaction.client.user.id);
+  if (!BotInGuild) {
+    return new ErrorEmbed()
+      .useErrTemplate("AppNotFoundInGuildForPerms")
+      .replyToInteract(Interaction, true, true);
+  }
 
-  for (const Permission of CommandObject.options.bot_perms) {
+  if (Array.isArray(CommandObject.options.bot_perms)) {
+    return ValidateBotPermissionsArray(BotInGuild, CommandObject.options.bot_perms, Interaction);
+  }
+
+  const SubCmdGroup = Interaction.options.getSubcommandGroup(false);
+  const SubCommand = Interaction.options.getSubcommand(false);
+
+  if (SubCmdGroup && Array.isArray(CommandObject.options.bot_perms[SubCmdGroup])) {
+    return ValidateBotPermissionsArray(
+      BotInGuild,
+      CommandObject.options.bot_perms[SubCmdGroup],
+      Interaction
+    );
+  }
+
+  if (SubCommand && Array.isArray(CommandObject.options.bot_perms[SubCommand])) {
+    return ValidateBotPermissionsArray(
+      BotInGuild,
+      CommandObject.options.bot_perms[SubCommand],
+      Interaction
+    );
+  }
+}
+
+/**
+ * Checks if a user has the required permissions to run a command and returns an promise for a reply message if any permissions are missing.
+ * @param {PermissionResolvable[]} PermsArray - An array of permissions to check for.
+ * @param Interaction - The slash command interaction object received.
+ * @returns
+ */
+async function ValidateUserPermissionsArray(
+  PermsArray: PermissionResolvable[],
+  Interaction: ChatInputCommandInteraction<"cached">
+) {
+  const MissingPerms: string[] = [];
+  for (const Permission of PermsArray) {
+    if (!Interaction.member.permissions.has(Permission)) {
+      const LiteralPerm =
+        Object.keys(PermissionFlagsBits).find((Key) => PermissionFlagsBits[Key] === Permission) ??
+        "[Unknown]";
+      MissingPerms.push(PascalToNormal(LiteralPerm));
+    }
+  }
+
+  if (MissingPerms.length) {
+    const Plural = MissingPerms.length === 1 ? "" : "s";
+    return Interaction.reply({
+      ephemeral: true,
+      embeds: [
+        new UnauthorizedEmbed().setDescription(
+          "Missing user permission%s.\nYou do not have the following permission%s to run this command:\n%s",
+          Plural,
+          Plural,
+          UnorderedList(MissingPerms)
+        ),
+      ],
+    });
+  }
+}
+
+/**
+ * Checks if the app has the necessary permissions to perform a command and returns an promis to the error reply message if any permissions are missing.
+ * @param {GuildMember} BotInGuild - The guild member object of the bot in the guild where the command is being executed.
+ * @param {PermissionResolvable[]} PermsArray - An array of `PermissionResolvable` values. These values represent the permissions that the bot needs to have in order to perform a specific command.
+ * @param Interaction - The slash command interaction object received.
+ * @returns a reply to the interaction with an error message if the bot lacks any necessary
+ * permissions. If there are missing permissions, it will reply with an ephemeral message containing an
+ * error embed that lists the missing permissions. If there are no missing permissions, the function
+ * does not return anything.
+ */
+async function ValidateBotPermissionsArray(
+  BotInGuild: GuildMember,
+  PermsArray: PermissionResolvable[],
+  Interaction: ChatInputCommandInteraction<"cached">
+) {
+  const MissingPerms: string[] = [];
+  for (const Permission of PermsArray) {
     if (
       BotInGuild?.permissions instanceof PermissionsBitField &&
       !BotInGuild.permissions.has(Permission)
@@ -287,5 +364,27 @@ function HandleBotPermissions(
         ),
       ],
     });
+  }
+}
+
+/**
+ * The function `HandleSubcommandUserPerms` checks if a user has the required permissions to use a
+ * command and returns an unauthorized embed if they do not.
+ * @param Perms - The permissions required for a member/user to execute a command. It could be an array of permissions or an object representing specific permissions.
+ * @param Interaction - The slash command interaction object received.
+ * @returns
+ */
+async function HandleSubcommandUserPerms(
+  Perms: NonNullable<CommandObjectOptions["bot_perms"]>,
+  Interaction: ChatInputCommandInteraction<"cached">
+) {
+  if (Array.isArray(Perms)) {
+    return ValidateUserPermissionsArray(Perms, Interaction);
+  }
+
+  if (IsValidUserPermsObj(Perms) && !(await UserHasPerms(Interaction, Perms))) {
+    return new UnauthorizedEmbed()
+      .useErrTemplate("UnauthorizedCmdUsage")
+      .replyToInteract(Interaction, true, true);
   }
 }

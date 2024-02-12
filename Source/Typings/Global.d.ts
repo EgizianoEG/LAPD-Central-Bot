@@ -31,28 +31,6 @@ export interface CronJobFileDefReturn {
   cron_func?: (arg0?: Date | "manual" | "init", arg1?: DiscordClient) => void;
 }
 
-export interface CommandObjectOptions {
-  /** Whether or not this command will be removed if it already exists in the application or excluded from registration. */
-  deleted?: boolean;
-
-  /** Should the command be updated regardless of whether it is altered or not? */
-  force_update?: boolean;
-
-  /**Should command execution be restricted to application developers only? */
-  dev_only?: boolean;
-
-  /** Cooldown period in *seconds* between each command execution (Check the `CommandHandler` file for the default cooldown value) */
-  cooldown?: number;
-
-  /** The required user permissions to run this command */
-  user_perms?:
-    | PermissionResolvable[]
-    | UtilityTypesMask.DeepPartial<ExtraTypings.UserPermissionsConfig>;
-
-  /** Bot permissions that are required to run this command */
-  bot_perms?: PermissionResolvable[];
-}
-
 declare global {
   export import DiscordJS = DiscordJSMask;
   export import Mongoose = MongooseMask;
@@ -95,6 +73,38 @@ declare global {
     arg0: DiscordClient | SlashCommandInteraction,
     arg1?: SlashCommandInteraction
   ) => Promise<any>;
+
+  interface CommandObjectOptions {
+    /** Whether or not this command will be removed if it already exists in the application or excluded from registration. */
+    deleted?: boolean;
+
+    /** Should the command be updated regardless of whether it is altered or not? */
+    force_update?: boolean;
+
+    /**Should command execution be restricted to application developers only? */
+    dev_only?: boolean;
+
+    /** Cooldown period in *seconds* between each command execution (Check the `CommandHandler` file for the default cooldown value) */
+    cooldown?: number;
+
+    /**
+     * The required user guild permissions to run this command.
+     * Could be for the whole command or for each sub-command or sub-command group.
+     */
+    user_perms?:
+      | PermissionResolvable[]
+      | UtilityTypesMask.DeepPartial<ExtraTypings.UserPermissionsConfig>
+      | Record<
+          string,
+          UtilityTypesMask.DeepPartial<ExtraTypings.UserPermissionsConfig> | PermissionResolvable[]
+        >;
+
+    /**
+     * Bot guild permissions that are required to run this command.
+     * This could also be a record mapped to each sub-command or sub-command group.
+     */
+    bot_perms?: PermissionResolvable[] | Record<string, PermissionResolvable[]>;
+  }
 
   interface SlashCommandObject<ClassType extends CommandObjectDataType = SlashCommandBuilder> {
     /** The callback function or the `run` function which will be executed on command call */

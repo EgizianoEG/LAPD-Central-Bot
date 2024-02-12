@@ -12,6 +12,15 @@ export function IsValidRobloxUsername(Str: string): boolean {
 }
 
 /**
+ * Checks wether a given input can be a valid Discord ID (guild Id, user Id, ...).
+ * @param Input
+ * @returns
+ */
+export function IsValidDiscordId(Input: string): boolean {
+  return !!Input.match(/^\d{15,22}$/);
+}
+
+/**
  * Checks wether a given string can be a valid shift type name.
  * Valid names consist of letters, numerals, spaces, underscores, dashes, and periods
  * with a minimum length of `3` characters and a maximum length of `20` characters.
@@ -39,6 +48,15 @@ export function IsValidLicensePlate(Str: string): boolean {
  */
 export function IsValidPersonHeight(Str: string): boolean {
   return !!FormatHeight(Str).match(/^[1-7]'(?:\d|1[01]?)"$/);
+}
+
+/**
+ * Checks if an object has either a "management" or "staff" property so that it can be valid user permissions object.
+ * @param Obj - Any object to check.
+ * @returns
+ */
+export function IsValidUserPermsObj(Obj: any): boolean {
+  return !!(Obj.management || Obj.staff);
 }
 
 /**

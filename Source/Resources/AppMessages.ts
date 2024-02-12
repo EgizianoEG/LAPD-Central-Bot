@@ -44,6 +44,20 @@ export const ErrorMessages = {
       "You are not permitted to interact with a prompt or process that somebody else has initiated.",
   },
 
+  UnauthorizedCmdUsage: {
+    Title: "Unauthorized",
+    Description: "You do not have the necessary app permissions to utilize this command.",
+  },
+
+  /**
+   * If the app/bot couldn't be found in the guild (when validating it's permissions).
+   */
+  AppNotFoundInGuildForPerms: {
+    Title: "Error",
+    Description:
+      "Something went wrong, and the application could not be found on this server to validate its permissions.",
+  },
+
   /**
    * Malformed shift type name
    */
