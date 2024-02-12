@@ -23,7 +23,7 @@ async function Callback(Client: DiscordClient, Interaction: SlashCommandInteract
 // ------------------
 const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
   callback: Callback,
-  options: { devOnly: true },
+  options: { dev_only: true },
   data: new SlashCommandBuilder()
     .setName("send")
     .setDescription("Sends a specific information.")

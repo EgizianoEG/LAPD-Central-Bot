@@ -177,7 +177,7 @@ function HandleDevOnlyCommands(
   Interaction: ChatInputCommandInteraction
 ) {
   if (Interaction.replied) return;
-  if (CommandObject.options?.devOnly && !Discord.BotDevs.includes(Interaction.user.id)) {
+  if (CommandObject.options?.dev_only && !Discord.BotDevs.includes(Interaction.user.id)) {
     return new UnauthorizedEmbed()
       .setDescription("This command can only be executed by the bot's developers.")
       .replyToInteract(Interaction, true);
@@ -195,15 +195,15 @@ async function HandleUserPermissions(
 ) {
   if (Interaction.replied || !Interaction.inCachedGuild()) return;
   if (
-    !CommandObject.options?.userPerms ||
-    (Array.isArray(CommandObject.options?.userPerms) && !CommandObject.options?.userPerms.length)
+    !CommandObject.options?.user_perms ||
+    (Array.isArray(CommandObject.options?.user_perms) && !CommandObject.options?.user_perms.length)
   ) {
     return;
   }
 
-  if (Array.isArray(CommandObject.options.userPerms)) {
+  if (Array.isArray(CommandObject.options.user_perms)) {
     const MissingPerms: string[] = [];
-    for (const Permission of CommandObject.options.userPerms) {
+    for (const Permission of CommandObject.options.user_perms) {
       if (!Interaction.member.permissions.has(Permission)) {
         const LiteralPerm =
           Object.keys(PermissionFlagsBits).find((Key) => PermissionFlagsBits[Key] === Permission) ??
@@ -226,8 +226,8 @@ async function HandleUserPermissions(
         ],
       });
     }
-  } else if (!(await UserHasPerms(Interaction, CommandObject.options.userPerms))) {
-    if (CommandObject.options.userPerms.management) {
+  } else if (!(await UserHasPerms(Interaction, CommandObject.options.user_perms))) {
+    if (CommandObject.options.user_perms.management) {
       return new UnauthorizedEmbed()
         .setDescription(
           Dedent(`
@@ -256,14 +256,14 @@ function HandleBotPermissions(
   Interaction: ChatInputCommandInteraction
 ) {
   if (Interaction.replied || !Interaction.inCachedGuild()) return;
-  if (!CommandObject.options?.botPerms?.length) {
+  if (!CommandObject.options?.bot_perms?.length) {
     return;
   }
 
   const BotInGuild = Interaction.guild.members.me;
   const MissingPerms: string[] = [];
 
-  for (const Permission of CommandObject.options.botPerms) {
+  for (const Permission of CommandObject.options.bot_perms) {
     if (
       BotInGuild?.permissions instanceof PermissionsBitField &&
       !BotInGuild.permissions.has(Permission)

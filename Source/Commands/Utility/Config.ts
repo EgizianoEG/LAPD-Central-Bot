@@ -1185,7 +1185,7 @@ async function Callback(CmdInteract: SlashCommandInteraction<"cached">) {
 // Command structure:
 // ------------------
 const CommandObject: SlashCommandObject = {
-  options: { userPerms: [PermissionFlagsBits.Administrator] },
+  options: { user_perms: [PermissionFlagsBits.Administrator] },
   data: new SlashCommandBuilder()
     .setName("config")
     .setDescription("Manage and view bot configuration on the server.")

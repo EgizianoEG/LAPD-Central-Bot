@@ -36,21 +36,21 @@ export interface CommandObjectOptions {
   deleted?: boolean;
 
   /** Should the command be updated regardless of whether it is altered or not? */
-  forceUpdate?: boolean;
+  force_update?: boolean;
 
   /**Should command execution be restricted to application developers only? */
-  devOnly?: boolean;
+  dev_only?: boolean;
 
   /** Cooldown period in *seconds* between each command execution (Check the `CommandHandler` file for the default cooldown value) */
   cooldown?: number;
 
   /** The required user permissions to run this command */
-  userPerms?:
+  user_perms?:
     | PermissionResolvable[]
     | UtilityTypesMask.DeepPartial<ExtraTypings.UserPermissionsConfig>;
 
   /** Bot permissions that are required to run this command */
-  botPerms?: PermissionResolvable[];
+  bot_perms?: PermissionResolvable[];
 }
 
 declare global {

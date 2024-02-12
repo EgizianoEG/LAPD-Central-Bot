@@ -36,7 +36,7 @@ export default async function RegisterCommands(Client: DiscordClient) {
       if (AppDeployedCmd) {
         await HandleExistingCommand(Client, LocalCommand, AppDeployedCmd);
       } else {
-        if (!LocalCommand.options?.devOnly && LocalCommand.options?.deleted) {
+        if (!LocalCommand.options?.dev_only && LocalCommand.options?.deleted) {
           AppLogger.info(DeletedCmdLog, { label: LogLabel });
           continue;
         }
@@ -45,7 +45,7 @@ export default async function RegisterCommands(Client: DiscordClient) {
         const GuildCommands = await Guild?.commands?.fetch();
         const GuildExistingCmd = GuildCommands?.find((Cmd) => Cmd.name === CmdName);
 
-        if (GuildExistingCmd || LocalCommand.options?.devOnly) {
+        if (GuildExistingCmd || LocalCommand.options?.dev_only) {
           if (!Guild) {
             AppLogger.info({
               message:
@@ -147,13 +147,13 @@ async function HandleExistingCommand(
   }
 
   if (
-    (CmdManager.constructor === GuildApplicationCommandManager && !LocalCmd.options?.devOnly) ||
-    (CmdManager.constructor === ApplicationCommandManager && LocalCmd.options?.devOnly)
+    (CmdManager.constructor === GuildApplicationCommandManager && !LocalCmd.options?.dev_only) ||
+    (CmdManager.constructor === ApplicationCommandManager && LocalCmd.options?.dev_only)
   ) {
     return HandleCommandScopeSwitching(Client, LocalCmd, ExistingCmd);
   }
 
-  if (LocalCmd.options?.forceUpdate || !CmdsAreIdentical(ExistingCmd, LocalCmd)) {
+  if (LocalCmd.options?.force_update || !CmdsAreIdentical(ExistingCmd, LocalCmd)) {
     await CmdManager.edit(ExistingCmd.id, LocalCmd.data)
       .then((Cmd) => {
         AppLogger.info({
