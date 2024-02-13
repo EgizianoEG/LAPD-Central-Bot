@@ -829,8 +829,8 @@ const CommandObject = {
         .setDescription("The type of duty shift to be managed.")
         .setMinLength(3)
         .setMaxLength(20)
-        .setAutocomplete(true)
         .setRequired(false)
+        .setAutocomplete(true)
     ),
 
   callback: Callback,
