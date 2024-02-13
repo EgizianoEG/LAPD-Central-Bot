@@ -36,8 +36,15 @@ declare global {
   export import Mongoose = MongooseMask;
   export import UtilityTypes = UtilityTypesMask;
 
-  type UnPartial<T> = T extends Partial<infer R> ? R : T;
+  /**
+    * Defines a type that can be either undefined, null, or of type T.
+    * @example
+      // Expect: `string | undefined | null`
+      type NullableString = Nullable<string>;
+   */
+  type Nullable<T> = undefined | null | T;
   type NonEmptyArray<T> = [T, ...T[]];
+  type UnPartial<T> = T extends Partial<infer R> ? R : T;
   type RangedArray<T, Min extends number, Max extends number> = TupleMinMax<T, Min, Max>;
 
   /** Expands a type definition recursively. */
