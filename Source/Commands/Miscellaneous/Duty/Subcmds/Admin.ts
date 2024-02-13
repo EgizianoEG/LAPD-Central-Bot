@@ -23,6 +23,7 @@ import { SuccessEmbed, InfoEmbed, WarnEmbed, ErrorEmbed } from "@Utilities/Class
 
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
 import HandleEmbedPagination from "@Utilities/Other/HandleEmbedPagination.js";
+import HandleRoleAssignment from "@Utilities/Other/HandleShiftRoleAssignment.js";
 import GetMainShiftsData from "@Utilities/Database/GetShiftsData.js";
 import ShiftActionLogger from "@Utilities/Classes/ShiftActionLogger.js";
 import ShiftModel from "@Models/Shift.js";
@@ -460,7 +461,7 @@ async function HandleUserShiftsWipe(
   const PromptEmbed = new WarnEmbed()
     .setTitle("Shift Data Reset")
     .setDescription(
-      `Are you certain you want to delete/wipe all recorded shifts of ${EDSType} type(s) for <@${TargetUser.id}>?\n\n` +
+      `Are you certain you want to delete/wipe all active and recorded shifts of ${EDSType} type(s) for <@${TargetUser.id}>?\n\n` +
         "**Note:** This is an ***irrevocable*** action, and erased data cannot be recovered."
     );
 
@@ -495,7 +496,7 @@ async function HandleUserShiftsWipe(
   await Confirmation.deferUpdate();
   const WipeResult = await WipeUserShifts(TargetUser.id, BInteract.guildId, ShiftType);
   const WipeEmbed = new SuccessEmbed()
-    .setTimestamp()
+    .setTimestamp(Confirmation.createdAt)
     .setDescription(null)
     .setTitle("User Shifts Wiped")
     .setFields({
@@ -578,6 +579,7 @@ async function HandleUserShiftEnd(
 
   return Promise.all([
     ShiftActionLogger.LogShiftEnd(EndedShift, BInteract, BInteract.user, TargetUser),
+    HandleRoleAssignment("off-duty", BInteract.client, BInteract.guildId, BInteract.user.id),
     RespMessage.edit({
       components: GetButtonActionRows(false, BInteract),
       embeds: [RespEmbed],
@@ -625,11 +627,20 @@ async function HandleUserShiftDelete(BInteract: ButtonInteraction<"cached">, Tar
       .replyToInteract(ModalSubmission, false, false);
   }
 
-  await ShiftFound.deleteOne();
-  await new SuccessEmbed()
-    .setTitle("Shift Deleted")
-    .setDescription(`Shift with the identifier \`${ShiftId}\` was successfully deleted.`)
-    .replyToInteract(ModalSubmission);
+  if (!ShiftFound.end_timestamp) {
+    HandleRoleAssignment("off-duty", BInteract.client, BInteract.guildId, BInteract.user.id).catch(
+      () => null
+    );
+  }
+
+  return Promise.all([
+    ShiftFound.deleteOne(),
+    ShiftActionLogger.LogShiftDelete(BInteract, ShiftFound),
+    new SuccessEmbed()
+      .setTitle("Shift Deleted")
+      .setDescription(`Shift with the identifier \`${ShiftId}\` was successfully deleted.`)
+      .replyToInteract(ModalSubmission),
+  ]);
 }
 
 /**

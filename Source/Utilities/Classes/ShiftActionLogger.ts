@@ -402,14 +402,42 @@ export default class ShiftActionLogger {
       .setTimestamp()
       .setColor(Embeds.Colors.ShiftEnd)
       .setTitle(TargettedUser ? "User Shifts Wiped" : "Shifts Wiped")
+      .setFooter({ text: `Wiped by: @${UserInteract.user.username}` })
       .setDescription(
         Dedent(`
-        ${TargettedUser ? `**User:** <@${TargettedUser.id}>\n` : ""}
-        **Shifts Deleted:** \`${DeleteResult.deletedCount}\`
-        **Shifts of Type:** ${ShiftType ? `\`${ShiftType}\`` : "*All Shift Types*"}
-        **Total Shifts Time:** ${ReadableDuration(DeleteResult.totalTime ?? 0)}
-        **Deleted by Management User:** <@${UserInteract.user.id}>
-      `)
+          ${TargettedUser ? `**User:** <@${TargettedUser.id}>\n` : ""}
+          **Shifts Deleted:** \`${DeleteResult.deletedCount}\`
+          **Shifts of Type:** ${ShiftType ? `\`${ShiftType}\`` : "*All Shift Types*"}
+          **Total Time:** ${ReadableDuration(DeleteResult.totalTime ?? 0)}
+        `)
+      );
+
+    return LoggingChannel?.send({ embeds: [LogEmbed] });
+  }
+
+  /**
+   * Logs a shift wipe-all action to the appropriate and specified channel of a guild.
+   * @param UserInteract - The received discordjs interaction (button/cmd) from the admin user.
+   * @param ShiftDeleted - ...
+   * @returns A promise that resolves to the logging message sent or `undefined` if it wasn't.
+   */
+  public static async LogShiftDelete(
+    UserInteract: Exclude<DiscordUserInteract, GuildMember>,
+    ShiftDeleted: HydratedShiftDocument
+  ) {
+    const LoggingChannel = await this.GetLoggingChannel(UserInteract);
+    const LogEmbed = new EmbedBuilder()
+      .setTimestamp(UserInteract.createdAt)
+      .setColor(Embeds.Colors.ShiftEnd)
+      .setTitle("User Shift Deleted")
+      .setFooter({ text: `Deleted by: @${UserInteract.user.username}` })
+      .setDescription(
+        Dedent(`
+          **User:** <@${ShiftDeleted.user}>
+          **Shift Type:** \`${ShiftDeleted.type}\`
+          **On-Duty Time:** ${ReadableDuration(ShiftDeleted.durations.on_duty)}
+          **On-Break Time:** ${ReadableDuration(ShiftDeleted.durations.on_break)}
+        `)
       );
 
     return LoggingChannel?.send({ embeds: [LogEmbed] });
