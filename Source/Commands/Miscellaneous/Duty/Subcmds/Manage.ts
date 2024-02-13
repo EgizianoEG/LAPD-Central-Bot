@@ -192,6 +192,8 @@ async function HandleNonActiveShift(
 
   ComponentCollector.once("end", async (Collected, EndReason) => {
     ComponentCollector.removeAllListeners();
+    const ButtonInteract = Collected.last();
+
     if (EndReason.match(/\w+Delete/)) return;
     try {
       if (EndReason === "time") {
@@ -205,7 +207,7 @@ async function HandleNonActiveShift(
         type: MngShiftType,
         user: Interaction.user.id,
         guild: Interaction.guildId,
-        start_timestamp: Interaction.createdTimestamp,
+        start_timestamp: ButtonInteract!.createdTimestamp,
       });
 
       ActiveShiftsCache.set(StartedShift._id, Interaction);
@@ -241,7 +243,7 @@ async function HandleNonActiveShift(
 
       await new ErrorEmbed()
         .useErrTemplate("AppError")
-        .replyToInteract(Collected.last() ?? Interaction);
+        .replyToInteract(ButtonInteract ?? Interaction);
     }
   });
 }
