@@ -213,7 +213,7 @@ export namespace ExtraTypings {
     name: string;
     guild_id: string;
     is_default?: boolean;
-    permissible_roles?: string[];
+    access_roles?: string[];
   }
 
   export interface GuildShiftType<ExcludeId extends boolean = false> {
@@ -223,7 +223,7 @@ export namespace ExtraTypings {
     /** Should this shift type be the default one? */
     is_default: boolean;
     /** All roles whose holders can utilize this duty shift type. */
-    permissible_roles: string[];
+    access_roles: string[];
     /** The date when this shift type was created. */
     created_at: Date;
   }

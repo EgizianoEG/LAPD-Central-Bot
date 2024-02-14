@@ -40,7 +40,7 @@ export default async function CreateShiftType(Data: ExtraTypings.CreateShiftType
     const Total = GuildDoc.settings.shifts.types.push({
       name: Data.name,
       is_default: Data.is_default,
-      permissible_roles: Data.permissible_roles,
+      access_roles: Data.access_roles,
     });
 
     return GuildDoc.save().then((Res) => {

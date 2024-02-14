@@ -27,7 +27,7 @@ function FormatEmbedDescription(ShiftTypeData: Utilities.Database.GuildShiftType
     const Template = Dedent(`
         **Name:** \`%s\`
         **Default Type:** \`%s\`
-        **Permissible Roles:**
+        **Access Roles:**
         > %s
     `);
 
@@ -35,8 +35,8 @@ function FormatEmbedDescription(ShiftTypeData: Utilities.Database.GuildShiftType
       Template + "\n\n",
       ShiftType.name,
       ShiftType.is_default ? "Yes" : "No",
-      ShiftType.permissible_roles.length
-        ? ListFormatter.format(ShiftType.permissible_roles.map((RoleId) => `<@&${RoleId}>`))
+      ShiftType.access_roles.length
+        ? ListFormatter.format(ShiftType.access_roles.map((RoleId) => `<@&${RoleId}>`))
         : "*Usable by all identified staff members*"
     );
 

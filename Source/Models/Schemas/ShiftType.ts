@@ -21,7 +21,7 @@ const ShiftTypeSchema = new Schema({
     required: true,
   },
 
-  permissible_roles: {
+  access_roles: {
     required: true,
     default: [],
     type: [

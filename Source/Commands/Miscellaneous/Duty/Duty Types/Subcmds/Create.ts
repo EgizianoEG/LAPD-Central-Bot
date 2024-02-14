@@ -108,19 +108,20 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
       Dedent(`
         - **Name:** \`${escapeMarkdown(ShiftTypeName)}\`
         - **Is Default:** \`${IsDefaultType ? "True" : "False"}\`
-        - **Permissible Roles:**
+        - **Access Roles:**
+          - Roles that owners may utilize and use this shift type.
           - To limit who may use this shift type, choose the appropriate roles from the drop-down menu below.
           - To make this shift type available and usable for all members, keep the drop-down menu empty.
-          - Press the \`Confirm and Create\` button when finished to proceed.
+          - Press the \`Confirm and Create\` button when finished to proceed with the creation.
   
         *This prompt will automatically cancel after five minutes of inactivity.*
-    `)
+      `)
     );
 
   const PromptComponents = [
     new ActionRowBuilder().addComponents(
       new RoleSelectMenuBuilder()
-        .setCustomId(`permissible-roles:${Interaction.user.id}`)
+        .setCustomId(`access-roles:${Interaction.user.id}`)
         .setPlaceholder("Specify which roles may utilize this shift type")
         .setMinValues(0)
         .setMaxValues(15)
@@ -183,7 +184,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
           guild_id: Interaction.guildId,
           name: ShiftTypeName,
           is_default: IsDefaultType,
-          permissible_roles: ShiftTypePermittedRoles,
+          access_roles: ShiftTypePermittedRoles,
         });
 
         if (Response instanceof Error) {
@@ -198,7 +199,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
                 .setDescription(
                   `**Name:** \`${Response.name}\`\n`,
                   `**Is Default:** \`${Response.is_default ? "Yes" : "No"}\`\n`,
-                  "**Permissible Roles:**\n",
+                  "**Access Roles:**\n",
                   ShiftTypePermittedRoles.length
                     ? ListFormatter.format(ShiftTypePermittedRoles.map((RoleId) => `<@&${RoleId}>`))
                     : "*Usable by all staff identified members*"
