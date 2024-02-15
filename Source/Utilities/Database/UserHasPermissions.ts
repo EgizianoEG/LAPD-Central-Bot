@@ -6,37 +6,57 @@ import { ExtraTypings } from "@Typings/Utilities/Database.js";
 import { DeepPartial } from "utility-types";
 import GuildModel from "@Models/Guild.js";
 
+type DBRolePermsType = {
+  staff: string[];
+  management: string[];
+};
+
 /**
  * Checks if a user has the required permissions based on the provided permissions configuration.
  * @param CmdInteraction - The user command interaction to process.
- * @param Perms - Permissions to validate against.
+ * @param Permissions - Permissions to validate against.
  * @returns A `Promise` that resolves to a boolean value.
  */
-export default async function UserHasPerms(
+export default async function UserHasPerms<RMissing extends boolean = false>(
   CmdInteraction: BaseInteraction<"cached">,
-  Perms: DeepPartial<ExtraTypings.UserPermissionsConfig>
-): Promise<boolean> {
-  if (!IsPlainObject(Perms) || IsEmptyObject(Perms)) return true;
-  if (Object.values(Perms).every((Val) => !Val)) return true;
+  Permissions: DeepPartial<ExtraTypings.UserPermissionsConfig>,
+  ReturnMissing?: RMissing
+): Promise<RMissing extends true ? [boolean, string[]] : boolean> {
+  if (!IsPlainObject(Permissions) || IsEmptyObject(Permissions)) return BaseReturn(ReturnMissing);
+  if (Object.values(Permissions).every((Val) => !Val)) return BaseReturn(ReturnMissing);
 
-  return CheckPerms(await GetDBRolePerms(CmdInteraction.guildId), Perms, CmdInteraction.member);
+  const CheckResult = CheckPerms(
+    await GetDBRolePerms(CmdInteraction.guildId),
+    Permissions,
+    CmdInteraction.member
+  );
+
+  if (ReturnMissing) {
+    return CheckResult as any;
+  } else {
+    return CheckResult[0] as any;
+  }
 }
 
 /**
  * Checks if a user or multiple users have specific permissions in a guild.
  * @param {string | string[]} User - Can be either a string or an array of strings. It represents the user or users for whom the permissions need to be checked.
  * @param {string} GuildId - A string that represents the ID of the guild (server) where the user's permissions will be checked.
- * @param {ExtraTypings.UserPermissionsConfig} Perms - Represents the permissions that the user should have.
+ * @param {ExtraTypings.UserPermissionsConfig} Permissions - Represents the permissions that the user should have.
  * @param {boolean} [UseCache=false] - A boolean flag that determines whether to use the cache for retrieving user permissions (if available); default: `false`
  * @returns A `Promise` that resolves to a boolean value or a record of boolean values if `User` is an array.
  */
 export async function UserHasPermsV2<UType extends string | string[]>(
   User: UType,
   GuildId: string,
-  Perms: DeepPartial<ExtraTypings.UserPermissionsConfig>,
+  Permissions: DeepPartial<ExtraTypings.UserPermissionsConfig>,
   UseCache: boolean = false
 ): Promise<UType extends string ? boolean : Record<string, boolean>> {
-  if (!IsPlainObject(Perms) || IsEmptyObject(Perms) || Object.values(Perms).every((Val) => !Val)) {
+  if (
+    !IsPlainObject(Permissions) ||
+    IsEmptyObject(Permissions) ||
+    Object.values(Permissions).every((Val) => !Val)
+  ) {
     if (Array.isArray(User)) {
       return User.reduce((Acc, UserId) => {
         Acc[UserId] = true;
@@ -48,7 +68,7 @@ export async function UserHasPermsV2<UType extends string | string[]>(
   }
 
   if (UseCache && typeof User === "string") {
-    const Cached = UserPermsCache.get(`${GuildId}:${User}:${JSON.stringify(Perms)}`);
+    const Cached = UserPermsCache.get(`${GuildId}:${User}:${JSON.stringify(Permissions)}`);
     if (typeof Cached === "boolean") return Cached as any;
   }
 
@@ -57,14 +77,14 @@ export async function UserHasPermsV2<UType extends string | string[]>(
     const GuildMember = Guild?.members.cache.get(User);
     if (!GuildMember) return false as any;
 
-    const Result = CheckPerms(await GetDBRolePerms(GuildId, UseCache), Perms, GuildMember);
-    UserPermsCache.set(`${GuildId}:${User}:${JSON.stringify(Perms)}`, Result);
+    const Result = CheckPerms(await GetDBRolePerms(GuildId, UseCache), Permissions, GuildMember);
+    UserPermsCache.set(`${GuildId}:${User}:${JSON.stringify(Permissions)}`, Result);
     return Result as any;
   } else if (Array.isArray(User)) {
     const Result = {};
     for (const UserId of User) {
       if (UseCache) {
-        const Cached = UserPermsCache.get(`${GuildId}:${UserId}:${JSON.stringify(Perms)}`);
+        const Cached = UserPermsCache.get(`${GuildId}:${UserId}:${JSON.stringify(Permissions)}`);
         if (typeof Cached === "boolean") {
           Result[UserId] = Cached;
           continue;
@@ -77,8 +97,12 @@ export async function UserHasPermsV2<UType extends string | string[]>(
         continue;
       }
 
-      Result[UserId] = CheckPerms(await GetDBRolePerms(GuildId, UseCache), Perms, GuildMember);
-      UserPermsCache.set(`${GuildId}:${User}:${JSON.stringify(Perms)}`, Result[UserId]);
+      Result[UserId] = CheckPerms(
+        await GetDBRolePerms(GuildId, UseCache),
+        Permissions,
+        GuildMember
+      );
+      UserPermsCache.set(`${GuildId}:${User}:${JSON.stringify(Permissions)}`, Result[UserId]);
     }
 
     return Result as any;
@@ -88,12 +112,11 @@ export async function UserHasPermsV2<UType extends string | string[]>(
 }
 
 // ---------------------------------------------------------------------------------------
-// Local Utilities:
-// ----------------
-type DBRolePermsType = {
-  staff: string[];
-  management: string[];
-};
+// Local Helpers:
+// --------------
+function BaseReturn(ReturnMissing?: boolean) {
+  return ReturnMissing ? [true, [] as any] : (true as any);
+}
 
 /**
  * Determines whether the given object has a logical operation of "and" or "or".
@@ -142,19 +165,21 @@ function CheckPerms(
   DBRolePerms: DBRolePermsType,
   Perms: DeepPartial<ExtraTypings.UserPermissionsConfig>,
   GuildMember: GuildMember
-): boolean {
+): [boolean, string[]] {
   let HasStaff = false;
   let HasManagement = false;
+  const MissingPerms: string[] = [];
 
   if (Perms.management) {
     if (typeof Perms.management === "boolean") {
       if (
-        Perms.management &&
+        Perms.management === true &&
         (GuildMember.permissions.has(PermissionFlagsBits.ManageGuild) ||
           GuildMember.roles.cache.hasAny(...DBRolePerms.management))
       ) {
         HasManagement = true;
       }
+      MissingPerms.push("Manage Server or Application Management");
     } else if (Perms.management.guild && Perms.management.app) {
       const logicalOperation = GetLogicalOperation(Perms.management);
 
@@ -164,6 +189,8 @@ function CheckPerms(
         GuildMember.permissions.has(PermissionFlagsBits.ManageGuild)
       ) {
         HasManagement = true;
+      } else {
+        MissingPerms.push("Manage Server and Application Management");
       }
 
       if (
@@ -172,24 +199,28 @@ function CheckPerms(
           GuildMember.permissions.has(PermissionFlagsBits.ManageGuild))
       ) {
         HasManagement = true;
+      } else {
+        MissingPerms.push("Manage Server or Application Management");
       }
     } else {
       throw new Error(`Invalid 'management' object structure; ${String(Perms.management)}`);
     }
   }
 
-  if (
-    Perms.staff &&
-    typeof Perms.staff === "boolean" &&
-    (GuildMember.permissions.has(PermissionFlagsBits.ManageGuild) ||
-      GuildMember.roles.cache.hasAny(...DBRolePerms.staff))
-  ) {
-    HasStaff = true;
+  if (Perms.staff && Perms.staff === true) {
+    if (
+      GuildMember.permissions.has(PermissionFlagsBits.ManageGuild) ||
+      GuildMember.roles.cache.hasAny(...DBRolePerms.staff)
+    ) {
+      HasStaff = true;
+    } else {
+      MissingPerms.push("A staff role associated with the application");
+    }
   }
 
   if (Perms.$and) {
-    return HasManagement && HasStaff;
+    return [HasManagement && HasStaff, MissingPerms] as const;
   } else {
-    return HasStaff || HasManagement;
+    return [HasStaff || HasManagement, MissingPerms] as const;
   }
 }

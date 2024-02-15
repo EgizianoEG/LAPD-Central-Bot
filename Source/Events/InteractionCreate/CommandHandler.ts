@@ -209,37 +209,19 @@ async function HandleUserPermissions(
     return ValidateUserPermissionsArray(CommandObject.options.user_perms, Interaction);
   }
 
-  if (
-    IsValidUserPermsObj(CommandObject.options.user_perms) &&
-    !(await UserHasPerms(Interaction, CommandObject.options.user_perms))
-  ) {
-    if (CommandObject.options.user_perms.management) {
-      return new UnauthorizedEmbed()
-        .setDescription(
-          Dedent(`
-              You do not have the necessary app permissions to utilize this command.
-              - Permissions Required:
-               - Manage Server; or/and
-               - Application (Bot) Management
-            `)
-        )
-        .replyToInteract(Interaction, true, true);
-    } else {
-      return new UnauthorizedEmbed()
-        .useErrTemplate("UnauthorizedCmdUsage")
-        .replyToInteract(Interaction, true, true);
-    }
+  if (IsValidUserPermsObj(CommandObject.options.user_perms)) {
+    return HandleCommandUserPerms(CommandObject.options.user_perms as any, Interaction);
   }
 
   const SubCmdGroup = Interaction.options.getSubcommandGroup(false);
   const SubCommand = Interaction.options.getSubcommand(false);
 
   if (SubCmdGroup && Object.hasOwn(CommandObject.options.user_perms, SubCmdGroup)) {
-    return HandleSubcommandUserPerms(CommandObject.options.user_perms[SubCmdGroup], Interaction);
+    return HandleCommandUserPerms(CommandObject.options.user_perms[SubCmdGroup], Interaction);
   }
 
   if (SubCommand && Object.hasOwn(CommandObject.options.user_perms, SubCommand)) {
-    return HandleSubcommandUserPerms(CommandObject.options.user_perms[SubCommand], Interaction);
+    return HandleCommandUserPerms(CommandObject.options.user_perms[SubCommand], Interaction);
   }
 
   // Handle '$all_other', '$other_cmds', '$all', as well as '$other' as a special case
@@ -250,7 +232,7 @@ async function HandleUserPermissions(
   );
 
   if (MatchingKeyFA) {
-    return HandleSubcommandUserPerms(CommandObject.options.user_perms[MatchingKeyFA], Interaction);
+    return HandleCommandUserPerms(CommandObject.options.user_perms[MatchingKeyFA], Interaction);
   }
 }
 
@@ -385,7 +367,7 @@ async function ValidateBotPermissionsArray(
  * @param Interaction - The slash command interaction object received.
  * @returns
  */
-async function HandleSubcommandUserPerms(
+async function HandleCommandUserPerms(
   Perms: NonNullable<CommandObjectOptions["bot_perms"]>,
   Interaction: ChatInputCommandInteraction<"cached">
 ) {
@@ -393,9 +375,37 @@ async function HandleSubcommandUserPerms(
     return ValidateUserPermissionsArray(Perms, Interaction);
   }
 
-  if (IsValidUserPermsObj(Perms) && !(await UserHasPerms(Interaction, Perms))) {
+  if (!IsValidUserPermsObj(Perms)) {
+    return;
+  }
+
+  const [HasPerms, MissingPerms] = await UserHasPerms(Interaction, Perms, true);
+  let MissingListed: string;
+
+  if (!HasPerms) {
+    if (MissingPerms.length > 1) {
+      const OrAndMissingPermIndex = MissingPerms.findIndex((P) => !!P.match(/\b(?:and|or)\b/i));
+      const OtherMissingPerms = MissingPerms.filter((P) => !P.match(/\b(?:and|or)\b/i));
+      if (OrAndMissingPermIndex >= 0) {
+        MissingListed =
+          MissingPerms[OrAndMissingPermIndex].replace(/^(.+)\s(and|or)\s(.+)/i, "- $1; $2\n- $3") +
+          "\n- " +
+          OtherMissingPerms.join("\n- ");
+      } else {
+        MissingListed = `- ${OtherMissingPerms.join("\n- ")}`;
+      }
+    } else {
+      MissingListed = MissingPerms[0].replace(/^(.+)\s(and|or)\s(.+)$/i, "- $1; $2\n- $3");
+    }
+
     return new UnauthorizedEmbed()
-      .useErrTemplate("UnauthorizedCmdUsage")
+      .setDescription(
+        Dedent(`
+          You do not have the necessary permission(s) to utilize this command.
+          Permission(s) Required:
+          ${MissingListed}
+        `)
+      )
       .replyToInteract(Interaction, true, true);
   }
 }
