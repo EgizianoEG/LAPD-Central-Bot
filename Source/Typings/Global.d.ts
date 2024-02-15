@@ -96,7 +96,20 @@ declare global {
 
     /**
      * The required user guild permissions to run this command.
-     * Could be for the whole command or for each sub-command or sub-command group.
+     * Could be for the whole command [group] or for each sub-command or sub-command group.
+     * @example
+     * // The following declaration will only allow subcommand "load" to be used by users with the "Administrator"
+     * // permission, and will also allow all other subcommands (not "load") to be used by users with the "Management"
+     * // permission for either the server or the bot itself since "$all_other" is set.
+     *
+     * // Notice that specifying cmds with names will have a higher priority than specifying all other command perms.
+     * // Also that the "$all_other" has alternative names: "$other_cmds", "$all", and "$other".
+     *
+     * const Options: CommandObjectOptions = {
+     *  ...
+     *  user_perms: { $all_other: { management: true }, load: [PermissionFlagsBits.Administrator] }
+     *  ...
+     *  }
      */
     user_perms?:
       | PermissionResolvable[]
