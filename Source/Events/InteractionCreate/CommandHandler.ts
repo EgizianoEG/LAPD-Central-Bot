@@ -241,6 +241,17 @@ async function HandleUserPermissions(
   if (SubCommand && Object.hasOwn(CommandObject.options.user_perms, SubCommand)) {
     return HandleSubcommandUserPerms(CommandObject.options.user_perms[SubCommand], Interaction);
   }
+
+  // Handle '$all_other', '$other_cmds', '$all', as well as '$other' as a special case
+  // where these keys specify the permissions needed for all other subcommands not mentioned
+  // above in the user perms object structure.
+  const MatchingKeyFA = Object.keys(CommandObject.options.user_perms).find(
+    (key) => !!key.match(/^\$all(?:_other)?$|^\$other(?:_cmds)?$/)
+  );
+
+  if (MatchingKeyFA) {
+    return HandleSubcommandUserPerms(CommandObject.options.user_perms[MatchingKeyFA], Interaction);
+  }
 }
 
 /**

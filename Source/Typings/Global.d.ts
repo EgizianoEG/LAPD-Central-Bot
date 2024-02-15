@@ -102,7 +102,7 @@ declare global {
       | PermissionResolvable[]
       | UtilityTypesMask.DeepPartial<ExtraTypings.UserPermissionsConfig>
       | Record<
-          string,
+          "$all_other" | "$other_cmds" | "$all" | "$other" | string,
           UtilityTypesMask.DeepPartial<ExtraTypings.UserPermissionsConfig> | PermissionResolvable[]
         >;
 
