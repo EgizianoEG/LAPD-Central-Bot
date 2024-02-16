@@ -125,9 +125,9 @@ async function HandleShiftTypeRestrictions(
 
   if (UserHasMgmtPerms) return true;
   if (CmdShiftType && DesiredShiftType) {
-    return Interaction.member.roles.cache.hasAny(...DesiredShiftType.permissible_roles);
+    return Interaction.member.roles.cache.hasAny(...DesiredShiftType.access_roles);
   } else if (GuildDefaultType) {
-    return Interaction.member.roles.cache.hasAny(...GuildDefaultType.permissible_roles);
+    return Interaction.member.roles.cache.hasAny(...GuildDefaultType.access_roles);
   }
 
   return false;
