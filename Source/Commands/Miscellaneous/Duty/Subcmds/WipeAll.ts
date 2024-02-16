@@ -14,7 +14,7 @@ import { isAfter } from "date-fns";
 import { IsValidShiftTypeName } from "@Utilities/Other/Validators.js";
 import { InfoEmbed, WarnEmbed, SuccessEmbed, ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
-import HandleActionCollectorExceptions from "@Utilities/Other/HandleButtonCollectorExceptions.js";
+import HandleActionCollectorExceptions from "@Utilities/Other/HandleCompCollectorExceptions.js";
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
 import ShiftActionLogger from "@Utilities/Classes/ShiftActionLogger.js";
 import HumanizeDuration from "humanize-duration";

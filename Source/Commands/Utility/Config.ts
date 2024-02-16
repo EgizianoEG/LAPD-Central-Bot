@@ -26,7 +26,7 @@ import {
 import { ArraysAreEqual } from "@Utilities/Other/ArraysAreEqual.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
-import HandleActionCollectorExceptions from "@Utilities/Other/HandleButtonCollectorExceptions.js";
+import HandleActionCollectorExceptions from "@Utilities/Other/HandleCompCollectorExceptions.js";
 import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
 import GuildModel from "@Models/Guild.js";
 import Dedent from "dedent";

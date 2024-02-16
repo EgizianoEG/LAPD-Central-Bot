@@ -17,7 +17,7 @@ import { DummyText } from "@Utilities/Strings/Random.js";
 import { IsValidRobloxUsername } from "@Utilities/Other/Validators.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
-import HandleActionCollectorExceptions from "@Utilities/Other/HandleButtonCollectorExceptions.js";
+import HandleActionCollectorExceptions from "@Utilities/Other/HandleCompCollectorExceptions.js";
 import UpdateLinkedRobloxUser from "@Utilities/Database/UpdateLinkedUser.js";
 import AutocompleteUsername from "@Utilities/Autocompletion/Username.js";
 import GetIdByUsername from "@Utilities/Roblox/GetIdByUsername.js";

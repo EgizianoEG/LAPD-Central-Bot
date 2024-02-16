@@ -11,7 +11,7 @@ import Dedent from "dedent";
 import GetActiveShifts from "@Utilities/Database/GetShiftActive.js";
 import ShiftActionLogger from "@Utilities/Classes/ShiftActionLogger.js";
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
-import HandleActionCollectorExceptions from "@Utilities/Other/HandleButtonCollectorExceptions.js";
+import HandleActionCollectorExceptions from "@Utilities/Other/HandleCompCollectorExceptions.js";
 
 // ---------------------------------------------------------------------------------------
 // Functions:

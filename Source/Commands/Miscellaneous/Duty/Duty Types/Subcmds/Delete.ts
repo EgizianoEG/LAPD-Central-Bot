@@ -18,7 +18,7 @@ import Dedent from "dedent";
 import GetShiftTypes from "@Utilities/Database/GetShiftTypes.js";
 import DeleteShiftType from "@Utilities/Database/DeleteShiftType.js";
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
-import HandleActionCollectorExceptions from "@Utilities/Other/HandleButtonCollectorExceptions.js";
+import HandleActionCollectorExceptions from "@Utilities/Other/HandleCompCollectorExceptions.js";
 
 // ---------------------------------------------------------------------------------------
 // Functions:
