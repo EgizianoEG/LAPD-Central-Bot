@@ -1,4 +1,4 @@
-import { EmbedBuilder, GuildMember, SlashCommandBuilder } from "discord.js";
+import { EmbedBuilder, GuildMember, SlashCommandSubcommandBuilder } from "discord.js";
 import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import HandleEmbedPagination from "@Utilities/Other/HandleEmbedPagination.js";
 
@@ -27,11 +27,7 @@ function ToEmbedPages(Members: GuildMember[]) {
   return Embeds;
 }
 
-/**
- * @param _
- * @param Interaction
- */
-async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
+async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const InputRegex = Interaction.options.getString("regex", true);
   const InputRFlag = Interaction.options.getString("flags", false);
 
@@ -47,9 +43,8 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
       return HandleEmbedPagination(EmbedPages, Interaction);
     } else {
       return new InfoEmbed()
-        .setTitle("Matching Members")
-        .setDescription("There were no members found with that nickname regex.")
-        .replyToInteract(Interaction);
+        .useInfoTemplate("NicknameRegexNoMatchingMembers")
+        .replyToInteract(Interaction, true);
     }
   } catch (Err) {
     return new ErrorEmbed()
@@ -61,11 +56,10 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
 // ---------------------------------------------------------------------------------------
 // Command structure:
 // ------------------
-const CommandObject: SlashCommandObject<any> = {
+const CommandObject = {
   callback: Callback,
-  data: new SlashCommandBuilder()
-    .setName("nickname-search")
-    .setDMPermission(false)
+  data: new SlashCommandSubcommandBuilder()
+    .setName("search")
     .setDescription(
       "Look up server member(s) by their nickname(s) using an ECMAScript regular expression."
     )
@@ -73,7 +67,7 @@ const CommandObject: SlashCommandObject<any> = {
       Opt.setName("regex")
         .setDescription("The regex to match nicknames with.")
         .setMinLength(2)
-        .setMaxLength(30)
+        .setMaxLength(35)
         .setRequired(true)
     )
     .addStringOption((Opt) =>
