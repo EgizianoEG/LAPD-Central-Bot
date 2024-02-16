@@ -39,7 +39,7 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
   },
 
   data: new SlashCommandBuilder()
-    .setName("nickname")
+    .setName("nicknames")
     .setDescription("Utility commands for member nicknames.")
     .setDMPermission(false)
     .addSubcommand(Subcommands[0].data)
