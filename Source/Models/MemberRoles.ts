@@ -1,0 +1,104 @@
+import { time, roleMention, userMention } from "discord.js";
+import { Schema, model } from "mongoose";
+import { format } from "date-fns";
+
+const SavedRoleSchema = new Schema(
+  {
+    role_id: {
+      type: String,
+      match: /^\d{15,22}$/,
+      required: true,
+    },
+
+    name: {
+      type: String,
+      minLength: 1,
+      maxLength: 32,
+      required: true,
+    },
+  },
+  { _id: false, versionKey: false }
+);
+
+const MemberRoles = new Schema(
+  {
+    guild: {
+      type: String,
+      ref: "Guild",
+      match: /^\d{15,22}$/,
+      required: true,
+    },
+
+    member: {
+      type: String,
+      ref: "GuildProfile",
+      match: /^\d{15,22}$/,
+      required: true,
+    },
+
+    username: {
+      type: String,
+      required: true,
+    },
+
+    nickname: {
+      type: String,
+      minLength: 1,
+      maxLength: 32,
+      required: true,
+    },
+
+    saved_by: {
+      type: String,
+      ref: "GuildProfile",
+      match: /^\d{15,22}$/,
+      required: true,
+    },
+
+    saved_at: {
+      type: Date,
+      default: Date.now,
+    },
+
+    roles: {
+      type: [SavedRoleSchema],
+      default: [],
+      required: true,
+    },
+  },
+  {
+    virtuals: {
+      user_mention: {
+        get() {
+          return userMention(this.member);
+        },
+      },
+
+      saved_at_timestamp: {
+        get() {
+          return time(this.saved_at, "F");
+        },
+      },
+
+      saved_at_formatted: {
+        get() {
+          return format(this.saved_at, "MMMM dd, yyyy 'at' HH:mm:ss");
+        },
+      },
+
+      roles_mentioned: {
+        get() {
+          return this.roles.map((Role) => roleMention(Role.role_id));
+        },
+      },
+
+      autocomplete_text: {
+        get() {
+          return `${this.nickname} (@${this.username}) – ${format(this.saved_at, "MMM dd, yy 'at' HH:mm:ss")}`;
+        },
+      },
+    },
+  }
+);
+
+export default model("Saved_Role", MemberRoles);

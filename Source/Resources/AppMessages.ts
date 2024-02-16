@@ -1,4 +1,6 @@
 /* eslint-disable sonarjs/no-duplicate-string */
+import Dedent from "dedent";
+
 /**
  * A collection of error messages used throughout the application.
  *
@@ -366,6 +368,45 @@ export const ErrorMessages = {
     Title: "Shift Mismatch",
     Description: "The current active shift does not match the shift being requested to be void.",
   },
+
+  /**
+   * Roles save not found for deletion
+   */
+  RolesSaveNotFoundFD: {
+    Title: "Save Not Found",
+    Description: "There was no save found with the provided identifier to delete.",
+  },
+
+  /**
+   * Roles save with a specified id not found for a selected member
+   */
+  RolesSaveNotFoundFSM: {
+    Title: "Save Not Found",
+    Description:
+      "There was no save found with the provided identifier for the selected user/member.",
+  },
+
+  /**
+   * Roles save not found for a selected member
+   */
+  DBFailedToDeleteRolesSave: {
+    Title: "Database Error",
+    Description:
+      "There was an error deleting this save. Please try again later or contact support.",
+  },
+
+  /**
+   * For nickname searches and replaces
+   */
+  InvalidRegexSyntax: {
+    Title: "Invalid Regex Syntax",
+    Description: Dedent(`
+      The regular expression provided is either invalid or unsupported. \
+      Please ensure that it follows the correct syntax and try again.
+
+      For more information on regular expressions, please refer to the [MDN documentation](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions).
+    `),
+  },
 };
 
 export const InfoMessages = {
@@ -377,6 +418,14 @@ export const InfoMessages = {
   },
 
   /**
+   * Roles save not found for a selected member
+   */
+  RoleSavesNotFoundFSM: {
+    Title: "Saves Not Found",
+    Description: "There were no saves or backups found for the selected user.",
+  },
+
+  /**
    * @template {String} ConfigurationTopic
    */
   ConfigTopicNoChangesMade: {
@@ -384,9 +433,14 @@ export const InfoMessages = {
     Description: "There have been no alterations to the %s configuration of the app.",
   },
 
+  NicknameRegexNoMatchingMembers: {
+    Title: "Matching Members",
+    Description: "There were no members found with that nickname regex.",
+  },
+
   TimedOutConfigPrompt: {
     Title: "Timed Out",
     Description:
-      "This configuration prompt has timed out. Kindly rerun the configuration command to continue the process.",
+      "This configuration prompt has timed out. If you wish to continue with the process, please re-run the configuration command.",
   },
 };

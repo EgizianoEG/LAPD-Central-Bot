@@ -1,0 +1,80 @@
+// Dependencies:
+// -------------
+
+import {
+  Colors,
+  roleMention,
+  userMention,
+  EmbedBuilder,
+  SlashCommandSubcommandBuilder,
+} from "discord.js";
+
+import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import MSRolesModel from "@Models/MemberRoles.js";
+import Dedent from "dedent";
+
+// ---------------------------------------------------------------------------------------
+// Functions:
+// ----------
+async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
+  const SelectedMember = CmdInteraction.options.getMember("member");
+  if (!SelectedMember) {
+    return new ErrorEmbed()
+      .useErrTemplate("MemberNotFound")
+      .replyToInteract(CmdInteraction, true, false);
+  } else {
+    await CmdInteraction.deferReply();
+  }
+
+  const IsBot = SelectedMember.user.bot;
+  const CurrRoles = SelectedMember.roles.cache
+    .filter((Role) => Role.id !== CmdInteraction.guildId)
+    .sort((R1, R2) => R2.position - R1.position)
+    .map((Role) => {
+      return { role_id: Role.id, name: Role.name };
+    });
+
+  const SavedRoles = await MSRolesModel.create({
+    guild: CmdInteraction.guildId,
+    roles: CurrRoles,
+    member: SelectedMember.user.id,
+    nickname: SelectedMember.nickname ?? SelectedMember.user.displayName,
+    username: IsBot ? SelectedMember.user.tag : SelectedMember.user.username,
+    saved_by: CmdInteraction.user.id,
+    saved_at: CmdInteraction.createdAt,
+  });
+
+  const RespEmbed = new EmbedBuilder()
+    .setTimestamp(CmdInteraction.createdAt)
+    .setColor(Colors.Greyple)
+    .setTitle("Backup Created")
+    .setDescription(
+      Dedent(`
+        ${userMention(SelectedMember.id)}'s currently assigned roles were successfully saved and backed up with the save id \`${SavedRoles.id}\`.
+        - **Current Nickname:** \`${SavedRoles.nickname}\`
+        - **Current Username:** \`@${SavedRoles.username}\`
+      `)
+    )
+    .addFields({
+      name: `Backed Up Roles - ${SavedRoles.roles.length}`,
+      value: SavedRoles.roles.map((Role) => roleMention(Role.role_id)).join(", "),
+    });
+
+  return CmdInteraction.editReply({ embeds: [RespEmbed] });
+}
+
+// ---------------------------------------------------------------------------------------
+// Command structure:
+// ------------------
+const CommandObject = {
+  callback: Callback,
+  data: new SlashCommandSubcommandBuilder()
+    .setName("backup")
+    .setDescription("Saves and backups currently assigned roles for a member.")
+    .addUserOption((Option) =>
+      Option.setName("member").setDescription("The member to backup their roles.").setRequired(true)
+    ),
+};
+
+// ---------------------------------------------------------------------------------------
+export default CommandObject;
