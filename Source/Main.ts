@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/no-duplicate-string */
 import { connections as MongooseConnection, STATES as DBStates } from "mongoose";
 import { Client, Collection, GatewayIntentBits } from "discord.js";
 import { Discord as DiscordSecrets } from "@Config/Secrets.js";
@@ -8,6 +9,7 @@ import Chalk from "chalk";
 import Express from "express";
 import GetFiles from "@Utilities/Other/GetFilesFrom.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
+import FileSystem from "node:fs";
 import GetOSMetrics from "@Utilities/Other/GetOSMetrics.js";
 import DurHumanizer from "humanize-duration";
 AppLogger.info(Chalk.grey("=========================== New Run ==========================="));
@@ -62,10 +64,19 @@ App.buttonListeners = new Collection();
 // --------------------
 const EAppPort = process.env.PORT ?? 10_000;
 const ExpressApp = Express();
+const NotFoundPage = FileSystem.readFileSync(
+  Path.join(GetDirName(import.meta.url), "Resources", "HTML", "404.html"),
+  { encoding: "utf-8" }
+);
 
 ExpressApp.get("/", (_, Res) => {
   Res.setHeader("Content-Type", "application/json");
   Res.end(JSON.stringify({ message: "OK" }, null, 2));
+});
+
+ExpressApp.get("/*", (_, Res) => {
+  Res.setHeader("Content-Type", "text/html");
+  Res.end(NotFoundPage);
 });
 
 ExpressApp.get("/status", (_, Res) => {
