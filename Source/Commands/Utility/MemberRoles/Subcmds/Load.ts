@@ -73,7 +73,7 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
         .setDescription(RespEmbedDesc)
         .setColor(Colors.Greyple),
     ],
-  });
+  }).catch(() => null);
 }
 
 // ---------------------------------------------------------------------------------------

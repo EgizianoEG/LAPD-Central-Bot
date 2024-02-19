@@ -50,6 +50,7 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
       - **Username:** \`${Save.username}\`
       - **Saved By:** <@${Save.saved_by}>
       - **Saved At:** ${time(Save.saved_at, "f")}
+      - **Save Reason:** \`${Save.reason ?? "N/A"}\`
       - **Backed Up Roles ([${Save.roles.length}](${channelLink(CmdInteraction.channelId)})):** 
         ${RolesValidated.join(", ")}
   `);

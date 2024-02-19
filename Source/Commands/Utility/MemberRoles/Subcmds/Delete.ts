@@ -36,7 +36,7 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
   }
 
   const RespEmbedDesc = Dedent(`
-    The save was successfully deleted. Here is a summary of the save deleted:
+    The save was successfully deleted. Here is a summary of it:
     - **Save For:** <@${Save.member}>
     - **Saved By:** <@${Save.saved_by}>
     - **Saved At:** ${time(Save.saved_at, "f")}

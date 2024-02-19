@@ -60,6 +60,12 @@ const MemberRoles = new Schema(
       default: Date.now,
     },
 
+    reason: {
+      type: String,
+      default: null,
+      required: false,
+    },
+
     roles: {
       type: [SavedRoleSchema],
       default: [],
