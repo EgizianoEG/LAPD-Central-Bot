@@ -196,6 +196,7 @@ async function OnChargesModalSubmission(
 
   let AsstOfficers: string[] = [];
   const FCharges = FormatCharges(ModalInteraction.fields.getTextInputValue("charges-text"));
+  const ArrestNotes = ModalInteraction.fields.getTextInputValue("arrest-notes");
   const BookingNumber = GetBookingNumber(GuildDoc!.logs.arrests as any);
   const BookingMugshotURL = await GetBookingMugshot<true>({
     return_url: true,
@@ -241,6 +242,14 @@ async function OnChargesModalSubmission(
         inline: false,
       },
     ]);
+
+  if (ArrestNotes?.length) {
+    ConfirmationEmbed.addFields({
+      name: "Arrest Notes",
+      value: "```fix\n" + ArrestNotes + "```",
+      inline: false,
+    });
+  }
 
   const ButtonsActionRow = new ActionRowBuilder<ButtonBuilder>().setComponents(
     new ButtonBuilder()
@@ -328,6 +337,7 @@ async function OnChargesModalSubmission(
         };
 
         const ArresteeInfo: ArresteeInfoType = {
+          notes: ArrestNotes ?? null,
           booking_num: BookingNumber,
           booking_mugshot: BookingMugshotURL,
           Gender: CmdOptions.Gender,
@@ -398,7 +408,7 @@ async function CmdCallback(Interaction: SlashCommandInteraction<"cached">, Repor
         new TextInputBuilder()
           .setLabel("Arrest Notes")
           .setStyle(TextInputStyle.Short)
-          .setCustomId("notes-text")
+          .setCustomId("arrest-notes")
           .setPlaceholder("e.g., known to be in a gang.")
           .setMinLength(6)
           .setMaxLength(128)

@@ -23,6 +23,12 @@ const ArrestSchema = new Schema({
     default: Date.now,
   },
 
+  notes: {
+    type: String,
+    default: null,
+    required: false,
+  },
+
   arrestee: {
     _id: false,
     required: true,
