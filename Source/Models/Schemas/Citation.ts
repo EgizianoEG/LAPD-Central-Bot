@@ -23,6 +23,12 @@ const CitationSchema = new Schema<CitationPlainDoc, CitationModelType>({
     default: Date.now,
   },
 
+  img_url: {
+    type: String,
+    default: null,
+    required: false,
+  },
+
   num: {
     type: String,
     match: /^\d+$/,

@@ -22,6 +22,9 @@ export namespace Citations {
     /** The day period of the citation ("AM" or "PM") */
     ampm: "AM" | "PM";
 
+    /** The direct image url of the filled citation; if any. */
+    img_url?: string | null;
+
     /** The location of violation(s) stated. A maximum of 70 characters. */
     violation_loc: string;
 
