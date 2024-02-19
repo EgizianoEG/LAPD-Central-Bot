@@ -5,14 +5,17 @@ import { Citations } from "@Typings/Utilities/Generic.js";
 import SendGuildMessages from "@Utilities/Other/SendGuildMessages.js";
 import GuildModel from "@Models/Guild.js";
 import Dedent from "dedent";
+import UploadToImgBB from "./ImgBBUpload.js";
+import GetPlaceholderImgURL from "./GetPlaceholderImg.js";
+import { CitationImgDimensions } from "./GetFilledCitation.js";
 
 /**
  * Creates a traffic citation record on a specific guild.
  * @param CitationType - The type of citation being processed.
  * @param CachedInteract - The first interaction received; i.e. the command interaction.
- * @param ModalSubmission - The modal submission of the last needed information.
- * @param CitingOfficer - The officer who is issuing the citation.
- * @param PartialCitationData - The incomplete citation data to process.
+ * @param GuildDocument
+ * @param CitationData
+ * @param CitationImg - The filled citation as an image. A buffer to be uploaded or the image URL itself (if already uploaded.)
  * @returns - The logged citation message link (the main one) if successful.
  */
 export default async function LogTrafficCitation(
@@ -20,9 +23,23 @@ export default async function LogTrafficCitation(
   CachedInteract: SlashCommandInteraction<"cached">,
   GuildDocument: HydratedDocumentFromSchema<typeof GuildModel.schema>,
   CitationData: Citations.AnyCitationData,
-  CitationImgURL: string
+  CitationImg: string | Buffer
 ) {
-  GuildDocument.logs.citations.addToSet({ ...CitationData, issued_at: CachedInteract.createdAt });
+  let CitationImgURL: string;
+  if (CitationImg instanceof Buffer) {
+    CitationImgURL =
+      (await UploadToImgBB(CitationImg, `traffic_citation_#${CitationData.num}`)) ??
+      GetPlaceholderImgURL(`${CitationImgDimensions.Width}x${CitationImgDimensions.Height}`, "?");
+  } else {
+    CitationImgURL = CitationImg;
+  }
+
+  GuildDocument.logs.citations.addToSet({
+    ...CitationData,
+    issued_at: CachedInteract.createdAt,
+    img_url: CitationImgURL,
+  });
+
   await GuildDocument.save();
 
   const CitationDescription = Dedent(`

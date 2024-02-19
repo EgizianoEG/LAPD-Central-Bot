@@ -1,7 +1,6 @@
 import { type Canvas, createCanvas, loadImage } from "@napi-rs/canvas/index.js";
 import { Embeds } from "@Config/Shared.js";
-import { Other } from "@Config/Secrets.js";
-import Axios from "axios";
+import UploadToImgBB from "./ImgBBUpload.js";
 
 let BgCanvas: Canvas | null = null;
 export interface GetBookingMugshotOptions {
@@ -55,17 +54,8 @@ export default async function GetBookingMugshot<AsURL extends boolean | undefine
 
   const ImgBuffer = ImgCanvas.toBuffer("image/jpeg", 100);
   if (Options.return_url) {
-    const Payload = new FormData();
-    Payload.append("image", ImgBuffer.toString("base64"));
-
-    const Resp = await Axios.post("https://api.imgbb.com/1/upload", Payload, {
-      params: {
-        key: Other.ImgBB_API_Key,
-        name: `booking_mugshot_#${Options.booking_num}`,
-      },
-    });
-
-    return Resp.data?.data?.display_url ?? Embeds.Thumbs.UnknownImage;
+    return (UploadToImgBB(ImgBuffer, `booking_mugshot_#${Options.booking_num}`) ??
+      Embeds.Thumbs.UnknownImage) as any;
   } else {
     return ImgBuffer as any;
   }

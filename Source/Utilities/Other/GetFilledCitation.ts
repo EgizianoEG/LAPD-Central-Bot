@@ -1,12 +1,11 @@
 import { createCanvas, loadImage } from "@napi-rs/canvas/index.js";
 import { GetDirName } from "./Paths.js";
 import { Citations } from "@Typings/Utilities/Generic.js";
-import { Other } from "@Config/Secrets.js";
 
 import Path from "node:path";
-import Axios from "axios";
 import FileSystem from "node:fs/promises";
 import GetPlaceholderImgURL from "./GetPlaceholderImg.js";
+import UploadToImgBB from "./ImgBBUpload.js";
 
 export enum CitationImgDimensions {
   Height = 1120,
@@ -245,17 +244,8 @@ export async function GetFilledCitation<
 
   const ImgBuffer = CitCanvas.toBuffer("image/jpeg", 100);
   if (ReturnAsURL) {
-    const Payload = new FormData();
-    Payload.append("image", ImgBuffer.toString("base64"));
-
-    const Resp = await Axios.post("https://api.imgbb.com/1/upload", Payload, {
-      params: {
-        key: Other.ImgBB_API_Key,
-        name: `traffic_citation_#${CitData.num}`,
-      },
-    }).catch(() => null);
-
-    return Resp?.data?.data?.display_url ?? GetPlaceholderImgURL(`${Width}x${Height}`, "?");
+    return ((await UploadToImgBB(ImgBuffer, `traffic_citation_#${CitData.num}`)) ??
+      GetPlaceholderImgURL(`${Width}x${Height}`, "?")) as any;
   } else {
     return ImgBuffer as any;
   }
