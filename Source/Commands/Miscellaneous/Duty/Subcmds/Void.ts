@@ -52,6 +52,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     embeds: [PromptEmbed],
     components: [PromptButtons],
     fetchReply: true,
+    ephemeral: true,
   });
 
   const DisablePrompt = () => {

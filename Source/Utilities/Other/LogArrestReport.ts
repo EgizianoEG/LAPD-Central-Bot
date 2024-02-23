@@ -7,6 +7,7 @@ import { ExtraTypings } from "@Typings/Utilities/Database.js";
 import Dedent from "dedent";
 import GuildModel from "@Models/Guild.js";
 import SendGuildMessages from "@Utilities/Other/SendGuildMessages.js";
+import IncrementActiveShiftEvent from "@Utilities/Database/IncrementActiveShiftEvent.js";
 const ListFormatter = new Intl.ListFormat("en");
 
 export type ReporterInfoType = {
@@ -51,7 +52,7 @@ export default async function LogArrestReport(
   ReporterInfo.asst_officers = ReporterInfo.asst_officers ?? [];
 
   const QueryFilter = { _id: CachedInteract.guildId };
-  const GuildDoc = await GuildModel.findOneAndUpdate(QueryFilter, QueryFilter, {
+  const GuildDocument = await GuildModel.findOneAndUpdate(QueryFilter, QueryFilter, {
     upsert: true,
     new: true,
   });
@@ -62,7 +63,7 @@ export default async function LogArrestReport(
     ? ListFormatter.format(Array.from(ReporterInfo.asst_officers, (Id) => userMention(Id)))
     : "N/A";
 
-  const ArrestLogData: Partial<(typeof GuildDoc.logs.arrests)[number]> = {
+  const ArrestLogData: Partial<(typeof GuildDocument.logs.arrests)[number]> = {
     _id: ArresteeInfo.booking_num,
     made_at: ReporterInfo.report_date,
     arrest_assisting_officers: ReporterInfo.asst_officers,
@@ -86,8 +87,13 @@ export default async function LogArrestReport(
     },
   };
 
-  GuildDoc.logs.arrests.addToSet(ArrestLogData);
-  await GuildDoc.save();
+  GuildDocument.logs.arrests.addToSet(ArrestLogData);
+  await Promise.all([
+    GuildDocument.save(),
+    IncrementActiveShiftEvent("arrests", CachedInteract.user.id, GuildDocument._id).catch(
+      () => null
+    ),
+  ]);
 
   const ReportDescription = Dedent(`
     Arrest report submitted by <@${ReporterInfo.discord_user_id}>.
@@ -142,7 +148,7 @@ export default async function LogArrestReport(
 
   const MainMsgLink = await SendGuildMessages(
     CachedInteract,
-    GuildDoc.settings.log_channels.arrests,
+    GuildDocument.settings.log_channels.arrests,
     {
       embeds: [FormattedReport],
     }

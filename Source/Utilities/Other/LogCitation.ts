@@ -1,13 +1,14 @@
 import { HydratedDocumentFromSchema } from "mongoose";
 import { Colors, EmbedBuilder, time } from "discord.js";
+import { CitationImgDimensions } from "./GetFilledCitation.js";
 import { Citations } from "@Typings/Utilities/Generic.js";
 
-import SendGuildMessages from "@Utilities/Other/SendGuildMessages.js";
-import GuildModel from "@Models/Guild.js";
 import Dedent from "dedent";
+import GuildModel from "@Models/Guild.js";
 import UploadToImgBB from "./ImgBBUpload.js";
+import SendGuildMessages from "@Utilities/Other/SendGuildMessages.js";
 import GetPlaceholderImgURL from "./GetPlaceholderImg.js";
-import { CitationImgDimensions } from "./GetFilledCitation.js";
+import IncrementActiveShiftEvent from "@Utilities/Database/IncrementActiveShiftEvent.js";
 
 /**
  * Creates a traffic citation record on a specific guild.
@@ -40,7 +41,12 @@ export default async function LogTrafficCitation(
     img_url: CitationImgURL,
   });
 
-  await GuildDocument.save();
+  await Promise.all([
+    GuildDocument.save(),
+    IncrementActiveShiftEvent("citations", CachedInteract.user.id, GuildDocument._id).catch(
+      () => null
+    ),
+  ]);
 
   const CitationDescription = Dedent(`
     **Citation issued by:** <@${CachedInteract.user.id}>
