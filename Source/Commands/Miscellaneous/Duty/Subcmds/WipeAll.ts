@@ -43,9 +43,6 @@ async function HandleSTNameValidation(
   return false;
 }
 
-/**
- * @param Interaction
- */
 async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const ShiftType = Interaction.options.getString("type");
   const DateSpecified = Interaction.options.getString("before");
