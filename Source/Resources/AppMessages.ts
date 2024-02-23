@@ -145,7 +145,7 @@ export const ErrorMessages = {
   WipeAllNoShiftsFound: {
     Title: "No Shifts Found",
     Description:
-      "It looks that there are currently no recorded shifts that match your search to be deleted.",
+      "It looks like there are currently no recorded shifts that match your search to be deleted.",
   },
 
   /**
