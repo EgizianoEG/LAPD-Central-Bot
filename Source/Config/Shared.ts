@@ -13,9 +13,10 @@ const SharedData = {
       Warning: "#E67E22",
       Error: "#ED4245",
 
-      ShiftEnd: "#E22635",
-      ShiftStart: "#2E8B57",
-      ShiftBreak: "#FCAE1E",
+      ShiftEnd: "#C02942",
+      ShiftVoid: "#4E5052",
+      ShiftStart: "#1F9D4B",
+      ShiftBreak: "#FE8C2A",
     },
 
     Thumbs: {
