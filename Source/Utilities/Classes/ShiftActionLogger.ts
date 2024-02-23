@@ -5,6 +5,7 @@ import {
   User,
   GuildMember,
   userMention,
+  inlineCode,
   channelLink,
   EmbedBuilder,
   ImageURLOptions,
@@ -93,13 +94,10 @@ export default class ShiftActionLogger {
       ? FormatTime(Math.round(ShiftDoc.end_timestamp.valueOf() / 1000), "R")
       : null;
 
-    const BaseEmbed = new EmbedBuilder()
-      .setTimestamp()
-      .setFooter({ text: `Shift ID: ${ShiftDoc._id}` })
-      .setAuthor({
-        iconURL: UserAvatarURL,
-        name: `@${UserInteract.user.username}`,
-      });
+    const BaseEmbed = new EmbedBuilder().setAuthor({
+      iconURL: UserAvatarURL,
+      name: `@${UserInteract.user.username}`,
+    });
 
     return { BaseEmbed, LoggingChannel, ShiftStartedRT, ShiftEndedRT, CurrNickname };
   }
@@ -163,7 +161,6 @@ export default class ShiftActionLogger {
     const BaseData = await this.GetBaseData(ShiftDoc, UserInteract);
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Started")
       .setColor(SharedData.Embeds.Colors.ShiftStart)
-      .setFooter(null)
       .setFields(
         {
           inline: true,
@@ -179,7 +176,7 @@ export default class ShiftActionLogger {
           name: "Officer Details",
           value: Dedent(`
             - Officer: ${userMention(ShiftDoc.user)}
-            - Nickname: ${BaseData.CurrNickname}
+            - Nickname: ${inlineCode(BaseData.CurrNickname)}
           `),
         }
       );
@@ -216,7 +213,6 @@ export default class ShiftActionLogger {
     const BreakStartedRT = FormatTime(Math.round(ShiftDoc.events.breaks[0]![0] / 1000), "R");
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Break Started")
       .setColor(SharedData.Embeds.Colors.ShiftBreak)
-      .setFooter(null)
       .setFields(
         {
           inline: true,
@@ -233,7 +229,7 @@ export default class ShiftActionLogger {
           name: "Officer Details",
           value: Dedent(`
             - Officer: ${userMention(ShiftDoc.user)}
-            - Nickname: ${BaseData.CurrNickname}
+            - Nickname: ${inlineCode(BaseData.CurrNickname)}
           `),
         }
       );
@@ -277,7 +273,6 @@ export default class ShiftActionLogger {
 
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Break Ended")
       .setColor(SharedData.Embeds.Colors.ShiftBreak)
-      .setFooter(null)
       .setFields(
         {
           inline: true,
@@ -296,7 +291,7 @@ export default class ShiftActionLogger {
           name: "Officer Details",
           value: Dedent(`
             - Officer: ${userMention(ShiftDoc.user)}
-            - Nickname: ${BaseData.CurrNickname}
+            - Nickname: ${inlineCode(BaseData.CurrNickname)}
           `),
         }
       );
@@ -333,20 +328,18 @@ export default class ShiftActionLogger {
   ) {
     const BaseData = await this.GetBaseData(ShiftDoc, UserInteract);
     const OnDutyTime = ReadableDuration(ShiftDoc.durations.on_duty);
-    const OnBreakTime = ShiftDoc.durations.on_duty
-      ? ReadableDuration(ShiftDoc.durations.on_break)
-      : null;
+    const OnBreakTime =
+      ShiftDoc.durations.on_break > 0 ? ReadableDuration(ShiftDoc.durations.on_break) : null;
 
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Ended")
       .setColor(SharedData.Embeds.Colors.ShiftEnd)
-      .setFooter(null)
       .addFields(
         {
           inline: true,
           name: "Officer Details",
           value: Dedent(`
             - Officer: ${userMention(ShiftDoc.user)}
-            - Nickname: ${BaseData.CurrNickname}
+            - Nickname: ${inlineCode(BaseData.CurrNickname)}
           `),
         },
         {
@@ -405,14 +398,13 @@ export default class ShiftActionLogger {
 
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Automatically Ended")
       .setColor(SharedData.Embeds.Colors.ShiftEnd)
-      .setFooter(null)
       .addFields(
         {
           inline: true,
           name: "Officer Details",
           value: Dedent(`
             - Officer: ${userMention(ShiftDoc.user)}
-            - Nickname: ${BaseData.CurrNickname}
+            - Nickname: ${inlineCode(BaseData.CurrNickname)}
           `),
         },
         {
@@ -458,20 +450,18 @@ export default class ShiftActionLogger {
     const BaseData = await this.GetBaseData(ShiftDoc, UserInteract);
     const VoidEpoch = FormatTime(UserInteract.createdAt, "R");
     const OnDutyTime = ReadableDuration(ShiftDoc.durations.on_duty);
-    const OnBreakTime = ShiftDoc.durations.on_duty
-      ? ReadableDuration(ShiftDoc.durations.on_break)
-      : null;
+    const OnBreakTime =
+      ShiftDoc.durations.on_break > 0 ? ReadableDuration(ShiftDoc.durations.on_break) : null;
 
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Voided")
       .setColor(SharedData.Embeds.Colors.ShiftVoid)
-      .setFooter(null)
       .addFields(
         {
           inline: true,
           name: "Officer Details",
           value: Dedent(`
             - Officer: ${userMention(ShiftDoc.user)}
-            - Nickname: ${BaseData.CurrNickname}
+            - Nickname: ${inlineCode(BaseData.CurrNickname)}
           `),
         },
         {
@@ -489,7 +479,7 @@ export default class ShiftActionLogger {
             - Shift ID: \`${ShiftDoc._id}\`
               - Type: \`${ShiftDoc.type}\`
               - Started: ${BaseData.ShiftStartedRT}
-              - Ended: ${BaseData.ShiftEndedRT ?? VoidEpoch}
+              - Voided: ${BaseData.ShiftEndedRT ?? VoidEpoch}
               - On-Duty Time: ${OnDutyTime}
               ${OnBreakTime ? `- On-Break Time: ${OnBreakTime}` : ""}
           `),
@@ -526,7 +516,6 @@ export default class ShiftActionLogger {
   ) {
     const LoggingChannel = await this.GetLoggingChannel(UserInteract);
     const LogEmbed = new EmbedBuilder()
-      .setTimestamp(null)
       .setColor(Embeds.Colors.ShiftEnd)
       .setTitle(TargettedUser ? "Member Shifts Wiped" : "Shifts Wiped")
       .setFooter({ text: `Wiped by: @${UserInteract.user.username}` })
@@ -561,12 +550,11 @@ export default class ShiftActionLogger {
       .setTimestamp(UserInteract.createdAt)
       .setColor(Embeds.Colors.ShiftEnd)
       .setTitle("Member Shift Deleted")
-      .setFooter({
-        text: `Deleted by: @${UserInteract.user.username}; Shift ID: ${ShiftDeleted._id}`,
-      })
+      .setFooter({ text: `Deleted by: @${UserInteract.user.username}` })
       .setDescription(
         Dedent(`
           **Member:** <@${ShiftDeleted.user}>
+          **Shift ID:** \`${ShiftDeleted._id}\`
           **Shift of Type:** \`${ShiftDeleted.type}\`
           **On-Duty Time:** ${ReadableDuration(ShiftDeleted.durations.on_duty)}
           ${ShiftDeleted.durations.on_break ? `**On-Break Time:** ${ReadableDuration(ShiftDeleted.durations.on_break)}` : ""}
