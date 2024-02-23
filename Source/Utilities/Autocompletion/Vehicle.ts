@@ -2,21 +2,21 @@ import { AllVehicleModels, ERLCVehiclesData } from "@Resources/ERLCVehicles.js";
 import { FormatVehicleName } from "../Strings/Formatters.js";
 import ShuffleArray from "../Other/ShuffleArray.js";
 
-const VehicleProps: string[] = [];
+const VehicleTags: string[] = [];
 const VehicleNames: string[] = [];
 
 for (const Brand of ERLCVehiclesData) {
   for (const Model of Brand.models) {
-    if (!VehicleProps.includes(Model.style.toLowerCase())) {
-      VehicleProps.push(Model.style.toLowerCase());
+    if (!VehicleTags.includes(Model.style.toLowerCase())) {
+      VehicleTags.push(Model.style.toLowerCase());
     }
 
-    if (!VehicleProps.includes(Model.class.toLowerCase())) {
-      VehicleProps.push(Model.class.toLowerCase());
+    if (!VehicleTags.includes(Model.class.toLowerCase())) {
+      VehicleTags.push(Model.class.toLowerCase());
     }
 
-    if (!VehicleProps.includes(Model.category.toLowerCase())) {
-      VehicleProps.push(Model.category.toLowerCase());
+    if (!VehicleTags.includes(Model.category.toLowerCase())) {
+      VehicleTags.push(Model.category.toLowerCase());
     }
 
     VehicleNames.push(
@@ -39,7 +39,7 @@ export default function AutocompleteVehicle(Typed: string): Array<{ name: string
 
   if (Typed.match(/^\s*$/)) {
     Suggestions = ShuffleArray(VehicleNames);
-  } else if (VehicleProps.includes(LowerCased)) {
+  } else if (VehicleTags.includes(LowerCased)) {
     const MatchingModels = AllVehicleModels.filter(
       (Model) =>
         Model.style.toLowerCase() === LowerCased ||
