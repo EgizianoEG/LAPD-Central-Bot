@@ -1,11 +1,16 @@
+/* eslint-disable sonarjs/no-duplicate-string */
+// ------------------------------------------------------------------------------------
+
 import {
   User,
+  GuildMember,
+  userMention,
+  channelLink,
   EmbedBuilder,
   ImageURLOptions,
   TextBasedChannel,
   ButtonInteraction,
   time as FormatTime,
-  GuildMember,
 } from "discord.js";
 
 import { ExtraTypings } from "@Typings/Utilities/Database.js";
@@ -13,6 +18,10 @@ import SharedData, { Embeds } from "@Config/Shared.js";
 import GuildModel from "@Models/Guild.js";
 import HDuration from "humanize-duration";
 import Dedent from "dedent";
+
+const BluewishText = (Text: string | number, ChannelId: string) => {
+  return `[${Text}](${channelLink(ChannelId)})`;
+};
 
 const ReadableDuration = HDuration.humanizer({
   conjunction: " and ",
@@ -31,7 +40,6 @@ type DiscordUserInteract =
   | ButtonInteraction<"cached">
   | GuildMember;
 
-// TODO: Add support for logging administration actions on shifts.
 export default class ShiftActionLogger {
   private static readonly AvatarIconOpts: ImageURLOptions = { size: 128 };
 
@@ -41,7 +49,7 @@ export default class ShiftActionLogger {
    * @returns
    */
   private static async GetLoggingChannel(UserInteract: DiscordUserInteract) {
-    const ChannelId = await GuildModel.findOne({
+    const LoggingChannelId = await GuildModel.findOne({
       _id: UserInteract instanceof GuildMember ? UserInteract.guild.id : UserInteract.guildId,
     })
       .select("settings")
@@ -52,8 +60,8 @@ export default class ShiftActionLogger {
         return null;
       });
 
-    if (!ChannelId) return null;
-    const ChannelExists = UserInteract.guild.channels.cache.get(ChannelId);
+    if (!LoggingChannelId) return null;
+    const ChannelExists = UserInteract.guild.channels.cache.get(LoggingChannelId);
     const AbleToSendMsgs =
       ChannelExists?.viewable &&
       ChannelExists.isTextBased() &&
@@ -63,18 +71,28 @@ export default class ShiftActionLogger {
   }
 
   /**
-   * Base data for all class methods.
+   * Base data for a target member (inferred from the shift document and command interactions).
    * @param ShiftDoc - The latest/updated shift document.
    * @param UserInteract - The received discordjs interaction (button/cmd).
-   * @returns An object with the properties: `BaseEmbed`, `LoggingChannel`, and `ShiftStartedRT`.
+   * @returns
    */
   private static async GetBaseData(
     ShiftDoc: HydratedShiftDocument,
     UserInteract: DiscordUserInteract
   ) {
+    const UserInGuild =
+      UserInteract instanceof GuildMember
+        ? UserInteract
+        : await UserInteract.guild.members.fetch(UserInteract.user.id);
+
     const UserAvatarURL = UserInteract.user.displayAvatarURL(this.AvatarIconOpts);
+    const CurrNickname = UserInGuild.nickname ?? UserInteract.user.displayName;
     const LoggingChannel = await this.GetLoggingChannel(UserInteract);
     const ShiftStartedRT = FormatTime(Math.round(ShiftDoc.start_timestamp.valueOf() / 1000), "R");
+    const ShiftEndedRT = ShiftDoc.end_timestamp
+      ? FormatTime(Math.round(ShiftDoc.end_timestamp.valueOf() / 1000), "R")
+      : null;
+
     const BaseEmbed = new EmbedBuilder()
       .setTimestamp()
       .setFooter({ text: `Shift ID: ${ShiftDoc._id}` })
@@ -83,7 +101,21 @@ export default class ShiftActionLogger {
         name: `@${UserInteract.user.username}`,
       });
 
-    return { BaseEmbed, LoggingChannel, ShiftStartedRT };
+    return { BaseEmbed, LoggingChannel, ShiftStartedRT, ShiftEndedRT, CurrNickname };
+  }
+
+  /**
+   * Adds additional text before the existing footer text.
+   * @param Embed
+   * @param AdditionalText
+   * @returns
+   */
+  private static BeforeFooter(Embed: EmbedBuilder, AdditionalText: string): EmbedBuilder {
+    if (Embed.data.footer?.text && Embed.data.footer.text.length > 0) {
+      return Embed.setFooter({ text: `${AdditionalText}; ${Embed.data.footer.text}` });
+    } else {
+      return Embed.setFooter({ text: AdditionalText });
+    }
   }
 
   /**
@@ -131,25 +163,36 @@ export default class ShiftActionLogger {
     const BaseData = await this.GetBaseData(ShiftDoc, UserInteract);
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Started")
       .setColor(SharedData.Embeds.Colors.ShiftStart)
-      .setDescription(
-        Dedent(`
-            **Officer:** <@${ShiftDoc.user}>
-            **Started:** ${FormatTime(Math.round(ShiftDoc.start_timestamp.valueOf() / 1000), "R")}
-            **Shift Type:** \`${ShiftDoc.type}\`
-          `)
+      .setFooter(null)
+      .setFields(
+        {
+          inline: true,
+          name: "Shift Details",
+          value: Dedent(`
+            - Shift ID: \`${ShiftDoc._id}\`
+              - Type: \`${ShiftDoc.type}\`
+              - Started: ${BaseData.ShiftStartedRT}
+          `),
+        },
+        {
+          inline: true,
+          name: "Officer Details",
+          value: Dedent(`
+            - Officer: ${userMention(ShiftDoc.user)}
+            - Nickname: ${BaseData.CurrNickname}
+          `),
+        }
       );
 
     if (AdminUser) {
-      LogEmbed.setFooter({
-        text: `Started by: @${AdminUser.username}; ${LogEmbed.data.footer?.text}`,
-      });
+      this.BeforeFooter(LogEmbed, `Started by: @${AdminUser.username}`);
+    }
 
-      if (TargetUser) {
-        LogEmbed.setAuthor({
-          name: `@${TargetUser.username}`,
-          iconURL: TargetUser.displayAvatarURL(this.AvatarIconOpts),
-        });
-      }
+    if (TargetUser) {
+      LogEmbed.setAuthor({
+        name: `@${TargetUser.username}`,
+        iconURL: TargetUser.displayAvatarURL(this.AvatarIconOpts),
+      });
     }
 
     return BaseData.LoggingChannel?.send({ embeds: [LogEmbed] });
@@ -173,26 +216,39 @@ export default class ShiftActionLogger {
     const BreakStartedRT = FormatTime(Math.round(ShiftDoc.events.breaks[0]![0] / 1000), "R");
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Break Started")
       .setColor(SharedData.Embeds.Colors.ShiftBreak)
-      .setDescription(
-        Dedent(`
-              **Officer:** <@${ShiftDoc.user}>
-              **Shift Started:** ${BaseData.ShiftStartedRT}
-              **Break Started:** ${BreakStartedRT}
-              **Shift Type:** \`${ShiftDoc.type}\`
-            `)
+      .setFooter(null)
+      .setFields(
+        {
+          inline: true,
+          name: "Shift Details",
+          value: Dedent(`
+            - Shift ID: \`${ShiftDoc._id}\`
+              - Type: \`${ShiftDoc.type}\`
+              - Shift Started: ${BaseData.ShiftStartedRT}
+              - Break Started: ${BreakStartedRT}
+          `),
+        },
+        {
+          inline: true,
+          name: "Officer Details",
+          value: Dedent(`
+            - Officer: ${userMention(ShiftDoc.user)}
+            - Nickname: ${BaseData.CurrNickname}
+          `),
+        }
       );
 
     if (AdminUser) {
       LogEmbed.setFooter({
         text: `Started by: @${AdminUser.username}; ${LogEmbed.data.footer?.text}`,
       });
+    }
 
-      if (TargetUser) {
-        LogEmbed.setAuthor({
-          name: `@${TargetUser.username}`,
-          iconURL: TargetUser.displayAvatarURL(this.AvatarIconOpts),
-        });
-      }
+    if (TargetUser) {
+      LogEmbed.setAuthor({
+        name: `@${TargetUser.username}`,
+        iconURL: TargetUser.displayAvatarURL(this.AvatarIconOpts),
+      });
     }
 
     return BaseData.LoggingChannel?.send({ embeds: [LogEmbed] });
@@ -214,31 +270,48 @@ export default class ShiftActionLogger {
   ) {
     const BaseData = await this.GetBaseData(ShiftDoc, UserInteract);
     const EndedBreak = ShiftDoc.events.breaks.findLast(() => true) as number[];
+    const BreakStartedRT = FormatTime(Math.round(EndedBreak[0] / 1000), "R");
     const EndedBreakTime = ReadableDuration(EndedBreak[1] - EndedBreak[0]);
     const AllBreakTime = ReadableDuration(ShiftDoc.durations.on_break);
+    const AllBTEqualsEndedBreak = ShiftDoc.durations.on_break === EndedBreak[1] - EndedBreak[0];
+
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Break Ended")
       .setColor(SharedData.Embeds.Colors.ShiftBreak)
-      .setDescription(
-        Dedent(`
-              **Officer:** <@${ShiftDoc.user}>
-              **Shift Started:** ${BaseData.ShiftStartedRT}
-              **Break Time:** ${EndedBreakTime}
-              **All Break Time:** ${AllBreakTime}
-              **Shift Type:** \`${ShiftDoc.type}\`
-          `)
+      .setFooter(null)
+      .setFields(
+        {
+          inline: true,
+          name: "Shift Details",
+          value: Dedent(`
+            - Shift ID: \`${ShiftDoc._id}\`
+              - Type: \`${ShiftDoc.type}\`
+              - Shift Started: ${BaseData.ShiftStartedRT}
+              - Break Started: ${BreakStartedRT}
+              - Break Time: ${EndedBreakTime}
+              ${AllBTEqualsEndedBreak ? "" : `- All Break Time: ${AllBreakTime}`}
+          `),
+        },
+        {
+          inline: true,
+          name: "Officer Details",
+          value: Dedent(`
+            - Officer: ${userMention(ShiftDoc.user)}
+            - Nickname: ${BaseData.CurrNickname}
+          `),
+        }
       );
 
     if (AdminUser) {
       LogEmbed.setFooter({
         text: `Ended by: @${AdminUser.username}; ${LogEmbed.data.footer?.text}`,
       });
+    }
 
-      if (TargetUser) {
-        LogEmbed.setAuthor({
-          name: `@${TargetUser.username}`,
-          iconURL: TargetUser.displayAvatarURL(this.AvatarIconOpts),
-        });
-      }
+    if (TargetUser) {
+      LogEmbed.setAuthor({
+        name: `@${TargetUser.username}`,
+        iconURL: TargetUser.displayAvatarURL(this.AvatarIconOpts),
+      });
     }
 
     return BaseData.LoggingChannel?.send({ embeds: [LogEmbed] });
@@ -266,30 +339,47 @@ export default class ShiftActionLogger {
 
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Ended")
       .setColor(SharedData.Embeds.Colors.ShiftEnd)
-      .setDescription(
-        Dedent(`
-              **Officer:** <@${ShiftDoc.user}>
-              **Shift Type:** \`${ShiftDoc.type}\`
-              **Shift Started:** ${BaseData.ShiftStartedRT}
-              **On-Duty Time:** ${OnDutyTime}
-              ${OnBreakTime ? `**On-Break Time:** ${OnBreakTime}` : ""}
-              
-              **Arrests Made:** \`${ShiftDoc.events.arrests}\`
-              **Citations Issued:** \`${ShiftDoc.events.citations}\`
-          `)
+      .setFooter(null)
+      .addFields(
+        {
+          inline: true,
+          name: "Officer Details",
+          value: Dedent(`
+            - Officer: ${userMention(ShiftDoc.user)}
+            - Nickname: ${BaseData.CurrNickname}
+          `),
+        },
+        {
+          inline: true,
+          name: "Activities",
+          value: Dedent(`
+            Arrests Made: ${BluewishText(ShiftDoc.events.arrests, BaseData.LoggingChannel?.id ?? UserInteract.guild.id)}
+            Citations Issued: ${BluewishText(ShiftDoc.events.citations, BaseData.LoggingChannel?.id ?? UserInteract.guild.id)}
+          `),
+        },
+        {
+          inline: false,
+          name: "Shift Details",
+          value: Dedent(`
+            - Shift ID: \`${ShiftDoc._id}\`
+              - Type: \`${ShiftDoc.type}\`
+              - Started: ${BaseData.ShiftStartedRT}
+              - Ended: ${BaseData.ShiftEndedRT ?? "*N/A*"}
+              - On-Duty Time: ${OnDutyTime}
+              ${OnBreakTime ? `- On-Break Time: ${OnBreakTime}` : ""}
+          `),
+        }
       );
 
     if (AdminUser) {
-      LogEmbed.setFooter({
-        text: `Ended by: @${AdminUser.username}; ${LogEmbed.data.footer?.text}`,
-      });
+      this.BeforeFooter(LogEmbed, `Ended by: @${AdminUser.username}`);
+    }
 
-      if (TargetUser) {
-        LogEmbed.setAuthor({
-          name: `@${TargetUser.username}`,
-          iconURL: TargetUser.displayAvatarURL(this.AvatarIconOpts),
-        });
-      }
+    if (TargetUser) {
+      LogEmbed.setAuthor({
+        name: `@${TargetUser.username}`,
+        iconURL: TargetUser.displayAvatarURL(this.AvatarIconOpts),
+      });
     }
 
     return BaseData.LoggingChannel?.send({ embeds: [LogEmbed] });
@@ -315,18 +405,37 @@ export default class ShiftActionLogger {
 
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Automatically Ended")
       .setColor(SharedData.Embeds.Colors.ShiftEnd)
-      .setDescription(
-        Dedent(`
-              **Officer:** <@${ShiftDoc.user}>
-              **Shift Type:** \`${ShiftDoc.type}\`
-              **Shift Started:** ${BaseData.ShiftStartedRT}
-              **On-Duty Time:** ${OnDutyTime}
-              ${OnBreakTime ? `**On-Break Time:** ${OnBreakTime}` : ""}
-              **End Reason:** ${EndReason}
-              
-              **Arrests Made:** \`${ShiftDoc.events.arrests}\`
-              **Citations Issued:** \`${ShiftDoc.events.citations}\`
-          `)
+      .setFooter(null)
+      .addFields(
+        {
+          inline: true,
+          name: "Officer Details",
+          value: Dedent(`
+            - Officer: ${userMention(ShiftDoc.user)}
+            - Nickname: ${BaseData.CurrNickname}
+          `),
+        },
+        {
+          inline: true,
+          name: "Activities",
+          value: Dedent(`
+            Arrests Made: ${BluewishText(ShiftDoc.events.arrests, BaseData.LoggingChannel?.id ?? UserInteract.guild.id)}
+            Citations Issued: ${BluewishText(ShiftDoc.events.citations, BaseData.LoggingChannel?.id ?? UserInteract.guild.id)}
+          `),
+        },
+        {
+          inline: false,
+          name: "Shift Details",
+          value: Dedent(`
+            - Shift ID: \`${ShiftDoc._id}\`
+              - Type: \`${ShiftDoc.type}\`
+              - Started: ${BaseData.ShiftStartedRT}
+              - Ended: ${BaseData.ShiftEndedRT ?? "*N/A*"}
+              - On-Duty Time: ${OnDutyTime}
+              ${OnBreakTime ? `- On-Break Time: ${OnBreakTime}` : ""}
+              - End Reason: \`${EndReason}\`
+          `),
+        }
       );
 
     return BaseData.LoggingChannel?.send({ embeds: [LogEmbed] });
@@ -342,42 +451,60 @@ export default class ShiftActionLogger {
    */
   public static async LogShiftVoid(
     ShiftDoc: HydratedShiftDocument,
-    UserInteract: DiscordUserInteract,
+    UserInteract: Exclude<DiscordUserInteract, GuildMember>,
     AdminUser?: User,
     TargetUser?: User
   ) {
     const BaseData = await this.GetBaseData(ShiftDoc, UserInteract);
+    const VoidEpoch = FormatTime(UserInteract.createdAt, "R");
     const OnDutyTime = ReadableDuration(ShiftDoc.durations.on_duty);
     const OnBreakTime = ShiftDoc.durations.on_duty
       ? ReadableDuration(ShiftDoc.durations.on_break)
       : null;
 
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Voided")
-      .setColor(SharedData.Embeds.Colors.ShiftEnd)
-      .setDescription(
-        Dedent(`
-              **Officer:** <@${ShiftDoc.user}>
-              **Shift Type:** \`${ShiftDoc.type}\`
-              **Shift Started:** ${BaseData.ShiftStartedRT}
-              **On-Duty Time:** ${OnDutyTime}
-              ${OnBreakTime ? `**On-Break Time:** ${OnBreakTime}` : ""}
-              
-              **Arrests Made:** \`${ShiftDoc.events.arrests}\`
-              **Citations Issued:** \`${ShiftDoc.events.citations}\`
-          `)
+      .setColor(SharedData.Embeds.Colors.ShiftVoid)
+      .setFooter(null)
+      .addFields(
+        {
+          inline: true,
+          name: "Officer Details",
+          value: Dedent(`
+            - Officer: ${userMention(ShiftDoc.user)}
+            - Nickname: ${BaseData.CurrNickname}
+          `),
+        },
+        {
+          inline: true,
+          name: "Activities",
+          value: Dedent(`
+            Arrests Made: ${BluewishText(ShiftDoc.events.arrests, BaseData.LoggingChannel?.id ?? UserInteract.guild.id)}
+            Citations Issued: ${BluewishText(ShiftDoc.events.citations, BaseData.LoggingChannel?.id ?? UserInteract.guild.id)}
+          `),
+        },
+        {
+          inline: false,
+          name: "Shift Details",
+          value: Dedent(`
+            - Shift ID: \`${ShiftDoc._id}\`
+              - Type: \`${ShiftDoc.type}\`
+              - Started: ${BaseData.ShiftStartedRT}
+              - Ended: ${BaseData.ShiftEndedRT ?? VoidEpoch}
+              - On-Duty Time: ${OnDutyTime}
+              ${OnBreakTime ? `- On-Break Time: ${OnBreakTime}` : ""}
+          `),
+        }
       );
 
     if (AdminUser) {
-      LogEmbed.setFooter({
-        text: `Ended by: @${AdminUser.username}; ${LogEmbed.data.footer?.text}`,
-      });
+      this.BeforeFooter(LogEmbed, `Voided by: @${AdminUser.username}`);
+    }
 
-      if (TargetUser) {
-        LogEmbed.setAuthor({
-          name: `@${TargetUser.username}`,
-          iconURL: TargetUser.displayAvatarURL(this.AvatarIconOpts),
-        });
-      }
+    if (TargetUser) {
+      LogEmbed.setAuthor({
+        name: `@${TargetUser.username}`,
+        iconURL: TargetUser.displayAvatarURL(this.AvatarIconOpts),
+      });
     }
 
     return BaseData.LoggingChannel?.send({ embeds: [LogEmbed] });
@@ -388,7 +515,7 @@ export default class ShiftActionLogger {
    * @param UserInteract - The received discordjs interaction (button/cmd).
    * @param DeleteResult - The deletion result of mongoose/mongodb.
    * @param ShiftType - Type of shifts that were deleted; defaults to `null` which translates into `*All Types*`.
-   * @param TargettedUser - An optional parameter to specify only a targetted user.
+   * @param TargettedUser - An optional parameter to only specify a targetted user.
    * @returns A promise that resolves to the logging message sent or `undefined` if it wasn't.
    */
   public static async LogShiftsWipe(
@@ -399,24 +526,28 @@ export default class ShiftActionLogger {
   ) {
     const LoggingChannel = await this.GetLoggingChannel(UserInteract);
     const LogEmbed = new EmbedBuilder()
-      .setTimestamp()
+      .setTimestamp(null)
       .setColor(Embeds.Colors.ShiftEnd)
-      .setTitle(TargettedUser ? "User Shifts Wiped" : "Shifts Wiped")
+      .setTitle(TargettedUser ? "Member Shifts Wiped" : "Shifts Wiped")
       .setFooter({ text: `Wiped by: @${UserInteract.user.username}` })
       .setDescription(
         Dedent(`
-          ${TargettedUser ? `**User:** <@${TargettedUser.id}>\n` : ""}
+          ${TargettedUser ? `**Member:** <@${TargettedUser.id}>` : ""}
           **Shifts Deleted:** \`${DeleteResult.deletedCount}\`
           **Shifts of Type:** ${ShiftType ? `\`${ShiftType}\`` : "*All Shift Types*"}
-          **Total Time:** ${ReadableDuration(DeleteResult.totalTime ?? 0)}
+          **On-Duty Time:** ${DeleteResult.totalTime ? ReadableDuration(DeleteResult.totalTime) : "*N/A*"}
         `)
       );
+
+    if (!(UserInteract instanceof GuildMember)) {
+      LogEmbed.setTimestamp(UserInteract.createdAt);
+    }
 
     return LoggingChannel?.send({ embeds: [LogEmbed] });
   }
 
   /**
-   * Logs a shift wipe-all action to the appropriate and specified channel of a guild.
+   * Logs a shift delete action done by an administrative user to the appropriate and specified channel of a guild.
    * @param UserInteract - The received discordjs interaction (button/cmd) from the admin user.
    * @param ShiftDeleted - ...
    * @returns A promise that resolves to the logging message sent or `undefined` if it wasn't.
@@ -429,15 +560,17 @@ export default class ShiftActionLogger {
     const LogEmbed = new EmbedBuilder()
       .setTimestamp(UserInteract.createdAt)
       .setColor(Embeds.Colors.ShiftEnd)
-      .setTitle("User Shift Deleted")
-      .setFooter({ text: `Deleted by: @${UserInteract.user.username}` })
+      .setTitle("Member Shift Deleted")
+      .setFooter({
+        text: `Deleted by: @${UserInteract.user.username}; Shift ID: ${ShiftDeleted._id}`,
+      })
       .setDescription(
         Dedent(`
-          **User:** <@${ShiftDeleted.user}>
-          **Shift Type:** \`${ShiftDeleted.type}\`
+          **Member:** <@${ShiftDeleted.user}>
+          **Shift of Type:** \`${ShiftDeleted.type}\`
           **On-Duty Time:** ${ReadableDuration(ShiftDeleted.durations.on_duty)}
-          **On-Break Time:** ${ReadableDuration(ShiftDeleted.durations.on_break)}
-        `)
+          ${ShiftDeleted.durations.on_break ? `**On-Break Time:** ${ReadableDuration(ShiftDeleted.durations.on_break)}` : ""}
+          `)
       );
 
     return LoggingChannel?.send({ embeds: [LogEmbed] });

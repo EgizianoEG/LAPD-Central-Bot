@@ -443,4 +443,12 @@ export const InfoMessages = {
     Description:
       "This configuration prompt has timed out. If you wish to continue with the process, please re-run the configuration command.",
   },
+
+  /**
+   * No shifts wiped for specified user
+   */
+  NoShiftsWipedFU: {
+    Title: "No Shifts Wiped",
+    Description: "There were no shifts found that could be wiped for the specified user.",
+  },
 };

@@ -178,7 +178,11 @@ const HumanizeDuration = DHumanize.humanizer({
  * @param [ShiftType="Default"] - The type of shift to wipe.
  * @returns
  */
-async function WipeUserShifts(TargetUserId: string, GuildId: string, ShiftType?: string | null) {
+async function WipeUserShifts(
+  TargetUserId: string,
+  GuildId: string,
+  ShiftType?: string | null
+): Promise<Mongoose.mongo.DeleteResult & { allTime: number }> {
   const QueryFilter = {
     guild: GuildId,
     user: TargetUserId,
@@ -190,6 +194,14 @@ async function WipeUserShifts(TargetUserId: string, GuildId: string, ShiftType?:
     { $group: { _id: null, totalTime: { $sum: "$durations.on_duty" } } },
     { $unset: ["_id"] },
   ]);
+
+  if (TData[0]?.totalTime === 0) {
+    return {
+      allTime: 0,
+      acknowledged: true,
+      deletedCount: 0,
+    };
+  }
 
   return ShiftModel.deleteMany(QueryFilter).then((DResult: any) => {
     DResult.allTime = TData[0]?.totalTime ?? 0;
@@ -495,7 +507,7 @@ async function HandleUserShiftsWipe(
 
   await Confirmation.deferUpdate();
   const WipeResult = await WipeUserShifts(TargetUser.id, BInteract.guildId, ShiftType);
-  const WipeEmbed = new SuccessEmbed()
+  let WipeEmbed = new SuccessEmbed()
     .setTimestamp(Confirmation.createdAt)
     .setDescription(null)
     .setTitle("User Shifts Wiped")
@@ -507,6 +519,10 @@ async function HandleUserShiftsWipe(
           **Total On-Duty Time Erased:** ${HumanizeDuration(WipeResult.allTime)}
         `),
     });
+
+  if (WipeResult.deletedCount === 0) {
+    WipeEmbed = new InfoEmbed().useInfoTemplate("NoShiftsWipedFU");
+  }
 
   return ConfirmationPrompt.edit({ components: [], embeds: [WipeEmbed] });
 }
