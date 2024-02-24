@@ -1,11 +1,11 @@
 import type { ErrorMessages } from "@Resources/AppMessages.js";
 export interface AppErrorOptions {
-  /** [Currently Unused] Error code; defaults to `0`.
-   *   - `0`: Normal/Generic error,
-   *   - `1`: Warning manner,
-   *   - `2`: Unauthorized.
+  /** Error code; defaults to `1`.
+   *   - `0`: A fatal error,
+   *   - `1`: Non-fatal error,
+   *   - `2`: Warning matter error.
    */
-  code?: number;
+  code?: 0 | 1 | 2;
 
   /** The title for the error. This is mainly used for errors showed in embeds; defaults to "Application Error". */
   title?: string;
@@ -24,9 +24,11 @@ export interface AppErrorOptions {
 }
 
 export default class AppError extends Error {
-  is_showable: boolean;
-  title: string;
-  code: number;
+  readonly is_showable: boolean = false;
+  readonly name: string = "AppError";
+  readonly title: string = "Application Error";
+  readonly message: string = "An unspecified error occurred.";
+  readonly code: number = 1;
 
   /**
    * The extended error class that should be used around the application/bot codebase.
@@ -35,10 +37,9 @@ export default class AppError extends Error {
   constructor(Options: AppErrorOptions) {
     super(Options.message);
 
-    this.name = "AppError";
-    this.code = Options.code ?? 0;
-    this.title = Options.title ?? "Application Error";
-    this.message = Options.message ?? "Unknown Error";
+    this.code = Options.code ?? this.code;
+    this.title = Options.title ?? this.title;
+    this.message = Options.message ?? this.message;
     this.is_showable = !!Options.showable;
 
     if (Options.stack) {
