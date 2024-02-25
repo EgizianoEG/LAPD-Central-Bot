@@ -654,7 +654,7 @@ async function HandleUserShiftDelete(BInteract: ButtonInteraction<"cached">, Tar
     ShiftActionLogger.LogShiftDelete(BInteract, ShiftFound),
     new SuccessEmbed()
       .setTitle("Shift Deleted")
-      .setDescription(`Shift with the identifier \`${ShiftId}\` was successfully deleted.`)
+      .setDescription(`The shift with the identifier \`${ShiftId}\` was successfully deleted.`)
       .replyToInteract(ModalSubmission),
   ]);
 }
