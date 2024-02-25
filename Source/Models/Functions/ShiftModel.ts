@@ -7,6 +7,13 @@ import AppError from "@Utilities/Classes/AppError.js";
 const ErrorTitle = "Invalid Action";
 type ThisType = ExtraTypings.HydratedShiftDocument;
 
+async function GetUpdatedDocument(Document: ThisType) {
+  const Found = await (Document.constructor as any)
+    .findOne({ _id: Document._id })
+    .catch(() => null);
+  return (Found ?? Document) as ThisType;
+}
+
 export function IsBreakActive(this: ThisType) {
   return this.events.breaks.some(([, end]) => end === null);
 }
@@ -16,7 +23,9 @@ export function ShiftEventAdd(this: ThisType, type: "arrests" | "citations") {
   return this.save();
 }
 
-export function ShiftBreakStart(this: ThisType, timestamp: number = Date.now()) {
+export async function ShiftBreakStart(this: ThisType, timestamp: number = Date.now()) {
+  const DBDocument = await GetUpdatedDocument(this);
+
   if (this.isBreakActive()) {
     return Promise.reject(
       new AppError({
@@ -28,18 +37,20 @@ export function ShiftBreakStart(this: ThisType, timestamp: number = Date.now()) 
     );
   }
 
-  this.events.breaks.push([timestamp, null]);
-  this.updateDurations();
-  return this.save();
+  DBDocument.events.breaks.push([timestamp, null]);
+  DBDocument.updateDurations();
+  return DBDocument.save();
 }
 
-export function ShiftBreakEnd(this: ThisType, timestamp: number = Date.now()) {
-  if (this.events.breaks.length) {
+export async function ShiftBreakEnd(this: ThisType, timestamp: number = Date.now()) {
+  const DBDocument = await GetUpdatedDocument(this);
+
+  if (DBDocument.events.breaks.length) {
     const BreakActive = this.events.breaks.findIndex(([, end]) => end === null);
     if (BreakActive !== -1) {
-      this.events.breaks[BreakActive][1] = timestamp;
-      this.updateDurations();
-      return this.save();
+      DBDocument.events.breaks[BreakActive][1] = timestamp;
+      DBDocument.updateDurations();
+      return DBDocument.save();
     }
   }
 
@@ -53,7 +64,9 @@ export function ShiftBreakEnd(this: ThisType, timestamp: number = Date.now()) {
 }
 
 export async function ShiftEnd(this: ThisType, timestamp: Date | number = new Date()) {
-  if (this.end_timestamp)
+  const DBDocument = await GetUpdatedDocument(this);
+
+  if (DBDocument.end_timestamp)
     return Promise.reject(
       new AppError({
         title: ErrorTitle,
@@ -62,20 +75,21 @@ export async function ShiftEnd(this: ThisType, timestamp: Date | number = new Da
         showable: true,
       })
     );
-  else this.end_timestamp = new Date(timestamp);
-  this.durations.on_duty = this.end_timestamp.valueOf() - this.start_timestamp.valueOf();
+  else DBDocument.end_timestamp = new Date(timestamp);
+  this.durations.on_duty =
+    DBDocument.end_timestamp.valueOf() - DBDocument.start_timestamp.valueOf();
 
-  if (this.events.breaks.length) {
-    for (const Break of this.events.breaks) {
-      if (!Break[1]) Break[1] = this.end_timestamp.valueOf();
+  if (DBDocument.events.breaks.length) {
+    for (const Break of DBDocument.events.breaks) {
+      if (!Break[1]) Break[1] = DBDocument.end_timestamp.valueOf();
       const [StartEpoch, EndEpoch] = Break;
-      this.durations.on_break += EndEpoch - StartEpoch;
+      DBDocument.durations.on_break += EndEpoch - StartEpoch;
     }
-    this.durations.on_duty -= this.durations.on_break;
-    this.durations.on_duty = Math.max(this.durations.on_duty, 0);
+    DBDocument.durations.on_duty -= DBDocument.durations.on_break;
+    DBDocument.durations.on_duty = Math.max(DBDocument.durations.on_duty, 0);
   }
 
-  return this.save().then(async (ShiftDoc) => {
+  return DBDocument.save().then(async (ShiftDoc) => {
     ActiveShiftsCache.del(ShiftDoc._id);
     await ProfileModel.updateOne(
       {
@@ -85,13 +99,13 @@ export async function ShiftEnd(this: ThisType, timestamp: Date | number = new Da
       {
         $push: { "shifts.logs": ShiftDoc._id },
         $inc: {
-          "shifts.total_durations.on_duty": this.durations.on_duty,
-          "shifts.total_durations.on_break": this.durations.on_break,
+          "shifts.total_durations.on_duty": DBDocument.durations.on_duty,
+          "shifts.total_durations.on_break": DBDocument.durations.on_break,
         },
       },
       { upsert: true, setDefaultsOnInsert: true }
     );
-    return this;
+    return DBDocument;
   });
 }
 

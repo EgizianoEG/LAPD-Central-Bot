@@ -31,11 +31,13 @@ import GetMainShiftsData from "@Utilities/Database/GetShiftsData.js";
 import ShiftActionLogger from "@Utilities/Classes/ShiftActionLogger.js";
 import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
 import GetShiftActive from "@Utilities/Database/GetShiftActive.js";
+import FunctionQueue from "@Utilities/Classes/FunctionQueue.js";
 import UserHasPerms from "@Utilities/Database/UserHasPermissions.js";
 import ShiftModel from "@Models/Shift.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import DHumanize from "humanize-duration";
 import Dedent from "dedent";
+import AppError from "@Utilities/Classes/AppError.js";
 
 const HumanizeDuration = DHumanize.humanizer({
   conjunction: " and ",
@@ -157,6 +159,7 @@ async function HandleNonActiveShift(
   ButtonsActionRow: NavButtonsActionRow,
   MngShiftType: string
 ) {
+  const IResponsesQueue = FunctionQueue.GetInstance(Interaction.user.id);
   const ReplyMethod = Interaction.deferred ? "editReply" : "reply";
   const RespEmbed = new EmbedBuilder()
     .setColor(Colors.DarkBlue)
@@ -172,7 +175,7 @@ async function HandleNonActiveShift(
     AwaitMsgCompOptions(Interaction)
   );
 
-  ComponentCollector.on("collect", async (ButtonInteract) => {
+  const OnCollect = async (ButtonInteract: ButtonInteraction<"cached">) => {
     const LinkedRobloxUser = await GetLinkedRobloxUser(ButtonInteract);
     const UserPresence = (await GetUserPresence(LinkedRobloxUser)) as UserPresence;
     const ShiftActive = await GetShiftActive({ Interaction, UserOnly: true });
@@ -180,14 +183,19 @@ async function HandleNonActiveShift(
     if (UserPresence.userPresenceType !== 2) {
       await new ErrorEmbed()
         .useErrTemplate("SMRobloxUserNotInGame")
-        .replyToInteract(ButtonInteract, true);
+        .replyToInteract(ButtonInteract, true, false, "reply");
     } else if (ShiftActive) {
       await new ErrorEmbed()
         .useErrTemplate("ShiftAlreadyActive", ShiftActive.type)
-        .replyToInteract(ButtonInteract, true);
+        .replyToInteract(ButtonInteract, true, false, "reply");
     } else {
       ComponentCollector.stop("confirm-start");
     }
+  };
+
+  ComponentCollector.on("collect", async (BI) => {
+    await BI.deferUpdate().catch(() => null);
+    IResponsesQueue.Enqueue(OnCollect, undefined, BI);
   });
 
   ComponentCollector.once("end", async (Collected, EndReason) => {
@@ -234,7 +242,7 @@ async function HandleNonActiveShift(
       ]);
     } catch (Err: any) {
       AppLogger.error({
-        message: "An error occurred while creating a new shift;",
+        message: "An error occurred while creating a new shift record;",
         label: "Commands:Miscellaneous:Duty:Manage",
         user_id: Interaction.user.id,
         guild_id: Interaction.guildId,
@@ -243,7 +251,7 @@ async function HandleNonActiveShift(
 
       await new ErrorEmbed()
         .useErrTemplate("AppError")
-        .replyToInteract(ButtonInteract ?? Interaction);
+        .replyToInteract(ButtonInteract ?? Interaction, true, true);
     }
   });
 }
@@ -285,8 +293,7 @@ async function HandleOnBreakShift(
   ShiftActive: ExtraTypings.HydratedShiftDocument,
   BaseEmbedTitle: string,
   Interaction: SlashCommandInteraction<"cached">,
-  ButtonsActionRow: NavButtonsActionRow,
-  CollectorExceptionHandler: (Err: Error, Prompt: InteractionResponse<true>) => Promise<void>
+  ButtonsActionRow: NavButtonsActionRow
 ) {
   const ReplyMethod = Interaction.deferred ? "editReply" : "reply";
   const BreakEpochs = ShiftActive.events.breaks.findLast(([, end]) => end === null);
@@ -340,7 +347,23 @@ async function HandleOnBreakShift(
         ),
       ]);
     })
-    .catch((Err) => CollectorExceptionHandler(Err, InteractReply as any));
+    .catch((Err) => {
+      if (Err.message.match(/reason: time/)) {
+        return InteractReply.edit({
+          components: [
+            ButtonsActionRow.updateButtons({
+              start: false,
+              break: false,
+              end: false,
+            }),
+          ],
+        }).catch(() => null);
+      } else if (Err.message.match(/reason: \w+Delete/)) {
+        /* Ignore message/channel/guild deletion errors */
+      } else {
+        throw Err;
+      }
+    });
 }
 
 async function HandleShiftEnd(
@@ -350,7 +373,19 @@ async function HandleShiftEnd(
   TotalBreakTime: string | null,
   Reply: InteractionResponse<true>
 ) {
-  const UpdatedShift = await ShiftActive.end(ButtonInteract.createdTimestamp);
+  const UpdatedShift = await ShiftActive.end(ButtonInteract.createdTimestamp).catch((Err: any) => {
+    if (Err instanceof AppError && Err.is_showable) {
+      return Err;
+    }
+    throw Err;
+  });
+
+  if (UpdatedShift instanceof AppError) {
+    return new ErrorEmbed()
+      .useErrClass(UpdatedShift)
+      .replyToInteract(ButtonInteract, true, true, "reply");
+  }
+
   const ReplyEmbed = new EmbedBuilder()
     .setColor(Embeds.Colors.ShiftEnd)
     .setTitle("Shift Ended")
@@ -461,27 +496,6 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
 
   const BaseEmbedTitle = `Shift Management: \`${TargetShiftType}\` Type`;
   const ButtonsActionRow = GetManagementButtons(Interaction, ShiftActive);
-  const DisablePrompt = async (Prompt: InteractionResponse<true>) => {
-    return Prompt.edit({
-      components: [
-        ButtonsActionRow.updateButtons({
-          start: false,
-          break: false,
-          end: false,
-        }),
-      ],
-    });
-  };
-
-  const CollectorExceptionHandler = async (Err: Error, Prompt: InteractionResponse<true>) => {
-    if (Err.message.match(/reason: time/)) {
-      await DisablePrompt(Prompt);
-    } else if (Err.message.match(/reason: \w+Delete/)) {
-      /* Ignore message/channel/guild deletion errors */
-    } else {
-      throw Err;
-    }
-  };
 
   if (!ShiftActive) {
     return HandleNonActiveShift(
@@ -494,13 +508,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   }
 
   if (ShiftActive.isBreakActive()) {
-    return HandleOnBreakShift(
-      ShiftActive,
-      BaseEmbedTitle,
-      Interaction,
-      ButtonsActionRow,
-      CollectorExceptionHandler
-    );
+    return HandleOnBreakShift(ShiftActive, BaseEmbedTitle, Interaction, ButtonsActionRow);
   }
 
   const TotalBreakTime =
@@ -533,16 +541,48 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     embeds: [RespEmbed],
   });
 
-  return Reply.awaitMessageComponent(AwaitMsgCompOptions(Interaction))
-    .then(async (ButtonInteract) => {
+  const IResponsesQueue = FunctionQueue.GetInstance(Interaction.user.id);
+  return Reply.awaitMessageComponent(AwaitMsgCompOptions(Interaction)).then(
+    async (ButtonInteract) => {
       await ButtonInteract.deferUpdate();
+      const ErrHandler = (Err: any) => {
+        if (!(Err instanceof AppError && Err.is_showable)) throw Err;
+        return Promise.allSettled([
+          Reply.edit({
+            components: [
+              ButtonsActionRow.updateButtons({
+                start: false,
+                break: false,
+                end: false,
+              }),
+            ],
+          }).catch(() => null),
+          new ErrorEmbed().useErrClass(Err).replyToInteract(ButtonInteract, true, true, "reply"),
+        ]);
+      };
+
       if (ButtonInteract.customId.startsWith("dm-break")) {
-        return HandleShiftBreakStart(ShiftActive, ButtonInteract, TotalBreakTime, Reply);
+        IResponsesQueue.Enqueue(
+          HandleShiftBreakStart,
+          ErrHandler,
+          ShiftActive,
+          ButtonInteract,
+          TotalBreakTime,
+          Reply
+        );
       } else {
-        return HandleShiftEnd(ShiftActive, ButtonInteract, ShiftsInfo, TotalBreakTime, Reply);
+        IResponsesQueue.Enqueue(
+          HandleShiftEnd,
+          ErrHandler,
+          ShiftActive,
+          ButtonInteract,
+          ShiftsInfo,
+          TotalBreakTime,
+          Reply
+        );
       }
-    })
-    .catch((Err) => CollectorExceptionHandler(Err, Reply));
+    }
+  );
 }
 
 // ---------------------------------------------------------------------------------------
