@@ -63,16 +63,13 @@ export default class FunctionQueue {
   }
 
   private StartEmptyQueueCheck() {
-    // Check every 5 minutes
-    this.emptyTimeout = setInterval(
-      () => {
-        if (this.QueueLength === 0) {
-          clearInterval(this.emptyTimeout!);
-          FunctionQueue.instances.delete(this.id);
-        }
-      },
-      5 * 60 * 1000
-    );
+    // Check every minute
+    this.emptyTimeout = setInterval(() => {
+      if (this.QueueLength === 0) {
+        clearInterval(this.emptyTimeout!);
+        FunctionQueue.instances.delete(this.id);
+      }
+    }, 60 * 1000);
   }
 
   /**
