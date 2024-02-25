@@ -268,9 +268,9 @@ async function HandleShiftBreakStart(
     .setColor(Embeds.Colors.ShiftBreak)
     .setTitle("Break Started")
     .setFields({
-      name: "Current Shift:",
+      name: "Current Shift",
       value: Dedent(`
-            **Status:** ${Emojis.Idle} On Break
+            **Status:** (${Emojis.Idle}) On Break
             **Shift Started:** ${FormatTime(ShiftActive.start_timestamp, "R")}
             **Break Started:** ${BreakStarted}
             ${TotalBreakTime || ""}
@@ -298,7 +298,7 @@ async function HandleOnBreakShift(
   const ReplyMethod = Interaction.deferred ? "editReply" : "reply";
   const BreakEpochs = ShiftActive.events.breaks.findLast(([, end]) => end === null);
   const FieldDescription = Dedent(`
-      **Status:** ${Emojis.Idle} On Break
+      **Status:** (${Emojis.Idle}) On Break
       **Shift Started:** ${FormatTime(ShiftActive.start_timestamp, "R")}
       **Break Started:** ${FormatTime(Math.round(BreakEpochs![0] / 1000), "R")}
     `);
@@ -331,7 +331,7 @@ async function HandleOnBreakShift(
               .setFields({
                 name: "Current Shift",
                 value: Dedent(`
-                  **Status:** ${Emojis.Online} On Duty
+                  **Status:** (${Emojis.Online}) On Duty
                   **Shift Started:** ${FormatTime(UpdatedShift.start_timestamp, "R")}
                   **Ended Break Time:** ${HumanizeDuration(EndedBreak![1] - EndedBreak![0])}
                   **Total Break Time:** ${HumanizeDuration(UpdatedShift.durations.on_break)}
@@ -393,23 +393,25 @@ async function HandleShiftEnd(
     .setFooter({ text: `Shift Type: ${UpdatedShift.type}` })
     .setFields(
       {
-        name: "All Time Info:",
+        name: "All Statistics",
         value: ShiftDataInfo,
       },
       {
-        name: "Current Shift:",
+        inline: true,
+        name: "Ended Shift",
         value: Dedent(`
-            **Status:** ${Emojis.Offline} Ended (Off-Duty)
-            **Total Shift Time:** ${HumanizeDuration(UpdatedShift.durations.total)}
-            ${TotalBreakTime || ""}
-          `),
+          **Status:** (${Emojis.Offline}) Finished — Off-Duty
+          **Total Shift Time:** ${HumanizeDuration(UpdatedShift.durations.total)}
+          ${TotalBreakTime || ""}
+        `),
       },
       {
-        name: "Shift Statics:",
+        inline: true,
+        name: "Shift Activity",
         value: Dedent(`
-            **Arrests Made:** \`${UpdatedShift.events.arrests}\`
-            **Citations Issued:** \`${UpdatedShift.events.citations}\`
-          `),
+          **Arrests Made:** \`${UpdatedShift.events.arrests}\`
+          **Citations Issued:** \`${UpdatedShift.events.citations}\`
+        `),
       }
     );
 
@@ -521,13 +523,13 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     .setTitle(!ShiftActive ? BaseEmbedTitle : `Shift Management: \`${ShiftActive.type}\` Type`)
     .setFields(
       {
-        name: "All Time Info:",
+        name: "All Statistics",
         value: ShiftsInfo,
       },
       {
-        name: "Current Shift:",
+        name: "Shift Details",
         value: Dedent(`
-          **Status:** ${Emojis.Online} On Duty
+          **Status:** (${Emojis.Online}) On Duty
           **Shift Started:** ${FormatTime(ShiftActive.start_timestamp, "R")}
           ${TotalBreakTime || ""}
         `),
