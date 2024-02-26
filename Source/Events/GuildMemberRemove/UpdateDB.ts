@@ -16,9 +16,8 @@ export default async function UpdateDatabase(_: DiscordClient, Member: GuildMemb
 
   if (ShiftActive) {
     try {
-      await ShiftActive.end(new Date());
       await ShiftActionLogger.LogShiftAutomatedEnd(
-        ShiftActive,
+        await ShiftActive.end(),
         Member,
         "User has left the server."
       );
