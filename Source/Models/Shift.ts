@@ -91,17 +91,12 @@ ShiftSchema.pre("deleteMany", function (next) {
   return PreShiftModelDelete.call(this, "many", next);
 });
 
-ShiftSchema.post(/^find/, (Shifts, next) => {
-  if (Shifts) {
-    if (Array.isArray(Shifts)) {
-      Shifts.forEach((Shift) => {
-        Shift.updateDurations();
-      });
-    } else {
-      Shifts.updateDurations();
-    }
-  }
-  if (next) return next();
+ShiftSchema.pre("save", function (next) {
+  // Make sure that durations are calculated and set before saving.
+  // Otherwise, they will be saved as `0`.
+  this.durations.on_duty = -1;
+  this.durations.on_break = -1;
+  next();
 });
 
 for (const [MethodName, MethodFunc] of Object.entries(ShiftInstFuncs)) {

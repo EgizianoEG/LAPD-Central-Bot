@@ -38,7 +38,6 @@ export async function ShiftBreakStart(this: ThisType, timestamp: number = Date.n
   }
 
   DBDocument.events.breaks.push([timestamp, null]);
-  DBDocument.updateDurations();
   return DBDocument.save();
 }
 
@@ -49,7 +48,6 @@ export async function ShiftBreakEnd(this: ThisType, timestamp: number = Date.now
     const BreakActive = this.events.breaks.findIndex(([, end]) => end === null);
     if (BreakActive !== -1) {
       DBDocument.events.breaks[BreakActive][1] = timestamp;
-      DBDocument.updateDurations();
       return DBDocument.save();
     }
   }
@@ -183,28 +181,11 @@ export async function PreShiftModelDelete(
   return next();
 }
 
-export function UpdateShiftDurations(this: ThisType) {
-  const CurrTimestamp = this.end_timestamp?.valueOf() ?? Date.now();
-  const TotalShiftDuration = CurrTimestamp - this.start_timestamp.valueOf();
-  this.durations.on_duty = TotalShiftDuration;
-  this.durations.on_break = 0;
-
-  if (this.events.breaks.length) {
-    for (const Break of this.events.breaks) {
-      const [StartEpoch, EndEpoch] = Break;
-      this.durations.on_break += Math.max((EndEpoch || CurrTimestamp) - StartEpoch, 0);
-    }
-    this.durations.on_duty -= this.durations.on_break;
-    this.durations.on_duty = Math.max(this.durations.on_duty, 0);
-  }
-}
-
 export default {
   end: ShiftEnd,
   breakEnd: ShiftBreakEnd,
   breakStart: ShiftBreakStart,
   incrementEvents: ShiftEventAdd,
-  updateDurations: UpdateShiftDurations,
   isBreakActive: IsBreakActive,
 } as Record<
   keyof Omit<ExtraTypings.ShiftDocOverrides, "durations">,

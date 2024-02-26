@@ -67,10 +67,28 @@ export namespace ExtraTypings {
      * Notice that this is a `get` virtual and cannot be set/modified.
      */
     total: number;
-    /** On-duty shift duration in milliseconds. */
+
+    /**
+     * On-duty shift duration in milliseconds.
+     * This property is automatically calculated and cannot be set or modified.
+     * Attempting to modify it will not do any change but will set it to the automatically calculated value.
+     */
     on_duty: number;
-    /** On-break shift duration in milliseconds. */
+
+    /**
+     * On-break shift duration in milliseconds.
+     * This property is automatically calculated and cannot be set or modified.
+     * Attempting to modify it will not do any change but will set it to the automatically calculated value.
+     */
     on_break: number;
+
+    /**
+     * For time modication purposes, a negative value indicates that the
+     * on duty shift time will be decreased by the specified amount, and
+     * a positive value indicates that the on duty shift time will be increased
+     * by the specified amount (duration in ms).
+     */
+    on_duty_mod: number;
   }
 
   export interface ShiftDocOverrides {
@@ -80,12 +98,6 @@ export namespace ExtraTypings {
      * Returns `true` if there is an active break; otherwise, `false`.
      */
     isBreakActive(): boolean;
-
-    /**
-     * Updates the shift durations.
-     * This method should be called before any usage of the shift's `durations` field.
-     */
-    updateDurations(): void;
 
     /**
      * Increments a specified event by 1.
