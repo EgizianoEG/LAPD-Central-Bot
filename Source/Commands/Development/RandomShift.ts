@@ -1,5 +1,5 @@
-import ShiftModel from "@Models/Shift.js";
 import { SlashCommandBuilder, SlashCommandSubcommandsOnlyBuilder } from "discord.js";
+import ShiftModel from "@Models/Shift.js";
 import Dedent from "dedent";
 
 // ---------------------------------------------------------------------------------------
