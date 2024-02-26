@@ -117,10 +117,16 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   });
 
   if (PaginatedData.length === 0) {
-    return new InfoEmbed()
+    const ReplyEmbed = new InfoEmbed()
       .setTitle("No Shifts Found")
-      .setDescription("There were no shift records in the server to display a leaderboard for.")
-      .replyToInteract(Interaction);
+      .setDescription("There were no shift records in the server to display a leaderboard for.");
+    if (CmdShiftType) {
+      ReplyEmbed.setDescription(
+        `There were no shift records with of the \`${CmdShiftType}\` type to display a leaderboard for.`
+      );
+    }
+
+    return ReplyEmbed.replyToInteract(Interaction, true);
   }
 
   const BuiltPages = BuildLeaderboardPages(Interaction, PaginatedData, CmdShiftType);
@@ -131,6 +137,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
 // Command structure:
 // ------------------
 const CommandObject = {
+  callback: Callback,
   data: new SlashCommandSubcommandBuilder()
     .setName("leaderboard")
     .setDescription("Lists all recognized members' duty shift durations.")
@@ -142,8 +149,6 @@ const CommandObject = {
         .setRequired(false)
         .setAutocomplete(true)
     ),
-
-  callback: Callback,
 };
 
 // ---------------------------------------------------------------------------------------
