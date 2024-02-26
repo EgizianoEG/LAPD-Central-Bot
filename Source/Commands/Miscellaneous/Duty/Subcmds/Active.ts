@@ -73,8 +73,7 @@ function FormatActiveShifts(
     .setDescription("**The server's current active shifts, categorized by type.**")
     .setFooter(IncludesAnnotations ? { text: "[𝒊]: Currently on break" } : null)
     .setFields(Fields)
-    .setThumbnail(null)
-    .setTimestamp();
+    .setThumbnail(null);
 
   if (SelectedShiftType) {
     ReplyEmbed.setFields({ name: "Shifts", value: Fields[0].value }).setDescription(
@@ -99,9 +98,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     }, {});
 
   if (ActiveShifts.length) {
-    return FormatActiveShifts(ASOrdered, SelShiftType)
-      .setTimestamp(Interaction.createdAt)
-      .replyToInteract(Interaction);
+    return FormatActiveShifts(ASOrdered, SelShiftType).replyToInteract(Interaction);
   } else {
     const RespEmbedDesc = SelShiftType
       ? "There are no active shifts at this moment for the specified shift type."
@@ -110,7 +107,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     return new InfoEmbed()
       .setTitle("No Active Shifts")
       .setDescription(RespEmbedDesc)
-      .replyToInteract(Interaction);
+      .replyToInteract(Interaction, true);
   }
 }
 
