@@ -12,7 +12,6 @@ import {
   ActionRowBuilder,
   ButtonInteraction,
   time as FormatTime,
-  InteractionResponse,
   SlashCommandSubcommandBuilder,
 } from "discord.js";
 
@@ -221,7 +220,7 @@ async function HandleNonActiveShift(
       ActiveShiftsCache.set(StartedShift._id, Interaction);
       await Promise.all([
         ShiftActionLogger.LogShiftStart(StartedShift, Interaction),
-        Response.edit({
+        Interaction.editReply({
           components: [],
           embeds: [
             new EmbedBuilder()
@@ -259,8 +258,7 @@ async function HandleNonActiveShift(
 async function HandleShiftBreakStart(
   ShiftActive: ExtraTypings.HydratedShiftDocument,
   ButtonInteract: ButtonInteraction<"cached">,
-  TotalBreakTime: string | null,
-  Reply: InteractionResponse<true>
+  TotalBreakTime: Nullable<string>
 ) {
   const UpdatedShift = await ShiftActive.breakStart(ButtonInteract.createdTimestamp);
   const BreakStarted = FormatTime(Math.round(ButtonInteract.createdTimestamp / 1000), "R");
@@ -279,7 +277,7 @@ async function HandleShiftBreakStart(
 
   return Promise.all([
     ShiftActionLogger.LogShiftBreakStart(UpdatedShift, ButtonInteract),
-    Reply.edit({ components: [], embeds: [Embed] }),
+    ButtonInteract.editReply({ components: [], embeds: [Embed] }),
     HandleRoleAssignment(
       "on-break",
       ButtonInteract.client,
@@ -322,7 +320,7 @@ async function HandleOnBreakShift(
 
       return Promise.all([
         ShiftActionLogger.LogShiftBreakEnd(UpdatedShift as any, ButtonInteract),
-        InteractReply.edit({
+        Interaction.editReply({
           components: [],
           embeds: [
             new EmbedBuilder()
@@ -370,8 +368,7 @@ async function HandleShiftEnd(
   ShiftActive: ExtraTypings.HydratedShiftDocument,
   ButtonInteract: ButtonInteraction<"cached">,
   ShiftDataInfo: string,
-  TotalBreakTime: string | null,
-  Reply: InteractionResponse<true>
+  TotalBreakTime: Nullable<string>
 ) {
   const UpdatedShift = await ShiftActive.end(ButtonInteract.createdTimestamp).catch((Err: any) => {
     if (Err instanceof AppError && Err.is_showable) {
@@ -417,7 +414,7 @@ async function HandleShiftEnd(
 
   return Promise.all([
     ShiftActionLogger.LogShiftEnd(UpdatedShift, ButtonInteract),
-    Reply.edit({ components: [], embeds: [ReplyEmbed] }),
+    ButtonInteract.editReply({ components: [], embeds: [ReplyEmbed] }),
     HandleRoleAssignment(
       "off-duty",
       ButtonInteract.client,
@@ -569,8 +566,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
           ErrHandler,
           ShiftActive,
           ButtonInteract,
-          TotalBreakTime,
-          Reply
+          TotalBreakTime
         );
       } else {
         IResponsesQueue.Enqueue(
@@ -579,8 +575,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
           ShiftActive,
           ButtonInteract,
           ShiftsInfo,
-          TotalBreakTime,
-          Reply
+          TotalBreakTime
         );
       }
     }
