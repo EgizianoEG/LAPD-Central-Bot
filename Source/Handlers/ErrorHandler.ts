@@ -3,13 +3,15 @@ import AppLogger from "@Utilities/Classes/AppLogger.js";
 import AppError from "@Utilities/Classes/AppError.js";
 import Mongoose from "mongoose";
 const NonFatalDiscordAPIErrors: DiscordAPIError["code"][] = [10_062, 40_060, 50_001, 50_035];
+const NonFatalErrorNames = ["InteractionNotReplied"];
 
 export default function ErrorHandler() {
   process.on("uncaughtException", (Err) => {
     if (
       (Err instanceof DiscordAPIError && NonFatalDiscordAPIErrors.includes(Err.code)) ||
       (Err instanceof AppError && Err.code !== 0) ||
-      Err instanceof Mongoose.mongo.MongoServerError
+      Err instanceof Mongoose.mongo.MongoServerError ||
+      NonFatalErrorNames.some((Name) => Err.name.includes(Name))
     ) {
       return AppLogger.error({
         message: "A non-fatal error has occurred - [UncaughtException].",
