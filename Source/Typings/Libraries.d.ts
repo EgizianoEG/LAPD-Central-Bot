@@ -11,6 +11,18 @@ export declare module "utility-types" {
 }
 
 export declare module "discord.js" {
+  export interface InteractionCollector {
+    public on(event: string, listener: (...args: any[]) => Awaitable<any>): this;
+    public on(
+      event: 'end',
+      listener: (collected: Collection<Snowflake, Interaction>, reason: string) => Awaitable<any>,
+    ): this;
+    public on(
+      event: "collect" | "dispose" | "ignore",
+      listener: (interaction: Interaction) => Awaitable<any>
+    ): this;
+  }
+
   export interface Client {
     commands: Collection<string, SlashCommandObject>;
     cooldowns: Collection<string, Collection<string, number>>;
