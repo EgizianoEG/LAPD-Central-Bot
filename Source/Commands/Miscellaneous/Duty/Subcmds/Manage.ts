@@ -35,8 +35,9 @@ import UserHasPerms from "@Utilities/Database/UserHasPermissions.js";
 import ShiftModel from "@Models/Shift.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import DHumanize from "humanize-duration";
-import Dedent from "dedent";
 import AppError from "@Utilities/Classes/AppError.js";
+import Secrets from "@Config/Secrets.js";
+import Dedent from "dedent";
 
 const HumanizeDuration = DHumanize.humanizer({
   conjunction: " and ",
@@ -179,7 +180,10 @@ async function HandleNonActiveShift(
     const UserPresence = (await GetUserPresence(LinkedRobloxUser)) as UserPresence;
     const ShiftActive = await GetShiftActive({ Interaction, UserOnly: true });
 
-    if (UserPresence.userPresenceType !== 2) {
+    if (
+      UserPresence.userPresenceType !== 2 &&
+      !(!Secrets.Other.IsProdEnv && Secrets.Discord.BotDevs.includes(Interaction.user.id))
+    ) {
       await new ErrorEmbed()
         .useErrTemplate("SMRobloxUserNotInGame")
         .replyToInteract(ButtonInteract, true, false, "reply");

@@ -71,14 +71,16 @@ export namespace ExtraTypings {
     /**
      * On-duty shift duration in milliseconds.
      * This property is automatically calculated and cannot be set or modified.
-     * Attempting to modify it will not do any change but will set it to the automatically calculated value.
+     * Attempting to modify it will not do any change unless setting it to `-1`
+     * which will set it to the automatically calculated value.
      */
     on_duty: number;
 
     /**
      * On-break shift duration in milliseconds.
      * This property is automatically calculated and cannot be set or modified.
-     * Attempting to modify it will not do any change but will set it to the automatically calculated value.
+     * Attempting to modify it will not do any change unless setting it to `-1`
+     * which will set it to the automatically calculated value.
      */
     on_break: number;
 

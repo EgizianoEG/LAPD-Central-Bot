@@ -23,7 +23,7 @@
     "start:js": "node ./Build/Main.js",
     "start:ts": "tsx --env-file=.env .",
     "start": "npm run start:ts",
-    "build": "tsc && tsconfig-replace-paths --project tsconfig.json && cp -r ./Source/Resources/Imgs ./Build/Resources && cp -r ./Source/Resources/Fonts ./Build/Resources",
+    "build": "tsc && tsconfig-replace-paths --project tsconfig.json && cp -r ./Source/Resources/Imgs ./Build/Resources && cp -r ./Source/Resources/Fonts ./Build/Resources && cp -r ./Source/Resources/HTML ./Build/Resources",
     "clean-build": "rm -rf Build & npm run build",
     "lint": "tsc --noEmit && eslint \"Source/**/*.{js,ts}\" && prettier -c --end-of-line auto \"Source/**/*.{js,ts,json}\"",
     "cp:secrets": "cp ./Source/Config/Secrets.example.ts ./Source/Config/Secrets.ts",
