@@ -16,6 +16,9 @@ export namespace Secrets {
 
     /** A container for all related OpenWeather secret values. */
     OpenWeather: OpenWeather;
+
+    /** Other & general configuration values. */
+    Other: Other;
   }
 
   interface Roblox {
@@ -70,6 +73,9 @@ export namespace Secrets {
   interface Other {
     /* An optional property that specifies the environment in which the code is running. */
     Environment?: "development" | "production" | "testing" | "DEV" | "PROD" | "TEST";
+
+    /* Automatically set based on the Environment property. */
+    IsProdEnv: boolean;
 
     /** ImgBB API key to upload images */
     ImgBB_API_Key: string;

@@ -4,8 +4,7 @@ import { CronJobFileDefReturn } from "@Typings/Global.js";
 import GetOSMetrics from "@Utilities/Other/GetOSMetrics.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 
-const IsProductionEnv = !!OtherSecrets.Environment?.trim().match(/^Prod(?:uction)?$/i);
-if (IsProductionEnv) {
+if (OtherSecrets.IsProdEnv) {
   AppLogger.info({
     label: "Jobs:MetricsLogging",
     message: "Production environment detected. Starting metrics logging cron job; every 5 seconds.",
@@ -33,5 +32,5 @@ async function MetricsLog(_: any, Client: DiscordClient) {
 export default {
   cron_exp: "*/5 * * * * *",
   cron_opts: { timezone: "America/Los_Angeles" },
-  cron_func: IsProductionEnv ? MetricsLog : undefined,
+  cron_func: OtherSecrets.IsProdEnv ? MetricsLog : undefined,
 } as CronJobFileDefReturn;
