@@ -3,18 +3,22 @@
 
 import {
   User,
-  GuildMember,
-  userMention,
+  Guild,
   inlineCode,
   channelLink,
+  userMention,
+  GuildMember,
   EmbedBuilder,
   ImageURLOptions,
   TextBasedChannel,
   ButtonInteraction,
   time as FormatTime,
+  AnySelectMenuInteraction,
+  ModalSubmitInteraction,
 } from "discord.js";
 
 import { ExtraTypings } from "@Typings/Utilities/Database.js";
+import { App as DiscordApp } from "@DiscordApp";
 import SharedData, { Embeds } from "@Config/Shared.js";
 import GuildModel from "@Models/Guild.js";
 import HDuration from "humanize-duration";
@@ -38,6 +42,8 @@ type ShiftLogAction = "start" | "break-start" | "break-end" | "end" | "auto-end"
 type HydratedShiftDocument = ExtraTypings.HydratedShiftDocument;
 type DiscordUserInteract =
   | SlashCommandInteraction<"cached">
+  | AnySelectMenuInteraction<"cached">
+  | ModalSubmitInteraction<"cached">
   | ButtonInteraction<"cached">
   | GuildMember;
 
@@ -45,14 +51,12 @@ export default class ShiftActionLogger {
   private static readonly AvatarIconOpts: ImageURLOptions = { size: 128 };
 
   /**
-   * Fetches the shift actions logging channel for a specific guild (Guild Id is retrieved from the user interaction).
-   * @param UserInteract
+   * Fetches the shift actions logging channel for a specific guild.
+   * @param Guild
    * @returns
    */
-  private static async GetLoggingChannel(UserInteract: DiscordUserInteract) {
-    const LoggingChannelId = await GuildModel.findOne({
-      _id: UserInteract instanceof GuildMember ? UserInteract.guild.id : UserInteract.guildId,
-    })
+  private static async GetLoggingChannel(Guild: Guild) {
+    const LoggingChannelId = await GuildModel.findById(Guild.id)
       .select("settings")
       .then((GuildDoc) => {
         if (GuildDoc) {
@@ -62,11 +66,11 @@ export default class ShiftActionLogger {
       });
 
     if (!LoggingChannelId) return null;
-    const ChannelExists = UserInteract.guild.channels.cache.get(LoggingChannelId);
+    const ChannelExists = Guild.channels.cache.get(LoggingChannelId);
     const AbleToSendMsgs =
       ChannelExists?.viewable &&
       ChannelExists.isTextBased() &&
-      ChannelExists.permissionsFor(UserInteract.client.user.id)?.has("SendMessages");
+      ChannelExists.permissionsFor(await Guild.members.fetchMe())?.has("SendMessages");
 
     return AbleToSendMsgs === true ? (ChannelExists as TextBasedChannel) : null;
   }
@@ -74,21 +78,23 @@ export default class ShiftActionLogger {
   /**
    * Base data for a target member (inferred from the shift document and command interactions).
    * @param ShiftDoc - The latest/updated shift document.
-   * @param UserInteract - The received discordjs interaction (button/cmd).
+   * @param TUserInfo - The target user's information (user id and guild id).
    * @returns
    */
   private static async GetBaseData(
     ShiftDoc: HydratedShiftDocument,
-    UserInteract: DiscordUserInteract
+    TUserInfo: GuildMember | { user_id: string; guild_id: string }
   ) {
+    const Guild =
+      TUserInfo instanceof GuildMember
+        ? TUserInfo.guild
+        : await DiscordApp.guilds.fetch(TUserInfo.guild_id);
     const UserInGuild =
-      UserInteract instanceof GuildMember
-        ? UserInteract
-        : await UserInteract.guild.members.fetch(UserInteract.user.id);
+      TUserInfo instanceof GuildMember ? TUserInfo : await Guild.members.fetch(TUserInfo.user_id);
 
-    const UserAvatarURL = UserInteract.user.displayAvatarURL(this.AvatarIconOpts);
-    const CurrNickname = UserInGuild.nickname ?? UserInteract.user.displayName;
-    const LoggingChannel = await this.GetLoggingChannel(UserInteract);
+    const UserAvatarURL = UserInGuild.user.displayAvatarURL(this.AvatarIconOpts);
+    const CurrNickname = UserInGuild.nickname ?? UserInGuild.user.displayName;
+    const LoggingChannel = await this.GetLoggingChannel(Guild);
     const ShiftStartedRT = FormatTime(Math.round(ShiftDoc.start_timestamp.valueOf() / 1000), "R");
     const ShiftEndedRT = ShiftDoc.end_timestamp
       ? FormatTime(Math.round(ShiftDoc.end_timestamp.valueOf() / 1000), "R")
@@ -96,7 +102,7 @@ export default class ShiftActionLogger {
 
     const BaseEmbed = new EmbedBuilder().setAuthor({
       iconURL: UserAvatarURL,
-      name: `@${UserInteract.user.username}`,
+      name: `@${UserInGuild.user.username}`,
     });
 
     return { BaseEmbed, LoggingChannel, ShiftStartedRT, ShiftEndedRT, CurrNickname };
@@ -158,7 +164,11 @@ export default class ShiftActionLogger {
     AdminUser?: User,
     TargetUser?: User
   ) {
-    const BaseData = await this.GetBaseData(ShiftDoc, UserInteract);
+    const BaseData = await this.GetBaseData(ShiftDoc, {
+      user_id: ShiftDoc.user,
+      guild_id: UserInteract.guild.id,
+    });
+
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Started")
       .setColor(SharedData.Embeds.Colors.ShiftStart)
       .setFields(
@@ -209,7 +219,11 @@ export default class ShiftActionLogger {
     AdminUser?: User,
     TargetUser?: User
   ) {
-    const BaseData = await this.GetBaseData(ShiftDoc, UserInteract);
+    const BaseData = await this.GetBaseData(ShiftDoc, {
+      user_id: ShiftDoc.user,
+      guild_id: UserInteract.guild.id,
+    });
+
     const BreakStartedRT = FormatTime(Math.round(ShiftDoc.events.breaks[0]![0] / 1000), "R");
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Break Started")
       .setColor(SharedData.Embeds.Colors.ShiftBreak)
@@ -264,7 +278,11 @@ export default class ShiftActionLogger {
     AdminUser?: User,
     TargetUser?: User
   ) {
-    const BaseData = await this.GetBaseData(ShiftDoc, UserInteract);
+    const BaseData = await this.GetBaseData(ShiftDoc, {
+      user_id: ShiftDoc.user,
+      guild_id: UserInteract.guild.id,
+    });
+
     const EndedBreak = ShiftDoc.events.breaks.findLast(() => true) as number[];
     const BreakStartedRT = FormatTime(Math.round(EndedBreak[0] / 1000), "R");
     const EndedBreakTime = ReadableDuration(EndedBreak[1] - EndedBreak[0]);
@@ -326,7 +344,11 @@ export default class ShiftActionLogger {
     AdminUser?: User,
     TargetUser?: User
   ) {
-    const BaseData = await this.GetBaseData(ShiftDoc, UserInteract);
+    const BaseData = await this.GetBaseData(ShiftDoc, {
+      user_id: ShiftDoc.user,
+      guild_id: UserInteract.guild.id,
+    });
+
     const OnDutyTime = ReadableDuration(ShiftDoc.durations.on_duty);
     const OnBreakTime =
       ShiftDoc.durations.on_break > 0 ? ReadableDuration(ShiftDoc.durations.on_break) : null;
@@ -390,7 +412,11 @@ export default class ShiftActionLogger {
     UserInteract: DiscordUserInteract,
     EndReason: string
   ) {
-    const BaseData = await this.GetBaseData(ShiftDoc, UserInteract);
+    const BaseData = await this.GetBaseData(ShiftDoc, {
+      user_id: ShiftDoc.user,
+      guild_id: UserInteract.guild.id,
+    });
+
     const OnDutyTime = ReadableDuration(ShiftDoc.durations.on_duty);
     const OnBreakTime = ShiftDoc.durations.on_duty
       ? ReadableDuration(ShiftDoc.durations.on_break)
@@ -447,7 +473,11 @@ export default class ShiftActionLogger {
     AdminUser?: User,
     TargetUser?: User
   ) {
-    const BaseData = await this.GetBaseData(ShiftDoc, UserInteract);
+    const BaseData = await this.GetBaseData(ShiftDoc, {
+      user_id: ShiftDoc.user,
+      guild_id: UserInteract.guildId,
+    });
+
     const VoidEpoch = FormatTime(UserInteract.createdAt, "R");
     const OnDutyTime = ReadableDuration(ShiftDoc.durations.on_duty);
     const OnBreakTime =
@@ -514,7 +544,7 @@ export default class ShiftActionLogger {
     ShiftType?: string | null,
     TargettedUser?: User
   ) {
-    const LoggingChannel = await this.GetLoggingChannel(UserInteract);
+    const LoggingChannel = await this.GetLoggingChannel(UserInteract.guild);
     const LogEmbed = new EmbedBuilder()
       .setColor(Embeds.Colors.ShiftEnd)
       .setTitle(TargettedUser ? "Member Shifts Wiped" : "Shifts Wiped")
@@ -545,7 +575,7 @@ export default class ShiftActionLogger {
     UserInteract: Exclude<DiscordUserInteract, GuildMember>,
     ShiftDeleted: HydratedShiftDocument
   ) {
-    const LoggingChannel = await this.GetLoggingChannel(UserInteract);
+    const LoggingChannel = await this.GetLoggingChannel(UserInteract.guild);
     const LogEmbed = new EmbedBuilder()
       .setTimestamp(UserInteract.createdAt)
       .setColor(Embeds.Colors.ShiftEnd)
@@ -558,8 +588,112 @@ export default class ShiftActionLogger {
           **Shift of Type:** \`${ShiftDeleted.type}\`
           **On-Duty Time:** ${ReadableDuration(ShiftDeleted.durations.on_duty)}
           ${ShiftDeleted.durations.on_break ? `**On-Break Time:** ${ReadableDuration(ShiftDeleted.durations.on_break)}` : ""}
-          `)
+        `)
       );
+
+    return LoggingChannel?.send({ embeds: [LogEmbed] });
+  }
+
+  /**
+   * Logs a shift time set action done by an administrative user to the appropriate and specified channel of a guild.
+   * @param UserInteract - The received discordjs interaction (button/cmd) from the admin user.
+   * @param OldShiftDoc - The old shift document with old durations.
+   * @param ShiftUpdated - ...
+   * @returns A promise that resolves to the logging message sent or `undefined` if it wasn't.
+   */
+  public static async LogShiftTimeSet(
+    UserInteract: Exclude<DiscordUserInteract, GuildMember>,
+    OldShiftDoc: HydratedShiftDocument,
+    ShiftUpdated: HydratedShiftDocument
+  ) {
+    const LoggingChannel = await this.GetLoggingChannel(UserInteract.guild);
+    const LogEmbed = new EmbedBuilder()
+      .setTimestamp(UserInteract.createdAt)
+      .setColor(Embeds.Colors.ShiftEnd)
+      .setTitle("Shift Modified — Time Set")
+      .setFooter({ text: `Set by: @${UserInteract.user.username}` })
+      .setDescription(
+        Dedent(`
+          **Member:** <@${ShiftUpdated.user}>
+          **Shift ID:** \`${ShiftUpdated._id}\`
+          **Shift of Type:** \`${ShiftUpdated.type}\`
+          **Previous On-Duty Time:** ${ReadableDuration(OldShiftDoc.durations.on_duty)}
+          **Set On-Duty Time:** ${ShiftUpdated.durations.on_duty}
+          ${ShiftUpdated.hasBreaks() ? `**On-Break Time:** ${ReadableDuration(ShiftUpdated.durations.on_break)}` : ""}
+        `)
+      );
+
+    return LoggingChannel?.send({ embeds: [LogEmbed] });
+  }
+
+  /**
+   * Logs a shift time reset action done by an administrative user to the appropriate and specified channel of a guild.
+   * @param UserInteract - The received discordjs interaction (button/cmd) from the admin user.
+   * @param OldShiftDoc - The old shift document with old durations.
+   * @param ShiftUpdated - ...
+   * @returns A promise that resolves to the logging message sent or `undefined` if it wasn't.
+   */
+  public static async LogShiftTimeReset(
+    UserInteract: Exclude<DiscordUserInteract, GuildMember>,
+    OldShiftDoc: HydratedShiftDocument,
+    ShiftUpdated: HydratedShiftDocument
+  ) {
+    const LoggingChannel = await this.GetLoggingChannel(UserInteract.guild);
+    const LogEmbed = new EmbedBuilder()
+      .setTimestamp(UserInteract.createdAt)
+      .setColor(Embeds.Colors.ShiftEnd)
+      .setTitle("Shift Modified — Time Reset")
+      .setFooter({ text: `Reset by: @${UserInteract.user.username}` })
+      .setDescription(
+        Dedent(`
+          **Member:** <@${ShiftUpdated.user}>
+          **Shift ID:** \`${ShiftUpdated._id}\`
+          **Shift of Type:** \`${ShiftUpdated.type}\`
+          **Current On-Duty Time:** ${ReadableDuration(ShiftUpdated.durations.on_duty)}
+          **Previous On-Duty Time:** ${ReadableDuration(OldShiftDoc.durations.on_duty)}
+          ${ShiftUpdated.hasBreaks() ? `**On-Break Time:** ${ReadableDuration(ShiftUpdated.durations.on_break)}` : ""}
+        `)
+      );
+
+    return LoggingChannel?.send({ embeds: [LogEmbed] });
+  }
+
+  /**
+   * Logs a shift time add/subtract action done by an administrative user to the appropriate and specified channel of a guild.
+   * @param UserInteract - The received discordjs interaction (button/cmd) from the admin user.
+   * @param ShiftModified - ...
+   * @param TimeAddedSub - The time which has been added/subtracted in milliseconds.
+   * @param ActionType - The action taken on the shift; either adding or subtracting.
+   * @returns A promise that resolves to the logging message sent or `undefined` if it wasn't.
+   */
+  public static async LogShiftTimeAddSub(
+    UserInteract: Exclude<DiscordUserInteract, GuildMember>,
+    ShiftModified: HydratedShiftDocument,
+    TimeAddedSub: number,
+    ActionType: "Add" | "Subtract"
+  ) {
+    const LoggingChannel = await this.GetLoggingChannel(UserInteract.guild);
+    const LogEmbed = new EmbedBuilder()
+      .setTimestamp(UserInteract.createdAt)
+      .setFooter({ text: `Modified by: @${UserInteract.user.username}` })
+      .setDescription(
+        Dedent(`
+          **Member:** <@${ShiftModified.user}>
+          **Shift ID:** \`${ShiftModified._id}\`
+          **Shift of Type:** \`${ShiftModified.type}\`
+          **Time ${ActionType}ed:** ${ReadableDuration(TimeAddedSub)}
+          **On-Duty Time:** ${ReadableDuration(ShiftModified.durations.on_duty)}
+          ${ShiftModified.hasBreaks() ? `**On-Break Time:** ${ReadableDuration(ShiftModified.durations.on_break)}` : ""}
+        `)
+      );
+
+    if (ActionType === "Add") {
+      LogEmbed.setTitle("Shift Modified — Time Add");
+      LogEmbed.setColor(Embeds.Colors.ShiftStart);
+    } else {
+      LogEmbed.setTitle("Shift Modified — Time Subtract");
+      LogEmbed.setColor(Embeds.Colors.ShiftEnd);
+    }
 
     return LoggingChannel?.send({ embeds: [LogEmbed] });
   }
