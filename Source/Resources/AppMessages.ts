@@ -237,7 +237,8 @@ export const ErrorMessages = {
    */
   NoShiftFoundWithId: {
     Title: "Shift Not Found",
-    Description: "A shift with the ID you provided, `%s`, was not found.",
+    Description:
+      "The shift with the ID you provided, `%s`, could not be found. It's possible that the shift was removed or the ID might be incorrect.",
   },
 
   UnknownRadioCode: {
@@ -393,6 +394,43 @@ export const ErrorMessages = {
     Title: "Database Error",
     Description:
       "There was an error deleting this save. Please try again later or contact support.",
+  },
+
+  /**
+   * No active shift for modification
+   */
+  NoActiveShiftFM: {
+    Title: "No Active Shift",
+    Description: "There is no active shift at this moment for the selected user to modify.",
+  },
+
+  InvalidShiftId: {
+    Title: "Invalid Shift ID",
+    Description:
+      "The shift ID inputted is invalid. Please ensure that the provided ID is a valid 15-digit sequence.",
+  },
+
+  UnknownDurationExp: {
+    Title: "Unknown Time",
+    Description:
+      "The format of the duration you have entered is either incorrect or not supported. Kindly attempt again using a different format.",
+  },
+
+  /**
+   * Short typed duration (< 30 seconds)
+   */
+  ShortTypedDuration: {
+    Title: "Short Duration",
+    Description:
+      "The duration you have entered is too short. Kindly specify a duration of at least 30 seconds.",
+  },
+
+  /**
+   * Short typed duration (< 30 seconds)
+   */
+  ShiftTimeAlreadyReset: {
+    Title: "Time Already Reset",
+    Description: "The time for this shift has already been reset.",
   },
 
   /**

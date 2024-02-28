@@ -99,7 +99,12 @@ export namespace ExtraTypings {
     /**
      * Returns `true` if there is an active break; otherwise, `false`.
      */
-    isBreakActive(): boolean;
+    hasBreakActive(): boolean;
+
+    /**
+     * Returns `true` if there is any recorded break; otherwise, `false`.
+     */
+    hasBreaks(): boolean;
 
     /**
      * Increments a specified event by 1.
@@ -107,6 +112,64 @@ export namespace ExtraTypings {
      * @returns The saved shift
      */
     incrementEvents(type: "arrests" | "citations"): Promise<this>;
+
+    /**
+     * Fetches the latest saved version (last state) of the shift document.
+     * @param old_fallback - Whether or not to return the old shift document if fetching the latest fails.
+     * @param silent - Whether or not to *not* throw an error if fetching the latest state fails. Defaults to `true`.
+     * @returns The saved shift or `null` if it wasn't found on the database and `old_fallback` is `false`.
+     */
+    getLatestVersion<GOIFailed extends boolean = false>(
+      old_fallback?: GOIFailed,
+      silent?: boolean = true
+    ): Promise<GOIFailed extends true ? this : this | null>;
+
+    /**
+     * Adds on-duty time to the shift.
+     * @param duration - The amount of time to add in milliseconds.
+     * @throws {AppError} User showable error if the shift wasn't found on the databse.
+     * @returns The saved shift document after the modification.
+     */
+    addOnDutyTime(duration: number): Promise<this>;
+
+    /**
+     * Subtracts on-duty time from the shift.
+     * @param duration - The amount of time to subtract in milliseconds.
+     * @throws {AppError} User showable error if the shift wasn't found on the databse.
+     * @returns The saved shift document after the modification.
+     */
+    subOnDutyTime(duration: number): Promise<this>;
+
+    /**
+     * {@link addOnDutyTime} and {@link subOnDutyTime} both compined in one method.
+     * @param type - The action to perform.
+     * @param duration - The amount of time to add or subtract in milliseconds.
+     * @throws {AppError} User showable error if the shift wasn't found on the databse.
+     * @returns The saved shift document after the modification.
+     */
+    addSubOnDutyTime(type: "Add" | "Sub" | "Subtract", duration: number): Promise<this>;
+
+    /**
+     * Adjusts the on-duty time of the shift.
+     * @param duration - The duration to set in milliseconds.
+     * @param current_timestamp - The timestamp to act based
+     * on if the shift hasn't ended yet (default: Date.now()).
+     *
+     * @throws {AppError} User showable error if the shift wasn't found on the databse.
+     * @returns The saved shift document after the modification.
+     */
+    setOnDutyTime(duration: number, current_timestamp?: number = Date.now()): Promise<this>;
+
+    /**
+     * Resets the shift time based on the current timestamp
+     * @param current_timestamp - The timestamp to act based
+     * on if the shift hasn't ended yet (default: Date.now()).
+     *
+     * @throws {AppError} User showable error if the shift wasn't found on the databse OR
+     * if the shift's time already been reset (on-duty time is `0`).
+     * @returns The saved shift document after the modification.
+     */
+    resetOnDutyTime(current_timestamp?: number = Date.now()): Promise<this>;
 
     /**
      * Starts and creates a new break if there is no one currently active.
@@ -200,7 +263,7 @@ export namespace ExtraTypings {
 
   export interface GuildProfileDocument {
     /** The Discord user's unique identifier. */
-    user_id: string;
+    user: string;
 
     /** The Discord guild's unique identifier for thi specific profile. */
     guild: string;

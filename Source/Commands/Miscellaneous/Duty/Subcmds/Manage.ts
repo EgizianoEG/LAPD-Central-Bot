@@ -510,7 +510,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     );
   }
 
-  if (ShiftActive.isBreakActive()) {
+  if (ShiftActive.hasBreakActive()) {
     return HandleOnBreakShift(ShiftActive, BaseEmbedTitle, Interaction, ButtonsActionRow);
   }
 

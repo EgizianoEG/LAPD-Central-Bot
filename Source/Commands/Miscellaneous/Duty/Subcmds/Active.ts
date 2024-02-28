@@ -26,7 +26,7 @@ function ListShifts(ActiveShifts: Array<ExtraTypings.HydratedShiftDocument>) {
   const Listed: string[] = [];
 
   for (const Shift of ActiveShifts) {
-    const BAnnotaion = Shift.isBreakActive() ? "***⁽ᶦ⁾***" : "";
+    const BAnnotaion = Shift.hasBreakActive() ? "***⁽ᶦ⁾***" : "";
     const TOnDutyDuration = Shift.durations.on_duty;
     const Line = `1. <@${Shift.user}> \u{1680} ${ReadableDuration(TOnDutyDuration)} ${BAnnotaion}`;
     ShouldHaveBreakAnnotation = ShouldHaveBreakAnnotation || BAnnotaion.length > 0;

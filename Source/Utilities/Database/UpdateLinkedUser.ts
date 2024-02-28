@@ -13,7 +13,7 @@ export default async function UpdateLinkedRobloxUser(
 ) {
   RobloxUserId = Number(RobloxUserId) || 0;
   const Member = await GuildProfile.findOne({
-    user_id: CmdInteraction.user.id,
+    user: CmdInteraction.user.id,
     guild: CmdInteraction.guildId,
   }).exec();
 
@@ -22,7 +22,7 @@ export default async function UpdateLinkedRobloxUser(
     return Member.save();
   } else {
     return GuildProfile.create({
-      user_id: CmdInteraction.user.id,
+      user: CmdInteraction.user.id,
       guild: CmdInteraction.guildId,
       linked_account: {
         roblox_user_id: RobloxUserId,
