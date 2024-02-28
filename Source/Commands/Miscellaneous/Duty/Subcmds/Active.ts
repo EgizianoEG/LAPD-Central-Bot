@@ -115,7 +115,9 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
 const CommandObject = {
   data: new SlashCommandSubcommandBuilder()
     .setName("active")
-    .setDescription("Displays all members whose shifts are presently active.")
+    .setDescription(
+      "Displays all personnel whose shifts are presently active, including their current duration on-duty."
+    )
     .addStringOption((Option) =>
       Option.setName("type")
         .setDescription("The type of duty shift to be managed.")
