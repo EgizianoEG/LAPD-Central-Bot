@@ -11,7 +11,7 @@ const ProfileSchema = new Schema<
   ProfileModelType,
   ExtraTypings.GuildProfileOverrides
 >({
-  user_id: {
+  user: {
     type: String,
     match: /^\d{15,22}$/,
     index: true,

@@ -59,7 +59,7 @@ ActiveShiftsCache.on("expired", async function CheckShift(
       try {
         const ShiftDoc = await ShiftModel.findById(ShiftId).exec();
         if (ShiftDoc) {
-          await ShiftDoc.end();
+          const UpdatedShiftDoc = await ShiftDoc.end();
           await HandleRoleAssignment(
             "off-duty",
             DiscordUserInteract.client,
@@ -68,9 +68,9 @@ ActiveShiftsCache.on("expired", async function CheckShift(
           );
 
           await ShiftActionLogger.LogShiftAutomatedEnd(
-            ShiftDoc,
+            UpdatedShiftDoc,
             DiscordUserInteract,
-            "Roblox user not linked anymore"
+            "Roblox user not linked anymore."
           );
         }
         return ActiveShiftsCache.del(ShiftId);
@@ -91,7 +91,7 @@ ActiveShiftsCache.on("expired", async function CheckShift(
       try {
         const ShiftDoc = await ShiftModel.findById(ShiftId).exec();
         if (ShiftDoc) {
-          await ShiftDoc.end();
+          const UpdatedShiftDoc = await ShiftDoc.end();
           await HandleRoleAssignment(
             "off-duty",
             DiscordUserInteract.client,
@@ -100,9 +100,9 @@ ActiveShiftsCache.on("expired", async function CheckShift(
           );
 
           await ShiftActionLogger.LogShiftAutomatedEnd(
-            ShiftDoc,
+            UpdatedShiftDoc,
             DiscordUserInteract,
-            "Roblox user not in-game"
+            "Roblox user not in-game (1-14 minutes)."
           );
         }
       } catch (Err: any) {

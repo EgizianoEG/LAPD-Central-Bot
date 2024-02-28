@@ -1,6 +1,6 @@
 import { APIEmbedField, SlashCommandSubcommandBuilder } from "discord.js";
 import { ExtraTypings } from "@Typings/Utilities/Database.js";
-import { compareDesc } from "date-fns";
+import { compareAsc } from "date-fns";
 import { InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { Emojis } from "@Config/Shared.js";
 
@@ -26,19 +26,11 @@ function ListShifts(ActiveShifts: Array<ExtraTypings.HydratedShiftDocument>) {
   const Listed: string[] = [];
 
   for (const Shift of ActiveShifts) {
-    Listed.push(
-      `1. <@${Shift.user}> \u{1680} ${ReadableDuration(Shift.durations.total)} ${
-        Shift.events.breaks.some((Epochs) => {
-          if (Epochs[1] === null) {
-            ShouldHaveBreakAnnotation = true;
-            return true;
-          }
-          return false;
-        })
-          ? "***⁽ᶦ⁾***"
-          : ""
-      }`
-    );
+    const BAnnotaion = Shift.hasBreakActive() ? "***⁽ᶦ⁾***" : "";
+    const TOnDutyDuration = Shift.durations.on_duty;
+    const Line = `1. <@${Shift.user}> \u{1680} ${ReadableDuration(TOnDutyDuration)} ${BAnnotaion}`;
+    ShouldHaveBreakAnnotation = ShouldHaveBreakAnnotation || BAnnotaion.length > 0;
+    Listed.push(Line);
   }
 
   return [Listed, ShouldHaveBreakAnnotation] as const;
@@ -54,32 +46,37 @@ function FormatActiveShifts(
   SelectedShiftType: Nullable<string>
 ): InfoEmbed {
   const Fields: Array<APIEmbedField> = [];
-  let IncludesAnnotations = false;
+  let IncludeAnnotationComment = false;
 
   if (SelectedShiftType) {
     const [ListedShifts, AnnotationsIncluded] = ListShifts(ActiveGroupedShifts[SelectedShiftType]);
-    if (AnnotationsIncluded) IncludesAnnotations = true;
+    if (AnnotationsIncluded) IncludeAnnotationComment = true;
     Fields.push({ name: SelectedShiftType, value: ListedShifts.join("\n") });
   } else {
     for (const [ShiftType, ActiveShifts] of Object.entries(ActiveGroupedShifts)) {
       const [ListedShifts, AnnotationsIncluded] = ListShifts(ActiveShifts);
-      if (AnnotationsIncluded) IncludesAnnotations = true;
-      Fields.push({ name: ShiftType, value: ListedShifts.join("\n") });
+      if (AnnotationsIncluded) IncludeAnnotationComment = true;
+      Fields.push({
+        name: `${ShiftType} - ${ActiveShifts.length}`,
+        value: ListedShifts.join("\n"),
+      });
     }
   }
 
   const ReplyEmbed = new InfoEmbed()
     .setTitle(`${Emojis.StopWatch}   Currently Active Shifts`)
     .setDescription("**The server's current active shifts, categorized by type.**")
-    .setFooter(IncludesAnnotations ? { text: "[𝒊]: Currently on break" } : null)
+    .setFooter(IncludeAnnotationComment ? { text: "[𝒊]: Currently on break" } : null)
     .setFields(Fields)
-    .setThumbnail(null)
-    .setTimestamp();
+    .setThumbnail(null);
 
   if (SelectedShiftType) {
-    ReplyEmbed.setFields({ name: "Shifts", value: Fields[0].value }).setDescription(
+    ReplyEmbed.setDescription(
       `**The server's current active shifts of type \`${SelectedShiftType}\`.**`
-    );
+    ).setFields({
+      name: `Shifts - ${ActiveGroupedShifts[SelectedShiftType].length}`,
+      value: Fields[0].value,
+    });
   }
 
   return ReplyEmbed;
@@ -93,15 +90,13 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     .sort((a, b) => b[1].length - a[1].length)
     .reduce((obj, [key, value]) => {
       obj[key] = value.toSorted((a, b) => {
-        return compareDesc(a.start_timestamp, b.start_timestamp);
+        return compareAsc(a.start_timestamp, b.start_timestamp);
       });
       return obj;
     }, {});
 
   if (ActiveShifts.length) {
-    return FormatActiveShifts(ASOrdered, SelShiftType)
-      .setTimestamp(Interaction.createdAt)
-      .replyToInteract(Interaction);
+    await FormatActiveShifts(ASOrdered, SelShiftType).replyToInteract(Interaction);
   } else {
     const RespEmbedDesc = SelShiftType
       ? "There are no active shifts at this moment for the specified shift type."
@@ -110,7 +105,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     return new InfoEmbed()
       .setTitle("No Active Shifts")
       .setDescription(RespEmbedDesc)
-      .replyToInteract(Interaction);
+      .replyToInteract(Interaction, true);
   }
 }
 
@@ -120,7 +115,9 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
 const CommandObject = {
   data: new SlashCommandSubcommandBuilder()
     .setName("active")
-    .setDescription("Displays all members whose shifts are presently active.")
+    .setDescription(
+      "Displays all personnel whose shifts are presently active, including their current duration on-duty."
+    )
     .addStringOption((Option) =>
       Option.setName("type")
         .setDescription("The type of duty shift to be managed.")

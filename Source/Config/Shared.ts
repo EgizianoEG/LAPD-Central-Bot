@@ -34,7 +34,9 @@ const SharedData = {
   },
 
   // Attribution;
-  // Some of the following emojis are made or distributed by flaticon (https://www.flaticon.com)
+  // Some of the following emojis are made or distributed by:
+  // - Flaticon (https://www.flaticon.com)
+  // - Iconfinder (https://www.iconfinder.com)
   Emojis: {
     Online: "<:Online:1185771482656297010>",
     Offline: "<:Offline:1185771486460526714>",
@@ -48,6 +50,11 @@ const SharedData = {
     StopWatch: "<:Time:1185414712670826557>",
     LosAngeles: "<:LosAngeles:1185406541709463652>",
     HamburgerList: "<:Menu:1185793738212114484>",
+
+    ClockPlus: "<:ClockPlus:1212227997059518545>",
+    ClockMinus: "<:ClockMinus:1212228013375234058>",
+    ClockReset: "<:ClockReset:1212228189112369153>",
+    ClockSet: "<:ClockSet:1212228029116456960>",
 
     NavNext: "<:ArrowForward:1185405403715084319>",
     NavPrev: "<:ArrowBackward:1185405400489672816>",

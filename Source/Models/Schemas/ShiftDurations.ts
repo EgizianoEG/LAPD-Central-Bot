@@ -1,5 +1,5 @@
-import { ExtraTypings } from "@Typings/Utilities/Database.js";
 import { HydratedDocumentFromSchema, Schema } from "mongoose";
+import { ExtraTypings } from "@Typings/Utilities/Database.js";
 
 const ShiftDurations = new Schema({
   total: {
@@ -13,8 +13,10 @@ const ShiftDurations = new Schema({
     default: 0,
     min: 0,
 
-    set(this: ExtraTypings.HydratedShiftDocument["durations"]) {
-      return this.on_duty;
+    set(this: ExtraTypings.HydratedShiftDocument["durations"], v = -1) {
+      if (v === -1) {
+        return this.on_duty;
+      }
     },
 
     get(this: ExtraTypings.HydratedShiftDocument["durations"]) {
@@ -26,9 +28,8 @@ const ShiftDurations = new Schema({
       let OnDutyDuration = TotalShiftDuration;
       OnDutyDuration -= this.on_break;
       OnDutyDuration += this.on_duty_mod;
-      OnDutyDuration = Math.max(OnDutyDuration, 0);
 
-      return OnDutyDuration;
+      return Math.max(OnDutyDuration, 0);
     },
   },
 
@@ -37,8 +38,10 @@ const ShiftDurations = new Schema({
     default: 0,
     min: 0,
 
-    set(this: ExtraTypings.HydratedShiftDocument["durations"]) {
-      return this.on_break;
+    set(this: ExtraTypings.HydratedShiftDocument["durations"], v = -1) {
+      if (v === -1) {
+        return this.on_break;
+      }
     },
 
     get(this: ExtraTypings.HydratedShiftDocument["durations"]) {
@@ -47,17 +50,12 @@ const ShiftDurations = new Schema({
       if (!ShiftDoc.start_timestamp) return 0;
 
       const TotalShiftDuration = EndTimestamp - ShiftDoc.start_timestamp.valueOf();
-      let OnBreakDuration = 0;
-
-      if (ShiftDoc.events.breaks.length) {
-        for (const Break of ShiftDoc.events.breaks) {
-          const [StartEpoch, EndEpoch] = Break;
-          OnBreakDuration += Math.max((EndEpoch || EndTimestamp) - StartEpoch, 0);
-        }
-
-        OnBreakDuration = Math.min(OnBreakDuration, TotalShiftDuration);
-        return OnBreakDuration;
-      }
+      const OnBreakDuration = Math.min(
+        ShiftDoc.events.breaks.reduce((Total, [StartEpoch, EndEpoch]) => {
+          return Total + Math.max((EndEpoch || EndTimestamp) - StartEpoch, 0);
+        }, 0),
+        TotalShiftDuration
+      );
 
       this.on_break = OnBreakDuration;
       return OnBreakDuration;

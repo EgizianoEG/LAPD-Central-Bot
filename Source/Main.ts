@@ -69,17 +69,7 @@ const NotFoundPage = FileSystem.readFileSync(
   { encoding: "utf-8" }
 );
 
-ExpressApp.get("/", (_, Res) => {
-  Res.setHeader("Content-Type", "application/json");
-  Res.end(JSON.stringify({ message: "OK" }, null, 2));
-});
-
-ExpressApp.get("/*", (_, Res) => {
-  Res.setHeader("Content-Type", "text/html");
-  Res.end(NotFoundPage);
-});
-
-ExpressApp.get("/status", (_, Res) => {
+ExpressApp.get("/metrics", (_, Res) => {
   GetOSMetrics(true).then((Metrics) => {
     Res.setHeader("Content-Type", "application/json");
     Res.end(
@@ -104,6 +94,16 @@ ExpressApp.get("/status", (_, Res) => {
       )
     );
   });
+});
+
+ExpressApp.get("/", (_, Res) => {
+  Res.setHeader("Content-Type", "application/json");
+  Res.end(JSON.stringify({ message: "OK" }, null, 2));
+});
+
+ExpressApp.get("/*", (_, Res) => {
+  Res.setHeader("Content-Type", "text/html");
+  Res.end(NotFoundPage);
 });
 
 ExpressApp.listen(EAppPort, () => {

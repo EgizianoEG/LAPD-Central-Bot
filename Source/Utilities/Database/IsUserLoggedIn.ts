@@ -11,7 +11,7 @@ export default async function IsLoggedIn(SearchData: {
 }): Promise<number> {
   const Profile = await GuildProfile.findOne(
     {
-      user_id: SearchData.user.id,
+      user: SearchData.user.id,
       guild: SearchData.guildId,
     },
     { linked_account: 1 }

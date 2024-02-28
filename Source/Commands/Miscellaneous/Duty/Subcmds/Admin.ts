@@ -1,6 +1,10 @@
 /* eslint-disable sonarjs/no-duplicate-string */
 import {
   SlashCommandSubcommandBuilder,
+  StringSelectMenuOptionBuilder,
+  StringSelectMenuInteraction,
+  StringSelectMenuBuilder,
+  ModalSubmitInteraction,
   time as FormatTime,
   ButtonInteraction,
   ActionRowBuilder,
@@ -19,6 +23,7 @@ import {
 
 import { ExtraTypings } from "@Typings/Utilities/Database.js";
 import { Embeds, Emojis } from "@Config/Shared.js";
+import { IsValidShiftId } from "@Utilities/Other/Validators.js";
 import { SuccessEmbed, InfoEmbed, WarnEmbed, ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
@@ -32,6 +37,9 @@ import AppLogger from "@Utilities/Classes/AppLogger.js";
 import AppError from "@Utilities/Classes/AppError.js";
 import Chunks from "@Utilities/Other/SliceIntoChunks.js";
 import Dedent from "dedent";
+import ParseDuration from "parse-duration";
+import GetShiftActive from "@Utilities/Database/GetShiftActive.js";
+import { RandomString } from "@Utilities/Strings/Random.js";
 
 const FileLabel = "Commands:Miscellaneous:Duty:Admin";
 const HumanizeDuration = DHumanize.humanizer({
@@ -40,9 +48,258 @@ const HumanizeDuration = DHumanize.humanizer({
   round: true,
 });
 
+enum ShiftModActions {
+  TimeSet = "set",
+  TimeAdd = "add",
+  TimeSub = "sub",
+  TimeReset = "reset",
+}
+
 // ---------------------------------------------------------------------------------------
 // Functions:
 // ----------
+async function HandleShiftTimeModExceptions(
+  Interact: StringSelectMenuInteraction<"cached"> | ModalSubmitInteraction<"cached">,
+  ShiftDoc: ExtraTypings.HydratedShiftDocument,
+  Err: any
+) {
+  if (Err instanceof AppError && Err.is_showable) {
+    return new ErrorEmbed().useErrClass(Err).replyToInteract(Interact, true, true);
+  }
+
+  await new ErrorEmbed().useErrTemplate("AppError").replyToInteract(Interact, true, true);
+  AppLogger.error({
+    label: FileLabel,
+    message: "Failed to reset shift on-duty time.",
+    shift: ShiftDoc.toObject({ getters: true }),
+    interact: Interact,
+    stack: Err.stack,
+    details: {
+      ...Err,
+    },
+  });
+}
+
+function GetTimeModificationModal(
+  ActionType: "Add" | "Subtract" | "Set",
+  AdminInteract: StringSelectMenuInteraction<"cached">
+) {
+  return new ModalBuilder()
+    .setCustomId(`da-time-mod:${AdminInteract.user.id}:${AdminInteract.guildId}:${RandomString(4)}`)
+    .setTitle("Shift Time Modification")
+    .setComponents(
+      new ActionRowBuilder<TextInputBuilder>().setComponents(
+        new TextInputBuilder()
+          .setCustomId("da-st-mod-input")
+          .setLabel(`Shift Time To ${ActionType}`)
+          .setPlaceholder("E.g., 1 hour, and 34 minutes...")
+          .setStyle(TextInputStyle.Short)
+          .setMinLength(2)
+          .setMaxLength(25)
+      )
+    );
+}
+
+/**
+ * @param AdminInteract - The non deferred interaction.
+ * @param ShiftDocument - The target shift document.
+ */
+async function HandleShiftTimeReset(
+  AdminInteract: StringSelectMenuInteraction<"cached">,
+  ShiftDocument: ExtraTypings.HydratedShiftDocument
+) {
+  try {
+    const UpdatedDoc = await ShiftDocument.resetOnDutyTime(AdminInteract.createdTimestamp);
+    return Promise.allSettled([
+      ShiftActionLogger.LogShiftTimeReset(AdminInteract, ShiftDocument, UpdatedDoc),
+      new SuccessEmbed()
+        .setDescription("Successfully reset the shift's on-duty time.")
+        .replyToInteract(AdminInteract, true),
+    ]);
+  } catch (Err: any) {
+    return HandleShiftTimeModExceptions(AdminInteract, ShiftDocument, Err);
+  }
+}
+
+/**
+ * @param AdminInteract - The non deferred interaction.
+ * @param ShiftDocument - The target shift document.
+ */
+async function HandleShiftTimeSet(
+  AdminInteract: StringSelectMenuInteraction<"cached">,
+  ShiftDocument: ExtraTypings.HydratedShiftDocument
+) {
+  const TMModal = GetTimeModificationModal("Set", AdminInteract);
+  await AdminInteract.showModal(TMModal);
+  const ModalSubmission = await AdminInteract.awaitModalSubmit({
+    filter: (MS) => MS.user.id === AdminInteract.user.id && MS.customId === TMModal.data.custom_id,
+    time: 5 * 60 * 1000,
+  }).catch(() => null);
+
+  if (!ModalSubmission) return;
+  const InputDuration = ModalSubmission.fields.getTextInputValue("da-st-mod-input");
+  const ParsedDuration = ParseDuration(InputDuration, "millisecond");
+  const RoundedDuration = Math.round(ParsedDuration ?? 0);
+
+  if (!ParsedDuration) {
+    return new ErrorEmbed()
+      .useErrTemplate("UnknownDurationExp")
+      .replyToInteract(ModalSubmission, true, true);
+  } else if (RoundedDuration <= 30_000) {
+    return new ErrorEmbed()
+      .useErrTemplate("ShortTypedDuration")
+      .replyToInteract(ModalSubmission, true, true);
+  }
+
+  try {
+    const UpdatedDoc = await ShiftDocument.setOnDutyTime(
+      RoundedDuration,
+      ModalSubmission.createdTimestamp
+    );
+
+    return Promise.allSettled([
+      ShiftActionLogger.LogShiftTimeSet(ModalSubmission, ShiftDocument, UpdatedDoc),
+      new SuccessEmbed()
+        .setDescription(
+          `Successfully set the shift's on-duty time to ${HumanizeDuration(RoundedDuration)}.`
+        )
+        .replyToInteract(ModalSubmission, true),
+    ]);
+  } catch (Err: any) {
+    return HandleShiftTimeModExceptions(ModalSubmission, ShiftDocument, Err);
+  }
+}
+
+/**
+ * @param AdminInteract - The non deferred interaction.
+ * @param ShiftDocument - The target shift document.
+ */
+async function HandleShiftTimeAddSub(
+  ActionType: "Add" | "Subtract",
+  AdminInteract: StringSelectMenuInteraction<"cached">,
+  ShiftDocument: ExtraTypings.HydratedShiftDocument
+) {
+  const TMModal = GetTimeModificationModal(ActionType, AdminInteract);
+  await AdminInteract.showModal(TMModal);
+  const ModalSubmission = await AdminInteract.awaitModalSubmit({
+    filter: (MS) => MS.user.id === AdminInteract.user.id && MS.customId === TMModal.data.custom_id,
+    time: 5 * 60 * 1000,
+  }).catch(() => null);
+
+  if (!ModalSubmission) return;
+  const InputDuration = ModalSubmission.fields.getTextInputValue("da-st-mod-input");
+  const ParsedDuration = ParseDuration(InputDuration, "millisecond");
+  const RoundedDuration = Math.round(ParsedDuration ?? 0);
+  const SuccessMsg =
+    ActionType === "Add"
+      ? `Successfully added an extra \`${HumanizeDuration(RoundedDuration)}\` of on-duty time to the shift.`
+      : `Successfully subtracted \`${HumanizeDuration(RoundedDuration)}\` of on-duty time from the shift.`;
+
+  if (!ParsedDuration) {
+    return new ErrorEmbed()
+      .useErrTemplate("UnknownDurationExp")
+      .replyToInteract(ModalSubmission, true, true);
+  } else if (RoundedDuration <= 30_000) {
+    return new ErrorEmbed()
+      .useErrTemplate("ShortTypedDuration")
+      .replyToInteract(ModalSubmission, true, true);
+  }
+
+  try {
+    const UpdatedDoc = await ShiftDocument.addSubOnDutyTime(ActionType, RoundedDuration);
+    return Promise.allSettled([
+      new SuccessEmbed().setDescription(SuccessMsg).replyToInteract(ModalSubmission, true),
+      ShiftActionLogger.LogShiftTimeAddSub(
+        ModalSubmission,
+        UpdatedDoc,
+        RoundedDuration,
+        ActionType
+      ),
+    ]);
+  } catch (Err: any) {
+    return HandleShiftTimeModExceptions(ModalSubmission, ShiftDocument, Err);
+  }
+}
+
+async function PromptShiftModification(
+  Interact: ModalSubmitInteraction<"cached"> | ButtonInteraction<"cached">,
+  ShiftDocument: ExtraTypings.HydratedShiftDocument
+) {
+  if (Interact.isModalSubmit() && !Interact.deferred) await Interact.deferUpdate();
+  const ActionOptions = new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(
+    new StringSelectMenuBuilder()
+      .setCustomId("da-modify-actions")
+      .setPlaceholder("Select an action")
+      .setMinValues(1)
+      .setMaxValues(1)
+      .setOptions(
+        new StringSelectMenuOptionBuilder()
+          .setLabel("Add Time")
+          .setEmoji(Emojis.ClockPlus)
+          .setValue(ShiftModActions.TimeAdd)
+          .setDescription("Add extra on duty time to the shift."),
+        new StringSelectMenuOptionBuilder()
+          .setValue("sub")
+          .setLabel("Subtract Time")
+          .setEmoji(Emojis.ClockMinus)
+          .setValue(ShiftModActions.TimeSub)
+          .setDescription("Subtract and remove on duty time from the shift."),
+        new StringSelectMenuOptionBuilder()
+          .setValue("set")
+          .setLabel("Set Time")
+          .setEmoji(Emojis.ClockSet)
+          .setValue(ShiftModActions.TimeSet)
+          .setDescription("Set the shift's on-duty time, disregarding the current time."),
+        new StringSelectMenuOptionBuilder()
+          .setValue("reset")
+          .setLabel("Reset Time")
+          .setEmoji(Emojis.ClockReset)
+          .setValue(ShiftModActions.TimeReset)
+          .setDescription("Reset the shift's on-duty time as if it had just begun.")
+      )
+  );
+
+  const PromptEmbed = new EmbedBuilder()
+    .setColor(Colors.Greyple)
+    .setTitle(`Shift Modifier — \`${ShiftDocument._id}\``)
+    .setDescription(
+      "Kindly select an action to perform on the specified shift from the below options."
+    );
+
+  const Prompt = await Interact.editReply({ embeds: [PromptEmbed], components: [ActionOptions] });
+  const CompCollector = Prompt.createMessageComponentCollector({
+    filter: (BInteract) => HandleCollectorFiltering(Interact, BInteract),
+    componentType: ComponentType.StringSelect,
+    time: 5 * 60_000,
+  });
+
+  CompCollector.on("collect", async (SMInteract: StringSelectMenuInteraction<"cached">) => {
+    if (SMInteract.values[0] === ShiftModActions.TimeReset) {
+      await HandleShiftTimeReset(SMInteract, ShiftDocument);
+    } else if (SMInteract.values[0] === ShiftModActions.TimeSet) {
+      await HandleShiftTimeSet(SMInteract, ShiftDocument);
+    } else if (SMInteract.values[0] === ShiftModActions.TimeAdd) {
+      await HandleShiftTimeAddSub("Add", SMInteract, ShiftDocument);
+    } else if (SMInteract.values[0] === ShiftModActions.TimeSub) {
+      await HandleShiftTimeAddSub("Subtract", SMInteract, ShiftDocument);
+    }
+
+    // Remove any selected option.
+    return Interact.editReply({ components: [ActionOptions] }).catch(() => null);
+  });
+
+  CompCollector.on("end", async (CollectedInteracts, EndReason) => {
+    CompCollector.removeAllListeners();
+    if (EndReason.match(/\w+Delete/)) return;
+
+    try {
+      const LastInteract = CollectedInteracts.last() ?? Interact;
+      ActionOptions.components[0].setDisabled(true);
+      await LastInteract.editReply({ components: [ActionOptions] });
+    } catch (Err: any) {}
+  });
+}
+
 /**
  * For shift modifications.
  * Not planned to be used yet & needs to be completed.
@@ -51,125 +308,139 @@ const HumanizeDuration = DHumanize.humanizer({
  * @param ShiftType
  * @param ActiveShift
  */
-// async function HandleShiftModifications(
-//   TargetUser: User,
-//   Interaction: ButtonInteraction<"cached">,
-//   ShiftType: string,
-//   ActiveShift: ExtraTypings.HydratedShiftDocument | null
-// ) {
-//   const RespEmbed = new EmbedBuilder()
-//     .setColor(Colors.DarkBlue)
-//     .setTitle("Shift Modifier")
-//     .setDescription("Please select a shift to modify its durations.")
-//     .setAuthor({
-//       name: TargetUser.username,
-//       iconURL: TargetUser.avatarURL() || undefined,
-//     });
+async function HandleShiftModifications(
+  Interaction: ButtonInteraction<"cached">,
+  TargetUser: User
+) {
+  const IsShiftActive = !!(await GetShiftActive({
+    UserOnly: true,
+    Interaction: {
+      guildId: Interaction.guildId,
+      user: { id: TargetUser.id },
+    },
+  }));
 
-//   const ButtonsActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-//     new ButtonBuilder()
-//       .setCustomId("da-modify-curr")
-//       .setLabel("Current Shift")
-//       .setDisabled(!ActiveShift)
-//       .setStyle(ButtonStyle.Secondary),
-//     new ButtonBuilder()
-//       .setCustomId("da-modify-id")
-//       .setLabel("Shift ID")
-//       .setDisabled(false)
-//       .setStyle(ButtonStyle.Secondary)
-//   );
+  const RespEmbed = new EmbedBuilder()
+    .setColor(Colors.Greyple)
+    .setTitle("Shift Modifier")
+    .setDescription("Please select a shift to modify its durations.");
 
-//   const Message = await Interaction[Interaction.replied ? "followUp" : "reply"]({
-//     components: [ButtonsActionRow],
-//     embeds: [RespEmbed],
-//     fetchReply: true,
-//   });
+  const ButtonsActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId("da-modify-curr")
+      .setLabel("Select Current Shift")
+      .setDisabled(!IsShiftActive)
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId("da-modify-id")
+      .setLabel("Select By Shift ID")
+      .setDisabled(false)
+      .setStyle(ButtonStyle.Secondary)
+  );
 
-//   const CompCollector = Message.createMessageComponentCollector({
-//     filter: (BInteract) => HandleCollectorFiltering(Interaction, BInteract),
-//     componentType: ComponentType.Button,
-//     time: 5 * 60_000,
-//   });
+  const Message = await Interaction.reply({
+    components: [ButtonsActionRow],
+    embeds: [RespEmbed],
+    ephemeral: true,
+    fetchReply: true,
+  });
 
-//   CompCollector.on("collect", async (ButtonInteract) => {
-//     await ButtonInteract.deferUpdate();
-//     if (ButtonInteract.customId === "da-modify-curr") {
-//       const CurrentShift = await ShiftModel.findOne({
-//         user: TargetUser.id,
-//         guild: Interaction.guildId,
-//         type: ShiftType,
-//         end_timestamp: { $eq: null },
-//       });
+  const CompCollector = Message.createMessageComponentCollector({
+    filter: (BInteract) => HandleCollectorFiltering(Interaction, BInteract),
+    componentType: ComponentType.Button,
+    time: 5 * 60_000,
+  });
 
-//       if (!CurrentShift) {
-//         return SendErrorReply({
-//           Interaction: ButtonInteract,
-//           Title: "No Active Shift",
-//           Message: "There is no active shift for this user to modify.",
-//         });
-//       }
-//     } else {
-//       const ShiftIdModal = new ModalBuilder()
-//         .setCustomId("da-modify-id-getter")
-//         .setTitle("Modify Shift")
-//         .addComponents(
-//           new ActionRowBuilder<TextInputBuilder>().addComponents(
-//             new TextInputBuilder()
-//               .setLabel("Shift ID")
-//               .setPlaceholder("Fill in the 15-character numeric shift id.")
-//               .setCustomId("da-modify-id")
-//               .setRequired(true)
-//               .setMinLength(20)
-//               .setMaxLength(20)
-//               .setStyle(TextInputStyle.Short)
-//           )
-//         );
+  CompCollector.on("collect", async (ButtonInteract) => {
+    if (ButtonInteract.customId === "da-modify-curr") {
+      await ButtonInteract.deferUpdate();
+      const ActiveShift = await GetShiftActive({
+        UserOnly: true,
+        Interaction: {
+          guildId: Interaction.guildId,
+          user: { id: TargetUser.id },
+        },
+      });
 
-//       await ButtonInteract.showModal(ShiftIdModal);
-//       const ModalSubmission = await ButtonInteract.awaitModalSubmit({
-//         time: 5 * 60_000,
-//         filter: (MS) => MS.user.id === ButtonInteract.user.id,
-//       }).catch(() => null);
+      if (!ActiveShift) {
+        return new ErrorEmbed()
+          .useErrTemplate("NoActiveShiftFM")
+          .replyToInteract(ButtonInteract, true, false, "reply");
+      }
 
-//       if (ModalSubmission) {
-//         const ShiftId = ModalSubmission.fields.getTextInputValue("da-modify-id");
-//         const ShiftFound = await ShiftModel.findById(ShiftId);
+      CompCollector.stop();
+      return PromptShiftModification(ButtonInteract, ActiveShift);
+    }
 
-//         if (!ShiftFound) {
-//           return SendErrorReply({
-//             Interaction: ModalSubmission,
-//             Title: "Shift Not Found",
-//             Message: "A shift with the ID you provided was not found.",
-//           });
-//         }
-//       }
-//     }
-//   });
+    const ShiftIdModal = new ModalBuilder()
+      .setTitle("Shift Modification")
+      .setCustomId(
+        `da-modify-id-getter:${ButtonInteract.user.id}:${ButtonInteract.guildId}:${RandomString(4)}`
+      )
+      .addComponents(
+        new ActionRowBuilder<TextInputBuilder>().addComponents(
+          new TextInputBuilder()
+            .setLabel("Shift ID")
+            .setPlaceholder("Please fill in the 15-character numeric shift id.")
+            .setCustomId("da-modify-id")
+            .setRequired(true)
+            .setMinLength(15)
+            .setMaxLength(15)
+            .setStyle(TextInputStyle.Short)
+        )
+      );
 
-//   CompCollector.on("end", async (Collected, EndReason) => {
-//     CompCollector.removeAllListeners();
-//     if (EndReason.match(/\w+Delete/)) return;
-//     try {
-//       if (EndReason === "time") {
-//         ButtonsActionRow.components.forEach((Button) => Button.setDisabled(true));
-//         await Message.edit({ components: [ButtonsActionRow] });
-//       }
-//     } catch (Err: any) {
-//       AppLogger.error({
-//         message: "An error occurred while creating a new shift;",
-//         label: "Commands:Miscellaneous:DutyManage",
-//         user_id: Interaction.user.id,
-//         guild_id: Interaction.guildId,
-//         stack: Err.stack,
-//       });
+    await ButtonInteract.showModal(ShiftIdModal);
+    const ModalSubmission = await ButtonInteract.awaitModalSubmit({
+      filter: (MS: ModalSubmitInteraction) =>
+        MS.user.id === ButtonInteract.user.id && MS.customId === ShiftIdModal.data.custom_id,
+      time: 5 * 60_000,
+    }).catch(() => null);
 
-//       SendErrorReply({
-//         Interaction: Collected.last() ?? Interaction,
-//         Template: "AppError",
-//       });
-//     }
-//   });
-// }
+    const ShiftId = ModalSubmission?.fields.getTextInputValue("da-modify-id");
+    if (!ShiftId || !IsValidShiftId(ShiftId)) {
+      return new ErrorEmbed()
+        .useErrTemplate("InvalidShiftId")
+        .replyToInteract(ModalSubmission, true, false);
+    }
+
+    const ShiftFound = await ShiftModel.findById(ShiftId);
+    if (!ShiftFound) {
+      return new ErrorEmbed()
+        .useErrTemplate("NoShiftFoundWithId", ShiftId)
+        .replyToInteract(ModalSubmission, true, false);
+    }
+
+    CompCollector.stop();
+    return PromptShiftModification(ModalSubmission, ShiftFound);
+  });
+
+  CompCollector.on("end", async (Collected, EndReason) => {
+    CompCollector.removeAllListeners();
+    if (EndReason.match(/\w+Delete/)) return;
+    try {
+      if (EndReason === "time") {
+        ButtonsActionRow.components.forEach((Button) => Button.setDisabled(true));
+        await Message.edit({ components: [ButtonsActionRow] });
+      }
+    } catch (Err: any) {
+      AppLogger.error({
+        message: "An error occurred while modifying a shift.",
+        label: "Commands:Miscellaneous:DutyManage",
+        user_id: Interaction.user.id,
+        guild_id: Interaction.guildId,
+        stack: Err.stack,
+        details: {
+          ...Err,
+        },
+      });
+
+      return new ErrorEmbed()
+        .useErrTemplate("AppError")
+        .replyToInteract(Collected.last() ?? Interaction, true, true, "reply");
+    }
+  });
+}
 
 /**
  * Wipes a user's shifts
@@ -181,7 +452,7 @@ const HumanizeDuration = DHumanize.humanizer({
 async function WipeUserShifts(
   TargetUserId: string,
   GuildId: string,
-  ShiftType?: string | null
+  ShiftType?: Nullable<string>
 ): Promise<Mongoose.mongo.DeleteResult & { allTime: number }> {
   const QueryFilter = {
     guild: GuildId,
@@ -218,7 +489,7 @@ async function WipeUserShifts(
  * @param [ShiftType] - Shift type targetted.
  * @returns
  */
-async function GetPaginatedShifts(TargetUser: User, GuildId: string, ShiftType?: string | null) {
+async function GetPaginatedShifts(TargetUser: User, GuildId: string, ShiftType?: Nullable<string>) {
   const ShiftData: {
     _id: string;
     /** Start epoch in milliseconds */
@@ -259,25 +530,30 @@ async function GetPaginatedShifts(TargetUser: User, GuildId: string, ShiftType?:
           ],
         },
         duration: {
-          $cond: [
+          $add: [
+            "$durations.on_duty_mod",
             {
-              $eq: ["$end_timestamp", null],
-            },
-            {
-              $subtract: [
-                new Date(),
+              $cond: [
                 {
-                  $toDate: "$start_timestamp",
-                },
-              ],
-            },
-            {
-              $subtract: [
-                {
-                  $toDate: "$end_timestamp",
+                  $eq: ["$end_timestamp", null],
                 },
                 {
-                  $toDate: "$start_timestamp",
+                  $subtract: [
+                    new Date(),
+                    {
+                      $toDate: "$start_timestamp",
+                    },
+                  ],
+                },
+                {
+                  $subtract: [
+                    {
+                      $toDate: "$end_timestamp",
+                    },
+                    {
+                      $toDate: "$start_timestamp",
+                    },
+                  ],
                 },
               ],
             },
@@ -375,7 +651,7 @@ function GetButtonActionRows(
     new ButtonBuilder()
       .setCustomId("da-modify")
       .setLabel("Modify")
-      .setDisabled(true)
+      .setDisabled(false)
       .setEmoji(Emojis.FileEdit)
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
@@ -432,7 +708,7 @@ function GetButtonActionRows(
 async function HandleShiftListing(
   BInteract: ButtonInteraction<"cached">,
   TargetUser: User,
-  ShiftType?: string | null
+  ShiftType?: Nullable<string>
 ) {
   const Pages = await GetPaginatedShifts(TargetUser, BInteract.guildId, ShiftType);
   if (Pages.length) {
@@ -442,10 +718,10 @@ async function HandleShiftListing(
       .setTitle("No Recorded Shifts")
       .setDescription(
         `There are no recorded shifts for this user${
-          ShiftType ? ` under the ${ShiftType} type` : ""
-        }.`
+          ShiftType ? ` under the \`${ShiftType}\` type` : ""
+        } to list.`
       )
-      .replyToInteract(BInteract);
+      .replyToInteract(BInteract, true);
   }
 }
 
@@ -459,7 +735,7 @@ async function HandleShiftListing(
 async function HandleUserShiftsWipe(
   BInteract: ButtonInteraction<"cached">,
   TargetUser: User,
-  ShiftType?: string | null
+  ShiftType?: Nullable<string>
 ) {
   const EDSType = ShiftType ? `the ${ShiftType}` : "all";
   const ButtonAR = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -541,14 +817,13 @@ async function HandleUserShiftEnd(
   RespMessage: Message<true>,
   TargetUser: User,
   ActiveShift: ExtraTypings.HydratedShiftDocument,
-  CmdShiftType?: string | null
+  CmdShiftType?: Nullable<string>
 ) {
   await BInteract.deferUpdate();
   const EndedShift = await ActiveShift.end(BInteract.createdTimestamp);
-  const TotalBreakTime =
-    EndedShift.durations.on_break > 500
-      ? `**Total Break Time:** ${HumanizeDuration(EndedShift.durations.on_break)}`
-      : null;
+  const TotalBreakTime = EndedShift.hasBreaks()
+    ? `**Total Break Time:** ${HumanizeDuration(EndedShift.durations.on_break)}`
+    : null;
 
   const UserShiftsData = await GetMainShiftsData({
     user: TargetUser.id,
@@ -557,10 +832,10 @@ async function HandleUserShiftEnd(
   });
 
   const ShiftsInfo = Dedent(`
-        **Shift Count:** \`${UserShiftsData.shift_count}\`
-        **Total On-Duty Time:** ${UserShiftsData.total_onduty}
-        **Average On-Duty Time:** ${UserShiftsData.avg_onduty}
-      `);
+    **Shift Count:** \`${UserShiftsData.shift_count}\`
+    **Total On-Duty Time:** ${UserShiftsData.total_onduty}
+    **Average On-Duty Time:** ${UserShiftsData.avg_onduty}
+  `);
 
   const RespEmbed = new EmbedBuilder()
     .setColor(Embeds.Colors.ShiftEnd)
@@ -579,17 +854,17 @@ async function HandleUserShiftEnd(
       {
         name: "Last Shift:",
         value: Dedent(`
-            **Status:** ${Emojis.Offline} Ended (Off-Duty)
-            **Total Shift Time:** ${HumanizeDuration(EndedShift.durations.total)}
-            ${TotalBreakTime || ""}
-          `),
+          **Status:** ${Emojis.Offline} Ended (Off-Duty)
+          **Total Shift Time:** ${HumanizeDuration(EndedShift.durations.on_duty)}
+          ${TotalBreakTime || ""}
+        `),
       },
       {
         name: "Last Shift Statics:",
         value: Dedent(`
-            **Arrests Made:** \`${EndedShift.events.arrests}\`
-            **Citations Issued:** \`${EndedShift.events.citations}\`
-          `),
+          **Arrests Made:** \`${EndedShift.events.arrests}\`
+          **Citations Issued:** \`${EndedShift.events.citations}\`
+        `),
       }
     );
 
@@ -611,13 +886,15 @@ async function HandleUserShiftEnd(
  */
 async function HandleUserShiftDelete(BInteract: ButtonInteraction<"cached">, TargetUser: User) {
   const Modal = new ModalBuilder()
-    .setCustomId(`da-delete-shift:${BInteract.user.id}:${BInteract.guildId}:${TargetUser.id}`)
     .setTitle("Shift Deletion")
+    .setCustomId(
+      `da-delete-shift:${BInteract.user.id}:${BInteract.guildId}:${TargetUser.id}:${RandomString(4)}`
+    )
     .setComponents(
       new ActionRowBuilder<TextInputBuilder>().setComponents(
         new TextInputBuilder()
           .setStyle(TextInputStyle.Short)
-          .setPlaceholder("Enter the desired shift's ID here to delete...")
+          .setPlaceholder("Enter the desired shift's ID to delete here...")
           .setCustomId("da-shift-id")
           .setLabel("Shift ID")
           .setMaxLength(15)
@@ -628,19 +905,18 @@ async function HandleUserShiftDelete(BInteract: ButtonInteraction<"cached">, Tar
 
   await BInteract.showModal(Modal);
   const ModalSubmission = await BInteract.awaitModalSubmit({
-    filter: (MS) => HandleCollectorFiltering(BInteract, MS),
+    filter: (MS) => MS.user.id === BInteract.user.id && MS.customId === Modal.data.custom_id,
     time: 5 * 60_000,
   }).catch(() => null);
 
   if (!ModalSubmission) return;
-
   const ShiftId = ModalSubmission.fields.getTextInputValue("da-shift-id");
   const ShiftFound = await ShiftModel.findById(ShiftId);
 
   if (!ShiftFound) {
     return new ErrorEmbed()
       .useErrTemplate("NoShiftFoundWithId", ShiftId)
-      .replyToInteract(ModalSubmission, false, false);
+      .replyToInteract(ModalSubmission, true);
   }
 
   if (!ShiftFound.end_timestamp) {
@@ -703,7 +979,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
       iconURL: TargetUser.displayAvatarURL({ size: 128 }),
     })
     .setColor(
-      ActiveShift?.isBreakActive()
+      ActiveShift?.hasBreakActive()
         ? Embeds.Colors.ShiftBreak
         : ActiveShift
           ? Embeds.Colors.ShiftStart
@@ -711,21 +987,23 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     );
 
   if (ActiveShift) {
-    const StatusText = ActiveShift.isBreakActive()
+    const StatusText = ActiveShift.hasBreakActive()
       ? `${Emojis.Idle} On-Break`
       : `${Emojis.Online} On-Duty`;
 
-    const TotalBreakTime =
-      ActiveShift.durations.on_break > 500
-        ? `**Total Break Time:** ${HumanizeDuration(ActiveShift.durations.on_break)}`
-        : null;
+    const TotalBreakTime = ActiveShift.hasBreaks()
+      ? `**Total Break Time:** ${HumanizeDuration(ActiveShift.durations.on_break)}`
+      : null;
 
+    ActiveShift.durations.on_duty = -1;
     RespEmbed.addFields({
-      name: "Current Shift:",
+      name: "Active Shift:",
       value: Dedent(`
-        **ID:** \`${ActiveShift._id}\`
+        **ID:** \`${ActiveShift._id}\`\
+        ${CmdShiftType ? "" : `\n**Type:** \`${ActiveShift.type}\``}
         **Status:** ${StatusText}
         **Shift Started:** ${FormatTime(ActiveShift.start_timestamp, "R")}
+        **On-Duty Time:** ${HumanizeDuration(ActiveShift.durations.on_duty)}
         ${TotalBreakTime || ""}
       `),
     });
@@ -770,6 +1048,9 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
           } else {
             await ButtonInteract.deferUpdate();
           }
+          break;
+        case "da-modify":
+          await HandleShiftModifications(ButtonInteract, TargetUser);
           break;
         default:
           break;

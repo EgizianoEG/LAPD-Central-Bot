@@ -7,15 +7,33 @@ import AppError from "@Utilities/Classes/AppError.js";
 const ErrorTitle = "Invalid Action";
 type ThisType = ExtraTypings.HydratedShiftDocument;
 
-async function GetUpdatedDocument(Document: ThisType) {
-  const Found = await (Document.constructor as any)
+async function GetUpdatedDocument<GOIFailed extends boolean = false>(
+  Document: ThisType,
+  OldFallback: GOIFailed,
+  Silent: boolean = true
+): Promise<GOIFailed extends true ? ThisType : ThisType | null> {
+  return (Document.constructor as any)
     .findOne({ _id: Document._id })
-    .catch(() => null);
-  return (Found ?? Document) as ThisType;
+    .then((Latest: Nullable<ThisType>) => {
+      if (OldFallback) {
+        return Latest ?? Document;
+      }
+      return Latest;
+    })
+    .catch((Err: any) => {
+      if (Silent) {
+        return null;
+      }
+      throw Err;
+    });
 }
 
-export function IsBreakActive(this: ThisType) {
+export function HasBreakActive(this: ThisType) {
   return this.events.breaks.some(([, end]) => end === null);
+}
+
+export function HasBreaks(this: ThisType) {
+  return this.events.breaks.length > 0;
 }
 
 export function ShiftEventAdd(this: ThisType, type: "arrests" | "citations") {
@@ -23,10 +41,18 @@ export function ShiftEventAdd(this: ThisType, type: "arrests" | "citations") {
   return this.save();
 }
 
-export async function ShiftBreakStart(this: ThisType, timestamp: number = Date.now()) {
-  const DBDocument = await GetUpdatedDocument(this);
+export async function GetLatestVersion<GOIFailed extends boolean = false>(
+  this: ThisType,
+  OldFallback: GOIFailed,
+  Silent: boolean = true
+): Promise<GOIFailed extends true ? ThisType : ThisType | null> {
+  return GetUpdatedDocument(this, OldFallback, Silent);
+}
 
-  if (this.isBreakActive()) {
+export async function ShiftBreakStart(this: ThisType, timestamp: number = Date.now()) {
+  const DBDocument = await this.getLatestVersion(true, true);
+
+  if (this.hasBreakActive()) {
     return Promise.reject(
       new AppError({
         title: ErrorTitle,
@@ -42,7 +68,7 @@ export async function ShiftBreakStart(this: ThisType, timestamp: number = Date.n
 }
 
 export async function ShiftBreakEnd(this: ThisType, timestamp: number = Date.now()) {
-  const DBDocument = await GetUpdatedDocument(this);
+  const DBDocument = await this.getLatestVersion(true, true);
 
   if (DBDocument.events.breaks.length) {
     const BreakActive = this.events.breaks.findIndex(([, end]) => end === null);
@@ -62,7 +88,7 @@ export async function ShiftBreakEnd(this: ThisType, timestamp: number = Date.now
 }
 
 export async function ShiftEnd(this: ThisType, timestamp: Date | number = new Date()) {
-  const DBDocument = await GetUpdatedDocument(this);
+  const DBDocument = await this.getLatestVersion(true, true);
 
   if (DBDocument.end_timestamp)
     return Promise.reject(
@@ -74,24 +100,12 @@ export async function ShiftEnd(this: ThisType, timestamp: Date | number = new Da
       })
     );
   else DBDocument.end_timestamp = new Date(timestamp);
-  this.durations.on_duty =
-    DBDocument.end_timestamp.valueOf() - DBDocument.start_timestamp.valueOf();
-
-  if (DBDocument.events.breaks.length) {
-    for (const Break of DBDocument.events.breaks) {
-      if (!Break[1]) Break[1] = DBDocument.end_timestamp.valueOf();
-      const [StartEpoch, EndEpoch] = Break;
-      DBDocument.durations.on_break += EndEpoch - StartEpoch;
-    }
-    DBDocument.durations.on_duty -= DBDocument.durations.on_break;
-    DBDocument.durations.on_duty = Math.max(DBDocument.durations.on_duty, 0);
-  }
 
   return DBDocument.save().then(async (ShiftDoc) => {
     ActiveShiftsCache.del(ShiftDoc._id);
     await ProfileModel.updateOne(
       {
-        user_id: ShiftDoc.user,
+        user: ShiftDoc.user,
         guild: ShiftDoc.guild,
       },
       {
@@ -100,11 +114,65 @@ export async function ShiftEnd(this: ThisType, timestamp: Date | number = new Da
           "shifts.total_durations.on_duty": DBDocument.durations.on_duty,
           "shifts.total_durations.on_break": DBDocument.durations.on_break,
         },
-      },
-      { upsert: true, setDefaultsOnInsert: true }
-    );
+      }
+    ).exec();
     return DBDocument;
   });
+}
+
+export async function ResetShiftTime(this: ThisType, CurrentTimestamp: number = Date.now()) {
+  const DBShiftDoc = await this.getLatestVersion(false, false);
+  if (!DBShiftDoc) {
+    throw new AppError({ template: "NoShiftFoundWithId", showable: true });
+  }
+
+  if (DBShiftDoc.durations.on_duty === 0) {
+    throw new AppError({ template: "ShiftTimeAlreadyReset", showable: true });
+  }
+
+  DBShiftDoc.durations.on_duty_mod = -(
+    (DBShiftDoc.end_timestamp?.valueOf() || CurrentTimestamp) - DBShiftDoc.start_timestamp.valueOf()
+  );
+
+  return DBShiftDoc.save();
+}
+
+export async function SetShiftTime(
+  this: ThisType,
+  Duration: number,
+  CurrentTimestamp: number = Date.now()
+) {
+  const DBShiftDoc = await this.getLatestVersion(false, false);
+  if (!DBShiftDoc) {
+    throw new AppError({ template: "NoShiftFoundWithId", showable: true });
+  }
+
+  DBShiftDoc.durations.on_duty_mod += Math.round(Math.max(Duration, 0));
+  DBShiftDoc.durations.on_duty_mod -=
+    (DBShiftDoc.end_timestamp?.valueOf() || CurrentTimestamp) -
+    DBShiftDoc.start_timestamp.valueOf();
+
+  return DBShiftDoc.save();
+}
+
+export async function AddSubShiftTime(
+  this: ThisType,
+  Type: "Add" | "Sub" | "Subtract",
+  Duration: number
+) {
+  Duration = Math.round(Duration);
+  const DBShiftDoc = await this.getLatestVersion(false, false);
+  if (!DBShiftDoc) {
+    throw new AppError({ template: "NoShiftFoundWithId", showable: true });
+  }
+
+  if (Type === "Add") {
+    DBShiftDoc.durations.on_duty_mod += Duration;
+  } else {
+    DBShiftDoc.durations.on_duty_mod -= Math.min(Duration, DBShiftDoc.durations.on_duty);
+  }
+
+  return DBShiftDoc.save();
 }
 
 export async function PreShiftDocDelete(
@@ -113,8 +181,8 @@ export async function PreShiftDocDelete(
 ) {
   ActiveShiftsCache.del(this._id);
   const UserProfile = await ProfileModel.findOneAndUpdate(
-    { user_id: this.user, guild: this.guild },
-    { user_id: this.user, guild: this.guild },
+    { user: this.user, guild: this.guild },
+    { user: this.user, guild: this.guild },
     { upsert: true, new: true }
   ).exec();
 
@@ -165,7 +233,7 @@ export async function PreShiftModelDelete(
 
     await ProfileModel.updateOne(
       {
-        user_id: UserData[0],
+        user: UserData[0],
         guild: UserData[1],
       },
       {
@@ -186,8 +254,19 @@ export default {
   breakEnd: ShiftBreakEnd,
   breakStart: ShiftBreakStart,
   incrementEvents: ShiftEventAdd,
-  isBreakActive: IsBreakActive,
-} as Record<
-  keyof Omit<ExtraTypings.ShiftDocOverrides, "durations">,
-  (this: ThisType, arg0: any) => any
->;
+  getLatestVersion: GetLatestVersion,
+  hasBreakActive: HasBreakActive,
+  hasBreaks: HasBreaks,
+
+  setOnDutyTime: SetShiftTime,
+  resetOnDutyTime: ResetShiftTime,
+  addSubOnDutyTime: AddSubShiftTime,
+
+  async addOnDutyTime(this: ThisType, Duration: number) {
+    return AddSubShiftTime.call(this, "Add", Duration);
+  },
+
+  async subOnDutyTime(this: ThisType, Duration: number) {
+    return AddSubShiftTime.call(this, "Sub", Duration);
+  },
+} as Omit<ExtraTypings.ShiftDocOverrides, "durations">;

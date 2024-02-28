@@ -1,4 +1,4 @@
-import type { ErrorMessages } from "@Resources/AppMessages.js";
+import { ErrorMessages } from "@Resources/AppMessages.js";
 export interface AppErrorOptions {
   /** Error code; defaults to `1`.
    *   - `0`: A fatal error,
@@ -36,6 +36,10 @@ export default class AppError extends Error {
    */
   constructor(Options: AppErrorOptions) {
     super(Options.message);
+    if (Options.template) {
+      this.title = ErrorMessages[Options.template].Title;
+      this.message = ErrorMessages[Options.template].Description;
+    }
 
     this.code = Options.code ?? this.code;
     this.title = Options.title ?? this.title;

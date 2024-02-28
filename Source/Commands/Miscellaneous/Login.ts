@@ -155,7 +155,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
               new SuccessEmbed()
                 .setTitle("Successfully Verified")
                 .setDescription(
-                  "You have successfully verified your Roblox username and linked it to your Discord account."
+                  "Your Roblox account has been successfully verified and linked to the application."
                 ),
             ],
           });
@@ -167,7 +167,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
       } else {
         return new InfoEmbed()
           .setTitle("Process Cancellation")
-          .setDescription("The login process has been canceled due to user request.")
+          .setDescription("The login process has been canceled due to your request.")
           .replyToInteract(ButtonInteract, true);
       }
     })

@@ -1,5 +1,6 @@
-import { FormatHeight } from "@Utilities/Strings/Formatters.js";
 import { SlashCommandBuilder } from "discord.js";
+import { FormatHeight } from "@Utilities/Strings/Formatters.js";
+import { isBefore } from "date-fns";
 
 /**
  * Checks wether a given string can be valid as a Roblox username.
@@ -29,6 +30,19 @@ export function IsValidDiscordId(Input: string): boolean {
  */
 export function IsValidShiftTypeName(Str: string): boolean {
   return !!(Str.trim().match(/^[\w\-. ]{3,20}$/) && !Str.trim().match(/^[-.]+$/));
+}
+
+/**
+ * Checks wether a given string can be a valid shift id.
+ * Validation consists of:
+ * 1. Checking if the string is 15 characters long.
+ *    The shift id must be include the start timestamp in milliseconds and additional two tailing random numbers.
+ * 2. Checking if the start timestamp is in the past and not in the future.
+ * @param Str - The string to be validated as a shift id.
+ * @returns
+ */
+export function IsValidShiftId(Str: string): boolean {
+  return !!Str.match(/^\d{15}$/) && isBefore(Number(Str.slice(0, 13)), new Date());
 }
 
 /**
