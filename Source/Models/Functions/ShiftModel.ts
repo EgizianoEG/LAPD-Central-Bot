@@ -147,6 +147,7 @@ export async function SetShiftTime(
     throw new AppError({ template: "NoShiftFoundWithId", showable: true });
   }
 
+  DBShiftDoc.durations.on_duty_mod = 0;
   DBShiftDoc.durations.on_duty_mod += Math.round(Math.max(Duration, 0));
   DBShiftDoc.durations.on_duty_mod -=
     (DBShiftDoc.end_timestamp?.valueOf() || CurrentTimestamp) -

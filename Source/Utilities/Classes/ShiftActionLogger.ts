@@ -176,8 +176,8 @@ export default class ShiftActionLogger {
           inline: true,
           name: "Shift Details",
           value: Dedent(`
-            - Shift ID: \`${ShiftDoc._id}\`
-              - Type: \`${ShiftDoc.type}\`
+            - Shift ID: ${inlineCode(ShiftDoc._id)}
+              - Type: ${inlineCode(ShiftDoc.type)}
               - Started: ${BaseData.ShiftStartedRT}
           `),
         },
@@ -232,8 +232,8 @@ export default class ShiftActionLogger {
           inline: true,
           name: "Shift Details",
           value: Dedent(`
-            - Shift ID: \`${ShiftDoc._id}\`
-              - Type: \`${ShiftDoc.type}\`
+            - Shift ID: ${inlineCode(ShiftDoc._id)}
+              - Type: ${inlineCode(ShiftDoc.type)}
               - Shift Started: ${BaseData.ShiftStartedRT}
               - Break Started: ${BreakStartedRT}
           `),
@@ -296,8 +296,8 @@ export default class ShiftActionLogger {
           inline: true,
           name: "Shift Details",
           value: Dedent(`
-            - Shift ID: \`${ShiftDoc._id}\`
-              - Type: \`${ShiftDoc.type}\`
+            - Shift ID: ${inlineCode(ShiftDoc._id)}
+              - Type: ${inlineCode(ShiftDoc.type)}
               - Shift Started: ${BaseData.ShiftStartedRT}
               - Break Started: ${BreakStartedRT}
               - Break Time: ${EndedBreakTime}
@@ -350,8 +350,7 @@ export default class ShiftActionLogger {
     });
 
     const OnDutyTime = ReadableDuration(ShiftDoc.durations.on_duty);
-    const OnBreakTime =
-      ShiftDoc.durations.on_break > 0 ? ReadableDuration(ShiftDoc.durations.on_break) : null;
+    const OnBreakTime = ShiftDoc.hasBreaks() ? ReadableDuration(ShiftDoc.durations.on_break) : null;
 
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Ended")
       .setColor(SharedData.Embeds.Colors.ShiftEnd)
@@ -376,8 +375,8 @@ export default class ShiftActionLogger {
           inline: false,
           name: "Shift Details",
           value: Dedent(`
-            - Shift ID: \`${ShiftDoc._id}\`
-              - Type: \`${ShiftDoc.type}\`
+            - Shift ID: ${inlineCode(ShiftDoc._id)}
+              - Type: ${inlineCode(ShiftDoc.type)}
               - Started: ${BaseData.ShiftStartedRT}
               - Ended: ${BaseData.ShiftEndedRT ?? "*N/A*"}
               - On-Duty Time: ${OnDutyTime}
@@ -418,9 +417,7 @@ export default class ShiftActionLogger {
     });
 
     const OnDutyTime = ReadableDuration(ShiftDoc.durations.on_duty);
-    const OnBreakTime = ShiftDoc.durations.on_duty
-      ? ReadableDuration(ShiftDoc.durations.on_break)
-      : null;
+    const OnBreakTime = ShiftDoc.hasBreaks() ? ReadableDuration(ShiftDoc.durations.on_break) : null;
 
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Automatically Ended")
       .setColor(SharedData.Embeds.Colors.ShiftEnd)
@@ -445,13 +442,14 @@ export default class ShiftActionLogger {
           inline: false,
           name: "Shift Details",
           value: Dedent(`
-            - Shift ID: \`${ShiftDoc._id}\`
-              - Type: \`${ShiftDoc.type}\`
+            - Shift ID: ${inlineCode(ShiftDoc._id)}
+              - Type: ${inlineCode(ShiftDoc.type)}
               - Started: ${BaseData.ShiftStartedRT}
               - Ended: ${BaseData.ShiftEndedRT ?? "*N/A*"}
+              - End Reason: ${inlineCode(EndReason)}
               - On-Duty Time: ${OnDutyTime}
               ${OnBreakTime ? `- On-Break Time: ${OnBreakTime}` : ""}
-              - End Reason: \`${EndReason}\`
+              ${OnBreakTime ? `- Breaks: ${BluewishText(ShiftDoc.events.breaks.length, BaseData.LoggingChannel?.id ?? UserInteract.guild.id)}` : ""}
           `),
         }
       );
@@ -480,8 +478,7 @@ export default class ShiftActionLogger {
 
     const VoidEpoch = FormatTime(UserInteract.createdAt, "R");
     const OnDutyTime = ReadableDuration(ShiftDoc.durations.on_duty);
-    const OnBreakTime =
-      ShiftDoc.durations.on_break > 0 ? ReadableDuration(ShiftDoc.durations.on_break) : null;
+    const OnBreakTime = ShiftDoc.hasBreaks() ? ReadableDuration(ShiftDoc.durations.on_break) : null;
 
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Voided")
       .setColor(SharedData.Embeds.Colors.ShiftVoid)
@@ -506,12 +503,13 @@ export default class ShiftActionLogger {
           inline: false,
           name: "Shift Details",
           value: Dedent(`
-            - Shift ID: \`${ShiftDoc._id}\`
-              - Type: \`${ShiftDoc.type}\`
+            - Shift ID: ${inlineCode(ShiftDoc._id)}
+              - Type: ${inlineCode(ShiftDoc.type)}
               - Started: ${BaseData.ShiftStartedRT}
               - Voided: ${BaseData.ShiftEndedRT ?? VoidEpoch}
               - On-Duty Time: ${OnDutyTime}
               ${OnBreakTime ? `- On-Break Time: ${OnBreakTime}` : ""}
+              ${OnBreakTime ? `- Breaks: ${BluewishText(ShiftDoc.events.breaks.length, BaseData.LoggingChannel?.id ?? UserInteract.guild.id)}` : ""}
           `),
         }
       );
@@ -533,14 +531,14 @@ export default class ShiftActionLogger {
   /**
    * Logs a shift wipe-all action to the appropriate and specified channel of a guild.
    * @param UserInteract - The received discordjs interaction (button/cmd).
-   * @param DeleteResult - The deletion result of mongoose/mongodb.
+   * @param WipeResult - The deletion result of mongoose/mongodb.
    * @param ShiftType - Type of shifts that were deleted; defaults to `null` which translates into `*All Types*`.
    * @param TargettedUser - An optional parameter to only specify a targetted user.
    * @returns A promise that resolves to the logging message sent or `undefined` if it wasn't.
    */
   public static async LogShiftsWipe(
     UserInteract: DiscordUserInteract,
-    DeleteResult: Mongoose.mongo.DeleteResult & { totalTime: number },
+    WipeResult: Mongoose.mongo.DeleteResult & { totalTime: number },
     ShiftType?: string | null,
     TargettedUser?: User
   ) {
@@ -552,9 +550,9 @@ export default class ShiftActionLogger {
       .setDescription(
         Dedent(`
           ${TargettedUser ? `**Member:** <@${TargettedUser.id}>` : ""}
-          **Shifts Deleted:** \`${DeleteResult.deletedCount}\`
-          **Shifts of Type:** ${ShiftType ? `\`${ShiftType}\`` : "*All Shift Types*"}
-          **On-Duty Time:** ${DeleteResult.totalTime ? ReadableDuration(DeleteResult.totalTime) : "*N/A*"}
+          **Shifts Deleted:** ${BluewishText(WipeResult.deletedCount, LoggingChannel?.id ?? UserInteract.id)}
+          **Shifts of Type:** ${ShiftType ? `${inlineCode(ShiftType)}` : "*All Shift Types*"}
+          **On-Duty Time Sum:** ${WipeResult.totalTime ? ReadableDuration(WipeResult.totalTime) : "*N/A*"}
         `)
       );
 
@@ -584,8 +582,8 @@ export default class ShiftActionLogger {
       .setDescription(
         Dedent(`
           **Member:** <@${ShiftDeleted.user}>
-          **Shift ID:** \`${ShiftDeleted._id}\`
-          **Shift of Type:** \`${ShiftDeleted.type}\`
+          **Shift ID:** ${inlineCode(ShiftDeleted._id)}
+          **Shift of Type:** ${inlineCode(ShiftDeleted.type)}
           **On-Duty Time:** ${ReadableDuration(ShiftDeleted.durations.on_duty)}
           ${ShiftDeleted.durations.on_break ? `**On-Break Time:** ${ReadableDuration(ShiftDeleted.durations.on_break)}` : ""}
         `)
@@ -609,16 +607,16 @@ export default class ShiftActionLogger {
     const LoggingChannel = await this.GetLoggingChannel(UserInteract.guild);
     const LogEmbed = new EmbedBuilder()
       .setTimestamp(UserInteract.createdAt)
-      .setColor(Embeds.Colors.ShiftEnd)
+      .setColor(Embeds.Colors.ShiftVoid)
       .setTitle("Shift Modified — Time Set")
       .setFooter({ text: `Set by: @${UserInteract.user.username}` })
       .setDescription(
         Dedent(`
           **Member:** <@${ShiftUpdated.user}>
-          **Shift ID:** \`${ShiftUpdated._id}\`
-          **Shift of Type:** \`${ShiftUpdated.type}\`
+          **Shift ID:** ${inlineCode(ShiftUpdated._id)}
+          **Shift of Type:** ${inlineCode(ShiftUpdated.type)}
           **Previous On-Duty Time:** ${ReadableDuration(OldShiftDoc.durations.on_duty)}
-          **Set On-Duty Time:** ${ShiftUpdated.durations.on_duty}
+          **Set On-Duty Time:** ${ReadableDuration(ShiftUpdated.durations.on_duty)}
           ${ShiftUpdated.hasBreaks() ? `**On-Break Time:** ${ReadableDuration(ShiftUpdated.durations.on_break)}` : ""}
         `)
       );
@@ -647,8 +645,8 @@ export default class ShiftActionLogger {
       .setDescription(
         Dedent(`
           **Member:** <@${ShiftUpdated.user}>
-          **Shift ID:** \`${ShiftUpdated._id}\`
-          **Shift of Type:** \`${ShiftUpdated.type}\`
+          **Shift ID:** ${inlineCode(ShiftUpdated._id)}
+          **Shift of Type:** ${inlineCode(ShiftUpdated.type)}
           **Current On-Duty Time:** ${ReadableDuration(ShiftUpdated.durations.on_duty)}
           **Previous On-Duty Time:** ${ReadableDuration(OldShiftDoc.durations.on_duty)}
           ${ShiftUpdated.hasBreaks() ? `**On-Break Time:** ${ReadableDuration(ShiftUpdated.durations.on_break)}` : ""}
@@ -679,8 +677,8 @@ export default class ShiftActionLogger {
       .setDescription(
         Dedent(`
           **Member:** <@${ShiftModified.user}>
-          **Shift ID:** \`${ShiftModified._id}\`
-          **Shift of Type:** \`${ShiftModified.type}\`
+          **Shift ID:** ${inlineCode(ShiftModified._id)}
+          **Shift of Type:** ${inlineCode(ShiftModified.type)}
           **Time ${ActionType}ed:** ${ReadableDuration(TimeAddedSub)}
           **On-Duty Time:** ${ReadableDuration(ShiftModified.durations.on_duty)}
           ${ShiftModified.hasBreaks() ? `**On-Break Time:** ${ReadableDuration(ShiftModified.durations.on_break)}` : ""}

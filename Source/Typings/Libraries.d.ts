@@ -1,5 +1,10 @@
-import type { ChatInputCommandInteraction, Collection } from "discord.js";
 import type { TupleMinMax } from "./Global.js";
+import type {
+  ChatInputCommandInteraction,
+  CollectedInteraction,
+  Collection,
+  Snowflake,
+} from "discord.js";
 
 export declare module "utility-types" {
   export { NonEmptyArray, RangedArray, UnPartial, TupleMinMax };
@@ -11,16 +16,19 @@ export declare module "utility-types" {
 }
 
 export declare module "discord.js" {
-  export interface InteractionCollector {
-    on(event: string, listener: (...args: any[]) => Awaitable<any>): this;
+  export interface InteractionCollector<Interaction extends CollectedInteraction>
+    extends Collector<Snowflake, Interaction, [Collection<Snowflake, Interaction>]> {
     on(
       event: "end",
       listener: (collected: Collection<Snowflake, Interaction>, reason: string) => Awaitable<any>
     ): this;
+
     on(
       event: "collect" | "dispose" | "ignore",
       listener: (interaction: Interaction) => Awaitable<any>
     ): this;
+
+    on(event: string, listener: (...args: any[]) => Awaitable<any>): this;
   }
 
   export interface Client {

@@ -433,6 +433,12 @@ export const ErrorMessages = {
     Description: "The time for this shift has already been reset.",
   },
 
+  NoRecentShifts: {
+    Title: "No Recent Shifts",
+    Description:
+      "There are no recent records for the specified user to display the last shift for.",
+  },
+
   /**
    * For nickname searches and replaces
    */

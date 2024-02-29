@@ -16,12 +16,14 @@ import {
   ModalBuilder,
   EmbedBuilder,
   ButtonStyle,
+  channelLink,
   Message,
   Colors,
   User,
 } from "discord.js";
 
 import { ExtraTypings } from "@Typings/Utilities/Database.js";
+import { RandomString } from "@Utilities/Strings/Random.js";
 import { Embeds, Emojis } from "@Config/Shared.js";
 import { IsValidShiftId } from "@Utilities/Other/Validators.js";
 import { SuccessEmbed, InfoEmbed, WarnEmbed, ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
@@ -31,17 +33,24 @@ import HandleEmbedPagination from "@Utilities/Other/HandleEmbedPagination.js";
 import HandleRoleAssignment from "@Utilities/Other/HandleShiftRoleAssignment.js";
 import GetMainShiftsData from "@Utilities/Database/GetShiftsData.js";
 import ShiftActionLogger from "@Utilities/Classes/ShiftActionLogger.js";
+import GetShiftActive from "@Utilities/Database/GetShiftActive.js";
+import ParseDuration from "parse-duration";
 import ShiftModel from "@Models/Shift.js";
 import DHumanize from "humanize-duration";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import AppError from "@Utilities/Classes/AppError.js";
 import Chunks from "@Utilities/Other/SliceIntoChunks.js";
 import Dedent from "dedent";
-import ParseDuration from "parse-duration";
-import GetShiftActive from "@Utilities/Database/GetShiftActive.js";
-import { RandomString } from "@Utilities/Strings/Random.js";
 
 const FileLabel = "Commands:Miscellaneous:Duty:Admin";
+const TimeModPlaceholders = [
+  "E.g., 1 hour, and 34 minutes...",
+  "E.g., 80 minutes and 30 seconds...",
+  "E.g., 45 minutes",
+  "E.g., 3hrs, 15m",
+  "E.g., 2hrs",
+];
+
 const HumanizeDuration = DHumanize.humanizer({
   conjunction: " and ",
   largest: 3,
@@ -58,26 +67,73 @@ enum ShiftModActions {
 // ---------------------------------------------------------------------------------------
 // Functions:
 // ----------
-async function HandleShiftTimeModExceptions(
-  Interact: StringSelectMenuInteraction<"cached"> | ModalSubmitInteraction<"cached">,
-  ShiftDoc: ExtraTypings.HydratedShiftDocument,
-  Err: any
-) {
-  if (Err instanceof AppError && Err.is_showable) {
-    return new ErrorEmbed().useErrClass(Err).replyToInteract(Interact, true, true);
-  }
 
-  await new ErrorEmbed().useErrTemplate("AppError").replyToInteract(Interact, true, true);
-  AppLogger.error({
-    label: FileLabel,
-    message: "Failed to reset shift on-duty time.",
-    shift: ShiftDoc.toObject({ getters: true }),
-    interact: Interact,
-    stack: Err.stack,
-    details: {
-      ...Err,
-    },
-  });
+/**
+ * Necessary administration buttons.
+ * Currently, users can't start shifts or do breaks on other users' behalf.
+ * @param ShiftActive
+ * @param Interaction
+ * @returns
+ */
+function GetButtonActionRows(
+  ShiftActive: ExtraTypings.HydratedShiftDocument | boolean | null,
+  Interaction: SlashCommandInteraction<"cached"> | ButtonInteraction<"cached">
+) {
+  const ActionRowOne = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId("da-list")
+      .setLabel("List")
+      .setDisabled(false)
+      .setEmoji(Emojis.HamburgerList)
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId("da-modify")
+      .setLabel("Modify")
+      .setDisabled(false)
+      .setEmoji(Emojis.FileEdit)
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId("da-wipe")
+      .setLabel("Wipe Shifts")
+      .setDisabled(false)
+      .setEmoji(Emojis.Trash)
+      .setStyle(ButtonStyle.Danger)
+  ) as ActionRowBuilder<ButtonBuilder & { data: { custom_id: string } }>;
+
+  const ActionRowTwo = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId("da-start")
+      .setLabel("Start")
+      .setDisabled(true)
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId("da-break")
+      .setLabel("Break")
+      .setDisabled(true)
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId("da-end")
+      .setLabel("End")
+      .setDisabled(!ShiftActive)
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId("da-delete")
+      .setLabel("Delete")
+      .setDisabled(false)
+      .setEmoji(Emojis.FileDelete)
+      .setStyle(ButtonStyle.Danger)
+  ) as ActionRowBuilder<ButtonBuilder & { data: { custom_id: string } }>;
+
+  // Set custom Ids for each button for future usage outside of the main cmd callback function.
+  ActionRowOne.components.forEach((Comp) =>
+    Comp.setCustomId(`${Comp.data.custom_id}:${Interaction.user.id}:${Interaction.guildId}`)
+  );
+
+  ActionRowTwo.components.forEach((Comp) =>
+    Comp.setCustomId(`${Comp.data.custom_id}:${Interaction.user.id}:${Interaction.guildId}`)
+  );
+
+  return [ActionRowOne, ActionRowTwo];
 }
 
 function GetTimeModificationModal(
@@ -92,12 +148,36 @@ function GetTimeModificationModal(
         new TextInputBuilder()
           .setCustomId("da-st-mod-input")
           .setLabel(`Shift Time To ${ActionType}`)
-          .setPlaceholder("E.g., 1 hour, and 34 minutes...")
           .setStyle(TextInputStyle.Short)
           .setMinLength(2)
           .setMaxLength(25)
+          .setPlaceholder(
+            TimeModPlaceholders[Math.floor(Math.random() * TimeModPlaceholders.length)]
+          )
       )
     );
+}
+
+async function HandleShiftTimeModExceptions(
+  Interact: StringSelectMenuInteraction<"cached"> | ModalSubmitInteraction<"cached">,
+  ShiftDoc: ExtraTypings.HydratedShiftDocument,
+  Err: any
+) {
+  if (Err instanceof AppError && Err.is_showable) {
+    return new ErrorEmbed().useErrClass(Err).replyToInteract(Interact, true, true);
+  }
+
+  await new ErrorEmbed().useErrTemplate("AppError").replyToInteract(Interact, true, true);
+  AppLogger.error({
+    label: FileLabel,
+    message: "Failed to modify shift time;",
+    shift: ShiftDoc.toObject({ getters: true }),
+    interact: Interact,
+    stack: Err.stack,
+    details: {
+      ...Err,
+    },
+  });
 }
 
 /**
@@ -161,7 +241,7 @@ async function HandleShiftTimeSet(
       ShiftActionLogger.LogShiftTimeSet(ModalSubmission, ShiftDocument, UpdatedDoc),
       new SuccessEmbed()
         .setDescription(
-          `Successfully set the shift's on-duty time to ${HumanizeDuration(RoundedDuration)}.`
+          `Successfully set the shift's on-duty time to ${HumanizeDuration(UpdatedDoc.durations.on_duty)}.`
         )
         .replyToInteract(ModalSubmission, true),
     ]);
@@ -301,12 +381,9 @@ async function PromptShiftModification(
 }
 
 /**
- * For shift modifications.
- * Not planned to be used yet & needs to be completed.
- * @param TargetUser
- * @param Interaction
- * @param ShiftType
- * @param ActiveShift
+ * Handles modification logic to selected shifts.
+ * @param Interaction - The button interaction that triggered the function.
+ * @param TargetUser - The user whose shift is being modified.
  */
 async function HandleShiftModifications(
   Interaction: ButtonInteraction<"cached">,
@@ -320,6 +397,7 @@ async function HandleShiftModifications(
     },
   }));
 
+  const CurrLastBtn = IsShiftActive ? "Current" : "Last";
   const RespEmbed = new EmbedBuilder()
     .setColor(Colors.Greyple)
     .setTitle("Shift Modifier")
@@ -327,9 +405,9 @@ async function HandleShiftModifications(
 
   const ButtonsActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
-      .setCustomId("da-modify-curr")
-      .setLabel("Select Current Shift")
-      .setDisabled(!IsShiftActive)
+      .setCustomId(`da-modify-${CurrLastBtn.toLowerCase()}`)
+      .setLabel(`Select ${CurrLastBtn} Shift`)
+      .setDisabled(false)
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId("da-modify-id")
@@ -352,7 +430,7 @@ async function HandleShiftModifications(
   });
 
   CompCollector.on("collect", async (ButtonInteract) => {
-    if (ButtonInteract.customId === "da-modify-curr") {
+    if (ButtonInteract.customId === "da-modify-current") {
       await ButtonInteract.deferUpdate();
       const ActiveShift = await GetShiftActive({
         UserOnly: true,
@@ -370,6 +448,25 @@ async function HandleShiftModifications(
 
       CompCollector.stop();
       return PromptShiftModification(ButtonInteract, ActiveShift);
+    }
+
+    if (ButtonInteract.customId === "da-modify-last") {
+      await ButtonInteract.deferUpdate();
+      const LastShift = await ShiftModel.findOne({
+        guild: Interaction.guildId,
+        user: TargetUser.id,
+      })
+        .sort({ start_timestamp: -1 })
+        .exec();
+
+      if (!LastShift) {
+        return new ErrorEmbed()
+          .useErrTemplate("NoRecentShifts")
+          .replyToInteract(ButtonInteract, true, false, "reply");
+      }
+
+      CompCollector.stop();
+      return PromptShiftModification(ButtonInteract, LastShift);
     }
 
     const ShiftIdModal = new ModalBuilder()
@@ -398,6 +495,7 @@ async function HandleShiftModifications(
     }).catch(() => null);
 
     const ShiftId = ModalSubmission?.fields.getTextInputValue("da-modify-id");
+    if (!ModalSubmission) return;
     if (!ShiftId || !IsValidShiftId(ShiftId)) {
       return new ErrorEmbed()
         .useErrTemplate("InvalidShiftId")
@@ -415,30 +513,11 @@ async function HandleShiftModifications(
     return PromptShiftModification(ModalSubmission, ShiftFound);
   });
 
-  CompCollector.on("end", async (Collected, EndReason) => {
+  CompCollector.on("end", async (_, EndReason) => {
     CompCollector.removeAllListeners();
     if (EndReason.match(/\w+Delete/)) return;
-    try {
-      if (EndReason === "time") {
-        ButtonsActionRow.components.forEach((Button) => Button.setDisabled(true));
-        await Message.edit({ components: [ButtonsActionRow] });
-      }
-    } catch (Err: any) {
-      AppLogger.error({
-        message: "An error occurred while modifying a shift.",
-        label: "Commands:Miscellaneous:DutyManage",
-        user_id: Interaction.user.id,
-        guild_id: Interaction.guildId,
-        stack: Err.stack,
-        details: {
-          ...Err,
-        },
-      });
-
-      return new ErrorEmbed()
-        .useErrTemplate("AppError")
-        .replyToInteract(Collected.last() ?? Interaction, true, true, "reply");
-    }
+    ButtonsActionRow.components.forEach((Button) => Button.setDisabled(true));
+    await Message.edit({ components: [ButtonsActionRow] }).catch(() => null);
   });
 }
 
@@ -453,7 +532,7 @@ async function WipeUserShifts(
   TargetUserId: string,
   GuildId: string,
   ShiftType?: Nullable<string>
-): Promise<Mongoose.mongo.DeleteResult & { allTime: number }> {
+): Promise<Mongoose.mongo.DeleteResult & { totalTime: number }> {
   const QueryFilter = {
     guild: GuildId,
     user: TargetUserId,
@@ -468,15 +547,15 @@ async function WipeUserShifts(
 
   if (TData[0]?.totalTime === 0) {
     return {
-      allTime: 0,
+      totalTime: 0,
       acknowledged: true,
       deletedCount: 0,
     };
   }
 
   return ShiftModel.deleteMany(QueryFilter).then((DResult: any) => {
-    DResult.allTime = TData[0]?.totalTime ?? 0;
-    return DResult as Mongoose.mongo.DeleteResult & { allTime: number };
+    DResult.totalTime = TData[0]?.totalTime ?? 0;
+    return DResult as Mongoose.mongo.DeleteResult & { totalTime: number };
   });
 }
 
@@ -531,7 +610,9 @@ async function GetPaginatedShifts(TargetUser: User, GuildId: string, ShiftType?:
         },
         duration: {
           $add: [
-            "$durations.on_duty_mod",
+            {
+              $ifNull: ["$durations.on_duty_mod", 0],
+            },
             {
               $cond: [
                 {
@@ -609,93 +690,29 @@ async function GetPaginatedShifts(TargetUser: User, GuildId: string, ShiftType?:
         typeof Data.ended === "string"
           ? Data.ended
           : FormatTime(Math.round(Data.started / 1000), "T");
+
       return Dedent(`
-        **Shift ID:** \`${Data._id}\`
-        **Shift Duration:** ${HumanizeDuration(Data.duration)}
-        **Shift Started:** ${Started}
-        **Shift Ended:** ${Ended}
+        - **Shift ID:** \`${Data._id}\`
+          - **Duration:** ${HumanizeDuration(Data.duration)}
+          - **Started:** ${Started}
+          - **Ended:** ${Ended}
       `);
     }).join("\n\n");
 
+    const FooterAppend = ShiftType ? `type: ${ShiftType}` : "all shift types";
     return new InfoEmbed()
       .setDescription(EmbedDescription)
       .setThumbnail(null)
       .setTimestamp()
       .setTitle("Recorded Shifts")
-      .setFooter({ text: `Showing Records for Type: ${ShiftType ?? "All shift types"}` })
+      .setFooter({
+        text: `Showing records for ${FooterAppend}`,
+      })
       .setAuthor({
-        name: TargetUser.username,
-        iconURL: TargetUser.avatarURL() || undefined,
+        name: `@${TargetUser.username}`,
+        iconURL: TargetUser.displayAvatarURL({ size: 128 }),
       });
   });
-}
-
-/**
- * Necessary administration buttons.
- * Currently, users can't start shifts or do breaks on other users' behalf.
- * @param ShiftActive
- * @param Interaction
- * @returns
- */
-function GetButtonActionRows(
-  ShiftActive: ExtraTypings.HydratedShiftDocument | boolean | null,
-  Interaction: SlashCommandInteraction<"cached"> | ButtonInteraction<"cached">
-) {
-  const ActionRowOne = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder()
-      .setCustomId("da-list")
-      .setLabel("List")
-      .setDisabled(false)
-      .setEmoji(Emojis.HamburgerList)
-      .setStyle(ButtonStyle.Success),
-    new ButtonBuilder()
-      .setCustomId("da-modify")
-      .setLabel("Modify")
-      .setDisabled(false)
-      .setEmoji(Emojis.FileEdit)
-      .setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder()
-      .setCustomId("da-wipe")
-      .setLabel("Wipe Shifts")
-      .setDisabled(false)
-      .setEmoji(Emojis.Trash)
-      .setStyle(ButtonStyle.Danger)
-  ) as ActionRowBuilder<ButtonBuilder & { data: { custom_id: string } }>;
-
-  const ActionRowTwo = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder()
-      .setCustomId("da-start")
-      .setLabel("Start")
-      .setDisabled(true)
-      .setStyle(ButtonStyle.Success),
-    new ButtonBuilder()
-      .setCustomId("da-break")
-      .setLabel("Break")
-      .setDisabled(true)
-      .setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder()
-      .setCustomId("da-end")
-      .setLabel("End")
-      .setDisabled(!ShiftActive)
-      .setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder()
-      .setCustomId("da-delete")
-      .setLabel("Delete")
-      .setDisabled(false)
-      .setEmoji(Emojis.FileDelete)
-      .setStyle(ButtonStyle.Danger)
-  ) as ActionRowBuilder<ButtonBuilder & { data: { custom_id: string } }>;
-
-  // Set custom Ids for each button for future usage outside of the main cmd callback function.
-  ActionRowOne.components.forEach((Comp) =>
-    Comp.setCustomId(`${Comp.data.custom_id}:${Interaction.user.id}:${Interaction.guildId}`)
-  );
-
-  ActionRowTwo.components.forEach((Comp) =>
-    Comp.setCustomId(`${Comp.data.custom_id}:${Interaction.user.id}:${Interaction.guildId}`)
-  );
-
-  return [ActionRowOne, ActionRowTwo];
 }
 
 /**
@@ -743,29 +760,67 @@ async function HandleUserShiftsWipe(
       .setCustomId(`da-wipe-confirm:${BInteract.user.id}:${BInteract.guildId}:${TargetUser.id}`)
       .setEmoji(Emojis.Warning)
       .setLabel("Confirm and Wipe")
-      .setStyle(ButtonStyle.Danger)
+      .setStyle(ButtonStyle.Danger),
+    new ButtonBuilder()
+      .setCustomId(`da-wipe-cancel:${BInteract.user.id}:${BInteract.guildId}:${TargetUser.id}`)
+      .setLabel("Cancel Shift Wipe")
+      .setStyle(ButtonStyle.Secondary)
   );
 
   const PromptEmbed = new WarnEmbed()
     .setTitle("Shift Data Reset")
     .setDescription(
-      `Are you certain you want to delete/wipe all active and recorded shifts of ${EDSType} type(s) for <@${TargetUser.id}>?\n\n` +
+      `Are you certain you want to delete and wipe all active and recorded shifts of ${EDSType} type(s) for <@${TargetUser.id}>?\n\n` +
         "**Note:** This is an ***irrevocable*** action, and erased data cannot be recovered."
     );
 
   const ConfirmationPrompt = await BInteract.reply({
+    fetchReply: true,
     components: [ButtonAR],
     embeds: [PromptEmbed],
   });
 
-  const Confirmation = await ConfirmationPrompt.awaitMessageComponent({
-    filter: (BI) => HandleCollectorFiltering(BInteract, BI),
-    componentType: ComponentType.Button,
-    time: 5 * 60_000,
-  }).catch(async (Err: any) => {
+  try {
+    const ConfirmationInteract = await ConfirmationPrompt.awaitMessageComponent({
+      filter: (BI) => HandleCollectorFiltering(BInteract, BI),
+      componentType: ComponentType.Button,
+      time: 5 * 60_000,
+    });
+
+    if (!ConfirmationInteract.customId.startsWith("da-wipe-confirm")) {
+      return new InfoEmbed()
+        .setTitle("Shift Wipe Cancelled")
+        .setDescription("Shift wipe was cancelled, and no modifications were made.")
+        .replyToInteract(BInteract, true, false, "editReply");
+    }
+
+    await ConfirmationInteract.deferUpdate();
+    const WipeResult = await WipeUserShifts(TargetUser.id, BInteract.guildId, ShiftType);
+    let WipeEmbed = new SuccessEmbed()
+      .setTimestamp(ConfirmationInteract.createdAt)
+      .setDescription(null)
+      .setTitle("Member Shifts Wiped")
+      .setFields({
+        name: "Wipe Details:",
+        value: Dedent(`
+          **Member:** <@${TargetUser.id}>
+          **Wiped Shifts:** [${WipeResult.deletedCount}](${channelLink(ConfirmationInteract.channelId)})
+          **On-Duty Time Erased:** ${HumanizeDuration(WipeResult.totalTime)}
+        `),
+      });
+
+    if (WipeResult.deletedCount === 0) {
+      WipeEmbed = new InfoEmbed().useInfoTemplate("NoShiftsWipedFU");
+    }
+
+    return Promise.allSettled([
+      ShiftActionLogger.LogShiftsWipe(ConfirmationInteract, WipeResult, ShiftType, TargetUser),
+      BInteract.editReply({ components: [], embeds: [WipeEmbed] }),
+    ]);
+  } catch (Err: any) {
     if (Err.message.match(/reason: time/)) {
       ButtonAR.components[0].setDisabled(true);
-      await ConfirmationPrompt.edit({ components: [ButtonAR] }).catch((Err) => {
+      await BInteract.editReply({ components: [ButtonAR] }).catch((Err) => {
         if (Err.code === 50_001) return;
         throw Err;
       });
@@ -774,33 +829,7 @@ async function HandleUserShiftsWipe(
     } else {
       throw Err;
     }
-  });
-
-  // Disregard if the user did not confirm or the collector timed out.
-  if (!Confirmation?.customId.startsWith("da-wipe-confirm")) {
-    return;
   }
-
-  await Confirmation.deferUpdate();
-  const WipeResult = await WipeUserShifts(TargetUser.id, BInteract.guildId, ShiftType);
-  let WipeEmbed = new SuccessEmbed()
-    .setTimestamp(Confirmation.createdAt)
-    .setDescription(null)
-    .setTitle("User Shifts Wiped")
-    .setFields({
-      name: "Wipe Details:",
-      value: Dedent(`
-          **User:** <@${TargetUser.id}>
-          **Total Wiped Shifts:** \`${WipeResult.deletedCount}\`
-          **Total On-Duty Time Erased:** ${HumanizeDuration(WipeResult.allTime)}
-        `),
-    });
-
-  if (WipeResult.deletedCount === 0) {
-    WipeEmbed = new InfoEmbed().useInfoTemplate("NoShiftsWipedFU");
-  }
-
-  return ConfirmationPrompt.edit({ components: [], embeds: [WipeEmbed] });
 }
 
 /**
@@ -925,8 +954,8 @@ async function HandleUserShiftDelete(BInteract: ButtonInteraction<"cached">, Tar
     );
   }
 
-  return Promise.all([
-    ShiftFound.deleteOne(),
+  await ShiftFound.deleteOne();
+  return Promise.allSettled([
     ShiftActionLogger.LogShiftDelete(BInteract, ShiftFound),
     new SuccessEmbed()
       .setTitle("Shift Deleted")
@@ -935,9 +964,9 @@ async function HandleUserShiftDelete(BInteract: ButtonInteraction<"cached">, Tar
   ]);
 }
 
-/**
- * @param Interaction
- */
+// ---------------------------------------------------------------------------------------
+// Initial Logic:
+// --------------
 async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const CmdShiftType = Interaction.options.getString("type", false);
   const TargetUser = Interaction.options.getUser("member", true);
@@ -1113,6 +1142,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
 // Command structure:
 // ------------------
 const CommandObject = {
+  callback: Callback,
   data: new SlashCommandSubcommandBuilder()
     .setName("admin")
     .setDescription("Manage and administer the duty shift of somebody else.")
@@ -1129,8 +1159,6 @@ const CommandObject = {
         .setRequired(false)
         .setAutocomplete(true)
     ),
-
-  callback: Callback,
 };
 
 // ---------------------------------------------------------------------------------------
