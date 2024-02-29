@@ -3,7 +3,11 @@ import AppLogger from "@Utilities/Classes/AppLogger.js";
 import AppError from "@Utilities/Classes/AppError.js";
 import Mongoose from "mongoose";
 const NonFatalDiscordAPIErrors: DiscordAPIError["code"][] = [10_062, 40_060, 50_001, 50_035];
-const NonFatalErrorNames = ["InteractionNotReplied", "ModalSubmitInteractionFieldNotFound"];
+const NonFatalErrorNames = [
+  "InteractionNotReplied",
+  "InteractionAlreadyReplied",
+  "ModalSubmitInteractionFieldNotFound",
+];
 
 export default function ErrorHandler() {
   process.on("uncaughtException", (Err) => {
