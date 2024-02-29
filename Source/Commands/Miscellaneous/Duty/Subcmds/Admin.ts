@@ -67,10 +67,9 @@ enum ShiftModActions {
 // ---------------------------------------------------------------------------------------
 // Functions:
 // ----------
-
 /**
  * Necessary administration buttons.
- * Currently, users can't start shifts or do breaks on other users' behalf.
+ * Currently, none shall be able to start shifts or do breaks on other users' behalf.
  * @param ShiftActive
  * @param Interaction
  * @returns
