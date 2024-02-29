@@ -26,6 +26,7 @@ export type NavButtonsActionRow = ActionRowBuilder<
  * @param Interaction - The command interaction initiated the execution.
  * @param [TotalPages=1] - The total number of pages could be shown; defaults to `1`.
  * @param [AddUniqueIds=false] - Should the function add an additional unique identifier to the end of the buttons' custom ids?
+ * @param [EnablePageSelect=false] - Should the function enable the page number button?
  * @returns A DiscordJS ActionRow instance that contains five predefined navigation buttons as the following:
  * - All disabled buttons;
  * - All primary buttons except the page number button;
@@ -34,7 +35,8 @@ export type NavButtonsActionRow = ActionRowBuilder<
 export default function GetPredefinedNavButtons(
   Interaction: SlashCommandInteraction | ButtonInteraction,
   TotalPages: number = 1,
-  AddUniqueIds: boolean = false
+  AddUniqueIds: boolean = false,
+  EnablePageSelect: boolean = false
 ) {
   const ARInstance = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -51,7 +53,7 @@ export default function GetPredefinedNavButtons(
       .setCustomId("current")
       .setLabel("Page: 1/" + TotalPages)
       .setStyle(ButtonStyle.Secondary)
-      .setDisabled(true),
+      .setDisabled(!EnablePageSelect),
     new ButtonBuilder()
       .setCustomId("next")
       .setEmoji(Emojis.NavNext)

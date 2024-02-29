@@ -1,3 +1,5 @@
+import { RandomString } from "@Utilities/Strings/Random.js";
+import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import {
   InteractionResponse,
   ButtonInteraction,
@@ -5,6 +7,10 @@ import {
   ComponentType,
   EmbedBuilder,
   Message,
+  ModalBuilder,
+  TextInputStyle,
+  ActionRowBuilder,
+  TextInputBuilder,
 } from "discord.js";
 
 import AppLogger from "@Utilities/Classes/AppLogger.js";
@@ -12,6 +18,7 @@ import GetPredefinedNavButtons from "./GetNavButtons.js";
 import HandleCollectorFiltering from "./HandleCollectorFilter.js";
 const Clamp = (Value: number, Min: number, Max: number) => Math.min(Math.max(Value, Min), Max);
 
+// ---------------------------------------------------------------------------------------
 /**
  * Handles the pagination process for a given embeds array.
  * @notice Some bugs may appear if not using the `fetchReply: true` field in message options.
@@ -26,7 +33,7 @@ export default async function HandleEmbedPagination(
   Context?: string
 ): Promise<void> {
   let CurrPageIndex = 0;
-  const NavigationButtons = GetPredefinedNavButtons(Interact, Pages.length, true);
+  const NavigationButtons = GetPredefinedNavButtons(Interact, Pages.length, true, true);
   const ReplyMethod = Interact.deferred ? "editReply" : Interact.replied ? "followUp" : "reply";
   const ResponseMessage: Message | InteractionResponse = await Interact[ReplyMethod as any]({
     components: Pages.length > 1 ? [NavigationButtons] : undefined,
@@ -34,7 +41,7 @@ export default async function HandleEmbedPagination(
     embeds: [Pages[0]],
   });
 
-  // Do not paginate if there is only one page.
+  // Do not paginate if there is only one page received.
   if (Pages.length === 1) return;
   const ComponentCollector = ResponseMessage.createMessageComponentCollector({
     filter: (Btn) => HandleCollectorFiltering(Interact, Btn),
@@ -43,24 +50,33 @@ export default async function HandleEmbedPagination(
   });
 
   ComponentCollector.on("collect", async (NavInteraction: ButtonInteraction<"cached">) => {
-    let NewPageIndex: number;
-    await NavInteraction.deferUpdate();
-    switch (NavInteraction.customId.split(":")[0]) {
-      case "nav-next":
-        NewPageIndex = Clamp(CurrPageIndex + 1, 0, Pages.length);
-        break;
-      case "nav-prev":
-        NewPageIndex = Clamp(CurrPageIndex - 1, 0, Pages.length);
-        break;
-      case "nav-last":
-        NewPageIndex = Pages.length - 1;
-        break;
-      case "nav-first":
-      default:
-        NewPageIndex = 0;
-        break;
+    let NewPageIndex: number = -1;
+    if (NavInteraction.customId.includes("current")) {
+      const SPNum = await HandlePageSelection(Pages, CurrPageIndex, NavInteraction);
+      if (SPNum) NewPageIndex = SPNum;
+      else return;
     }
 
+    if (NewPageIndex === -1) {
+      await NavInteraction.deferUpdate();
+      switch (NavInteraction.customId.split(":")[0]) {
+        case "nav-next":
+          NewPageIndex = Clamp(CurrPageIndex + 1, 0, Pages.length);
+          break;
+        case "nav-prev":
+          NewPageIndex = Clamp(CurrPageIndex - 1, 0, Pages.length);
+          break;
+        case "nav-last":
+          NewPageIndex = Pages.length - 1;
+          break;
+        case "nav-first":
+        default:
+          NewPageIndex = 0;
+          break;
+      }
+    }
+
+    if (NewPageIndex === CurrPageIndex) return;
     NavigationButtons.updateButtons(
       {
         first: NewPageIndex !== 0,
@@ -113,4 +129,66 @@ export default async function HandleEmbedPagination(
       });
     }
   });
+}
+
+// ---------------------------------------------------------------------------------------
+// Utility:
+// --------
+async function HandlePageSelection(
+  Pages: EmbedBuilder[],
+  CurrentIndex: number,
+  BtnInteract: ButtonInteraction<"cached">
+): Promise<number | null> {
+  const PageSelectModal = GetPageSelectModal(BtnInteract, Pages.length, CurrentIndex);
+  BtnInteract.showModal(PageSelectModal);
+
+  const ModalSubmission = await BtnInteract.awaitModalSubmit({
+    time: 5 * 60 * 1000,
+    filter: (MS) =>
+      MS.user.id === BtnInteract.user.id && MS.customId === PageSelectModal.data.custom_id,
+  }).catch(() => null);
+
+  if (!ModalSubmission) return null;
+  const InputPageNum = ModalSubmission.fields.getTextInputValue("page-num");
+  const ParsedNumber = Number(InputPageNum);
+
+  if (!InputPageNum.match(/^\d+$/) || !ParsedNumber || ParsedNumber < 1) {
+    await new ErrorEmbed()
+      .useErrTemplate("InvalidPageNumber")
+      .replyToInteract(ModalSubmission, true);
+    return null;
+  }
+
+  if (ParsedNumber > Pages.length) {
+    await new ErrorEmbed().useErrTemplate("PageNotFoundWN").replyToInteract(ModalSubmission, true);
+    return null;
+  }
+
+  await ModalSubmission.deferUpdate();
+  return ParsedNumber - 1;
+}
+
+function GetPageSelectModal(
+  BtnInteract: ButtonInteraction<"cached">,
+  TotalPages: number,
+  CurrPageIndex: number
+) {
+  return new ModalBuilder()
+    .setTitle("Page Selection")
+    .setCustomId(
+      `paginate-page-select:${BtnInteract.user.id}:${BtnInteract.guildId}:${RandomString(3)}`
+    )
+    .setComponents(
+      new ActionRowBuilder<TextInputBuilder>().setComponents(
+        new TextInputBuilder()
+          .setPlaceholder(`Type in a page number between 1 and ${TotalPages}...`)
+          .setLabel("Page Number")
+          .setCustomId("page-num")
+          .setStyle(TextInputStyle.Short)
+          .setRequired(true)
+          .setMinLength(1)
+          .setMaxLength(TotalPages > 9 ? 2 : 1)
+          .setValue(`${CurrPageIndex + 1}`)
+      )
+    );
 }

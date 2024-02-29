@@ -439,6 +439,16 @@ export const ErrorMessages = {
       "There are no recent records for the specified user to display the last shift for.",
   },
 
+  InvalidPageNumber: {
+    Title: "Invalid Page Number",
+    Description: "The value you have entered is not valid for a page number.",
+  },
+
+  PageNotFoundWN: {
+    Title: "Page Not Found",
+    Description: "The page corresponding to the specified number does not exist.",
+  },
+
   /**
    * For nickname searches and replaces
    */
