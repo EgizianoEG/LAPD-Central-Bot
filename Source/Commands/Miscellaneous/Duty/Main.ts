@@ -86,7 +86,7 @@ async function Callback(Client: DiscordClient, Interaction: SlashCommandInteract
           ? (SubCommand.callback as AnySlashCmdCallback)(Client, Interaction)
           : (SubCommand.callback as AnySlashCmdCallback)(Interaction);
       } else {
-        return;
+        continue;
       }
     }
   }

@@ -45,7 +45,7 @@ export default async function GetMainShiftsData(
           $sum: 1,
         },
         total_onduty: {
-          $sum: "$durations.on_duty",
+          $sum: ["$durations.on_duty", { $ifNull: ["$durations.on_duty_mod", 0] }],
         },
         total_onbreak: {
           $sum: "$durations.on_break",

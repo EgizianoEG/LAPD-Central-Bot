@@ -89,13 +89,11 @@ export default async function RegisterCommands(Client: DiscordClient) {
       }
     }
 
+    const GuildRegCmds = await Client.application.commands.fetch({ guildId: Discord.TestGuildId });
+    const TotalRegCmds = Client.application.commands.cache.size;
     AppLogger.info({
       message: "%o slash command(s) %s been registered locally; %o globally deployed.",
-      splat: [
-        Client.commands.size,
-        Client.commands.size > 1 ? "have" : "has ",
-        AppCommands.cache.size,
-      ],
+      splat: [TotalRegCmds, TotalRegCmds > 1 ? "have" : "has ", TotalRegCmds - GuildRegCmds.size],
       label: LogLabel,
     });
   } catch (Err: any) {

@@ -28,7 +28,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
       if (typeof Subcommand.callback === "function") {
         return Subcommand.callback(Interaction);
       } else {
-        break;
+        continue;
       }
     }
   }

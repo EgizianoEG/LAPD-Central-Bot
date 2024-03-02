@@ -72,7 +72,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
       if (typeof Subcommand.callback === "function") {
         return Subcommand.callback(Interaction, UserData);
       } else {
-        break;
+        continue;
       }
     }
   }
