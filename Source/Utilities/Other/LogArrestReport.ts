@@ -33,9 +33,9 @@ export type ReporterInfoType = {
 
 export type ArresteeInfoType = Omit<CmdOptionsType, "Arrestee"> & {
   notes?: string | null;
-  formatted_charges: string;
+  formatted_charges: string[];
   booking_mugshot: string;
-  booking_num: string;
+  booking_num: number;
   roblox_user: {
     display_name: string;
     name: string;
@@ -141,7 +141,7 @@ export default async function LogArrestReport(
       },
       {
         name: "Convicted Charges",
-        value: ArresteeInfo.formatted_charges,
+        value: ArresteeInfo.formatted_charges.join("\n"),
         inline: false,
       },
     ]);

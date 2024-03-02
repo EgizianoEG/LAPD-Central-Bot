@@ -43,7 +43,7 @@ export async function GetFilledCitation<
   // Citation Number
   CitCTX.font = "400 2.4em Bahnschrift";
   CitCTX.fillStyle = "rgba(0, 0, 0, 0.7)";
-  CitCTX.fillText(CitData.num, Width / 1.268, Height / 12.727);
+  CitCTX.fillText(CitData.num.toString(), Width / 1.268, Height / 12.727);
 
   // Change Configuration
   CitCTX.font = "300 1.32em Bahnschrift";

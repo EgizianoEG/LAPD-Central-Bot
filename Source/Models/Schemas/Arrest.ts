@@ -4,8 +4,7 @@ import { Schema } from "mongoose";
 const ArrestSchema = new Schema({
   // Used as the booking number
   _id: {
-    type: String,
-    match: [/^\d+$/i, "The arrest Id/booking number must be a number."],
+    type: Number,
     required: true,
   },
 
@@ -77,11 +76,17 @@ const ArrestSchema = new Schema({
       },
 
       charges: {
-        type: String,
-        trim: true,
         required: true,
-        minLength: 6,
-        maxLength: 1028,
+        type: [
+          {
+            _id: false,
+            type: String,
+            trim: true,
+            required: true,
+            minLength: 6,
+            maxLength: 1028,
+          },
+        ],
       },
     },
   },

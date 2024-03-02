@@ -38,7 +38,7 @@ function CharactersFromSet(CharSet: string | RegExp): string[] {
 export function RandomString(
   Length: number = 10,
   CharSet: string | RegExp = /\w/,
-  NotIn?: string[]
+  NotIn?: (string | number)[]
 ): string {
   if (!Length || !CharSet) return "";
   const AvailableChars = Cache[CharSet.toString()] ?? CharactersFromSet(CharSet);
@@ -50,13 +50,15 @@ export function RandomString(
   }
 
   const Joined = Randomized.join("");
-  if (NotIn) {
+  if (NotIn?.length) {
+    NotIn = NotIn.map((V) => V.toString());
     if (NotIn.includes(Joined)) {
       return RandomString(Length, CharSet, NotIn);
     } else {
       return Joined;
     }
   }
+
   return Joined;
 }
 

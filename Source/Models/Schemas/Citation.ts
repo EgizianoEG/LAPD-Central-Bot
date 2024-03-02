@@ -30,8 +30,8 @@ const CitationSchema = new Schema<CitationPlainDoc, CitationModelType>({
   },
 
   num: {
-    type: String,
-    match: /^\d+$/,
+    min: 0,
+    type: Number,
     required: true,
   },
 

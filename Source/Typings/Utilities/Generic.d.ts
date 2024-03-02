@@ -8,7 +8,7 @@ export namespace Citations {
   type CitationType = "Warning" | "Fine";
   interface WarningCitationData {
     /** Citation number */
-    num: string;
+    num: number;
 
     /** Date of violation or citation issuing date */
     dov: string;

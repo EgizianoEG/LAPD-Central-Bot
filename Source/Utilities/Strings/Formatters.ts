@@ -561,10 +561,10 @@ export function AddTrafficViolationCodes(
  * @param Input - The input charges text to format and formalize.
  * @returns A formatted and number listed charges with its penal codes.
  */
-export function FormatCharges(Input: string): string {
+export function FormatCharges(Input: string): string[] {
   const Titled = TitleCase(Input, true);
   const Listed = ListCharges(Titled, true, true);
-  return AddStatutes(Listed).join("\n");
+  return AddStatutes(Listed);
 }
 
 /**

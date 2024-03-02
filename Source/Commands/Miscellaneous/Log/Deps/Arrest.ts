@@ -64,7 +64,7 @@ export type CmdOptionsType = {
  */
 function GetBookingNumber(ArrestRecords: ExtraTypings.ArrestRecord[]) {
   const RecordedBookingNums = ArrestRecords.map((Record) => Record._id);
-  return RandomString(4, /\d/, RecordedBookingNums);
+  return Number(RandomString(4, /\d/, RecordedBookingNums));
 }
 
 /**
@@ -238,7 +238,7 @@ async function OnChargesModalSubmission(
       },
       {
         name: "Convicted Charges",
-        value: FCharges,
+        value: FCharges.join("\n"),
         inline: false,
       },
     ]);

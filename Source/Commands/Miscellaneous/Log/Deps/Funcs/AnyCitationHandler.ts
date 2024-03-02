@@ -167,14 +167,16 @@ export default async function AnyCitationCallback(
 // ------------------------
 /**
  * Generates a random string of 5 characters, consisting of digits, based on a list of recorded citation numbers.
- * @param {{ num: string }[]} RecordedCits - An array of objects, where each object has a property "num" that represents a recorded citation number.
+ * @param {{ num: number }[]} RecordedCits - An array of objects, where each object has a property "num" that represents a recorded citation number.
  * @returns a randomly generated string of length `5`, consisting of digits, based on the input parameter.
  */
-function GenerateCitationNumber(RecordedCits: { num: string }[]): string {
-  return RandomString(
-    5,
-    /\d/,
-    RecordedCits.map((RCit) => RCit.num)
+function GenerateCitationNumber(RecordedCits: { num: number }[]): number {
+  return Number(
+    RandomString(
+      5,
+      /\d/,
+      RecordedCits.map((RCit) => RCit.num)
+    )
   );
 }
 
