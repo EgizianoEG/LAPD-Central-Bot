@@ -2,7 +2,7 @@ import type * as DiscordJSMask from "discord.js";
 import type * as MongooseMask from "mongoose";
 import type * as UtilityTypesMask from "utility-types";
 import type { ScheduleOptions } from "node-cron";
-import type { ExtraTypings } from "./Utilities/Database.js";
+import type { GeneralTypings } from "./Utilities/Generic.d.ts";
 import type {
   SlashCommandSubcommandsOnlyBuilder,
   SlashCommandSubcommandBuilder,
@@ -113,10 +113,11 @@ declare global {
      */
     user_perms?:
       | PermissionResolvable[]
-      | UtilityTypesMask.DeepPartial<ExtraTypings.UserPermissionsConfig>
+      | UtilityTypesMask.DeepPartial<GeneralTypings.UserPermissionsConfig>
       | Record<
           "$all_other" | "$other_cmds" | "$all" | "$other" | string,
-          UtilityTypesMask.DeepPartial<ExtraTypings.UserPermissionsConfig> | PermissionResolvable[]
+          | UtilityTypesMask.DeepPartial<GeneralTypings.UserPermissionsConfig>
+          | PermissionResolvable[]
         >;
 
     /**
