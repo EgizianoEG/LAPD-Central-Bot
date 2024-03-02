@@ -23,7 +23,7 @@ export default async function LogTrafficCitation(
   CitationType: Citations.CitationType,
   CachedInteract: SlashCommandInteraction<"cached">,
   GuildDocument: HydratedDocumentFromSchema<typeof GuildModel.schema>,
-  CitationData: Citations.AnyCitationData,
+  CitationData: Omit<Citations.AnyCitationData, "img_url">,
   CitationImg: string | Buffer
 ) {
   let CitationImgURL: string;

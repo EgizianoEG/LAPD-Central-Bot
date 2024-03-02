@@ -27,7 +27,9 @@ export async function GetFilledCitation<
   AsURL extends boolean | undefined = undefined,
 >(
   CitType: Type,
-  CitData: Type extends "Warning" ? Citations.WarningCitationData : Citations.FineCitationData,
+  CitData: Type extends "Warning"
+    ? Omit<Citations.WarningCitationData, "img_url">
+    : Omit<Citations.FineCitationData, "img_url">,
   ReturnAsURL?: boolean
 ): Promise<
   AsURL extends true ? string : AsURL extends false | undefined ? Buffer : Buffer | string

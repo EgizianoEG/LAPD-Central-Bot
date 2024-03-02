@@ -375,7 +375,7 @@ async function OnModalSubmission(
     })
     .match(/(?<time>[\d:]+) (?<day_period>\w+)/);
 
-  const CitationFullData: Citations.AnyCitationData = {
+  const CitationFullData: Omit<Citations.AnyCitationData, "img_url"> = {
     dov: DateInfo!.groups!.date,
     tov: TimeInfo!.groups!.time,
     dow: WeekDayToNum(DateInfo!.groups!.dow),

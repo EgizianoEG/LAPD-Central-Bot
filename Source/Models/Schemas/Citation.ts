@@ -25,8 +25,7 @@ const CitationSchema = new Schema<CitationPlainDoc, CitationModelType>({
 
   img_url: {
     type: String,
-    default: null,
-    required: false,
+    required: true,
   },
 
   num: {

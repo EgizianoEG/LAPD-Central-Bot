@@ -1,3 +1,4 @@
+import { ImgBB } from "@Typings/Utilities/APIResponses.js";
 import { Other } from "@Config/Secrets.js";
 import Axios from "axios";
 
@@ -11,12 +12,12 @@ export default async function UploadToImgBB(Img: Buffer, ImgName?: string): Prom
   const Payload = new FormData();
   Payload.append("image", Img.toString("base64"));
 
-  return Axios.post("https://api.imgbb.com/1/upload", Payload, {
+  return Axios.post<ImgBB.ImageUpload>("https://api.imgbb.com/1/upload", Payload, {
     params: {
       key: Other.ImgBB_API_Key,
       name: ImgName,
     },
   })
-    .then((Resp) => Resp.data?.data?.display_url)
+    .then((Resp) => Resp.data?.data.display_url || null)
     .catch(() => null);
 }
