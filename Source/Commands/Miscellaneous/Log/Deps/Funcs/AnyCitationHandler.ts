@@ -29,9 +29,9 @@ import {
   IsValidRobloxUsername,
 } from "@Utilities/Other/Validators.js";
 
-import { CitationImgDimensions, GetFilledCitation } from "@Utilities/Other/GetFilledCitation.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { EyeColors, HairColors } from "@Resources/ERLCPDColors.js";
+import { GetFilledCitation } from "@Utilities/Other/GetFilledCitation.js";
 import { AllVehicleModels } from "@Resources/ERLCVehicles.js";
 import { ReporterInfo } from "../../Log.js";
 import { RandomString } from "@Utilities/Strings/Random.js";
@@ -40,7 +40,6 @@ import { Citations } from "@Typings/Utilities/Generic.js";
 import { Vehicles } from "@Typings/Resources.js";
 
 import HandleActionCollectorExceptions from "@Utilities/Other/HandleCompCollectorExceptions.js";
-import GetPlaceholderImgURL from "@Utilities/Other/GetPlaceholderImg.js";
 import LogTrafficCitation from "@Utilities/Other/LogCitation.js";
 import GetIdByUsername from "@Utilities/Roblox/GetIdByUsername.js";
 import BrickColors from "@Resources/BrickColors.js";
@@ -450,16 +449,12 @@ async function OnModalSubmission(
     await ButtonResponse.deferUpdate();
 
     if (ButtonResponse.customId === "confirm-citation") {
-      const CitationImgURL =
-        ConfirmationMsg.attachments.first()?.url ??
-        GetPlaceholderImgURL(`${CitationImgDimensions.Width}x${CitationImgDimensions.Height}`, "?");
-
       const MainLogMsgLink = await LogTrafficCitation(
         CitationType,
         CmdInteract,
         GuildDoc,
         CitationFullData,
-        CitationImgURL
+        CitationImgBuffer
       );
 
       const CEDescription = Dedent(`
