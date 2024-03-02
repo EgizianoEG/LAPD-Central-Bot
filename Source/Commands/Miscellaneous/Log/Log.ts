@@ -2,18 +2,18 @@
 // Dependencies:
 // -------------
 
-import { SlashCommandBuilder, AutocompleteInteraction } from "discord.js";
-import { ErrorMessages } from "@Resources/AppMessages.js";
-import { ExtraTypings } from "@Typings/Utilities/Database.js";
+import { Shifts } from "@Typings/Utilities/Database.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { ErrorMessages } from "@Resources/AppMessages.js";
+import { SlashCommandBuilder, AutocompleteInteraction } from "discord.js";
 
 import AutocompleteUsername from "@Utilities/Autocompletion/Username.js";
 import AutocompleteVehicle from "@Utilities/Autocompletion/Vehicle.js";
 import AutocompleteHeight from "@Utilities/Autocompletion/Height.js";
 import AutocompleteWeight from "@Utilities/Autocompletion/Weight.js";
 import AutocompleteColor from "@Utilities/Autocompletion/Color.js";
-import GetRobloxUserLinked from "@Utilities/Database/IsUserLoggedIn.js";
 import GetShiftActive from "@Utilities/Database/GetShiftActive.js";
+import GetRobloxUserLinked from "@Utilities/Database/IsUserLoggedIn.js";
 
 const Subcommands = [
   (await import("./Deps/CitFine.js")).default,
@@ -121,6 +121,6 @@ const CommandObject: SlashCommandObject<any> = {
 // ---------------------------------------------------------------------------------------
 export default CommandObject;
 export interface ReporterInfo {
-  ActiveShift: ExtraTypings.HydratedShiftDocument | null;
+  ActiveShift: Shifts.HydratedShiftDocument | null;
   RobloxUserId: number;
 }

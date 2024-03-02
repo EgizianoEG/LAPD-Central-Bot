@@ -113,9 +113,3 @@ export namespace Secrets {
     lon: number | string;
   }
 }
-
-declare global {
-  namespace Config {
-    type Secrets = Secrets.Config;
-  }
-}

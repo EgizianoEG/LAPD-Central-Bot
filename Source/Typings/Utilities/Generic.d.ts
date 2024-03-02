@@ -123,6 +123,28 @@ export namespace Citations {
   }
 }
 
+export namespace GeneralTypings {
+  /** Bot (application) or guild management/staff permissions.
+   * If a boolean value given to a parent property, it acts like logical OR
+   * meaning that if the object is `{ management: true }`; then the check will succeed
+   * if the user has one of the permissions for management (guild scope or app scope); otherwise it will fail.
+   */
+  interface UserPermissionsConfig extends Pick<LogicalOperations, "$and" | "$or"> {
+    management:
+      | boolean
+      | ({
+          guild: boolean;
+          app: boolean;
+        } & Pick<LogicalOperations, "$and" | "$or">);
+
+    staff: boolean;
+    // | ({
+    //     guild?: boolean;
+    //     app?: boolean;
+    //   } & Pick<LogicalOperations, "$and" | "$or">);
+  }
+}
+
 export namespace OSMetrics {
   interface OSMetricsData<HR extends boolean = false> {
     /** Running node version */
@@ -171,8 +193,4 @@ export namespace OSMetrics {
       heap_used: HR extends true ? string : number;
     };
   }
-}
-
-declare global {
-  namespace Utilities {}
 }

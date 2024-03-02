@@ -2,7 +2,7 @@ import { ButtonInteraction, Colors, EmbedBuilder, userMention } from "discord.js
 import { CmdOptionsType } from "@Cmds/Miscellaneous/Log/Deps/Arrest.js";
 import { FormatUsername } from "@Utilities/Strings/Formatters.js";
 import { Images, Icons } from "@Config/Shared.js";
-import { ExtraTypings } from "@Typings/Utilities/Database.js";
+import { Shifts } from "@Typings/Utilities/Database.js";
 
 import Dedent from "dedent";
 import GuildModel from "@Models/Guild.js";
@@ -12,7 +12,7 @@ const ListFormatter = new Intl.ListFormat("en");
 
 export type ReporterInfoType = {
   /** Shift currently active for the reporting officer */
-  shift_active: ExtraTypings.HydratedShiftDocument | null;
+  shift_active: Shifts.HydratedShiftDocument | null;
 
   /** Arresting/Reporting officer's Discord Id */
   discord_user_id: string;
@@ -66,7 +66,7 @@ export default async function LogArrestReport(
   const ArrestLogData: Partial<(typeof GuildDocument.logs.arrests)[number]> = {
     _id: ArresteeInfo.booking_num,
     made_at: ReporterInfo.report_date,
-    arrest_assisting_officers: ReporterInfo.asst_officers,
+    assisting_officers: ReporterInfo.asst_officers,
     notes: ArresteeInfo.notes,
 
     arrestee: {

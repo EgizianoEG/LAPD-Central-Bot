@@ -1,11 +1,11 @@
 import { CallbackWithoutResultAndOptionalError, Query } from "mongoose";
 import { ActiveShiftsCache } from "@Utilities/Other/Cache.js";
-import { ExtraTypings } from "@Typings/Utilities/Database.js";
+import { Shifts } from "@Typings/Utilities/Database.js";
 import ProfileModel from "@Models/GuildProfile.js";
 import AppError from "@Utilities/Classes/AppError.js";
 
 const ErrorTitle = "Invalid Action";
-type ThisType = ExtraTypings.HydratedShiftDocument;
+type ThisType = Shifts.HydratedShiftDocument;
 
 async function GetUpdatedDocument<GOIFailed extends boolean = false>(
   Document: ThisType,
@@ -203,9 +203,9 @@ export async function PreShiftDocDelete(
 export async function PreShiftModelDelete(
   this: Query<
     { deleteCount: number; acknowledged: boolean },
-    ExtraTypings.ShiftDocument,
+    Shifts.ShiftDocument,
     object,
-    ExtraTypings.ShiftDocument
+    Shifts.ShiftDocument
   >,
   type: "many" | "one",
   next: CallbackWithoutResultAndOptionalError = () => {}
@@ -220,7 +220,7 @@ export async function PreShiftModelDelete(
     return next();
   }
 
-  const Shifts = await this.model.find<ExtraTypings.HydratedShiftDocument>(Filter).exec();
+  const Shifts = await this.model.find<Shifts.HydratedShiftDocument>(Filter).exec();
   const MappedDocs = Map.groupBy(Shifts, (Doc) => [Doc.user, Doc.guild]);
 
   for (const [UserData, ShiftDocs] of MappedDocs.entries()) {
@@ -270,4 +270,4 @@ export default {
   async subOnDutyTime(this: ThisType, Duration: number) {
     return AddSubShiftTime.call(this, "Sub", Duration);
   },
-} as Omit<ExtraTypings.ShiftDocOverrides, "durations">;
+} as Omit<Shifts.ShiftDocumentOverrides, "durations">;

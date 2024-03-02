@@ -1,8 +1,8 @@
-import { ExtraTypings } from "@Typings/Utilities/Database.js";
+import { Shifts } from "@Typings/Utilities/Database.js";
 import ShiftModel from "@Models/Shift.js";
 
 export default async function IncrementActiveShiftEvent(
-  Event: keyof Omit<ExtraTypings.ShiftEvents, "breaks">,
+  Event: keyof Omit<Shifts.ShiftEvents, "breaks">,
   UserId: string,
   GuildId: string
 ) {

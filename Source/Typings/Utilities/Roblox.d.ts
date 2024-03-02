@@ -208,11 +208,3 @@ export namespace APITypes.Thumbnails {
     ];
   }
 }
-
-declare global {
-  namespace Utilities.Roblox {
-    type UserPresence = APIResponses.Presence.UserPresence;
-    type UserSearchResult = APIResponses.Users.UserSearchResult;
-    type UserProfileDetails = APIResponses.Users.GetUserResponse;
-  }
-}

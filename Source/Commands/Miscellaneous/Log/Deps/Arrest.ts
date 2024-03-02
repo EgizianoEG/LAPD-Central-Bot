@@ -27,7 +27,7 @@ import LogArrestReport, {
 } from "@Utilities/Other/LogArrestReport.js";
 
 import { RandomString } from "@Utilities/Strings/Random.js";
-import { ExtraTypings } from "@Typings/Utilities/Database.js";
+import { GuildArrests } from "@Typings/Utilities/Database.js";
 import { ReporterInfo } from "../Log.js";
 import { UserHasPermsV2 } from "@Utilities/Database/UserHasPermissions.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
@@ -62,7 +62,7 @@ export type CmdOptionsType = {
  * @param ArrestRecords - An array of ArrestRecord objects.
  * @returns A random booking number.
  */
-function GetBookingNumber(ArrestRecords: ExtraTypings.ArrestRecord[]) {
+function GetBookingNumber(ArrestRecords: GuildArrests.ArrestRecord[]) {
   const RecordedBookingNums = ArrestRecords.map((Record) => Record._id);
   return Number(RandomString(4, /\d/, RecordedBookingNums));
 }

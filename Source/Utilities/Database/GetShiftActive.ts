@@ -1,4 +1,4 @@
-import { ExtraTypings } from "@Typings/Utilities/Database.js";
+import { Shifts } from "@Typings/Utilities/Database.js";
 import { Falsey } from "utility-types";
 import ShiftModel from "@Models/Shift.js";
 import { ButtonInteraction } from "discord.js";
@@ -37,9 +37,7 @@ export default async function GetShiftActive<UOType extends boolean | undefined 
     | ButtonInteraction<"cached">
     | { user: { id: string }; guildId: string };
 }): Promise<
-  UOType extends Falsey
-    ? ExtraTypings.HydratedShiftDocument[]
-    : ExtraTypings.HydratedShiftDocument | null
+  UOType extends Falsey ? Shifts.HydratedShiftDocument[] : Shifts.HydratedShiftDocument | null
 > {
   const ActiveShifts = await ShiftModel.find({
     guild: Interaction.guildId,

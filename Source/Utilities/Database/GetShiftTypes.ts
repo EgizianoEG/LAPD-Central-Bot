@@ -1,4 +1,4 @@
-import { ExtraTypings } from "@Typings/Utilities/Database.js";
+import { Guilds } from "@Typings/Utilities/Database.js";
 import { Types } from "mongoose";
 import GuildModel from "@Models/Guild.js";
 
@@ -9,7 +9,7 @@ import GuildModel from "@Models/Guild.js";
  */
 export default async function GetShiftTypes(
   GuildId: string
-): Promise<Types.DocumentArray<ExtraTypings.GuildShiftType>> {
+): Promise<Types.DocumentArray<Guilds.ShiftType>> {
   return GuildModel.findById(GuildId)
     .select("settings.shifts.types")
     .then((GuildData) => {

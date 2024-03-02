@@ -1,5 +1,5 @@
 import type { PropertiesToString } from "utility-types";
-import type { ExtraTypings } from "@Typings/Utilities/Database.js";
+import type { Shifts } from "@Typings/Utilities/Database.js";
 import type { FilterQuery } from "mongoose";
 import DHumanize from "humanize-duration";
 import ShiftModel from "@Models/Shift.js";
@@ -29,7 +29,7 @@ const HumanizeDuration = DHumanize.humanizer({
  * @returns An object that contains main shifts data which also contains converted shift durations in human readable format.
  */
 export default async function GetMainShiftsData(
-  QueryFilter: FilterQuery<ExtraTypings.ShiftDocument>,
+  QueryFilter: FilterQuery<Shifts.ShiftDocument>,
   HasActiveShift: boolean = false
 ) {
   QueryFilter.end_timestamp = { $ne: null };

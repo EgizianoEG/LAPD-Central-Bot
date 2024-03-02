@@ -2,7 +2,7 @@ import { EmbedBuilder, SlashCommandSubcommandBuilder } from "discord.js";
 import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { IsValidShiftTypeName } from "@Utilities/Other/Validators.js";
 import { ErrorMessages } from "@Resources/AppMessages.js";
-import { ExtraTypings } from "@Typings/Utilities/Database.js";
+import { Shifts } from "@Typings/Utilities/Database.js";
 
 import HandleEmbedPagination from "@Utilities/Other/HandleEmbedPagination.js";
 import DurationHumanize from "humanize-duration";
@@ -70,7 +70,7 @@ function BuildLeaderboardPages(
  * @returns Array of sorted and paginated durations ready to be formatted as text.
  * Where the first item of the array is the Discord user id and the second is the total on duty duration.
  */
-function GetPaginatedDurations(ShiftsData: ExtraTypings.HydratedShiftDocument[]) {
+function GetPaginatedDurations(ShiftsData: Shifts.HydratedShiftDocument[]) {
   const UserGroupedDocs = Object.groupBy(ShiftsData, (Doc) => Doc.user);
   const MappedData = new Map<string, number>();
 

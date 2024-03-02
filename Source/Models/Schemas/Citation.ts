@@ -1,10 +1,9 @@
 import { EyeColors, HairColors } from "@Resources/ERLCPDColors.js";
 import { Model, Schema } from "mongoose";
-import { Citations } from "@Typings/Utilities/Generic.js";
+import { GuildCitations } from "@Typings/Utilities/Database.js";
 import ERLCAgeGroups from "@Resources/ERLCAgeGroups.js";
 
-type CitationPlainDoc = Citations.WarningCitationData &
-  Partial<Citations.FineCitationData> & { type: Citations.CitationType; issued_at: Date };
+type CitationPlainDoc = GuildCitations.AnyCitationData;
 type CitationModelType = Model<CitationPlainDoc, unknown>;
 
 const CitationSchema = new Schema<CitationPlainDoc, CitationModelType>({

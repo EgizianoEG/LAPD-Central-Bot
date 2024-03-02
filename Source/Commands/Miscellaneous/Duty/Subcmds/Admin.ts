@@ -22,7 +22,7 @@ import {
   User,
 } from "discord.js";
 
-import { ExtraTypings } from "@Typings/Utilities/Database.js";
+import { Shifts } from "@Typings/Utilities/Database.js";
 import { RandomString } from "@Utilities/Strings/Random.js";
 import { Embeds, Emojis } from "@Config/Shared.js";
 import { IsValidShiftId } from "@Utilities/Other/Validators.js";
@@ -75,7 +75,7 @@ enum ShiftModActions {
  * @returns
  */
 function GetButtonActionRows(
-  ShiftActive: ExtraTypings.HydratedShiftDocument | boolean | null,
+  ShiftActive: Shifts.HydratedShiftDocument | boolean | null,
   Interaction: SlashCommandInteraction<"cached"> | ButtonInteraction<"cached">
 ) {
   const ActionRowOne = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -159,7 +159,7 @@ function GetTimeModificationModal(
 
 async function HandleShiftTimeModExceptions(
   Interact: StringSelectMenuInteraction<"cached"> | ModalSubmitInteraction<"cached">,
-  ShiftDoc: ExtraTypings.HydratedShiftDocument,
+  ShiftDoc: Shifts.HydratedShiftDocument,
   Err: any
 ) {
   if (Err instanceof AppError && Err.is_showable) {
@@ -185,7 +185,7 @@ async function HandleShiftTimeModExceptions(
  */
 async function HandleShiftTimeReset(
   AdminInteract: StringSelectMenuInteraction<"cached">,
-  ShiftDocument: ExtraTypings.HydratedShiftDocument
+  ShiftDocument: Shifts.HydratedShiftDocument
 ) {
   try {
     const UpdatedDoc = await ShiftDocument.resetOnDutyTime(AdminInteract.createdTimestamp);
@@ -206,7 +206,7 @@ async function HandleShiftTimeReset(
  */
 async function HandleShiftTimeSet(
   AdminInteract: StringSelectMenuInteraction<"cached">,
-  ShiftDocument: ExtraTypings.HydratedShiftDocument
+  ShiftDocument: Shifts.HydratedShiftDocument
 ) {
   const TMModal = GetTimeModificationModal("Set", AdminInteract);
   await AdminInteract.showModal(TMModal);
@@ -256,7 +256,7 @@ async function HandleShiftTimeSet(
 async function HandleShiftTimeAddSub(
   ActionType: "Add" | "Subtract",
   AdminInteract: StringSelectMenuInteraction<"cached">,
-  ShiftDocument: ExtraTypings.HydratedShiftDocument
+  ShiftDocument: Shifts.HydratedShiftDocument
 ) {
   const TMModal = GetTimeModificationModal(ActionType, AdminInteract);
   await AdminInteract.showModal(TMModal);
@@ -302,7 +302,7 @@ async function HandleShiftTimeAddSub(
 
 async function PromptShiftModification(
   Interact: ModalSubmitInteraction<"cached"> | ButtonInteraction<"cached">,
-  ShiftDocument: ExtraTypings.HydratedShiftDocument
+  ShiftDocument: Shifts.HydratedShiftDocument
 ) {
   if (Interact.isModalSubmit() && !Interact.deferred) await Interact.deferUpdate();
   const ActionOptions = new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(
@@ -844,7 +844,7 @@ async function HandleUserShiftEnd(
   BInteract: ButtonInteraction<"cached">,
   RespMessage: Message<true>,
   TargetUser: User,
-  ActiveShift: ExtraTypings.HydratedShiftDocument,
+  ActiveShift: Shifts.HydratedShiftDocument,
   CmdShiftType?: Nullable<string>
 ) {
   await BInteract.deferUpdate();

@@ -1,8 +1,8 @@
 import { BaseInteraction, GuildMember, PermissionFlagsBits } from "discord.js";
 import { UserPermsCache, DBRolePermsCache } from "../Other/Cache.js";
 import { IsPlainObject, IsEmptyObject } from "../Other/Validators.js";
+import { GeneralTypings } from "@Typings/Utilities/Generic.js";
 import { App as Client } from "@DiscordApp";
-import { ExtraTypings } from "@Typings/Utilities/Database.js";
 import { DeepPartial } from "utility-types";
 import GuildModel from "@Models/Guild.js";
 
@@ -19,7 +19,7 @@ type DBRolePermsType = {
  */
 export default async function UserHasPerms<RMissing extends boolean = false>(
   CmdInteraction: BaseInteraction<"cached">,
-  Permissions: DeepPartial<ExtraTypings.UserPermissionsConfig>,
+  Permissions: DeepPartial<GeneralTypings.UserPermissionsConfig>,
   ReturnMissing?: RMissing
 ): Promise<RMissing extends true ? [boolean, string[]] : boolean> {
   if (!IsPlainObject(Permissions) || IsEmptyObject(Permissions)) return BaseReturn(ReturnMissing);
@@ -42,14 +42,14 @@ export default async function UserHasPerms<RMissing extends boolean = false>(
  * Checks if a user or multiple users have specific permissions in a guild.
  * @param {string | string[]} User - Can be either a string or an array of strings. It represents the user or users for whom the permissions need to be checked.
  * @param {string} GuildId - A string that represents the ID of the guild (server) where the user's permissions will be checked.
- * @param {ExtraTypings.UserPermissionsConfig} Permissions - Represents the permissions that the user should have.
+ * @param {GeneralTypings.UserPermissionsConfig} Permissions - Represents the permissions that the user should have.
  * @param {boolean} [UseCache=false] - A boolean flag that determines whether to use the cache for retrieving user permissions (if available); default: `false`
  * @returns A `Promise` that resolves to a boolean value or a record of boolean values if `User` is an array.
  */
 export async function UserHasPermsV2<UType extends string | string[]>(
   User: UType,
   GuildId: string,
-  Permissions: DeepPartial<ExtraTypings.UserPermissionsConfig>,
+  Permissions: DeepPartial<GeneralTypings.UserPermissionsConfig>,
   UseCache: boolean = false
 ): Promise<UType extends string ? boolean : Record<string, boolean>> {
   if (
@@ -157,13 +157,13 @@ async function GetDBRolePerms(
 /**
  * Checks if a guild member has staff or management permissions based on their roles and guild permissions.
  * @param {DBRolePermsType} DBRolePerms
- * @param {DeepPartial<ExtraTypings.UserPermissionsConfig>} Perms
+ * @param {DeepPartial<GeneralTypings.UserPermissionsConfig>} Perms
  * @param {GuildMember} GuildMember
  * @returns a boolean value, either true or false.
  */
 function CheckPerms(
   DBRolePerms: DBRolePermsType,
-  Perms: DeepPartial<ExtraTypings.UserPermissionsConfig>,
+  Perms: DeepPartial<GeneralTypings.UserPermissionsConfig>,
   GuildMember: GuildMember
 ): [boolean, string[]] {
   let HasStaff = false;

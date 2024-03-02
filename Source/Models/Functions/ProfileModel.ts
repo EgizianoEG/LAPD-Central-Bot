@@ -1,11 +1,8 @@
 import { CallbackWithoutResultAndOptionalError, HydratedDocument, Document, Query } from "mongoose";
-import { ExtraTypings } from "@Typings/Utilities/Database.js";
+import { GuildProfiles } from "@Typings/Utilities/Database.js";
 import ShiftModel from "@Models/Shift.js";
 
-type ProfileDoc = HydratedDocument<
-  ExtraTypings.GuildProfileDocument,
-  ExtraTypings.GuildProfileOverrides
->;
+type ProfileDoc = HydratedDocument<GuildProfiles.ProfileDocument, GuildProfiles.ProfileOverrides>;
 
 export function ProfilePostFind(
   Data: ProfileDoc | ProfileDoc[],

@@ -1,7 +1,7 @@
 import { APIEmbedField, SlashCommandSubcommandBuilder } from "discord.js";
-import { ExtraTypings } from "@Typings/Utilities/Database.js";
 import { compareAsc } from "date-fns";
 import { InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { Shifts } from "@Typings/Utilities/Database.js";
 import { Emojis } from "@Config/Shared.js";
 
 import DHumanizer from "humanize-duration";
@@ -21,7 +21,7 @@ const ReadableDuration = DHumanizer.humanizer({
  * @param ActiveShifts
  * @returns
  */
-function ListShifts(ActiveShifts: Array<ExtraTypings.HydratedShiftDocument>) {
+function ListShifts(ActiveShifts: Array<Shifts.HydratedShiftDocument>) {
   let ShouldHaveBreakAnnotation = false;
   const Listed: string[] = [];
 
@@ -42,7 +42,7 @@ function ListShifts(ActiveShifts: Array<ExtraTypings.HydratedShiftDocument>) {
  * @returns
  */
 function FormatActiveShifts(
-  ActiveGroupedShifts: Record<string, Array<ExtraTypings.HydratedShiftDocument>>,
+  ActiveGroupedShifts: Record<string, Array<Shifts.HydratedShiftDocument>>,
   SelectedShiftType: Nullable<string>
 ): InfoEmbed {
   const Fields: Array<APIEmbedField> = [];

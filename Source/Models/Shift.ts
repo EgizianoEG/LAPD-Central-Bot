@@ -1,80 +1,78 @@
 import { randomInt as RandomInteger } from "node:crypto";
 import { Schema, Model, model } from "mongoose";
-import { ExtraTypings } from "@Typings/Utilities/Database.js";
+import { Shifts } from "@Typings/Utilities/Database.js";
 import ShiftDurations from "./Schemas/ShiftDurations.js";
 import ShiftInstFuncs, { PreShiftModelDelete, PreShiftDocDelete } from "./Functions/ShiftModel.js";
 
-type ShiftPlainDoc = ExtraTypings.ShiftDocument;
-type ShiftModelType = Model<ShiftPlainDoc, unknown, ExtraTypings.ShiftDocOverrides>;
+type ShiftPlainDoc = Shifts.ShiftDocument;
+type ShiftModelType = Model<ShiftPlainDoc, unknown, Shifts.ShiftDocumentOverrides>;
 
-const ShiftSchema = new Schema<
-  ExtraTypings.ShiftDocument,
-  ShiftModelType,
-  ExtraTypings.ShiftDocOverrides
->({
-  _id: {
-    type: String,
-    default() {
-      return `${Date.now()}${RandomInteger(10, 99)}`.slice(0, 15);
+const ShiftSchema = new Schema<Shifts.ShiftDocument, ShiftModelType, Shifts.ShiftDocumentOverrides>(
+  {
+    _id: {
+      type: String,
+      default() {
+        return `${Date.now()}${RandomInteger(10, 99)}`.slice(0, 15);
+      },
     },
-  },
 
-  user: {
-    type: String,
-    ref: "GuildProfile",
-    match: /^\d{15,22}$/,
-    index: true,
-    required: true,
-  },
+    user: {
+      type: String,
+      ref: "GuildProfile",
+      match: /^\d{15,22}$/,
+      index: true,
+      required: true,
+    },
 
-  guild: {
-    type: String,
-    ref: "Guild",
-    match: /^\d{15,22}$/,
-    index: true,
-    required: true,
-  },
+    guild: {
+      type: String,
+      ref: "Guild",
+      match: /^\d{15,22}$/,
+      index: true,
+      required: true,
+    },
 
-  start_timestamp: {
-    type: Date,
-    default: Date.now,
-    immutable: true,
-  },
+    start_timestamp: {
+      type: Date,
+      default: Date.now,
+      immutable: true,
+    },
 
-  end_timestamp: {
-    type: Date,
-    default: null,
-    required: false,
-  },
+    end_timestamp: {
+      type: Date,
+      default: null,
+      required: false,
+    },
 
-  type: {
-    type: String,
-    trim: true,
-    default: "Default",
-  },
-
-  durations: {
-    _id: false,
-    default: {},
-    type: ShiftDurations,
-  },
-
-  events: {
-    _id: false,
-    default: {},
     type: {
-      breaks: [[Number, Number]],
-      arrests: {
-        type: Number,
-        default: 0,
-      },
-      citations: {
-        type: Number,
-        default: 0,
+      type: String,
+      trim: true,
+      default: "Default",
+    },
+
+    durations: {
+      _id: false,
+      default: {},
+      type: ShiftDurations,
+    },
+
+    events: {
+      _id: false,
+      default: {},
+      type: {
+        breaks: [[Number, Number]],
+        arrests: {
+          type: Number,
+          default: 0,
+        },
+        citations: {
+          type: Number,
+          default: 0,
+        },
       },
     },
-  },
-});
+  }
+);
 
 ShiftSchema.set("_id", false);
 ShiftSchema.set("versionKey", false);

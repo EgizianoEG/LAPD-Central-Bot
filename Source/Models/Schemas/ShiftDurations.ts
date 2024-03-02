@@ -1,5 +1,5 @@
 import { HydratedDocumentFromSchema, Schema } from "mongoose";
-import { ExtraTypings } from "@Typings/Utilities/Database.js";
+import { Shifts } from "@Typings/Utilities/Database.js";
 
 const ShiftDurations = new Schema({
   total: {
@@ -13,14 +13,14 @@ const ShiftDurations = new Schema({
     default: 0,
     min: 0,
 
-    set(this: ExtraTypings.HydratedShiftDocument["durations"], v = -1) {
+    set(this: Shifts.HydratedShiftDocument["durations"], v = -1) {
       if (v === -1) {
         return this.on_duty;
       }
     },
 
-    get(this: ExtraTypings.HydratedShiftDocument["durations"]) {
-      const ShiftDoc = this.ownerDocument() as ExtraTypings.HydratedShiftDocument;
+    get(this: Shifts.HydratedShiftDocument["durations"]) {
+      const ShiftDoc = this.ownerDocument() as Shifts.HydratedShiftDocument;
       const EndTimestamp = ShiftDoc.end_timestamp?.valueOf() ?? Date.now();
       if (!ShiftDoc.start_timestamp) return 0;
 
@@ -38,14 +38,14 @@ const ShiftDurations = new Schema({
     default: 0,
     min: 0,
 
-    set(this: ExtraTypings.HydratedShiftDocument["durations"], v = -1) {
+    set(this: Shifts.HydratedShiftDocument["durations"], v = -1) {
       if (v === -1) {
         return this.on_break;
       }
     },
 
-    get(this: ExtraTypings.HydratedShiftDocument["durations"]) {
-      const ShiftDoc = this.ownerDocument() as ExtraTypings.HydratedShiftDocument;
+    get(this: Shifts.HydratedShiftDocument["durations"]) {
+      const ShiftDoc = this.ownerDocument() as Shifts.HydratedShiftDocument;
       const EndTimestamp = ShiftDoc.end_timestamp?.valueOf() ?? Date.now();
       if (!ShiftDoc.start_timestamp) return 0;
 

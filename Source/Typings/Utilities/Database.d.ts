@@ -1,39 +1,35 @@
 import type { DeepPartial, Falsey, Overwrite } from "utility-types";
 import type { Types, HydratedDocument, HydratedDocumentFromSchema } from "mongoose";
+import type ERLCAgeGroups from "@Resources/ERLCAgeGroups.ts";
 import ArrestSchema from "@Models/Schemas/Arrest.ts";
 
-export namespace ExtraTypings {
-  export type HydratedShiftDocument = HydratedDocument<ShiftDocument, ShiftDocOverrides>;
-  export interface TotalDurationsData {
-    /** A `get` virtual and cannot be set/modified. */
-    all: number;
-    /** All on-duty shift durations in milliseconds. */
-    on_duty: number;
-    /** All on-break shift durations in milliseconds. */
-    on_break: number;
+export namespace Guilds {
+  interface CreateShiftTypeConfig {
+    name: string;
+    guild_id: string;
+    is_default?: boolean;
+    access_roles?: string[];
   }
 
-  export interface ArrestRecord {
-    _id: string;
-    gender: "Male" | "Female";
-    height: string;
-    weight: string;
-    charges: string;
-    age_group: 1 | 2 | 3 | 4 | 5;
-    defendant_roblox_id: number;
-    defendant_roblox_name: string;
-    arresting_officer_roblox_id: string;
-    arresting_officer_discord_id: string;
-    arresting_officer_roblox_name: string;
+  interface ShiftType {
+    _id: Types.ObjectId;
+    /** The unique shift type name. */
+    name: string;
+    /** Should this shift type be the default one? */
+    is_default: boolean;
+    /** All roles whose holders can utilize this duty shift type. */
+    access_roles: string[];
+    /** The date when this shift type was created. */
+    created_at: Date;
   }
 
-  export interface GuildLogs {
-    arrests: ArrestRecord[];
-    citations: [];
+  interface GuildLogs {
+    arrests: GuildArrests.ArrestRecord[];
+    citations: GuildCitations.AnyCitationData[];
     callsigns: [];
   }
 
-  export interface GuildSettings {
+  interface GuildSettings {
     require_authorization: boolean;
 
     log_channels: {
@@ -61,7 +57,12 @@ export namespace ExtraTypings {
     };
   }
 
-  export interface ShiftDurations {
+  interface GuildDocument {}
+}
+
+export namespace Shifts {
+  type HydratedShiftDocument = HydratedDocument<ShiftDocument, ShiftDocumentOverrides>;
+  interface ShiftDurations {
     /**
      * The total duration (on-duty and on-break sum) for the shift in milliseconds.
      * Notice that this is a `get` virtual and cannot be set/modified.
@@ -93,7 +94,7 @@ export namespace ExtraTypings {
     on_duty_mod: number;
   }
 
-  export interface ShiftDocOverrides {
+  interface ShiftDocumentOverrides {
     durations: Types.Subdocument<undefined> & ShiftDurations;
 
     /**
@@ -196,14 +197,7 @@ export namespace ExtraTypings {
     end(timestamp?: number | Date): Promise<this>;
   }
 
-  export interface LogicalOperations {
-    $and: boolean;
-    $or: boolean;
-    $not: boolean;
-    $nor: boolean;
-  }
-
-  export interface ShiftEvents<BPA extends boolean = true> {
+  interface ShiftEvents<BPA extends boolean = true> {
     /**
      * An array of breaks logged during the shift.
      * Each break is a tuple which has two values in the format: `[StartEpoch, EndEpoch]`
@@ -218,7 +212,7 @@ export namespace ExtraTypings {
     citations: number;
   }
 
-  export interface ShiftDocument<BreaksPossiblyActive extends boolean = true> {
+  interface ShiftDocument<BreaksPossiblyActive extends boolean = true> {
     /**
      * The unique identifier (15 digits) of this shift
      * where the first 13 digits indicates the timestamp
@@ -255,13 +249,24 @@ export namespace ExtraTypings {
     /** Logged events during this shift. */
     events: ShiftEvents<BreaksPossiblyActive>;
   }
+}
 
-  export interface GuildProfileOverrides {
+export namespace GuildProfiles {
+  interface TotalDurationsData {
+    /** A `get` virtual and cannot be set/modified. */
+    all: number;
+    /** All on-duty shift durations in milliseconds. */
+    on_duty: number;
+    /** All on-break shift durations in milliseconds. */
+    on_break: number;
+  }
+
+  interface ProfileOverrides {
     total_durations: Types.Subdocument<undefined> & TotalDurationsData;
     average_periods: Types.Subdocument<undefined> & TotalDurationsData;
   }
 
-  export interface GuildProfileDocument {
+  interface ProfileDocument {
     /** The Discord user's unique identifier. */
     user: string;
 
@@ -285,52 +290,178 @@ export namespace ExtraTypings {
       logs: string[];
     };
   }
+}
 
-  export interface CreateShiftTypeConfig {
-    name: string;
-    guild_id: string;
-    is_default?: boolean;
-    access_roles?: string[];
+export namespace GuildCitations {
+  type CitationType = "Warning" | "Fine";
+  interface WarningCitationData {
+    /** Citation number. */
+    num: number;
+
+    /** The date of violation or citation. */
+    issued_at: Date;
+
+    /** Date of violation or citation issuing date. */
+    dov: string;
+
+    /** Time of violation or citation issuing time in 12 hour format with hours and minutes (10:45). */
+    tov: string;
+
+    /** The day of week of the citation in numeric format (1 to 7); e.g, 1: Sunday, 7: Saturday. */
+    dow: number;
+
+    /** The day period of the citation ("AM" or "PM"). */
+    ampm: "AM" | "PM";
+
+    /** The direct image url of the filled citation; if any. */
+    img_url: string;
+
+    /** The location of violation(s) stated. A maximum of 70 characters. */
+    violation_loc: string;
+
+    /** Who issued the citation */
+    citing_officer: CitingOfficerInfo;
+
+    /**
+     * A list of violations. A violation text shall have the following format: "XXX(A) CVC - XXX".
+     * Where it contains the violation vehicle/penal code and it's description.
+     */
+    violations: (string | Violation)[];
+    violator: ViolatorInfo;
+    vehicle: VehicleInfo;
   }
 
-  export interface GuildShiftType<ExcludeId extends boolean = false> {
-    _id: Types.ObjectId;
-    /** The unique shift type name. */
-    name: string;
-    /** Should this shift type be the default one? */
-    is_default: boolean;
-    /** All roles whose holders can utilize this duty shift type. */
-    access_roles: string[];
-    /** The date when this shift type was created. */
-    created_at: Date;
+  interface FineCitationData extends WarningCitationData {
+    /** The amount of the fine in US dollars. This field is only applicable to fine citations not to warnings */
+    fine_amount: number;
   }
 
-  /** Bot (application) or guild management/staff permissions.
-   * If a boolean value given to a parent property, it acts like logical OR
-   * meaning that if the object is `{ management: true }`; then the check will succeed
-   * if the user has one of the permissions for management (guild scope or app scope); otherwise it will fail.
-   */
-  export interface UserPermissionsConfig extends Pick<LogicalOperations, "$and" | "$or"> {
-    management:
-      | boolean
-      | ({
-          guild: boolean;
-          app: boolean;
-        } & Pick<LogicalOperations, "$and" | "$or">);
+  interface AnyCitationData extends WarningCitationData, Partial<FineCitationData> {
+    type: GuildCitations.CitationType;
+  }
 
-    staff: boolean;
-    // | ({
-    //     guild?: boolean;
-    //     app?: boolean;
-    //   } & Pick<LogicalOperations, "$and" | "$or">);
+  interface CitPartialData {
+    violator: Pick<ViolatorInfo, "name" | "id"> & Partial<ViolatorInfo>;
+    vehicle: VehicleInfo;
+  }
+
+  interface CitingOfficerInfo {
+    /** Discord user Id */
+    discord_id: string;
+    /** Roblox user Id */
+    roblox_id: number;
+    /** Roblox username */
+    name: string;
+    /** Roblox display name */
+    display_name: string;
+  }
+
+  interface Violation {
+    /** Whether the violation is correctable or not */
+    correctable?: boolean;
+    /** The violation text itself */
+    violation: string;
+    /** Violation type. Either a misdemeanor (M) or normal infraction (I) */
+    type?: "M" | "I";
+  }
+
+  interface ViolatorInfo {
+    /** Roblox user Id */
+    id: number;
+
+    /** The name of the violator. Recommended to use the format: `[RobloxDisplayName] (@[RobloxUsername])` */
+    name: string;
+
+    /** The age group of the violator */
+    age: (typeof ERLCAgeGroups)[number]["name"];
+
+    gender: "Male" | "Female" | "M" | "F";
+
+    /** Hair color */
+    hair_color: (typeof HairColors)[number]["abbreviation"];
+
+    /** Eye color */
+    eye_color: (typeof EyeColors)[number]["abbreviation"];
+
+    /** Height in the format of feet and inches (5'7") */
+    height: `${number}'${number}` | string;
+
+    /** Weight in pounds (lbs) */
+    weight: number;
+
+    /** Residence city */
+    city: string;
+
+    /** Residence address */
+    address: string;
+
+    /** The driving license number itself; not the *vehicle* license/plate number */
+    lic_num: string;
+
+    /** The driving license class */
+    lic_class: string;
+
+    /** Whether the driving license is commercial or not */
+    lic_is_comm: boolean;
+  }
+
+  interface VehicleInfo {
+    body_style: string;
+    lic_num: string;
+    year: string;
+    make: string;
+    model: string;
+    color: string;
   }
 }
 
-declare global {
-  namespace Utilities.Database {
-    type HydratedShiftDocument = ExtraTypings.HydratedShiftDocument;
-    type ShiftDocument = ExtraTypings.ShiftDocument;
-    type GuildShiftType = ExtraTypings.GuildShiftType;
-    type UserPermissionsData = ExtraTypings.UserPermissionsConfig;
+export namespace GuildArrests {
+  interface ArrestRecord {
+    /** The arrest id. Also used as the booking number. */
+    _id: number;
+
+    /** The date when the arrest report was made. */
+    made_at: Date;
+
+    /** Any notes provided by the arresting officer. */
+    notes: string | null;
+
+    /** Detailed information about the arrestee. */
+    arrestee: ArresteeInfo;
+
+    /** An array of arresting officers' discord ids who assisted with the arrest. */
+    assisting_officers: string[];
+    arresting_officer: ArrestingOfficerInfo;
+  }
+
+  interface ArresteeInfo {
+    /**
+     * The formatted Roblox name of the arrestee (to use as a fallback if applicable when getting the username from id fails).
+     * It's Recommended to use the format: `[RobloxDisplayName] (@[RobloxUsername])`.
+     */
+    formatted_name: string;
+    roblox_id: number;
+    gender: "Male" | "Female" | "M" | "F";
+
+    /** A direct image url of the mugshot of the arrestee. */
+    mugshot_url: string;
+
+    /** The height in the format of feet and inches (5'7"). */
+    height: string;
+
+    /** The weight in pounds (lbs). */
+    weight: number;
+
+    /** The age group of the arrestee. */
+    age_group: (typeof ERLCAgeGroups)[number]["name"];
+
+    /** A list of charges which have already been formatted. */
+    charges: string[];
+  }
+
+  interface ArrestingOfficerInfo {
+    roblox_id: number;
+    discord_id: string;
+    formatted_name: string;
   }
 }

@@ -49,11 +49,3 @@ export namespace Vehicles {
       | "Bus";
   }
 }
-
-declare global {
-  namespace Resources.ERLCVehicles {
-    type VehicleModel = ERLCVehicles.VehicleModel;
-    type VehicleModelYear = ERLCVehicles.VehicleModelYear;
-    type VehicleResources = ERLCVehicles.VehicleResources;
-  }
-}

@@ -152,11 +152,3 @@ export namespace WeatherDataTypings {
     sunset: number;
   }
 }
-
-declare global {
-  namespace Utilities.WeatherData {
-    type CurrentWeatherOptions = WeatherDataTypings.CurrentWeatherOptions;
-    type RetrievedWeatherData = WeatherDataTypings.RetrievedWeatherData;
-    type CurrentWeatherData = WeatherDataTypings.CurrentWeatherData;
-  }
-}

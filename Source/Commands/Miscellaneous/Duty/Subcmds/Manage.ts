@@ -16,7 +16,7 @@ import {
 } from "discord.js";
 
 import { Types } from "mongoose";
-import { ExtraTypings } from "@Typings/Utilities/Database.js";
+import { Guilds, Shifts } from "@Typings/Utilities/Database.js";
 import { Embeds, Emojis } from "@Config/Shared.js";
 import { ActiveShiftsCache } from "@Utilities/Other/Cache.js";
 import { NavButtonsActionRow } from "@Utilities/Other/GetNavButtons.js";
@@ -57,7 +57,7 @@ const HumanizeDuration = DHumanize.humanizer({
  */
 function GetManagementButtons(
   Interaction: SlashCommandInteraction<"cached">,
-  ShiftActive: ExtraTypings.HydratedShiftDocument | null
+  ShiftActive: Shifts.HydratedShiftDocument | null
 ) {
   const ActionRow = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -111,7 +111,7 @@ function GetManagementButtons(
  */
 async function HandleShiftTypeRestrictions(
   Interaction: SlashCommandInteraction<"cached">,
-  GuildShiftTypes: Types.DocumentArray<ExtraTypings.GuildShiftType>,
+  GuildShiftTypes: Types.DocumentArray<Guilds.ShiftType>,
   CmdShiftType?: string | null
 ) {
   const GuildDefaultType = GuildShiftTypes.find((ShiftType) => ShiftType.is_default);
@@ -260,7 +260,7 @@ async function HandleNonActiveShift(
 }
 
 async function HandleShiftBreakStart(
-  ShiftActive: ExtraTypings.HydratedShiftDocument,
+  ShiftActive: Shifts.HydratedShiftDocument,
   ButtonInteract: ButtonInteraction<"cached">,
   TotalBreakTime: Nullable<string>
 ) {
@@ -292,7 +292,7 @@ async function HandleShiftBreakStart(
 }
 
 async function HandleOnBreakShift(
-  ShiftActive: ExtraTypings.HydratedShiftDocument,
+  ShiftActive: Shifts.HydratedShiftDocument,
   BaseEmbedTitle: string,
   Interaction: SlashCommandInteraction<"cached">,
   ButtonsActionRow: NavButtonsActionRow
@@ -369,7 +369,7 @@ async function HandleOnBreakShift(
 }
 
 async function HandleShiftEnd(
-  ShiftActive: ExtraTypings.HydratedShiftDocument,
+  ShiftActive: Shifts.HydratedShiftDocument,
   ButtonInteract: ButtonInteraction<"cached">,
   ShiftDataInfo: string,
   TotalBreakTime: Nullable<string>

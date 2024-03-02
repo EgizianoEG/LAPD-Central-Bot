@@ -17,7 +17,7 @@ import {
   ModalSubmitInteraction,
 } from "discord.js";
 
-import { ExtraTypings } from "@Typings/Utilities/Database.js";
+import { Shifts } from "@Typings/Utilities/Database.js";
 import { App as DiscordApp } from "@DiscordApp";
 import SharedData, { Embeds } from "@Config/Shared.js";
 import GuildModel from "@Models/Guild.js";
@@ -39,7 +39,7 @@ const ReadableDuration = HDuration.humanizer({
 // -----------------
 
 type ShiftLogAction = "start" | "break-start" | "break-end" | "end" | "auto-end" | "wipe";
-type HydratedShiftDocument = ExtraTypings.HydratedShiftDocument;
+type HydratedShiftDocument = Shifts.HydratedShiftDocument;
 type DiscordUserInteract =
   | SlashCommandInteraction<"cached">
   | AnySelectMenuInteraction<"cached">

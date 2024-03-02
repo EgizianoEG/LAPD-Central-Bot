@@ -1,7 +1,11 @@
 import ERLCAgeGroups from "@Resources/ERLCAgeGroups.js";
-import { Schema } from "mongoose";
+import { GuildArrests } from "@Typings/Utilities/Database.js";
+import { Model, Schema } from "mongoose";
 
-const ArrestSchema = new Schema({
+type ArrestPlainDoc = GuildArrests.ArrestRecord;
+type ArrestModelType = Model<ArrestPlainDoc, unknown>;
+
+const ArrestSchema = new Schema<ArrestPlainDoc, ArrestModelType>({
   // Used as the booking number
   _id: {
     type: Number,
@@ -9,7 +13,7 @@ const ArrestSchema = new Schema({
   },
 
   /** Arresting officers who assisted with the arrest (Array of Discord user Ids) */
-  arrest_assisting_officers: {
+  assisting_officers: {
     type: [String],
     default: [],
     required: true,

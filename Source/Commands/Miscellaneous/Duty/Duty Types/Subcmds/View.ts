@@ -2,6 +2,7 @@
 // -------------
 
 import { Embeds } from "@Config/Shared.js";
+import { Guilds } from "@Typings/Utilities/Database.js";
 import { InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { SlashCommandSubcommandBuilder, EmbedBuilder, Colors } from "discord.js";
 
@@ -21,7 +22,7 @@ const DisplayedShiftTypesPerPage = 3;
  * @param ShiftTypeData - An array of shift types to format
  * @returns A formatted string to be set as an embed description
  */
-function FormatEmbedDescription(ShiftTypeData: Utilities.Database.GuildShiftType[]): string {
+function FormatEmbedDescription(ShiftTypeData: Guilds.ShiftType[]): string {
   const Formatted: string[] = [];
   for (const ShiftType of ShiftTypeData) {
     const Template = Dedent(`
@@ -52,10 +53,10 @@ function FormatEmbedDescription(ShiftTypeData: Utilities.Database.GuildShiftType
  * @returns An array of embeds representing pages of shift types
  */
 function CreateEmbedPages(
-  ShiftTypesData: Utilities.Database.GuildShiftType[],
+  ShiftTypesData: Guilds.ShiftType[],
   ShiftTypesPerPage: number
 ): EmbedBuilder[] {
-  const SegmentedData: Utilities.Database.GuildShiftType[][] = [];
+  const SegmentedData: Guilds.ShiftType[][] = [];
   const Pages: EmbedBuilder[] = [];
 
   if (ShiftTypesData.length) {
