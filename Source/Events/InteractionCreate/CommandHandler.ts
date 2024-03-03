@@ -73,8 +73,7 @@ export default async function CommandHandler(
         .then(() => {
           AppLogger.warn({
             label: LogLabel,
-            message:
-              "Could not find the command object of slash command '%s'; terminated execution.",
+            message: "Could not find the command object of slash command %o; terminated execution.",
             splat: [FullCmdName],
             cmd_options: Object(Interaction.options)._hoistedOptions,
           });
@@ -114,7 +113,7 @@ export default async function CommandHandler(
 
     const ErrId = RandomString(6, /[\dA-Z]/i);
     AppLogger.error({
-      message: "An error occurred while executing slash command '%s';",
+      message: "An error occurred while executing slash command %o;",
       label: LogLabel,
       error_id: ErrId,
       stack: Err.stack,
