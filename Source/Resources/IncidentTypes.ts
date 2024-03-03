@@ -1,0 +1,17 @@
+export default [
+  "Fire",
+  "Other",
+  "Pursuit",
+  "Robbery",
+  "Assault",
+  "Burglary",
+  "Shooting",
+  "Gang Activity",
+  "Traffic Accident",
+  "Hostage Situation",
+  "Firearm Discharge",
+  "Medical Emergency",
+  "Public Disturbance",
+  "Suspicious Activity",
+  "Domestic Disturbance",
+] as const;

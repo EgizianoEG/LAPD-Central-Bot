@@ -2,6 +2,7 @@ import { Schema, model } from "mongoose";
 import ArrestSchema from "./Schemas/Arrest.js";
 import CallsignSchema from "./Schemas/Callsign.js";
 import CitationSchema from "./Schemas/Citation.js";
+import IncidentSchema from "./Schemas/Incident.js";
 import GSettingsSchema from "./Schemas/GuildSettings.js";
 
 const GuildSchema = new Schema({
@@ -17,6 +18,7 @@ const GuildSchema = new Schema({
     type: {
       arrests: [ArrestSchema],
       citations: [CitationSchema],
+      incidents: [IncidentSchema],
       callsigns: [CallsignSchema],
     },
   },

@@ -1,7 +1,7 @@
 import type { DeepPartial, Falsey, Overwrite } from "utility-types";
 import type { Types, HydratedDocument, HydratedDocumentFromSchema } from "mongoose";
 import type ERLCAgeGroups from "@Resources/ERLCAgeGroups.ts";
-import ArrestSchema from "@Models/Schemas/Arrest.ts";
+import type IncidentTypes from "@Resources/IncidentTypes.ts";
 
 export namespace Guilds {
   interface CreateShiftTypeConfig {
@@ -464,6 +464,52 @@ export namespace GuildArrests {
     roblox_id: number;
     discord_id: string;
     formatted_name: string;
+  }
+}
+
+export namespace GuildIncidents {
+  type IncidentType = (typeof IncidentTypes)[number];
+  type IncidentStatus = "Active" | "Closed" | "Resolved";
+
+  interface OfficerInvolved {
+    /** The Roblox user id. */
+    id: number;
+
+    /** The Roblox username. */
+    username: string;
+
+    /** The Roblox display name. */
+    display_name: string;
+
+    /** The Discord user id. */
+    discord_id: string;
+  }
+
+  interface IncidentRecord {
+    _id: number;
+    type: GuildIncidents.IncidentType;
+    made_on: Date;
+
+    notes?: string | null;
+    location: string;
+    description: string;
+    status: IncidentStatus;
+    reported_by: OfficerInvolved;
+
+    /** A list of involved suspects. */
+    suspects: string[];
+
+    /** A list of possible involved victims. */
+    victims: string[];
+
+    /** A list of involved officers. */
+    officers: Omit<OfficerInvolved, "discord_id">[];
+
+    /**
+     * An array of image urls of the incident.
+     * Not currently and shouldn't be used due to possible misuse of the feature.
+     */
+    attachments: string[];
   }
 }
 
