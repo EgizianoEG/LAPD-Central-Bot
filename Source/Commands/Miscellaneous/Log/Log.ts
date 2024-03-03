@@ -5,7 +5,11 @@
 import { Shifts } from "@Typings/Utilities/Database.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { ErrorMessages } from "@Resources/AppMessages.js";
-import { SlashCommandBuilder, AutocompleteInteraction } from "discord.js";
+import {
+  SlashCommandBuilder,
+  AutocompleteInteraction,
+  ApplicationCommandOptionChoiceData,
+} from "discord.js";
 
 import AutocompleteUsername from "@Utilities/Autocompletion/Username.js";
 import AutocompleteVehicle from "@Utilities/Autocompletion/Vehicle.js";
@@ -43,7 +47,7 @@ async function HandleInteractValidation(Interaction: SlashCommandInteraction<"ca
   }
 
   const HasActiveShift = await GetShiftActive({ Interaction, UserOnly: true });
-  // Validation for shift active yet to be implemented once the shift system is 100% functional and ready.
+  // Functionality is unnecessary at the moment.
   // if (!HasActiveShift) {
   //   IsHandled = true;
   //   await new ErrorEmbed()
@@ -84,7 +88,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
  */
 async function Autocomplete(Interaction: AutocompleteInteraction) {
   const { name, value } = Interaction.options.getFocused(true);
-  let Suggestions: { name: string; value: string }[] = [];
+  let Suggestions: ApplicationCommandOptionChoiceData[] = [];
 
   if (name === "name") {
     Suggestions = await AutocompleteUsername(value);

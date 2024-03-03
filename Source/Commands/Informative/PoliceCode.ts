@@ -86,9 +86,7 @@ async function Callback(Interaction: SlashCommandInteraction) {
  */
 async function Autocomplete(Interaction: AutocompleteInteraction) {
   const { name, value } = Interaction.options.getFocused(true);
-  const Suggestions: { name: string; value: string }[] =
-    name === "code" ? AutocompleteRadioCode(value) : [];
-
+  const Suggestions = name === "code" ? AutocompleteRadioCode(value) : [];
   return Interaction.respond(Suggestions);
 }
 

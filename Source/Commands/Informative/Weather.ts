@@ -6,9 +6,6 @@ import { GetCurrentWeather } from "@Utilities/Other/WeatherData.js";
 import { Colors, EmbedBuilder, SlashCommandBuilder } from "discord.js";
 // ---------------------------------------------------------------------------------------
 
-/**
- * @param Interaction
- */
 async function Callback(Interaction: SlashCommandInteraction<"raw">) {
   const Units: any = Interaction.options.getString("units") ?? "imperial";
   const WeatherData = await GetCurrentWeather({ Formatted: true, Units });
@@ -71,7 +68,7 @@ async function Callback(Interaction: SlashCommandInteraction<"raw">) {
 // ------------------
 const CommandObject: SlashCommandObject<any> = {
   callback: Callback,
-  options: { cooldown: 30 },
+  options: { cooldown: 5 },
   data: new SlashCommandBuilder()
     .setName("weather")
     .setDescription("Check the current weather in the city of Los Angeles.")
