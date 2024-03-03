@@ -67,17 +67,17 @@ export default async function CommandHandler(
     });
 
     if (!CommandObject) {
+      AppLogger.warn({
+        message:
+          "Could not find the command object of slash command %o; terminating command execution.",
+        label: LogLabel,
+        splat: [FullCmdName],
+        cmd_options: Object(Interaction.options)._hoistedOptions,
+      });
+
       return new ErrorEmbed()
         .setDescription("Attempt execution of a non-existent command on the application.")
-        .replyToInteract(Interaction, true, true)
-        .then(() => {
-          AppLogger.warn({
-            label: LogLabel,
-            message: "Could not find the command object of slash command %o; terminated execution.",
-            splat: [FullCmdName],
-            cmd_options: Object(Interaction.options)._hoistedOptions,
-          });
-        });
+        .replyToInteract(Interaction, true, true);
     }
 
     await HandleCommandCooldowns(Client, Interaction, CommandObject, FullCmdName);
