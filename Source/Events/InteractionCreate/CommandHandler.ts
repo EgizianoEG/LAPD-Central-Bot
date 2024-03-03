@@ -422,14 +422,14 @@ async function HandleCommandUserPerms(
       const OtherMissingPerms = MissingPerms.filter((P) => !P.match(/\b(?:and|or)\b/i));
       if (OrAndMissingPermIndex >= 0) {
         MissingListed =
-          MissingPerms[OrAndMissingPermIndex].replace(/^(.+)\s(and|or)\s(.+)/i, "- $1; $2\n- $3") +
+          MissingPerms[OrAndMissingPermIndex].replace(/^(.+)\s(and|or)\s(.+)/i, "$1; $2\n- $3") +
           "\n- " +
           OtherMissingPerms.join("\n- ");
       } else {
         MissingListed = `- ${OtherMissingPerms.join("\n- ")}`;
       }
     } else {
-      MissingListed = MissingPerms[0].replace(/^(.+)\s(and|or)\s(.+)$/i, "- $1; $2\n- $3");
+      MissingListed = MissingPerms[0].replace(/^(.+)\s(and|or)\s(.+)$/i, "$1; $2\n- $3");
     }
 
     return new UnauthorizedEmbed()
@@ -437,7 +437,7 @@ async function HandleCommandUserPerms(
         Dedent(`
           You do not have the necessary permission(s) to utilize this command.
           Permission(s) Required:
-          ${MissingListed}
+          - ${MissingListed.replace("\n", `\n${" ".repeat(10)}`)}
         `)
       )
       .replyToInteract(Interaction, true, true);
