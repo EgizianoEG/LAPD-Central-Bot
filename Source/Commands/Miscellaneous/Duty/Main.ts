@@ -1,12 +1,11 @@
 import { AutocompleteInteraction, SlashCommandBuilder } from "discord.js";
-import { ErrorEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import DutyTypesSubcommandGroup from "./Duty Types/Main.js";
 import AutocompleteShiftType from "@Utilities/Autocompletion/ShiftType.js";
 import HasRobloxLinked from "@Utilities/Database/IsUserLoggedIn.js";
 import UserHasPerms from "@Utilities/Database/UserHasPermissions.js";
 
-const ManagementAuthorizedCmds = ["types", "wipe-all", "admin"];
 const Subcommands = [
   (await import("./Subcmds/Void.js")).default,
   (await import("./Subcmds/Admin.js")).default,
@@ -27,37 +26,8 @@ const Subcommands = [
  */
 async function IsAuthorizedCmdUsage(Interaction: SlashCommandInteraction<"cached">) {
   const SubcmdName = Interaction.options.getSubcommand();
-  const SubcmdGroupName = Interaction.options.getSubcommandGroup() ?? "";
 
-  if (
-    ManagementAuthorizedCmds.includes(SubcmdName) ||
-    ManagementAuthorizedCmds.includes(SubcmdGroupName)
-  ) {
-    if (!(await UserHasPerms(Interaction, { management: true }))) {
-      await new UnauthorizedEmbed()
-        .setDescription(
-          "You do not have the necessary permissions to utilize this command.\n",
-          "- Permissions Required:\n",
-          " - Manage Server; or\n",
-          " - Application (Bot) Management"
-        )
-        .replyToInteract(Interaction, true);
-      return false;
-    }
-    return true;
-  }
-
-  if (!(await UserHasPerms(Interaction, { staff: true }))) {
-    await new UnauthorizedEmbed()
-      .setDescription(
-        "You do not have the necessary permissions to utilize this command.\n",
-        "- Permissions Required:\n",
-        " - Manage Server; or\n",
-        " - A Staff Role Associated With the Application"
-      )
-      .replyToInteract(Interaction, true);
-    return false;
-  } else if (SubcmdName === "manage") {
+  if (SubcmdName === "manage") {
     const LinkedRobloxUser = await HasRobloxLinked(Interaction);
     if (!LinkedRobloxUser) {
       await new ErrorEmbed()
@@ -122,15 +92,23 @@ async function Autocomplete(Interaction: AutocompleteInteraction<"cached">) {
 // Command structure:
 // ------------------
 const CommandObject: SlashCommandObject = {
-  options: { cooldown: 5 },
+  callback: Callback,
+  autocomplete: Autocomplete,
+  options: {
+    cooldown: 2.5,
+    user_perms: {
+      types: { management: true },
+      admin: { management: true },
+      $all_other: { staff: true },
+      "wipe-all": { management: true },
+    },
+  },
+
   data: new SlashCommandBuilder()
     .setName("duty")
     .setDescription("Duty and shifts related actions.")
     .addSubcommandGroup(DutyTypesSubcommandGroup.data)
     .setDMPermission(false),
-
-  callback: Callback,
-  autocomplete: Autocomplete,
 };
 
 for (const SubCommand of Subcommands) {
