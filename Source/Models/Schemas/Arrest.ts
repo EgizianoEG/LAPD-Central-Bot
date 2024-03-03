@@ -6,20 +6,17 @@ type ArrestPlainDoc = GuildArrests.ArrestRecord;
 type ArrestModelType = Model<ArrestPlainDoc, unknown>;
 
 const ArrestSchema = new Schema<ArrestPlainDoc, ArrestModelType>({
-  // Used as the booking number
   _id: {
     type: Number,
     required: true,
   },
 
-  /** Arresting officers who assisted with the arrest (Array of Discord user Ids) */
   assisting_officers: {
     type: [String],
     default: [],
     required: true,
   },
 
-  // The date when the arrest report was created.
   made_on: {
     type: Date,
     required: true,
@@ -36,7 +33,6 @@ const ArrestSchema = new Schema<ArrestPlainDoc, ArrestModelType>({
     _id: false,
     required: true,
     type: {
-      // Last known name (to use as a fallback when getting the username from id fails)
       formatted_name: {
         type: String,
         trim: true,
