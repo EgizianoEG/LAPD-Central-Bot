@@ -1,3 +1,4 @@
+import { type ApplicationCommandOptionChoiceData } from "discord.js";
 import { EscapeRegExp } from "@Utilities/Strings/Formatters.js";
 import GuildModel from "@Models/Guild.js";
 
@@ -7,17 +8,17 @@ const DefaultSuggestion = {
 };
 
 /**
- * Autocompletes an input weight.
- * @param TypedValue The input string.
- * @param GuildId The interaction guild Id.
- * @param IncludeDefault Whether or not to include the default shift type suggestion; `true` by default.
- * @returns An array of suggestions.
+ * Autocompletes a shift type based on the typed value.
+ * @param TypedValue - The value to be autocompleted.
+ * @param GuildId - The id of the guild where the shift types should be retrieved.
+ * @param IncludeDefault - Whether to include the default suggestion. Default is `true`.
+ * @returns
  */
 export default async function AutocompleteShiftType(
   TypedValue: string,
   GuildId: string,
   IncludeDefault = true
-): Promise<Array<{ name: string; value: string }>> {
+): Promise<Array<ApplicationCommandOptionChoiceData>> {
   let Suggestions: (string | { name: string; value: string })[];
   const EscapedValue = EscapeRegExp(TypedValue);
   const ShiftTypes = await GuildModel.findById(GuildId)

@@ -1,8 +1,8 @@
-import type { ApplicationCommandOptionChoiceData } from "discord.js";
+import { type ApplicationCommandOptionChoiceData } from "discord.js";
 import GetAllBookingNums from "@Utilities/Database/GetBookingNums.js";
 
 /**
- * Autocompletes an input citation number.
+ * Autocompletes an input booking number.
  * @param Typed The input value from user.
  * @param GuildId The interaction guild id.
  * @returns An array of suggestions.

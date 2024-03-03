@@ -1,4 +1,4 @@
-import type { ApplicationCommandOptionChoiceData } from "discord.js";
+import { type ApplicationCommandOptionChoiceData } from "discord.js";
 import GetAllCitationNums from "@Utilities/Database/GetCitationNumbers.js";
 
 /**

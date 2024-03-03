@@ -1,3 +1,4 @@
+import { type ApplicationCommandOptionChoiceData } from "discord.js";
 import { AllVehicleModels, ERLCVehiclesData } from "@Resources/ERLCVehicles.js";
 import { FormatVehicleName } from "../Strings/Formatters.js";
 import ShuffleArray from "../Other/ShuffleArray.js";
@@ -29,11 +30,13 @@ for (const Brand of ERLCVehiclesData) {
 }
 
 /**
- * Autocompletes an input vehicle model
- * @param Typed - The input string value
- * @returns An array of suggestions
+ * Autocompletes a vehicle based on the typed input.
+ * @param Typed - The typed input to autocomplete.
+ * @returns
  */
-export default function AutocompleteVehicle(Typed: string): Array<{ name: string; value: string }> {
+export default function AutocompleteVehicle(
+  Typed: string
+): Array<ApplicationCommandOptionChoiceData> {
   let Suggestions: string[] = [];
   const LowerCased = Typed.toLowerCase();
 

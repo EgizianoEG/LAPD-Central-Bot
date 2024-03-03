@@ -1,3 +1,4 @@
+import { type ApplicationCommandOptionChoiceData } from "discord.js";
 import { EscapeRegExp } from "@Utilities/Strings/Formatters.js";
 
 const WeightOptions: string[] = [];
@@ -12,11 +13,13 @@ Cache.Default = WeightOptions.filter((Element) => {
 }).map((Choice) => ({ name: `${Choice} lbs`, value: Choice }));
 
 /**
- * Autocompletes an input weight
- * @param TypedValue - The user's input value
- * @returns An array of weight suggestions
+ * Autocompletes an input weight.
+ * @param TypedValue - The user's input value.
+ * @returns An array of weight suggestions.
  */
-export default function AutocompleteWeight(TypedValue: string): { name: string; value: string }[] {
+export default function AutocompleteWeight(
+  TypedValue: string
+): Array<ApplicationCommandOptionChoiceData> {
   let Suggestions: string[];
 
   if (TypedValue in Cache) return Cache[TypedValue];

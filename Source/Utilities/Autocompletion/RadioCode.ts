@@ -1,3 +1,4 @@
+import type { ApplicationCommandOptionChoiceData } from "discord.js";
 import { TenCodes, ElevenCodes, LiteralCodes } from "@Resources/RadioCodes.js";
 
 const AllCodes = [...LiteralCodes, ...TenCodes, ...ElevenCodes];
@@ -7,13 +8,13 @@ for (const Code of AllCodes) {
 }
 
 /**
- * Autocompletes an input vehicle model
- * @param Typed - The input string value
- * @returns An array of suggestions
+ * Autocompletes an input radio code.
+ * @param Typed - The typed string.
+ * @returns An array of objects containing name and value properties.
  */
 export default function AutocompleteRadioCode(
   Typed: string
-): Array<{ name: string; value: string }> {
+): Array<ApplicationCommandOptionChoiceData> {
   let Suggestions: string[] = [];
 
   if (Typed.match(/^\s*$/)) {

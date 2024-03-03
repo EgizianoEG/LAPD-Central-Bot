@@ -8,6 +8,7 @@ import HandleEmbedPagination from "@Utilities/Other/HandleEmbedPagination.js";
 import DurationHumanize from "humanize-duration";
 import ShiftModel from "@Models/Shift.js";
 import Chunks from "@Utilities/Other/SliceIntoChunks.js";
+import Util from "util";
 
 const ReadableDuration = DurationHumanize.humanizer({
   conjunction: " and ",
@@ -44,15 +45,18 @@ function BuildLeaderboardPages(
   CmdShiftType: string | null
 ) {
   const LeaderboardPages: EmbedBuilder[] = [];
+  const FooterText = Util.format(
+    "Showing leaderboard for %s duty shift type%s.",
+    CmdShiftType ?? "all",
+    CmdShiftType ? "" : "s"
+  );
 
   for (const [PageIndex, PageData] of PaginatedDurations.entries()) {
     const PageEmbed = new InfoEmbed()
       .setThumbnail(null)
       .setTitle("Shift Leaderboard")
       .setDescription(FormatPageText(PageData, PageIndex * 10))
-      .setFooter({
-        text: "Showing leaderboard for " + (CmdShiftType ?? "all") + " duty shift type(s).",
-      })
+      .setFooter({ text: FooterText })
       .setAuthor({
         name: Interaction.guild.name,
         iconURL: Interaction.guild.iconURL() ?? undefined,
