@@ -11,6 +11,9 @@ import {
   TextInputStyle,
   ActionRowBuilder,
   TextInputBuilder,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
+  Colors,
 } from "discord.js";
 
 import AppLogger from "@Utilities/Classes/AppLogger.js";
@@ -52,8 +55,14 @@ export default async function HandleEmbedPagination(
   ComponentCollector.on("collect", async (NavInteraction: ButtonInteraction<"cached">) => {
     let NewPageIndex: number = -1;
     if (NavInteraction.customId.includes("current")) {
-      const SPNum = await HandlePageSelection(Pages, CurrPageIndex, NavInteraction);
-      if (SPNum) NewPageIndex = SPNum;
+      let SPNum: number | null = null;
+      if (Pages.length > 25) {
+        SPNum = await HandleModalPageSelection(Pages, CurrPageIndex, NavInteraction);
+      } else {
+        SPNum = await HandleSelectMenuPageSelection(Pages, CurrPageIndex, NavInteraction);
+      }
+
+      if (SPNum !== null) NewPageIndex = SPNum;
       else return;
     }
 
@@ -109,23 +118,27 @@ export default async function HandleEmbedPagination(
       });
   });
 
-  ComponentCollector.on("end", async (_, EndReason: string) => {
+  ComponentCollector.on("end", async (Collected, EndReason: string) => {
     ComponentCollector.removeAllListeners();
     if (EndReason.match(/\w+Delete/)) return;
 
     try {
       NavigationButtons.components.forEach((Btn) => Btn.setDisabled(true));
-      await ResponseMessage.edit({ components: [NavigationButtons] });
-    } catch (Err: any) {
-      if (Err instanceof DiscordAPIError && Err.code === 50_001) {
-        return;
+      const LastInteract = Collected.last();
+      if (LastInteract) {
+        await LastInteract.editReply({ components: [NavigationButtons] });
+      } else {
+        await (await ResponseMessage.fetch()).edit({ components: [NavigationButtons] });
       }
-
+    } catch (Err: any) {
       AppLogger.error({
         message: "An error occurred while ending the component collector for pagination;",
         label: "Utilities:Other:HandleEmbedPagination",
         context: Context,
         stack: Err.stack,
+        details: {
+          ...Err,
+        },
       });
     }
   });
@@ -134,7 +147,39 @@ export default async function HandleEmbedPagination(
 // ---------------------------------------------------------------------------------------
 // Utility:
 // --------
-async function HandlePageSelection(
+async function HandleSelectMenuPageSelection(
+  Pages: EmbedBuilder[],
+  CurrentIndex: number,
+  BtnInteract: ButtonInteraction<"cached">
+): Promise<number | null> {
+  await BtnInteract.deferUpdate();
+  const PageSelectMenu = GetPageSelectMenu(BtnInteract, Pages.length, CurrentIndex);
+  const PromptEmbed = new EmbedBuilder()
+    .setColor(Colors.Greyple)
+    .setTitle("Page Selection")
+    .setDescription("Please select a page to view from the dropdown menu below.");
+
+  const PromptMsg = await BtnInteract.followUp({
+    embeds: [PromptEmbed],
+    components: [PageSelectMenu],
+    fetchReply: true,
+    ephemeral: true,
+  });
+
+  const MenuSelection = await PromptMsg.awaitMessageComponent({
+    time: 5 * 60 * 1000,
+    componentType: ComponentType.StringSelect,
+    filter: (IC) =>
+      IC.user.id === BtnInteract.user.id &&
+      IC.customId === PageSelectMenu.components[0].data.custom_id,
+  }).catch(() => null);
+
+  if (!MenuSelection) return null;
+  MenuSelection.deleteReply().catch(() => null);
+  return Number(MenuSelection.values[0]);
+}
+
+async function HandleModalPageSelection(
   Pages: EmbedBuilder[],
   CurrentIndex: number,
   BtnInteract: ButtonInteraction<"cached">
@@ -166,6 +211,33 @@ async function HandlePageSelection(
 
   await ModalSubmission.deferUpdate();
   return ParsedNumber - 1;
+}
+
+function GetPageSelectMenu(
+  BtnInteract: ButtonInteraction<"cached">,
+  TotalPages: number,
+  CurrPageIndex: number
+) {
+  const SelectMenuActionRow = new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(
+    new StringSelectMenuBuilder()
+      .setCustomId(
+        `paginate-page-select:${BtnInteract.user.id}:${BtnInteract.guildId}:${RandomString(3)}`
+      )
+      .setPlaceholder("Select a page...")
+      .setMinValues(1)
+      .setMaxValues(1)
+  );
+
+  for (let i = 0; i < TotalPages && i < 25; i++) {
+    SelectMenuActionRow.components[0].addOptions(
+      new StringSelectMenuOptionBuilder()
+        .setDefault(i === CurrPageIndex)
+        .setLabel(`Page ${i + 1}`)
+        .setValue(`${i}`)
+    );
+  }
+
+  return SelectMenuActionRow;
 }
 
 function GetPageSelectModal(
