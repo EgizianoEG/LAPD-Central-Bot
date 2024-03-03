@@ -1,0 +1,75 @@
+// Dependencies:
+// -------------
+import AutocompleteCitationNum from "@Utilities/Autocompletion/CitationNum.js";
+import AutocompleteBookingNum from "@Utilities/Autocompletion/BookingNum.js";
+import AutocompleteUsername from "@Utilities/Autocompletion/Username.js";
+import SearchSubcmdGroup from "./Search/Search.js";
+import {
+  SlashCommandBuilder,
+  type AutocompleteInteraction,
+  type ApplicationCommandOptionChoiceData,
+  type SlashCommandSubcommandsOnlyBuilder,
+} from "discord.js";
+
+const Subcommands = [(await import("./Subcmds/Lookup.js")).default];
+
+// ---------------------------------------------------------------------------------------
+// Functions:
+// ----------
+async function Callback(Interaction: SlashCommandInteraction<"cached">) {
+  const SubCommandName = Interaction.options.getSubcommand();
+  const SubCommandGroupName = Interaction.options.getSubcommandGroup();
+
+  for (const Subcommand of Subcommands) {
+    if (Subcommand.data.name === SubCommandName) {
+      if (typeof Subcommand.callback === "function") {
+        return (Subcommand.callback as any)(Interaction);
+      } else {
+        continue;
+      }
+    }
+  }
+
+  if (SubCommandGroupName === "search" && typeof SearchSubcmdGroup.callback === "function") {
+    return SearchSubcmdGroup.callback(Interaction);
+  }
+}
+
+async function Autocomplete(Interaction: AutocompleteInteraction<"cached">): Promise<void> {
+  const { name, value } = Interaction.options.getFocused(true);
+  let Suggestions: ApplicationCommandOptionChoiceData[];
+
+  if (name === "name") {
+    Suggestions = await AutocompleteUsername(value);
+  } else if (name === "citation-num") {
+    Suggestions = await AutocompleteCitationNum(value, Interaction.guildId);
+  } else if (name === "booking-num") {
+    Suggestions = await AutocompleteBookingNum(value, Interaction.guildId);
+  } else {
+    Suggestions = [];
+  }
+
+  return Interaction.respond(Suggestions);
+}
+
+// ---------------------------------------------------------------------------------------
+// Command structure:
+// ------------------
+const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
+  autocomplete: Autocomplete,
+  callback: Callback,
+  options: {
+    cooldown: 2.5,
+    user_perms: { staff: true },
+  },
+
+  data: new SlashCommandBuilder()
+    .setName("mdt")
+    .setDescription("MDT commands.")
+    .setDMPermission(false)
+    .addSubcommand(Subcommands[0].data)
+    .addSubcommandGroup(SearchSubcmdGroup.data),
+};
+
+// ---------------------------------------------------------------------------------------
+export default CommandObject;

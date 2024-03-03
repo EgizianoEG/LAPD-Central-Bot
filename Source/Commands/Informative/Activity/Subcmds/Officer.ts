@@ -1,6 +1,6 @@
 // Dependencies:
 // -------------
-import { SlashCommandBuilder, userMention } from "discord.js";
+import { SlashCommandSubcommandBuilder, userMention } from "discord.js";
 import { formatDistance, isAfter } from "date-fns";
 import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { FormatUsername } from "@Utilities/Strings/Formatters.js";
@@ -19,8 +19,8 @@ import Dedent from "dedent";
  * @param Interaction
  */
 async function Callback(Interaction: SlashCommandInteraction<"cached">) {
-  const OfficerSelected = Interaction.options.getMember("officer");
   const HRDateAfter = Interaction.options.getString("since");
+  let OfficerSelected = Interaction.options.getMember("officer");
   let DateAfterParsed: Date | null = null;
 
   if (OfficerSelected) {
@@ -30,9 +30,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
         .replyToInteract(Interaction, true, false);
     }
   } else {
-    return new ErrorEmbed()
-      .useErrTemplate("MemberNotFound")
-      .replyToInteract(Interaction, true, false);
+    OfficerSelected = Interaction.member;
   }
 
   if (HRDateAfter) {
@@ -71,18 +69,18 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const RespEmbed = new InfoEmbed()
     .setTitle(`Officer Activity — @${OfficerSelected.user.username}`)
     .setThumbnail(TargetRUserThumb)
-    .setTimestamp(Interaction.createdAt)
     .setDescription(null)
     .setFields(
       {
         name: "**Basic Info:**",
         value: Dedent(`
           - User: ${userMention(OfficerSelected.id)}
-          - Roblox Account: ${FormattedRobloxName}
+          - Linked Account: ${FormattedRobloxName}
           - Current Nickname: \`${CurrServerNickname}\`
-      `),
+        `),
       },
       {
+        inline: true,
         name: "**Shift Statistics**",
         value: Dedent(`
           - **Total Shifts:** \`${ShiftsData.shift_count}\`
@@ -95,6 +93,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
         `),
       },
       {
+        inline: true,
         name: "**Field Activity:**",
         value: Dedent(`
           - Arrests Made: \`${FieldActivityData.arrests_made}\`
@@ -120,16 +119,15 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
 // ---------------------------------------------------------------------------------------
 // Command structure:
 // ------------------
-const CommandObject: SlashCommandObject<SlashCommandWithOptions> = {
+const CommandObject: SlashCommandObject<SlashCommandSubcommandBuilder> = {
   callback: Callback,
-  data: new SlashCommandBuilder()
-    .setName("activity")
+  data: new SlashCommandSubcommandBuilder()
+    .setName("for")
     .setDescription("Shows general activity information of an officer.")
-    .setDMPermission(false)
     .addUserOption((Option) =>
       Option.setName("officer")
-        .setDescription("The officer to show activity information for.")
-        .setRequired(true)
+        .setDescription("The officer to show activity information for. Defaults to yourself.")
+        .setRequired(false)
     )
     .addStringOption((Option) =>
       Option.setName("since")

@@ -449,6 +449,16 @@ export const ErrorMessages = {
     Description: "The page corresponding to the specified number does not exist.",
   },
 
+  ArrestRecordNotFound: {
+    Title: "Record Not Found",
+    Description: "The arrest record corresponding to the specified booking number is non-existent.",
+  },
+
+  CitRecordNotFound: {
+    Title: "Record Not Found",
+    Description: "There is no citation found with the specified number.",
+  },
+
   /**
    * For nickname searches and replaces
    */
