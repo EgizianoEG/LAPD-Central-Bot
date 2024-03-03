@@ -55,6 +55,17 @@ export default async function CommandHandler(
     .join(" ");
 
   try {
+    AppLogger.debug({
+      message: "Handling execution of slash command %o...",
+      label: LogLabel,
+      splat: [FullCmdName],
+      details: {
+        full_name: FullCmdName,
+        cmd_options: Interaction.options,
+        stringified: Interaction.toString(),
+      },
+    });
+
     if (!CommandObject) {
       return new ErrorEmbed()
         .setDescription("Attempt execution of a non-existent command on the application.")
