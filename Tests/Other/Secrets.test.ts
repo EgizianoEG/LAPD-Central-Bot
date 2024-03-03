@@ -1,4 +1,4 @@
-import AppConfig, { Discord, Roblox, MongoDB, OpenWeather } from "@Config/Secrets.js";
+import AppConfig, { Discord, Roblox, MongoDB, OpenWeather, Other } from "@Config/Secrets.js";
 import { SnowflakeUtil } from "discord.js";
 
 // ---------------------------------------------------------------------------------------
@@ -24,6 +24,7 @@ describe("Secrets Config File", () => {
     expect(AppConfig).toStrictEqual({
       Discord,
       Roblox,
+      Other,
       MongoDB,
       OpenWeather,
     });

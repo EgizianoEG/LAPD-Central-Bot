@@ -509,7 +509,7 @@ describe("String Formatting Utilities", () => {
         - Statute: § 2800.2(A) VC\
       `;
 
-      const Result = FormatCharges(Input);
+      const Result = FormatCharges(Input).join("\n");
       expect(Result).toBe(ExpectedOutput);
     });
   });
