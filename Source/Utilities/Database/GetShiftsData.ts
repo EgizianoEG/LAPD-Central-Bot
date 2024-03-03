@@ -41,11 +41,16 @@ export default async function GetMainShiftsData(
     {
       $group: {
         _id: null,
-        shift_count: {
-          $sum: 1,
-        },
+        shift_count: { $sum: 1 },
         total_onduty: {
-          $sum: ["$durations.on_duty", { $ifNull: ["$durations.on_duty_mod", 0] }],
+          $sum: {
+            $add: [
+              "$durations.on_duty",
+              {
+                $ifNull: ["$durations.on_duty_mod", 0],
+              },
+            ],
+          },
         },
         total_onbreak: {
           $sum: "$durations.on_break",
