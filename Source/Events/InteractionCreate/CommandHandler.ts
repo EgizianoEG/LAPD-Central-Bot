@@ -70,7 +70,7 @@ export default async function CommandHandler(
         });
     }
 
-    await HandleCommandCooldowns(Client, Interaction, CommandObject);
+    await HandleCommandCooldowns(Client, Interaction, CommandObject, FullCmdName);
     await HandleDevOnlyCommands(CommandObject, Interaction);
     await HandleUserPermissions(CommandObject, Interaction);
     await HandleBotPermissions(CommandObject, Interaction);
@@ -134,23 +134,51 @@ export default async function CommandHandler(
  * @param Client
  * @param CommandObject
  * @param Interaction
+ * @param CommandName - The full name of the slash command.
  */
 async function HandleCommandCooldowns(
   Client: DiscordClient,
   Interaction: ChatInputCommandInteraction,
-  CommandObject: SlashCommandObject
+  CommandObject: SlashCommandObject,
+  CommandName: string
 ) {
+  if (Interaction.replied) return;
   const CurrentTS = Date.now();
   const Cooldowns = Client.cooldowns;
   const CommandID = Interaction.commandId;
-  const CommandName = Interaction.commandName;
 
   if (!Cooldowns.has(CommandName)) {
     Cooldowns.set(CommandName, new Collection());
   }
 
   const Timestamps = Cooldowns.get(CommandName);
-  const CooldownDuration = (CommandObject.options?.cooldown ?? DefaultCmdCooldownDuration) * 1000;
+  let CooldownDuration: number = DefaultCmdCooldownDuration * 1000;
+  if (CommandObject.options?.cooldown) {
+    if (typeof CommandObject.options.cooldown === "number") {
+      CooldownDuration = CommandObject.options.cooldown * 1000;
+    } else {
+      const RunningCmdGS =
+        Interaction.options.getSubcommandGroup(false) ?? Interaction.options.getSubcommand(false);
+
+      if (RunningCmdGS) {
+        const MatchingSubcmdCooldown = CommandObject.options.cooldown[RunningCmdGS];
+        if (MatchingSubcmdCooldown) {
+          CooldownDuration = MatchingSubcmdCooldown * 1000;
+        } else {
+          // Handle '$all_other', '$other_cmds', '$all', as well as '$other' as a special case
+          // where these keys specify the permissions needed for all other subcommands not mentioned
+          // above in the user perms object structure.
+          const CooldownFallbackKey = Object.keys(CommandObject.options.cooldown).find(
+            (key) => !!key.match(/^\$all(?:_other)?$|^\$other(?:_cmds)?$/)
+          );
+
+          if (CooldownFallbackKey) {
+            CooldownDuration = CommandObject.options.cooldown[CooldownFallbackKey] * 1000;
+          }
+        }
+      }
+    }
+  }
 
   if (!Timestamps) return;
   if (Timestamps.has(Interaction.user.id)) {

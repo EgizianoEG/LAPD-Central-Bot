@@ -91,8 +91,14 @@ declare global {
     /**Should command execution be restricted to application developers only? */
     dev_only?: boolean;
 
-    /** Cooldown period in *seconds* between each command execution (Check the `CommandHandler` file for the default cooldown value) */
-    cooldown?: number;
+    /**
+     * Cooldown period in *seconds* between each command execution (Check the `CommandHandler` file for the default cooldown value).
+     * Could be a record of cooldowns so that there are different cooldowns for each sub command or sub command group individually.
+     * Use "$all_other", "$other_cmds", "$all", or "$other" to set a cooldown for all other commands/subcmds/subcmd-groups under a single slash command.
+     *
+     * If there is a cooldown set for a subcommand or subcommand group, it will override the default or $all_other cooldown value.
+     */
+    cooldown?: number | Record<"$all_other" | "$other_cmds" | "$all" | "$other" | string, number>;
 
     /**
      * The required user guild permissions to run this command.
