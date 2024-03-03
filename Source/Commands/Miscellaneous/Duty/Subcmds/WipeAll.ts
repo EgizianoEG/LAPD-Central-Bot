@@ -157,7 +157,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
         return new InfoEmbed()
           .setTitle("Deletion Cancelled")
           .setDescription("Shift data deletion has been cancelled.")
-          .replyToInteract(ButtonInteract);
+          .replyToInteract(ButtonInteract, true);
       }
     })
     .catch((Err) => HandleActionCollectorExceptions(Err, DisablePrompt));
