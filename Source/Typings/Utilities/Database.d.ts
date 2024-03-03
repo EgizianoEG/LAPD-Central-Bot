@@ -9,6 +9,7 @@ export namespace Guilds {
     guild_id: string;
     is_default?: boolean;
     access_roles?: string[];
+    created_on?: Date;
   }
 
   interface ShiftType {
@@ -20,7 +21,7 @@ export namespace Guilds {
     /** All roles whose holders can utilize this duty shift type. */
     access_roles: string[];
     /** The date when this shift type was created. */
-    created_at: Date;
+    created_on: Date;
   }
 
   interface GuildLogs {
@@ -299,7 +300,7 @@ export namespace GuildCitations {
     num: number;
 
     /** The date of violation or citation. */
-    issued_at: Date;
+    issued_on: Date;
 
     /** Date of violation or citation issuing date. */
     dov: string;
@@ -421,7 +422,7 @@ export namespace GuildArrests {
     _id: number;
 
     /** The date when the arrest report was made. */
-    made_at: Date;
+    made_on: Date;
 
     /** Any notes provided by the arresting officer. */
     notes: string | null;
@@ -463,5 +464,39 @@ export namespace GuildArrests {
     roblox_id: number;
     discord_id: string;
     formatted_name: string;
+  }
+}
+
+export namespace AggregateResults {
+  interface GetCitationNumbers {
+    citations: {
+      num: string;
+      autocomplete_label: string;
+    }[];
+  }
+
+  interface GetBookingNumbers {
+    bookings: {
+      num: string;
+      autocomplete_label: string;
+    }[];
+  }
+
+  interface GetCitationRecord {
+    citation: GuildCitations.AnyCitationData;
+  }
+
+  interface GetArrestRecord {
+    arrest: GuildArrests.ArrestRecord;
+  }
+
+  interface GetUserRecords {
+    arrests: GuildArrests.ArrestRecord[];
+    citations: GuildCitations.AnyCitationData[];
+
+    total_arrests: number;
+    total_citations: number;
+    recent_arrest: GuildArrests.ArrestRecord | null;
+    recent_citation: GuildCitations.AnyCitationData | null;
   }
 }

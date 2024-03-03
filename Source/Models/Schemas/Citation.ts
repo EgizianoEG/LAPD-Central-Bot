@@ -16,7 +16,7 @@ const CitationSchema = new Schema<CitationPlainDoc, CitationModelType>({
     },
   },
 
-  issued_at: {
+  issued_on: {
     type: Date,
     required: true,
     default: Date.now,

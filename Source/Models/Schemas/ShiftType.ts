@@ -33,7 +33,7 @@ const ShiftTypeSchema = new Schema({
     ],
   },
 
-  created_at: {
+  created_on: {
     type: Date,
     default: Date.now,
     immutable: true,

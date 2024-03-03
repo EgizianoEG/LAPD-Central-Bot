@@ -41,6 +41,7 @@ export default async function CreateShiftType(Data: Guilds.CreateShiftTypeConfig
       name: Data.name,
       is_default: Data.is_default,
       access_roles: Data.access_roles,
+      created_on: Data.created_on,
     });
 
     return GuildDoc.save().then((Res) => {

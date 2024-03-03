@@ -16,13 +16,13 @@ async function AutodeleteGuildLogs() {
     if (!LogDeletionInterval) continue;
 
     for (const ArrestReport of GuildDoc.logs.arrests) {
-      if (differenceInMilliseconds(ArrestReport.made_at, CurrentDate) >= LogDeletionInterval) {
+      if (differenceInMilliseconds(ArrestReport.made_on, CurrentDate) >= LogDeletionInterval) {
         ArrestLogIdsToRemove.push(ArrestReport._id);
       }
     }
 
     for (const CitationLog of GuildDoc.logs.citations) {
-      if (differenceInMilliseconds(CitationLog.issued_at, CurrentDate) >= LogDeletionInterval) {
+      if (differenceInMilliseconds(CitationLog.issued_on, CurrentDate) >= LogDeletionInterval) {
         CitationLogIdsToRemove.push(CitationLog.num);
       }
     }

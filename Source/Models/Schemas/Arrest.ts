@@ -20,7 +20,7 @@ const ArrestSchema = new Schema<ArrestPlainDoc, ArrestModelType>({
   },
 
   // The date when the arrest report was created.
-  made_at: {
+  made_on: {
     type: Date,
     required: true,
     default: Date.now,

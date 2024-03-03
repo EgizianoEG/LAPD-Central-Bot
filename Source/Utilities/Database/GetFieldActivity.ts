@@ -46,7 +46,7 @@ export default async function GetStaffFieldActivity(
                 {
                   $cond: {
                     if: After,
-                    then: { $gt: ["$$arrest.made_at", After] },
+                    then: { $gt: ["$$arrest.made_on", After] },
                     else: true,
                   },
                 },
@@ -60,11 +60,11 @@ export default async function GetStaffFieldActivity(
             as: "arrest",
             cond: {
               $and: [
-                { $in: [StaffMember.id, "$$arrest.arrest_assisting_officers"] },
+                { $in: [StaffMember.id, "$$arrest.assisting_officers"] },
                 {
                   $cond: {
                     if: After,
-                    then: { $gt: ["$$arrest.made_at", After] },
+                    then: { $gt: ["$$arrest.made_on", After] },
                     else: true,
                   },
                 },
@@ -82,7 +82,7 @@ export default async function GetStaffFieldActivity(
                 {
                   $cond: {
                     if: After,
-                    then: { $gt: ["$$citation.issued_at", After] },
+                    then: { $gt: ["$$citation.issued_on", After] },
                     else: true,
                   },
                 },
