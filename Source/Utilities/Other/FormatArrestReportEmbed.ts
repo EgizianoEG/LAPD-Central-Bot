@@ -26,7 +26,7 @@ export default async function GetFormattedArrestReportEmbed(
     : "N/A";
 
   const ReportDescription = Dedent(`
-    Arrest report submitted by ${userMention(ArrestInfo.arresting_officer.discord_id)}
+    Arrest report submitted by: ${userMention(ArrestInfo.arresting_officer.discord_id)}
     Arrest assisting officers: ${FAsstOfficers}
     Booking number: \`${ArrestInfo._id}\`
   `);
