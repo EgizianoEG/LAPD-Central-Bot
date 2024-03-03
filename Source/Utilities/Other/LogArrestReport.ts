@@ -1,14 +1,13 @@
-import { ButtonInteraction, Colors, EmbedBuilder, userMention } from "discord.js";
+import { GuildArrests, Shifts } from "@Typings/Utilities/Database.js";
+import { ButtonInteraction } from "discord.js";
 import { CmdOptionsType } from "@Cmds/Miscellaneous/Log/Deps/Arrest.js";
 import { FormatUsername } from "@Utilities/Strings/Formatters.js";
-import { Images, Icons } from "@Config/Shared.js";
-import { Shifts } from "@Typings/Utilities/Database.js";
+import { Images } from "@Config/Shared.js";
 
-import Dedent from "dedent";
 import GuildModel from "@Models/Guild.js";
 import SendGuildMessages from "@Utilities/Other/SendGuildMessages.js";
 import IncrementActiveShiftEvent from "@Utilities/Database/IncrementActiveShiftEvent.js";
-const ListFormatter = new Intl.ListFormat("en");
+import GetFormattedArrestReportEmbed from "./FormatArrestReportEmbed.js";
 
 export type ReporterInfoType = {
   /** Shift currently active for the reporting officer */
@@ -59,15 +58,11 @@ export default async function LogArrestReport(
 
   const FArresteeName = FormatUsername(ArresteeInfo.roblox_user);
   const FReporterName = FormatUsername(ReporterInfo.roblox_user);
-  const FAsstOfficers = ReporterInfo.asst_officers.length
-    ? ListFormatter.format(Array.from(ReporterInfo.asst_officers, (Id) => userMention(Id)))
-    : "N/A";
-
-  const ArrestLogData: Partial<(typeof GuildDocument.logs.arrests)[number]> = {
+  const ArrestLogData: GuildArrests.ArrestRecord = {
     _id: ArresteeInfo.booking_num,
-    made_at: ReporterInfo.report_date,
+    made_on: ReporterInfo.report_date,
     assisting_officers: ReporterInfo.asst_officers,
-    notes: ArresteeInfo.notes,
+    notes: ArresteeInfo.notes ?? null,
 
     arrestee: {
       roblox_id: Number(ArresteeInfo.roblox_user.id),
@@ -95,63 +90,14 @@ export default async function LogArrestReport(
     ),
   ]);
 
-  const ReportDescription = Dedent(`
-    Arrest report submitted by <@${ReporterInfo.discord_user_id}>.
-    Arrest assisting officers: ${FAsstOfficers}
-    Booking number: \`${ArresteeInfo.booking_num}\`
-  `);
-
-  const FormattedReport = new EmbedBuilder()
-    .setTitle("LAPD — Arrest Report")
-    .setDescription(ReportDescription)
-    .setTimestamp(CachedInteract.createdTimestamp)
-    .setThumbnail(ArresteeInfo.booking_mugshot)
-    .setTimestamp(ReporterInfo.report_date)
-    .setImage(Images.LAPD_Header)
-    .setColor(Colors.DarkBlue)
-    .setFooter({
-      iconURL: Icons.Signature,
-      text: `Report signed by: ${FReporterName}`,
-    })
-    .setFields([
-      {
-        name: "Arrestee",
-        value: FArresteeName,
-        inline: true,
-      },
-      {
-        name: "Gender",
-        value: ArresteeInfo.Gender,
-        inline: true,
-      },
-      {
-        name: "Arrest Age",
-        value: ArresteeInfo.AgeGroup,
-        inline: true,
-      },
-      {
-        name: "Height",
-        value: ArresteeInfo.Height,
-        inline: true,
-      },
-      {
-        name: "Weight",
-        value: ArresteeInfo.Weight + " lbs",
-        inline: true,
-      },
-      {
-        name: "Convicted Charges",
-        value: ArresteeInfo.formatted_charges.join("\n"),
-        inline: false,
-      },
-    ]);
+  const FormattedReport = (await GetFormattedArrestReportEmbed(ArrestLogData, false)).setImage(
+    Images.LAPD_Header
+  );
 
   const MainMsgLink = await SendGuildMessages(
     CachedInteract,
     GuildDocument.settings.log_channels.arrests,
-    {
-      embeds: [FormattedReport],
-    }
+    { embeds: [FormattedReport] }
   );
 
   return {
