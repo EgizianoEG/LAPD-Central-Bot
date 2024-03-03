@@ -106,11 +106,6 @@ export default async function CommandHandler(
       throw new ReferenceError("The command's callback function has not been found.");
     }
   } catch (Err: any) {
-    if (Err instanceof DiscordAPIError && (Err.code === 40_060 || Err.code === 10_062)) {
-      // Most likely this error is due to high latency issues.
-      return;
-    }
-
     const ErrId = RandomString(6, /[\dA-Z]/i);
     AppLogger.error({
       message: "An error occurred while executing slash command %o;",
@@ -126,12 +121,12 @@ export default async function CommandHandler(
         .setTitle(Err.title)
         .setDescription(Err.message)
         .setFooter({ text: `Error ID: ${ErrId}` })
-        .replyToInteract(Interaction, true);
+        .replyToInteract(Interaction, true, true);
     } else {
       await new ErrorEmbed()
         .useErrTemplate("AppError")
         .setFooter({ text: `Error ID: ${ErrId}` })
-        .replyToInteract(Interaction, true);
+        .replyToInteract(Interaction, true, true);
     }
   }
 }
