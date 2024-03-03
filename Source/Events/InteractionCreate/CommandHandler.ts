@@ -46,7 +46,13 @@ export default async function CommandHandler(
   if (!Interaction.isChatInputCommand()) return;
   const CommandName = Interaction.commandName;
   const CommandObject = Client.commands.get(CommandName);
-  const FullCmdName = Interaction.toString().match(/^\/([\w\- ]+)(?: \w+:.+)?$/)![1];
+  const FullCmdName = [
+    CommandName,
+    Interaction.options.getSubcommandGroup(false),
+    Interaction.options.getSubcommand(false),
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   try {
     if (!CommandObject) {
@@ -110,12 +116,12 @@ export default async function CommandHandler(
         .setTitle(Err.title)
         .setDescription(Err.message)
         .setFooter({ text: `Error ID: ${ErrId}` })
-        .replyToInteract(Interaction);
+        .replyToInteract(Interaction, true);
     } else {
       await new ErrorEmbed()
         .useErrTemplate("AppError")
         .setFooter({ text: `Error ID: ${ErrId}` })
-        .replyToInteract(Interaction);
+        .replyToInteract(Interaction, true);
     }
   }
 }
