@@ -5,7 +5,6 @@ import {
   time,
   Collection,
   GuildMember,
-  DiscordAPIError,
   PermissionsBitField,
   PermissionFlagsBits,
   PermissionResolvable,
