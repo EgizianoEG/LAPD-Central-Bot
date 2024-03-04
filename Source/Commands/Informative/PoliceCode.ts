@@ -5,9 +5,6 @@ import AutocompleteRadioCode from "@Utilities/Autocompletion/RadioCode.js";
 const AllCodes = [...TenCodes, ...ElevenCodes, ...LiteralCodes];
 // ---------------------------------------------------------------------------------------
 
-/**
- * @param Interaction
- */
 async function Callback(Interaction: SlashCommandInteraction) {
   const CodeTyped = Interaction.options.getString("code", true);
   const CodeFound = AllCodes.find(
@@ -80,10 +77,6 @@ async function Callback(Interaction: SlashCommandInteraction) {
   return Interaction.reply({ embeds: [ResponseEmbed] });
 }
 
-/**
- * @param Interaction
- * @returns
- */
 async function Autocomplete(Interaction: AutocompleteInteraction) {
   const { name, value } = Interaction.options.getFocused(true);
   const Suggestions = name === "code" ? AutocompleteRadioCode(value) : [];
