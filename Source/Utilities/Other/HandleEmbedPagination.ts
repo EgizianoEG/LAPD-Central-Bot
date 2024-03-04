@@ -7,13 +7,13 @@ import {
   ComponentType,
   EmbedBuilder,
   Message,
+  Colors,
   ModalBuilder,
   TextInputStyle,
   ActionRowBuilder,
   TextInputBuilder,
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
-  Colors,
 } from "discord.js";
 
 import AppLogger from "@Utilities/Classes/AppLogger.js";
