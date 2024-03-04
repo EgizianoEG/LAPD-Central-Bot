@@ -15,15 +15,18 @@ const RegexFlags = ["i", "g", "gi"];
  */
 function ToEmbedPages(Members: GuildMember[]) {
   const Embeds: EmbedBuilder[] = [];
+  const MMTotal = Members.length;
+
   for (let i = 0; i < Members.length; i += 20) {
     Embeds.push(
       new InfoEmbed()
-        .setTitle("Matching Members")
+        .setTitle(`Matching Members — ${MMTotal}`)
         .setDescription(
           ListFormatter.format(Members.slice(i, i + 20).map((M) => `<@${M.user.id}>`))
         )
     );
   }
+
   return Embeds;
 }
 
