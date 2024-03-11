@@ -50,7 +50,7 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
   const RolesAfter = (
     await SelectedMember.roles.add(
       FilteredRoles.map((Role) => Role.role_id),
-      `Roles save load; by @${CmdInteraction.user.username}`
+      `Roles save load; initiated by @${CmdInteraction.user.username}`
     )
   ).roles.cache;
 

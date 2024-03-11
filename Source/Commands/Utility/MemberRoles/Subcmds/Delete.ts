@@ -39,7 +39,7 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
     The save was successfully deleted. Here is a summary of it:
     - **Save For:** <@${Save.member}>
     - **Saved By:** <@${Save.saved_by}>
-    - **Saved At:** ${time(Save.saved_at, "f")}
+    - **Saved On:** ${time(Save.saved_on, "f")}
     - **Role Count:** [${Save.roles?.length}](${channelLink(CmdInteraction.channelId)})
   `);
 

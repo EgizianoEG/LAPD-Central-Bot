@@ -44,7 +44,7 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
     nickname: SelectedMember.nickname ?? SelectedMember.user.displayName,
     username: IsBot ? SelectedMember.user.tag : SelectedMember.user.username,
     saved_by: CmdInteraction.user.id,
-    saved_at: CmdInteraction.createdAt,
+    saved_on: CmdInteraction.createdAt,
   });
 
   const RespEmbed = new EmbedBuilder()

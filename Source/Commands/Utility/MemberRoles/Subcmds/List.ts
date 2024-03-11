@@ -36,7 +36,7 @@ function GetSavePages(
         Dedent(`
           - **Save ID:** \`${Save.id}\`
             - **Saved By:** <@${Save.saved_by}>
-            - **Saved At:** ${time(Save.saved_at, "f")}
+            - **Saved On:** ${time(Save.saved_on, "f")}
             - **Save Role Count:** [${Save.roles.length}](${channelLink(CmdInteraction.channelId)})
         `)
       );

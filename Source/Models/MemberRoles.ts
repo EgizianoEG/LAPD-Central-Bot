@@ -55,7 +55,7 @@ const MemberRoles = new Schema(
       required: true,
     },
 
-    saved_at: {
+    saved_on: {
       type: Date,
       default: Date.now,
     },
@@ -80,15 +80,15 @@ const MemberRoles = new Schema(
         },
       },
 
-      saved_at_timestamp: {
+      saved_on_timestamp: {
         get() {
-          return time(this.saved_at, "F");
+          return time(this.saved_on, "F");
         },
       },
 
-      saved_at_formatted: {
+      saved_on_formatted: {
         get() {
-          return format(this.saved_at, "MMMM dd, yyyy 'at' HH:mm:ss");
+          return format(this.saved_on, "MMMM dd, yyyy 'at' HH:mm:ss");
         },
       },
 
@@ -100,7 +100,7 @@ const MemberRoles = new Schema(
 
       autocomplete_text: {
         get() {
-          return `${this.nickname} (@${this.username}) – ${format(this.saved_at, "MMM dd, yy 'at' HH:mm:ss")}`;
+          return `${this.nickname} (@${this.username}) – ${format(this.saved_on, "MMM dd, yy 'at' HH:mm:ss")}`;
         },
       },
     },
