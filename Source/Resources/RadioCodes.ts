@@ -69,15 +69,16 @@ export const LiteralCodes: CodeType[] = [
     code: "Code 2",
     title: "Code Two",
     description: `
-      **Routine Call, No Lights or Siren.**
+      **Routine Call, No Sirens.**
       Code Two signifies an urgent situation requiring immediate attention, but not necessarily a life-threatening emergency. \
-      Responding officers are expected to proceed as quickly as possible while adhering to all traffic laws and avoiding the use of red lights and sirens.
+      Responding officers are expected to proceed as quickly as possible while adhering to all traffic laws and avoiding the use of sirens.
     `,
 
     notes: [
       "Officers responding to a 'Code Two' radio call *shall only* interrupt the Code Two call to perform police work of major importance.",
-      "Officers who interrupt their response to a Code Two call due to police work of major importance, delay, or other exigent circumstances shall immediately notify Communications Division or Dispatch.",
+      "Officers who interrupt their response to a Code Two call due to *police work of major importance*, delay, or other exigent circumstances shall immediately notify Communications Division or Dispatch.",
       "Supervisors evaluate interrupted Code Two responses for appropriateness, considering radio logs, scene visits, and other relevant information.",
+      "'Police Work of Major Importance' refers to police actions that involve the arrest, processing, and detention of felony suspects and intoxicated drivers, as well as tasks that are important for the urgent public safety and protection of life and property.",
     ],
 
     usage_contexts: [
@@ -96,7 +97,7 @@ export const LiteralCodes: CodeType[] = [
     code: "Code 2-H",
     title: "Code Two High",
     description: `
-      **Priority Call, Lights and Siren Can Be Used.**
+      **Priority Call, Lights and Sirens Can Be Used.**
       This code is almost equivalent to the 'Code Two' code, with the exception that the lights \
       and siren can be utilized only if necessary to get through traffic.
     `,
