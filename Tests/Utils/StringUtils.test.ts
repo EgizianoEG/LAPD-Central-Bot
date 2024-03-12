@@ -405,6 +405,12 @@ describe("String Formatting Utilities", () => {
       );
     });
 
+    it("Should return formatted username which is also linked (using markdown) to the user's Roblox profile if UsernameLinked parameter is `true`", () => {
+      expect(FormatUsername(InputUserData, false, true)).toBe(
+        "Builderman ([@builderman_spec](https://www.roblox.com/users/25041404840/profile))"
+      );
+    });
+
     it("Should return formatted string with the username regarded as the display name if display name is not specified", () => {
       InputUserData.display_name = undefined as any;
       expect(FormatUsername(InputUserData)).toBe("builderman_spec (@builderman_spec)");
