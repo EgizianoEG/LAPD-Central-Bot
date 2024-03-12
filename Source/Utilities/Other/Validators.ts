@@ -1,6 +1,7 @@
-import { SlashCommandBuilder } from "discord.js";
+import { SlashCommandBuilder, SnowflakeUtil } from "discord.js";
+import { isAfter, isBefore } from "date-fns";
 import { FormatHeight } from "@Utilities/Strings/Formatters.js";
-import { isBefore } from "date-fns";
+const MinDiscordTimestamp = 1420070400000;
 
 /**
  * Checks wether a given string can be valid as a Roblox username.
@@ -18,7 +19,9 @@ export function IsValidRobloxUsername(Str: string): boolean {
  * @returns
  */
 export function IsValidDiscordId(Input: string): boolean {
-  return !!Input.match(/^\d{15,22}$/);
+  if (!Input.match(/^\d{15,22}$/)) return false;
+  const SnowflakeTS = SnowflakeUtil.timestampFrom(Input);
+  return isBefore(SnowflakeTS, new Date()) && isAfter(SnowflakeTS, MinDiscordTimestamp);
 }
 
 /**
@@ -48,6 +51,7 @@ export function IsValidShiftId(Str: string): boolean {
 /**
  * Checks if a given string is a valid license plate by ensuring it does not start or end with
  * a hyphen and consists of 3 to 7 characters that are either letters, digits, or one hyphen between.
+ * This function won't check for all uppercase letters which means it is case-insensitive.
  * @param {string} Str - A string that represents a license plate.
  * @returns
  */

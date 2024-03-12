@@ -1,11 +1,16 @@
 /* eslint-disable no-new-object */
 import { SlashCommandBuilder } from "discord.js";
 import {
-  IsValidRobloxUsername,
-  IsValidShiftTypeName,
-  IsValidCmdObject,
   IsPlainObject,
   IsEmptyObject,
+  IsValidShiftId,
+  IsValidDiscordId,
+  IsValidCmdObject,
+  IsValidUserPermsObj,
+  IsValidLicensePlate,
+  IsValidPersonHeight,
+  IsValidShiftTypeName,
+  IsValidRobloxUsername,
 } from "@Utilities/Other/Validators";
 
 describe("IsValidRobloxUsername", () => {
@@ -113,5 +118,134 @@ describe("IsEmptyObject", () => {
     expect(IsEmptyObject({ key: "value" })).toBeFalsy();
     expect(IsEmptyObject({ a: 1, b: 2 })).toBeFalsy();
     expect(IsEmptyObject([1, 2, 3])).toBeFalsy();
+  });
+});
+
+describe("IsValidShiftId", () => {
+  it("Should return false for shift ids with less than or greater than 15 characters", () => {
+    expect(IsValidShiftId("")).toBeFalsy();
+    expect(IsValidShiftId("12345")).toBeFalsy();
+    expect(IsValidShiftId("12345678901234521")).toBeFalsy();
+  });
+
+  it("Should return false for non-numeric shift ids", () => {
+    expect(IsValidShiftId("               ")).toBeFalsy();
+    expect(IsValidShiftId("abcdabcdacdabcd")).toBeFalsy();
+    expect(IsValidShiftId("$#&^$#&^$#&^$#'")).toBeFalsy();
+  });
+
+  it("Should return false for invalid shift ids", () => {
+    expect(IsValidShiftId("723456789012345")).toBeFalsy();
+    expect(IsValidShiftId("179956789012345")).toBeFalsy();
+    expect(IsValidShiftId("02345678901234")).toBeFalsy();
+    expect(IsValidShiftId("18745678901234")).toBeFalsy();
+  });
+
+  it("Should return true for valid shift ids", () => {
+    const CurrentTimestamp = new Date().valueOf() - 1_000;
+    const ValidShiftId = CurrentTimestamp.toString().padEnd(15, "0");
+    expect(IsValidShiftId(ValidShiftId)).toBeTruthy();
+  });
+});
+
+describe("IsValidPersonHeight", () => {
+  it("Should return false for invalid person heights", () => {
+    expect(IsValidPersonHeight("")).toBeFalsy();
+    expect(IsValidPersonHeight("5'13\"")).toBeFalsy();
+    expect(IsValidPersonHeight("6'00\"")).toBeFalsy();
+    expect(IsValidPersonHeight("7'13\"")).toBeFalsy();
+    expect(IsValidPersonHeight("7'0\"1")).toBeFalsy();
+    expect(IsValidPersonHeight("4'01\"1")).toBeFalsy();
+    expect(IsValidPersonHeight("7'01\"a")).toBeFalsy();
+    expect(IsValidPersonHeight("7'14\" ")).toBeFalsy();
+    // eslint-disable-next-line quotes
+    expect(IsValidPersonHeight('7\'01""')).toBeFalsy();
+  });
+
+  it("Should return true for valid person heights", () => {
+    expect(IsValidPersonHeight("5'0\"")).toBeTruthy();
+    expect(IsValidPersonHeight("5'6\"")).toBeTruthy();
+    expect(IsValidPersonHeight("6'2\"")).toBeTruthy();
+    expect(IsValidPersonHeight("7'0\"")).toBeTruthy();
+    expect(IsValidPersonHeight("7'11\"")).toBeTruthy();
+  });
+});
+
+describe("IsValidUserPermsObj", () => {
+  it("Should return false for invalid user permissions objects", () => {
+    expect(IsValidUserPermsObj({})).toBeFalsy();
+    expect(IsValidUserPermsObj({ id: "123" })).toBeFalsy();
+    expect(IsValidUserPermsObj({ abc: "abc", manage: true })).toBeFalsy();
+    expect(IsValidUserPermsObj({ check: { staff: true, management: true } })).toBeFalsy();
+  });
+
+  it("Should return true for valid user permissions objects", () => {
+    expect(IsValidUserPermsObj({ staff: true })).toBeTruthy();
+    expect(IsValidUserPermsObj({ management: true })).toBeTruthy();
+    expect(IsValidUserPermsObj({ management: { server: true } })).toBeTruthy();
+    expect(IsValidUserPermsObj({ management: { server: true } })).toBeTruthy();
+    expect(IsValidUserPermsObj({ staff: true, management: false })).toBeTruthy();
+
+    expect(
+      IsValidUserPermsObj({ cmd: { staff: true }, management: { server: true } })
+    ).toBeTruthy();
+
+    expect(
+      IsValidUserPermsObj({ staff: true, management: { server: true, app: true } })
+    ).toBeTruthy();
+
+    expect(
+      IsValidUserPermsObj({ staff: true, management: { server: true, app: true, $and: true } })
+    ).toBeTruthy();
+  });
+});
+
+describe("IsValidDiscordId", () => {
+  it("Should return false for invalid Discord snowflake ids", () => {
+    expect(IsValidDiscordId("")).toBeFalsy();
+    expect(IsValidDiscordId("12345")).toBeFalsy();
+    expect(IsValidDiscordId("               ")).toBeFalsy();
+    expect(IsValidDiscordId("abcdabcdacdabcd")).toBeFalsy();
+    expect(IsValidDiscordId("$#&^$#&^$#&^$#'")).toBeFalsy();
+    expect(IsValidDiscordId("48002343548678901234")).toBeFalsy();
+    expect(IsValidDiscordId("4745858745678901234")).toBeFalsy();
+  });
+
+  it("Should return true for valid Discord snowflake ids", () => {
+    expect(IsValidDiscordId("123456789012345")).toBeTruthy();
+    expect(IsValidDiscordId("987654321098765432")).toBeTruthy();
+    expect(IsValidDiscordId("723456789012345")).toBeTruthy();
+    expect(IsValidDiscordId("179956789012345")).toBeTruthy();
+    expect(IsValidDiscordId("1202001151969742939")).toBeTruthy();
+    expect(IsValidDiscordId("1186171894911733841")).toBeTruthy();
+  });
+});
+
+describe("IsValidLicensePlate", () => {
+  it("Should return false for license plates starting or ending with '-'", () => {
+    expect(IsValidLicensePlate("-ABC123")).toBeFalsy();
+    expect(IsValidLicensePlate("ABC123-")).toBeFalsy();
+    expect(IsValidLicensePlate("-ABC123-")).toBeFalsy();
+  });
+
+  it("Should return false for license plates with less than 3 or more than 7 characters", () => {
+    expect(IsValidLicensePlate("AB")).toBeFalsy();
+    expect(IsValidLicensePlate("ABC12345")).toBeFalsy();
+  });
+
+  it("Should return false for license plates containing invalid characters", () => {
+    expect(IsValidLicensePlate("ABC@123")).toBeFalsy();
+    expect(IsValidLicensePlate("ABC_123")).toBeFalsy();
+    expect(IsValidLicensePlate("ABC.123")).toBeFalsy();
+  });
+
+  it("Should return true for valid license plates", () => {
+    expect(IsValidLicensePlate("ABC123")).toBeTruthy();
+    expect(IsValidLicensePlate("123")).toBeTruthy();
+    expect(IsValidLicensePlate("1234567")).toBeTruthy();
+    expect(IsValidLicensePlate("abcdefg")).toBeTruthy();
+    expect(IsValidLicensePlate("DEF-456")).toBeTruthy();
+    expect(IsValidLicensePlate("GHI-JKL")).toBeTruthy();
+    expect(IsValidLicensePlate("123-XYZ")).toBeTruthy();
   });
 });

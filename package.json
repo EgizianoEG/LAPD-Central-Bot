@@ -30,6 +30,7 @@
     "test:coverage": "jest \"--coverage\"",
     "test:secrets": "npm run test -- Tests/Other/Secrets.test.ts",
     "test:utils": "npm run test -- Tests/Utils/*",
+    "test:other": "npm run test -- Tests/Other/*",
     "test:rscs": "npm run test -- Tests/Other/Resources.test.ts",
     "test": "jest"
   },
