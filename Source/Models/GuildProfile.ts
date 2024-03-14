@@ -2,6 +2,7 @@ import { PreDelete, ProfilePostFind } from "./Functions/ProfileModel.js";
 import { Model, Schema, model } from "mongoose";
 import { GuildProfiles } from "@Typings/Utilities/Database.js";
 import ShiftsDataSchema from "./Schemas/ShiftsData.js";
+import LOARecordSchema from "./Schemas/LOA.js";
 
 type ProfilePlainDoc = GuildProfiles.ProfileDocument;
 type ProfileModelType = Model<ProfilePlainDoc, unknown, GuildProfiles.ProfileOverrides>;
@@ -33,6 +34,12 @@ const ProfileSchema = new Schema<ProfilePlainDoc, ProfileModelType, GuildProfile
           type: Number,
         },
       },
+    },
+
+    loas: {
+      type: [LOARecordSchema],
+      default: [],
+      required: true,
     },
 
     shifts: {
