@@ -1000,7 +1000,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
 
   const RespEmbed = new EmbedBuilder()
     .setTimestamp()
-    .setFields({ name: "All Time Info:", value: ShiftsInfo })
+    .setFields({ name: "All Time Statistics:", value: ShiftsInfo })
     .setFooter({ text: `Shift Type: ${CmdShiftType ?? "All shift types"}` })
     .setAuthor({
       name: `Shift Administration for @${TargetUser.username}`,
