@@ -272,11 +272,11 @@ async function HandleShiftBreakStart(
     .setFields({
       name: "Current Shift",
       value: Dedent(`
-            **Status:** (${Emojis.Idle}) On Break
-            **Shift Started:** ${FormatTime(ShiftActive.start_timestamp, "R")}
-            **Break Started:** ${BreakStarted}
-            ${TotalBreakTime || ""}
-            `),
+        **Status:** (${Emojis.Idle}) On Break
+        **Shift Started:** ${FormatTime(ShiftActive.start_timestamp, "R")}
+        **Break Started:** ${BreakStarted}
+        ${TotalBreakTime || ""}
+      `),
     });
 
   return Promise.all([
@@ -372,6 +372,7 @@ async function HandleShiftEnd(
   ShiftActive: Shifts.HydratedShiftDocument,
   ButtonInteract: ButtonInteraction<"cached">,
   ShiftDataInfo: string,
+  ButtonsActionRow: NavButtonsActionRow,
   TotalBreakTime: Nullable<string>
 ) {
   const UpdatedShift = await ShiftActive.end(ButtonInteract.createdTimestamp).catch((Err: any) => {
@@ -382,9 +383,14 @@ async function HandleShiftEnd(
   });
 
   if (UpdatedShift instanceof AppError) {
-    return new ErrorEmbed()
-      .useErrClass(UpdatedShift)
-      .replyToInteract(ButtonInteract, true, true, "reply");
+    return Promise.allSettled([
+      ButtonInteract.editReply({
+        components: [ButtonsActionRow.updateButtons({ start: false, break: false, end: false })],
+      }),
+      new ErrorEmbed()
+        .useErrClass(UpdatedShift)
+        .replyToInteract(ButtonInteract, true, true, "reply"),
+    ]);
   }
 
   const ReplyEmbed = new EmbedBuilder()
@@ -551,7 +557,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
       const ErrHandler = (Err: any) => {
         if (!(Err instanceof AppError && Err.is_showable)) throw Err;
         return Promise.allSettled([
-          Reply.edit({
+          ButtonInteract.editReply({
             components: [
               ButtonsActionRow.updateButtons({
                 start: false,
@@ -559,7 +565,19 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
                 end: false,
               }),
             ],
-          }).catch(() => null),
+          })
+            .catch(() =>
+              Reply.edit({
+                components: [
+                  ButtonsActionRow.updateButtons({
+                    start: false,
+                    break: false,
+                    end: false,
+                  }),
+                ],
+              })
+            )
+            .catch(() => null),
           new ErrorEmbed().useErrClass(Err).replyToInteract(ButtonInteract, true, true, "reply"),
         ]);
       };
@@ -579,6 +597,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
           ShiftActive,
           ButtonInteract,
           ShiftsInfo,
+          ButtonsActionRow,
           TotalBreakTime
         );
       }
