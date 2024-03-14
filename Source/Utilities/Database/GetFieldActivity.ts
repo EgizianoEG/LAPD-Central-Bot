@@ -54,7 +54,7 @@ export default async function GetStaffFieldActivity(
             },
           },
         },
-        assistedArrests: {
+        arrests_assisted: {
           $filter: {
             input: "$logs.arrests",
             as: "arrest",
