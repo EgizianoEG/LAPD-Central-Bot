@@ -209,7 +209,8 @@ export const ErrorMessages = {
    */
   RobloxUserNotLinked: {
     Title: "Hold On!",
-    Description: "You must first link your Roblox account to be able to use this command.",
+    Description:
+      "You must first link your Roblox account using the `login` slash command to be able to use this command.",
   },
 
   /**
