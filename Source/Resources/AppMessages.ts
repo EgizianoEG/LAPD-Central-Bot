@@ -417,6 +417,12 @@ export const ErrorMessages = {
       "The format of the duration you have entered is either incorrect or not supported. Kindly attempt again using a different format.",
   },
 
+  NotEnoughTimePassedAR: {
+    Title: "Insufficient Time",
+    Description:
+      "The time that has passed since the date you entered is insufficient to complete this action. Please provide a date that is at least one day earlier than today.",
+  },
+
   /**
    * Short typed duration (< 30 seconds)
    */
@@ -507,6 +513,21 @@ export const InfoMessages = {
     Title: "Timed Out",
     Description:
       "This configuration prompt has timed out. If you wish to continue with the process, please re-run the configuration command.",
+  },
+
+  NoShiftsFoundLeaderboard: {
+    Title: "No Shifts Found",
+    Description: "There were no shift records in the server to display a leaderboard for.",
+  },
+
+  NoShiftsFoundReport: {
+    Title: "No Shifts Found",
+    Description: "There were no shift records to create an activity report based on.",
+  },
+
+  NoShiftsFoundEndAll: {
+    Title: "No Active Shifts",
+    Description: "There are no active shifts at the moment to end.",
   },
 
   /**

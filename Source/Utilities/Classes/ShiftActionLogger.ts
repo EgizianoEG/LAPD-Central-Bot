@@ -193,6 +193,7 @@ export default class ShiftActionLogger {
 
     if (AdminUser) {
       this.BeforeFooter(LogEmbed, `Started by: @${AdminUser.username}`);
+      LogEmbed.setTimestamp(UserInteract.createdAt);
     }
 
     if (TargetUser) {
@@ -249,6 +250,7 @@ export default class ShiftActionLogger {
       );
 
     if (AdminUser) {
+      LogEmbed.setTimestamp(UserInteract.createdAt);
       LogEmbed.setFooter({
         text: `Started by: @${AdminUser.username}; ${LogEmbed.data.footer?.text}`,
       });
@@ -315,6 +317,7 @@ export default class ShiftActionLogger {
       );
 
     if (AdminUser) {
+      LogEmbed.setTimestamp(UserInteract.createdAt);
       LogEmbed.setFooter({
         text: `Ended by: @${AdminUser.username}; ${LogEmbed.data.footer?.text}`,
       });
@@ -387,6 +390,7 @@ export default class ShiftActionLogger {
 
     if (AdminUser) {
       this.BeforeFooter(LogEmbed, `Ended by: @${AdminUser.username}`);
+      LogEmbed.setTimestamp(UserInteract.createdAt);
     }
 
     if (TargetUser) {
@@ -516,6 +520,7 @@ export default class ShiftActionLogger {
 
     if (AdminUser) {
       this.BeforeFooter(LogEmbed, `Voided by: @${AdminUser.username}`);
+      LogEmbed.setTimestamp(UserInteract.createdAt);
     }
 
     if (TargetUser) {
@@ -560,6 +565,34 @@ export default class ShiftActionLogger {
       LogEmbed.setTimestamp(UserInteract.createdAt);
     }
 
+    return LoggingChannel?.send({ embeds: [LogEmbed] });
+  }
+
+  /**
+   * Logs a shift wipe-all action to the appropriate and specified channel of a guild.
+   * @param UserInteract - The received discordjs interaction (button/cmd).
+   * @param UpdateResult - The modification result of mongoose/mongodb.
+   * @param ShiftType - Type of shifts that were ended; defaults to `null` which translates into `*All Types*`.
+   * @returns A promise that resolves to the logging message sent or `undefined` if it wasn't.
+   */
+  public static async LogShiftsEndAll(
+    UserInteract: Exclude<DiscordUserInteract, GuildMember>,
+    UpdateResult: Mongoose.UpdateWriteOpResult,
+    ShiftType?: string | null
+  ) {
+    const LoggingChannel = await this.GetLoggingChannel(UserInteract.guild);
+    const LogEmbed = new EmbedBuilder()
+      .setColor(Embeds.Colors.ShiftEnd)
+      .setTitle("Shifts Ended")
+      .setFooter({ text: `Ended by: @${UserInteract.user.username}` })
+      .setDescription(
+        Dedent(`
+          **Shift Count:** ${BluewishText(UpdateResult.modifiedCount, LoggingChannel?.id ?? UserInteract.id)}
+          **Shift${UpdateResult.modifiedCount === 1 ? "" : "s"} of Type:** ${ShiftType ? `${inlineCode(ShiftType)}` : "*All Shift Types*"}
+        `)
+      );
+
+    LogEmbed.setTimestamp(UserInteract.createdAt);
     return LoggingChannel?.send({ embeds: [LogEmbed] });
   }
 
