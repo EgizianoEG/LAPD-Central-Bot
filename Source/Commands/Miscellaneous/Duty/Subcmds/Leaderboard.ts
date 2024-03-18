@@ -121,9 +121,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   });
 
   if (PaginatedData.length === 0) {
-    const ReplyEmbed = new InfoEmbed()
-      .setTitle("No Shifts Found")
-      .setDescription("There were no shift records in the server to display a leaderboard for.");
+    const ReplyEmbed = new InfoEmbed().useInfoTemplate("NoShiftsFoundLeaderboard");
     if (CmdShiftType) {
       ReplyEmbed.setDescription(
         `There were no shift records with of the \`${CmdShiftType}\` type to display a leaderboard for.`

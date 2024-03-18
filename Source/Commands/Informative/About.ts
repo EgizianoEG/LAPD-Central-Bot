@@ -23,9 +23,7 @@ async function Callback(Client: DiscordClient, Interaction: SlashCommandInteract
   const AppInviteLink = Client.generateInvite({
     scopes: [OAuth2Scopes.Bot, OAuth2Scopes.ApplicationsCommands],
     permissions: [
-      "AddReactions",
       "AttachFiles",
-      "EmbedLinks",
       "ManageRoles",
       "SendMessages",
       "ManageNicknames",
@@ -60,7 +58,7 @@ async function Callback(Client: DiscordClient, Interaction: SlashCommandInteract
       inline: true,
     })
     .addFields({
-      name: "Invite",
+      name: "App Invite",
       value: `[Invite Link](${AppInviteLink})`,
       inline: true,
     })

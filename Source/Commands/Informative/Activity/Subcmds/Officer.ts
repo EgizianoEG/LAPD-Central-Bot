@@ -19,9 +19,9 @@ import Dedent from "dedent";
  * @param Interaction
  */
 async function Callback(Interaction: SlashCommandInteraction<"cached">) {
-  const HRDateAfter = Interaction.options.getString("since");
+  const InputSince = Interaction.options.getString("since");
   let OfficerSelected = Interaction.options.getMember("officer");
-  let DateAfterParsed: Date | null = null;
+  let SinceDate: Date | null = null;
 
   if (OfficerSelected) {
     if (OfficerSelected.user.bot) {
@@ -33,13 +33,17 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     OfficerSelected = Interaction.member;
   }
 
-  if (HRDateAfter) {
-    DateAfterParsed = Chrono.parseDate(HRDateAfter, Interaction.createdAt);
-    if (!DateAfterParsed) {
+  if (InputSince) {
+    SinceDate = Chrono.parseDate(InputSince, Interaction.createdAt);
+    if (!SinceDate && !InputSince.match(/\bago\s*$/i)) {
+      SinceDate = Chrono.parseDate(`${InputSince} ago`, Interaction.createdAt);
+    }
+
+    if (!SinceDate) {
       return new ErrorEmbed()
         .useErrTemplate("UnknownDateFormat")
         .replyToInteract(Interaction, true, false);
-    } else if (isAfter(DateAfterParsed, Interaction.createdAt)) {
+    } else if (isAfter(SinceDate, Interaction.createdAt)) {
       return new ErrorEmbed()
         .useErrTemplate("DateInFuture")
         .replyToInteract(Interaction, true, false);
@@ -59,11 +63,11 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     ? FormatUsername(TargetRUserInfo, false, true)
     : "*Not Linked*";
 
-  const FieldActivityData = await GetStaffFieldActivity(OfficerSelected, DateAfterParsed);
+  const FieldActivityData = await GetStaffFieldActivity(OfficerSelected, SinceDate);
   const ShiftsData = await GetMainShiftsData({
     user: OfficerSelected.id,
     guild: Interaction.guildId,
-    start_timestamp: DateAfterParsed ? { $gte: DateAfterParsed } : { $exists: true },
+    start_timestamp: SinceDate ? { $gte: SinceDate } : { $exists: true },
   });
 
   const RespEmbed = new InfoEmbed()
@@ -105,9 +109,9 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
       }
     );
 
-  if (DateAfterParsed) {
+  if (SinceDate) {
     RespEmbed.setFooter({
-      text: `Showing activity since ${formatDistance(DateAfterParsed, Interaction.createdAt, {
+      text: `Showing activity since ${formatDistance(SinceDate, Interaction.createdAt, {
         addSuffix: true,
       })}`,
     });

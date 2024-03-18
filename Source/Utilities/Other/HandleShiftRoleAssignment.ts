@@ -27,14 +27,14 @@ export default async function HandleRoleAssignment(
 
     if (CurrentStatus === "on-duty") {
       await GuildMember.roles.remove(RASettings.on_break, "User is no longer on-break.");
-      await GuildMember.roles.add(RASettings.on_duty, "User is on shift and on-duty.");
+      await GuildMember.roles.add(RASettings.on_duty, "User is on an active shift and on-duty.");
     } else if (CurrentStatus === "on-break") {
-      await GuildMember.roles.remove(RASettings.on_duty, "Shift break started.");
-      await GuildMember.roles.add(RASettings.on_break, "User is on shift and on-break.");
+      await GuildMember.roles.remove(RASettings.on_duty, "User is currently taking a shift break.");
+      await GuildMember.roles.add(RASettings.on_break, "User has started a shift break.");
     } else {
       await GuildMember.roles.remove(
         [...RASettings.on_duty, ...RASettings.on_break],
-        "User is no longer on shift nor on-duty."
+        "User is now off-duty and no longer on shift."
       );
     }
   } catch (Err) {

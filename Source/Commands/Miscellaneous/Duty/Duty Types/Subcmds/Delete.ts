@@ -15,7 +15,7 @@ import { IsValidShiftTypeName } from "@Utilities/Other/Validators.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import Dedent from "dedent";
-import GetShiftTypes from "@Utilities/Database/GetShiftTypes.js";
+import ShiftTypeExists from "@Utilities/Database/ShiftTypeExists.js";
 import DeleteShiftType from "@Utilities/Database/DeleteShiftType.js";
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
 import HandleActionCollectorExceptions from "@Utilities/Other/HandleCompCollectorExceptions.js";
@@ -43,19 +43,12 @@ async function HandleSTNameValidation(
       .useErrTemplate("PreservedShiftTypeDeletion")
       .replyToInteract(Interaction, true)
       .then(() => true);
-  } else {
-    const ShiftTypeExists = await GetShiftTypes(Interaction.guildId).then((ShiftTypes) => {
-      for (const ShiftType of ShiftTypes) {
-        if (ShiftType.name === ShiftTypeName) return true;
-      }
-      return false;
-    });
-    if (!ShiftTypeExists)
-      return new ErrorEmbed()
-        .useErrTemplate("NonexistentShiftTypeDeletion", ShiftTypeName)
-        .replyToInteract(Interaction, true)
-        .then(() => true);
-  }
+  } else if (!(await ShiftTypeExists(Interaction.guildId, ShiftTypeName)))
+    return new ErrorEmbed()
+      .useErrTemplate("NonexistentShiftTypeDeletion", ShiftTypeName)
+      .replyToInteract(Interaction, true)
+      .then(() => true);
+
   return false;
 }
 

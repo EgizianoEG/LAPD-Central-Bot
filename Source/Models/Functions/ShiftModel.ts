@@ -103,19 +103,6 @@ export async function ShiftEnd(this: ThisType, timestamp: Date | number = new Da
 
   return DBDocument.save().then(async (ShiftDoc) => {
     ActiveShiftsCache.del(ShiftDoc._id);
-    await ProfileModel.updateOne(
-      {
-        user: ShiftDoc.user,
-        guild: ShiftDoc.guild,
-      },
-      {
-        $push: { "shifts.logs": ShiftDoc._id },
-        $inc: {
-          "shifts.total_durations.on_duty": DBDocument.durations.on_duty,
-          "shifts.total_durations.on_break": DBDocument.durations.on_break,
-        },
-      }
-    ).exec();
     return DBDocument;
   });
 }

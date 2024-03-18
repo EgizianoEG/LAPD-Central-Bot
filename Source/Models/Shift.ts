@@ -40,6 +40,7 @@ const ShiftSchema = new Schema<Shifts.ShiftDocument, ShiftModelType, Shifts.Shif
 
     end_timestamp: {
       type: Date,
+      index: true,
       default: null,
       required: false,
     },

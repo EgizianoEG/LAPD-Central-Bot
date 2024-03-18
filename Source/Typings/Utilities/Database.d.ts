@@ -1,5 +1,5 @@
+import type { Types, HydratedDocument, HydratedArraySubdocument } from "mongoose";
 import type { DeepPartial, Falsey, Overwrite } from "utility-types";
-import type { Types, HydratedDocument, HydratedDocumentFromSchema } from "mongoose";
 import type ERLCAgeGroups from "@Resources/ERLCAgeGroups.ts";
 import type IncidentTypes from "@Resources/IncidentTypes.ts";
 
@@ -267,6 +267,33 @@ export namespace GuildProfiles {
     average_periods: Types.Subdocument<undefined> & TotalDurationsData;
   }
 
+  interface LeaveOfAbsenceDocument {
+    status: "Pending" | "Approved" | "Denied";
+    reason: string;
+
+    /** A virtual returns the duration of the leave of absence in milliseconds. */
+    duration: number;
+
+    /** A virtual returns a human readable duration of the leave of absence. */
+    duration_hr: number;
+
+    /** The date when the leave of absence supposed to end. */
+    end_date: Date;
+
+    /** The date when the leave of absence was requested. */
+    request_date: Date;
+
+    /** The reason or comment on the LOA approval or denial. */
+    reviewer_comment: string | null;
+
+    /** The date when the leave of absence was reviewed. */
+    review_date: Date | null;
+    reviewed_by: {
+      id: string;
+      username: string;
+    } | null;
+  }
+
   interface ProfileDocument {
     /** The Discord user's unique identifier. */
     user: string;
@@ -284,6 +311,9 @@ export namespace GuildProfiles {
     linked_account: {
       roblox_user_id: number;
     };
+
+    /** Leave of absence records. */
+    loas: HydratedArraySubdocument<LeaveOfAbsenceDocument>[];
 
     shifts: {
       total_durations: TotalDurationsData;
@@ -544,5 +574,51 @@ export namespace AggregateResults {
     total_citations: number;
     recent_arrest: GuildArrests.ArrestRecord | null;
     recent_citation: GuildCitations.AnyCitationData | null;
+  }
+
+  /** Without the highest role or name of the user. */
+  interface BaseActivityReportData {
+    records: Omit<ActivityReportRecord, "role" | "username" | "display_name">[];
+    statistics: ActivityReportStatistics;
+  }
+
+  interface ActivityReportData {
+    records: ActivityReportRecord[];
+    statistics: ActivityReportStatistics;
+  }
+
+  interface ActivityReportRecord {
+    /** The Discord user id. */
+    id: string;
+
+    /** The highest role name. */
+    role: string;
+
+    /** The current username. */
+    username: string;
+
+    /** The current nickname in the server (fallback to display name.) */
+    display_name: string;
+    total_shifts: number;
+    total_time: number;
+    loa_active: boolean;
+    quota_met: boolean;
+
+    /** Total number of citations issued. */
+    citations: number;
+
+    /** Total number of arrests made. */
+    arrests: number;
+
+    /** Total number of arrests assisted. */
+    arrests_assisted: number;
+  }
+
+  interface ActivityReportStatistics {
+    /** Total on duty time compined. */
+    total_time: number;
+
+    /** Total shifts recorded. */
+    total_shifts: number;
   }
 }

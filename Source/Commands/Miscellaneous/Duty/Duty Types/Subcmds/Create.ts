@@ -19,7 +19,7 @@ import { IsValidShiftTypeName } from "@Utilities/Other/Validators.js";
 
 import Dedent from "dedent";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
-import GetShiftTypes from "@Utilities/Database/GetShiftTypes.js";
+import ShiftTypeExists from "@Utilities/Database/ShiftTypeExists.js";
 import CreateShiftType from "@Utilities/Database/CreateShiftType.js";
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
 const ListFormatter = new Intl.ListFormat("en");
@@ -45,19 +45,10 @@ async function HandleNameValidation(
     return new ErrorEmbed()
       .useErrTemplate("PreservedShiftTypeCreation")
       .replyToInteract(Interaction, true);
-  } else {
-    const ShiftTypeExists = await GetShiftTypes(Interaction.guildId).then((ShiftTypes) => {
-      for (const ShiftType of ShiftTypes) {
-        if (ShiftType.name === ShiftTypeName) return true;
-      }
-      return false;
-    });
-
-    if (ShiftTypeExists)
-      return new ErrorEmbed()
-        .useErrTemplate("ShiftTypeAlreadyExists", ShiftTypeName)
-        .replyToInteract(Interaction, true);
-  }
+  } else if (await ShiftTypeExists(Interaction.guildId, ShiftTypeName))
+    return new ErrorEmbed()
+      .useErrTemplate("ShiftTypeAlreadyExists", ShiftTypeName)
+      .replyToInteract(Interaction, true);
 }
 
 /**

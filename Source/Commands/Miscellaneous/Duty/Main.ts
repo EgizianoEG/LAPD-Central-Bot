@@ -12,6 +12,7 @@ const Subcommands = [
   (await import("./Subcmds/Manage.js")).default,
   (await import("./Subcmds/Active.js")).default,
   (await import("./Subcmds/WipeAll.js")).default,
+  (await import("./Subcmds/EndAll.js")).default,
   (await import("./Subcmds/Leaderboard.js")).default,
 ];
 
@@ -100,6 +101,7 @@ const CommandObject: SlashCommandObject = {
       types: { management: true },
       admin: { management: true },
       $all_other: { staff: true },
+      "end-all": { management: true },
       "wipe-all": { management: true },
     },
   },
