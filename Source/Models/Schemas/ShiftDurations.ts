@@ -28,8 +28,10 @@ const ShiftDurations = new Schema({
       let OnDutyDuration = TotalShiftDuration;
       OnDutyDuration -= this.on_break;
       OnDutyDuration += this.on_duty_mod;
+      OnDutyDuration = Math.max(OnDutyDuration, 0);
 
-      return Math.max(OnDutyDuration, 0);
+      this.on_duty = OnDutyDuration;
+      return OnDutyDuration;
     },
   },
 
@@ -47,16 +49,15 @@ const ShiftDurations = new Schema({
     get(this: Shifts.HydratedShiftDocument["durations"]) {
       const ShiftDoc = this.ownerDocument() as Shifts.HydratedShiftDocument;
       const EndTimestamp = ShiftDoc.end_timestamp?.valueOf() ?? Date.now();
-      if (!ShiftDoc.start_timestamp) return 0;
+      if (!ShiftDoc.start_timestamp || ShiftDoc.events.breaks.length === 0) return 0;
 
       const TotalShiftDuration = EndTimestamp - ShiftDoc.start_timestamp.valueOf();
-      const OnBreakDuration = Math.min(
-        ShiftDoc.events.breaks.reduce((Total, [StartEpoch, EndEpoch]) => {
-          return Total + Math.max((EndEpoch || EndTimestamp) - StartEpoch, 0);
-        }, 0),
-        TotalShiftDuration
-      );
+      let OnBreakDuration = ShiftDoc.events.breaks.reduce((Total, [StartEpoch, EndEpoch]) => {
+        return Total + Math.max((EndEpoch || EndTimestamp) - StartEpoch, 0);
+      }, 0);
 
+      OnBreakDuration = Math.min(OnBreakDuration, TotalShiftDuration);
+      OnBreakDuration = Math.max(OnBreakDuration, 0);
       this.on_break = OnBreakDuration;
       return OnBreakDuration;
     },

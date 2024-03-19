@@ -103,7 +103,7 @@ export async function ShiftEnd(this: ThisType, timestamp: Date | number = new Da
 
   return DBDocument.save().then(async (ShiftDoc) => {
     ActiveShiftsCache.del(ShiftDoc._id);
-    return DBDocument;
+    return ShiftDoc;
   });
 }
 

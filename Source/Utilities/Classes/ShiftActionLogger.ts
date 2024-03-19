@@ -9,12 +9,10 @@ import {
   userMention,
   GuildMember,
   EmbedBuilder,
+  BaseInteraction,
   ImageURLOptions,
   TextBasedChannel,
-  ButtonInteraction,
   time as FormatTime,
-  AnySelectMenuInteraction,
-  ModalSubmitInteraction,
 } from "discord.js";
 
 import { Shifts } from "@Typings/Utilities/Database.js";
@@ -35,18 +33,32 @@ const ReadableDuration = HDuration.humanizer({
 });
 
 // ------------------------------------------------------------------------------------
-// Class Definition:
-// -----------------
-
+// Typings:
+// --------
 type ShiftLogAction = "start" | "break-start" | "break-end" | "end" | "auto-end" | "wipe";
 type HydratedShiftDocument = Shifts.HydratedShiftDocument;
-type DiscordUserInteract =
-  | SlashCommandInteraction<"cached">
-  | AnySelectMenuInteraction<"cached">
-  | ModalSubmitInteraction<"cached">
-  | ButtonInteraction<"cached">
-  | GuildMember;
+type DiscordUserInteract = BaseInteraction<"cached"> | GuildMember;
 
+interface GetBaseDataOpts {
+  /** The latest and up-to-date shift document. */
+  shift_doc: HydratedShiftDocument;
+
+  /** The target user's information (user id and guild id). */
+  target_user: DiscordUserInteract | User | { user_id: string; guild_id: string };
+
+  /**
+   * The interaction that triggered the shift action. Used for accurate date of action.
+   * Defaults to the current date.
+   */
+  init_interact: DiscordUserInteract;
+
+  /** Should the base embed include the timestamp field set to the 'init interact' date? */
+  set_timestamp?: boolean;
+}
+
+// ------------------------------------------------------------------------------------
+// Class Definition:
+// -----------------
 export default class ShiftActionLogger {
   private static readonly AvatarIconOpts: ImageURLOptions = { size: 128 };
 
@@ -77,27 +89,36 @@ export default class ShiftActionLogger {
 
   /**
    * Base data for a target member (inferred from the shift document and command interactions).
-   * @param ShiftDoc - The latest/updated shift document.
-   * @param TUserInfo - The target user's information (user id and guild id).
-   * @returns
+   * @param Options - Options for the base data.
    */
-  private static async GetBaseData(
-    ShiftDoc: HydratedShiftDocument,
-    TUserInfo: GuildMember | { user_id: string; guild_id: string }
-  ) {
+  private static async GetBaseData(Options: GetBaseDataOpts) {
     const Guild =
-      TUserInfo instanceof GuildMember
-        ? TUserInfo.guild
-        : await DiscordApp.guilds.fetch(TUserInfo.guild_id);
+      Options.target_user instanceof GuildMember || Options.target_user instanceof BaseInteraction
+        ? Options.target_user.guild
+        : await DiscordApp.guilds.fetch(Options.shift_doc.guild);
+
     const UserInGuild =
-      TUserInfo instanceof GuildMember ? TUserInfo : await Guild.members.fetch(TUserInfo.user_id);
+      Options.target_user instanceof GuildMember
+        ? Options.target_user
+        : Options.target_user instanceof BaseInteraction
+          ? Options.target_user.member
+          : await Guild.members.fetch(Options.shift_doc.user);
+
+    const InteractDate =
+      Options.init_interact instanceof GuildMember
+        ? new Date()
+        : Options.init_interact?.createdAt ?? new Date();
 
     const UserAvatarURL = UserInGuild.user.displayAvatarURL(this.AvatarIconOpts);
     const CurrNickname = UserInGuild.nickname ?? UserInGuild.user.displayName;
     const LoggingChannel = await this.GetLoggingChannel(Guild);
-    const ShiftStartedRT = FormatTime(Math.round(ShiftDoc.start_timestamp.valueOf() / 1000), "R");
-    const ShiftEndedRT = ShiftDoc.end_timestamp
-      ? FormatTime(Math.round(ShiftDoc.end_timestamp.valueOf() / 1000), "R")
+    const ShiftStartedRT = FormatTime(
+      Math.round(Options.shift_doc.start_timestamp.valueOf() / 1000),
+      "R"
+    );
+
+    const ShiftEndedRT = Options.shift_doc.end_timestamp
+      ? FormatTime(Math.round(Options.shift_doc.end_timestamp.valueOf() / 1000), "R")
       : null;
 
     const BaseEmbed = new EmbedBuilder().setAuthor({
@@ -105,7 +126,11 @@ export default class ShiftActionLogger {
       name: `@${UserInGuild.user.username}`,
     });
 
-    return { BaseEmbed, LoggingChannel, ShiftStartedRT, ShiftEndedRT, CurrNickname };
+    if (Options.set_timestamp) {
+      BaseEmbed.setTimestamp(InteractDate);
+    }
+
+    return { BaseEmbed, LoggingChannel, ShiftStartedRT, ShiftEndedRT, CurrNickname, InteractDate };
   }
 
   /**
@@ -164,9 +189,10 @@ export default class ShiftActionLogger {
     AdminUser?: User,
     TargetUser?: User
   ) {
-    const BaseData = await this.GetBaseData(ShiftDoc, {
-      user_id: ShiftDoc.user,
-      guild_id: UserInteract.guild.id,
+    const BaseData = await this.GetBaseData({
+      target_user: TargetUser ?? UserInteract,
+      shift_doc: ShiftDoc,
+      init_interact: UserInteract,
     });
 
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Started")
@@ -193,7 +219,7 @@ export default class ShiftActionLogger {
 
     if (AdminUser) {
       this.BeforeFooter(LogEmbed, `Started by: @${AdminUser.username}`);
-      LogEmbed.setTimestamp(UserInteract.createdAt);
+      LogEmbed.setTimestamp(BaseData.InteractDate);
     }
 
     if (TargetUser) {
@@ -220,9 +246,10 @@ export default class ShiftActionLogger {
     AdminUser?: User,
     TargetUser?: User
   ) {
-    const BaseData = await this.GetBaseData(ShiftDoc, {
-      user_id: ShiftDoc.user,
-      guild_id: UserInteract.guild.id,
+    const BaseData = await this.GetBaseData({
+      target_user: TargetUser ?? UserInteract,
+      shift_doc: ShiftDoc,
+      init_interact: UserInteract,
     });
 
     const BreakStartedRT = FormatTime(Math.round(ShiftDoc.events.breaks[0]![0] / 1000), "R");
@@ -250,7 +277,7 @@ export default class ShiftActionLogger {
       );
 
     if (AdminUser) {
-      LogEmbed.setTimestamp(UserInteract.createdAt);
+      LogEmbed.setTimestamp(BaseData.InteractDate);
       LogEmbed.setFooter({
         text: `Started by: @${AdminUser.username}; ${LogEmbed.data.footer?.text}`,
       });
@@ -280,9 +307,10 @@ export default class ShiftActionLogger {
     AdminUser?: User,
     TargetUser?: User
   ) {
-    const BaseData = await this.GetBaseData(ShiftDoc, {
-      user_id: ShiftDoc.user,
-      guild_id: UserInteract.guild.id,
+    const BaseData = await this.GetBaseData({
+      target_user: TargetUser ?? UserInteract,
+      shift_doc: ShiftDoc,
+      init_interact: UserInteract,
     });
 
     const EndedBreak = ShiftDoc.events.breaks.findLast(() => true) as number[];
@@ -317,7 +345,7 @@ export default class ShiftActionLogger {
       );
 
     if (AdminUser) {
-      LogEmbed.setTimestamp(UserInteract.createdAt);
+      LogEmbed.setTimestamp(BaseData.InteractDate);
       LogEmbed.setFooter({
         text: `Ended by: @${AdminUser.username}; ${LogEmbed.data.footer?.text}`,
       });
@@ -347,9 +375,10 @@ export default class ShiftActionLogger {
     AdminUser?: User,
     TargetUser?: User
   ) {
-    const BaseData = await this.GetBaseData(ShiftDoc, {
-      user_id: ShiftDoc.user,
-      guild_id: UserInteract.guild.id,
+    const BaseData = await this.GetBaseData({
+      target_user: TargetUser ?? UserInteract,
+      shift_doc: ShiftDoc,
+      init_interact: UserInteract,
     });
 
     const OnDutyTime = ReadableDuration(ShiftDoc.durations.on_duty);
@@ -390,7 +419,7 @@ export default class ShiftActionLogger {
 
     if (AdminUser) {
       this.BeforeFooter(LogEmbed, `Ended by: @${AdminUser.username}`);
-      LogEmbed.setTimestamp(UserInteract.createdAt);
+      LogEmbed.setTimestamp(BaseData.InteractDate);
     }
 
     if (TargetUser) {
@@ -415,9 +444,10 @@ export default class ShiftActionLogger {
     UserInteract: DiscordUserInteract,
     EndReason: string
   ) {
-    const BaseData = await this.GetBaseData(ShiftDoc, {
-      user_id: ShiftDoc.user,
-      guild_id: UserInteract.guild.id,
+    const BaseData = await this.GetBaseData({
+      target_user: UserInteract,
+      shift_doc: ShiftDoc,
+      init_interact: UserInteract,
     });
 
     const OnDutyTime = ReadableDuration(ShiftDoc.durations.on_duty);
@@ -475,9 +505,10 @@ export default class ShiftActionLogger {
     AdminUser?: User,
     TargetUser?: User
   ) {
-    const BaseData = await this.GetBaseData(ShiftDoc, {
-      user_id: ShiftDoc.user,
-      guild_id: UserInteract.guildId,
+    const BaseData = await this.GetBaseData({
+      target_user: TargetUser ?? UserInteract,
+      shift_doc: ShiftDoc,
+      init_interact: UserInteract,
     });
 
     const VoidEpoch = FormatTime(UserInteract.createdAt, "R");
@@ -571,13 +602,13 @@ export default class ShiftActionLogger {
   /**
    * Logs a shift wipe-all action to the appropriate and specified channel of a guild.
    * @param UserInteract - The received discordjs interaction (button/cmd).
-   * @param UpdateResult - The modification result of mongoose/mongodb.
+   * @param TotalEnded - Total shifts that were ended.
    * @param ShiftType - Type of shifts that were ended; defaults to `null` which translates into `*All Types*`.
    * @returns A promise that resolves to the logging message sent or `undefined` if it wasn't.
    */
   public static async LogShiftsEndAll(
     UserInteract: Exclude<DiscordUserInteract, GuildMember>,
-    UpdateResult: Mongoose.UpdateWriteOpResult,
+    TotalEnded: number,
     ShiftType?: string | null
   ) {
     const LoggingChannel = await this.GetLoggingChannel(UserInteract.guild);
@@ -587,8 +618,8 @@ export default class ShiftActionLogger {
       .setFooter({ text: `Ended by: @${UserInteract.user.username}` })
       .setDescription(
         Dedent(`
-          **Shift Count:** ${BluewishText(UpdateResult.modifiedCount, LoggingChannel?.id ?? UserInteract.id)}
-          **Shift${UpdateResult.modifiedCount === 1 ? "" : "s"} of Type:** ${ShiftType ? `${inlineCode(ShiftType)}` : "*All Shift Types*"}
+          **Shift Count:** ${BluewishText(TotalEnded, LoggingChannel?.id ?? UserInteract.id)}
+          **Shift${TotalEnded === 1 ? "" : "s"} of Type:** ${ShiftType ? `${inlineCode(ShiftType)}` : "*All Shift Types*"}
         `)
       );
 
@@ -622,6 +653,7 @@ export default class ShiftActionLogger {
         `)
       );
 
+    LogEmbed.setTimestamp(UserInteract.createdAt);
     return LoggingChannel?.send({ embeds: [LogEmbed] });
   }
 
@@ -654,6 +686,7 @@ export default class ShiftActionLogger {
         `)
       );
 
+    LogEmbed.setTimestamp(UserInteract.createdAt);
     return LoggingChannel?.send({ embeds: [LogEmbed] });
   }
 
@@ -686,6 +719,7 @@ export default class ShiftActionLogger {
         `)
       );
 
+    LogEmbed.setTimestamp(UserInteract.createdAt);
     return LoggingChannel?.send({ embeds: [LogEmbed] });
   }
 
@@ -726,6 +760,7 @@ export default class ShiftActionLogger {
       LogEmbed.setColor(Embeds.Colors.ShiftEnd);
     }
 
+    LogEmbed.setTimestamp(UserInteract.createdAt);
     return LoggingChannel?.send({ embeds: [LogEmbed] });
   }
 }

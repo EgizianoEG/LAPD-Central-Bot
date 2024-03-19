@@ -1,47 +1,71 @@
-import { DiscordAPIError } from "discord.js";
-import GuildModel from "@Models/Guild.js";
+import { Guild, GuildMember } from "discord.js";
+import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
 
 /**
  * Handles shift role(s) assignment based on the current shift status of the user.
  * @param CurrentStatus - The current status of the shift ("on-duty", "on-break", or "off-duty").
  * @param Client - The Discord client.
  * @param GuildId - The ID of the user's guild/shift's guild.
- * @param UserId - The ID of the user whose shift status is being handled.
+ * @param UserId - The ID of the user whose shift status is being handled. Could be an array to handle multiple users at once.
  */
 export default async function HandleRoleAssignment(
   CurrentStatus: "on-duty" | "on-break" | "off-duty",
   Client: DiscordClient,
-  GuildId: string,
-  UserId: string
+  Guild: Guild | string,
+  UserId: string | string[]
 ) {
-  const RASettings = await GuildModel.findById(GuildId).then((Doc) => {
-    if (!Doc) return null;
-    return Doc.settings.shifts.role_assignment;
+  Guild = typeof Guild === "string" ? await Client.guilds.fetch(Guild) : Guild;
+  const RASettings = await GetGuildSettings(Guild.id).then((Settings) => {
+    if (!Settings) return null;
+    return Settings.shifts.role_assignment;
   });
 
-  if (!RASettings) return;
-  try {
-    const Guild = Client.guilds.cache.get(GuildId);
-    const GuildMember = Guild?.members.cache.get(UserId);
-    if (!GuildMember) return;
+  if (
+    !Guild ||
+    !RASettings ||
+    (RASettings.on_duty.length === 0 && RASettings.on_break.length === 0)
+  ) {
+    return;
+  }
 
-    if (CurrentStatus === "on-duty") {
-      await GuildMember.roles.remove(RASettings.on_break, "User is no longer on-break.");
-      await GuildMember.roles.add(RASettings.on_duty, "User is on an active shift and on-duty.");
-    } else if (CurrentStatus === "on-break") {
-      await GuildMember.roles.remove(RASettings.on_duty, "User is currently taking a shift break.");
-      await GuildMember.roles.add(RASettings.on_break, "User has started a shift break.");
-    } else {
-      await GuildMember.roles.remove(
-        [...RASettings.on_duty, ...RASettings.on_break],
-        "User is now off-duty and no longer on shift."
-      );
-    }
-  } catch (Err) {
-    // Ignore Discord permission errors.
-    if (Err instanceof DiscordAPIError && (Err.code === 50_013 || Err.code === 50_001)) {
-      return;
-    }
-    throw Err;
+  if (Array.isArray(UserId)) {
+    return Promise.all(
+      UserId.map(async (User) => {
+        const GuildMember = await Guild.members.fetch(User).catch(() => null);
+        if (!GuildMember) return Promise.resolve();
+        console.log("2-2");
+        return HandleSingleUserRoleAssignment(RASettings, GuildMember, CurrentStatus);
+      })
+    );
+  } else {
+    const GuildMember = await Guild.members.fetch(UserId).catch(() => null);
+    if (!GuildMember) return;
+    return HandleSingleUserRoleAssignment(RASettings, GuildMember, CurrentStatus);
+  }
+}
+
+async function HandleSingleUserRoleAssignment(
+  RASettings: NonNullable<
+    Awaited<ReturnType<typeof GetGuildSettings>>
+  >["shifts"]["role_assignment"],
+  GuildMember: GuildMember,
+  CurrentStatus: "on-duty" | "on-break" | "off-duty"
+) {
+  if (!GuildMember) return Promise.resolve();
+  if (CurrentStatus === "on-duty") {
+    return Promise.all([
+      GuildMember.roles.remove(RASettings.on_break, "User is no longer on-break."),
+      GuildMember.roles.add(RASettings.on_duty, "User is on an active shift and on-duty."),
+    ]);
+  } else if (CurrentStatus === "on-break") {
+    return Promise.all([
+      GuildMember.roles.remove(RASettings.on_duty, "User is currently taking a shift break."),
+      GuildMember.roles.add(RASettings.on_break, "User has started a shift break."),
+    ]);
+  } else {
+    return GuildMember.roles.remove(
+      [...RASettings.on_duty, ...RASettings.on_break],
+      "User is now off-duty and no longer on shift."
+    );
   }
 }

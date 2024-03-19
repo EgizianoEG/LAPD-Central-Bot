@@ -105,7 +105,7 @@ export const AddStatutesRegexes = {
   ),
 
   AttemptMurder: ORRegExp(
-    "(?:Trying|Attempt(?:ed|ing)?) (?:to )?(?:Kill|Murder|Homicide)",
+    `(?:Trying|Attempt(?:ed|ing)?) (?:${LEORegex.source})?(?:to )?(?:Kill|Murder|Homicide)`,
     "(?:Shoot(?:ing)?|Fir(?:ing|e)|Discharg(?:e|ing)) (?:at |on )?(?:a |an )?(?:Officer|Peace Officer|Police|Civilian|\\bLEO\\b|\\bPO\\b)s?"
   ),
 
