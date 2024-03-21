@@ -582,12 +582,15 @@ export namespace AggregateResults {
     statistics: ActivityReportStatistics;
   }
 
-  interface ActivityReportData {
-    records: ActivityReportRecord[];
-    statistics: ActivityReportStatistics;
+  /**
+   * @template T - The type of the total time and the time of the shift durations.
+   */
+  interface ActivityReportData<T extends number | string = number> {
+    records: ActivityReportRecord<T>[];
+    statistics: ActivityReportStatistics<T>;
   }
 
-  interface ActivityReportRecord {
+  interface ActivityReportRecord<T extends number | string = number> {
     /** The Discord user id. */
     id: string;
 
@@ -600,7 +603,7 @@ export namespace AggregateResults {
     /** The current nickname in the server (fallback to display name.) */
     display_name: string;
     total_shifts: number;
-    total_time: number;
+    total_time: T;
     loa_active: boolean;
     quota_met: boolean;
 
@@ -614,9 +617,9 @@ export namespace AggregateResults {
     arrests_assisted: number;
   }
 
-  interface ActivityReportStatistics {
+  interface ActivityReportStatistics<T extends number | string = number> {
     /** Total on duty time compined. */
-    total_time: number;
+    total_time: T;
 
     /** Total shifts recorded. */
     total_shifts: number;

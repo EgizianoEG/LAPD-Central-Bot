@@ -46,6 +46,7 @@ const SharedData = {
     FileEdit: "<:FileEdit:1185790827809738803>",
     FileDelete: "<:FileDelete:1185785834058813480>",
     Trash: "<:Trash:1185785496757088286>",
+    Loading: "<a:LoadingBlue:1219792743383957565>",
 
     StopWatch: "<:Time:1185414712670826557>",
     LosAngeles: "<:LosAngeles:1185406541709463652>",

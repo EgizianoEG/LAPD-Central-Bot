@@ -35,6 +35,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@google-cloud/local-auth": "^3.0.1",
     "@logtail/node": "^0.4.19",
     "@logtail/winston": "^0.4.19",
     "@napi-rs/canvas": "^0.1.45",
@@ -46,6 +47,7 @@
     "dedent": "^1.5.1",
     "discord.js": "^14.14.1",
     "express": "^4.18.2",
+    "googleapis": "^134.0.0",
     "humanize-duration": "^3.31.0",
     "mongoose": "^8.1.1",
     "node-cache": "^5.1.2",

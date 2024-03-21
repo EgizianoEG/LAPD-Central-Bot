@@ -1,14 +1,141 @@
 // Dependencies:
 // -------------
-import { SlashCommandSubcommandBuilder } from "discord.js";
-import { formatDistance, isAfter } from "date-fns";
+import {
+  SlashCommandSubcommandBuilder,
+  time as FormatTime,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+} from "discord.js";
+
+import { differenceInMilliseconds, isAfter, milliseconds } from "date-fns";
 import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { IsValidShiftTypeName } from "@Utilities/Other/Validators.js";
+import { Emojis } from "@Config/Shared.js";
 
 import * as Chrono from "chrono-node";
 import Dedent from "dedent";
+import DHumanize from "humanize-duration";
+import ShiftModel from "@Models/Shift.js";
+import ParseDuration from "parse-duration";
+import ShiftTypeExists from "@Utilities/Database/ShiftTypeExists.js";
+import CreateShiftReport from "@Utilities/Other/CreateShiftReport.js";
+
+const HumanizeDuration = DHumanize.humanizer({
+  conjunction: " and ",
+  largest: 3,
+  round: true,
+});
 
 // ---------------------------------------------------------------------------------------
-async function Callback(_CmdInteraction: SlashCommandInteraction<"cached">) {}
+async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
+  const InputQuotaDuration = CmdInteraction.options.getString("time-requirement", false);
+  const InputShiftType = CmdInteraction.options.getString("shift-type", false);
+  const InputSince = CmdInteraction.options.getString("since", true);
+  let SinceDate: Date | null = null;
+  let QuotaDur: number | null = null;
+
+  if (InputQuotaDuration) {
+    QuotaDur = Math.round(ParseDuration(InputQuotaDuration, "millisecond") ?? 0);
+    if (!QuotaDur) {
+      return new ErrorEmbed()
+        .useErrTemplate("UnknownDurationExp")
+        .replyToInteract(CmdInteraction, true, true);
+    }
+  }
+
+  if (InputSince) {
+    SinceDate = Chrono.parseDate(InputSince, CmdInteraction.createdAt);
+    if (!SinceDate && !InputSince.match(/\bago\s*$/i)) {
+      SinceDate = Chrono.parseDate(`${InputSince} ago`, CmdInteraction.createdAt);
+    }
+
+    if (!SinceDate) {
+      return new ErrorEmbed()
+        .useErrTemplate("UnknownDateFormat")
+        .replyToInteract(CmdInteraction, true, false);
+    } else if (isAfter(SinceDate, CmdInteraction.createdAt)) {
+      return new ErrorEmbed()
+        .useErrTemplate("DateInFuture")
+        .replyToInteract(CmdInteraction, true, false);
+    } else if (
+      differenceInMilliseconds(CmdInteraction.createdAt, SinceDate) + 10_000 <=
+      milliseconds({ days: 1 })
+    ) {
+      return new ErrorEmbed()
+        .useErrTemplate("NotEnoughTimePassedAR")
+        .replyToInteract(CmdInteraction, true, false);
+    }
+  }
+
+  if (InputShiftType) {
+    if (!IsValidShiftTypeName(InputShiftType)) {
+      return new ErrorEmbed()
+        .useErrTemplate("MalformedShiftTypeName")
+        .replyToInteract(CmdInteraction, true, false);
+    } else if (!(await ShiftTypeExists(CmdInteraction.guildId, InputShiftType))) {
+      return new ErrorEmbed()
+        .useErrTemplate("NonexistentShiftTypeUsage")
+        .replyToInteract(CmdInteraction, true, false);
+    }
+  }
+
+  const QuickShiftCount = await ShiftModel.countDocuments({
+    guild: CmdInteraction.guild.id,
+    type: InputShiftType || { $exists: true },
+    start_timestamp: SinceDate ? { $gte: SinceDate } : { $exists: true },
+    end_timestamp: { $ne: null },
+  });
+
+  if (QuickShiftCount === 0) {
+    return new InfoEmbed()
+      .useInfoTemplate("NoShiftsFoundReport")
+      .replyToInteract(CmdInteraction, true, false);
+  }
+
+  await new InfoEmbed()
+    .setThumbnail(null)
+    .setTitle(Emojis.Loading + "\u{2000}" + "Creating Report...")
+    .setDescription(
+      "This may take a few moments. Please wait while your activity report is being created."
+    )
+    .replyToInteract(CmdInteraction, true, false);
+
+  const ReportSpredsheetURL = await CreateShiftReport({
+    guild: CmdInteraction.guild,
+    members: await CmdInteraction.guild.members.fetch(),
+    shift_type: InputShiftType,
+    after: SinceDate,
+    quota_duration: QuotaDur,
+  });
+
+  const ShowReportButton = new ActionRowBuilder<ButtonBuilder>().setComponents(
+    new ButtonBuilder()
+      .setLabel("View Activity Report")
+      .setStyle(ButtonStyle.Link)
+      .setURL(ReportSpredsheetURL)
+  );
+
+  const RespEmbed = new InfoEmbed()
+    .setThumbnail(null)
+    .setTitle("Report Created")
+    .setDescription(
+      Dedent(`
+        **The activity report has been successfully created and is ready to be viewed.**
+        **Report Configuration:**
+        - **Data Since:** ${SinceDate ? FormatTime(SinceDate, "F") : "Not Specified"}
+        - **Shift Type:** ${InputShiftType ?? "All Shift Types"}
+        - **Shift Time Requirement:** ${QuotaDur ? HumanizeDuration(QuotaDur) : "Disabled (No Quota)"}
+        
+        *Click the button below to view the report on Google Sheets.*
+      `)
+    );
+
+  return CmdInteraction.editReply({
+    components: [ShowReportButton],
+    embeds: [RespEmbed],
+  });
+}
 
 // ---------------------------------------------------------------------------------------
 // Command structure:
@@ -32,7 +159,7 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandBuilder> = {
         .setDescription(
           "The on-duty shift time requirement for each officer. This requirement is disabled by default."
         )
-        .setMinLength(3)
+        .setMinLength(2)
         .setMaxLength(20)
         .setRequired(false)
     )
