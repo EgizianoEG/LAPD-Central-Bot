@@ -1,5 +1,12 @@
-import AppConfig, { Discord, Roblox, MongoDB, OpenWeather, Other } from "@Config/Secrets.js";
 import { SnowflakeUtil } from "discord.js";
+import AppConfig, {
+  OpenWeather,
+  GoogleAPI,
+  Discord,
+  Roblox,
+  MongoDB,
+  Other,
+} from "@Config/Secrets.js";
 
 // ---------------------------------------------------------------------------------------
 // Helpers:
@@ -26,6 +33,7 @@ describe("Secrets Config File", () => {
       Roblox,
       Other,
       MongoDB,
+      GoogleAPI,
       OpenWeather,
     });
   });

@@ -2,7 +2,7 @@ import Shuffle from "@Utilities/Other/ShuffleArray.js";
 
 describe("ShuffleArray()", () => {
   it("Should shuffle an array of elements", () => {
-    const Arr = [1, 2, 3, 4, 5];
+    const Arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     const ShuffledArr = Shuffle([...Arr]);
     expect(ShuffledArr).not.toEqual(Arr);
     expect(ShuffledArr.toSorted((a, b) => a - b)).toEqual(Arr.toSorted((a, b) => a - b));
