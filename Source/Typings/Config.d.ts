@@ -17,6 +17,9 @@ export namespace Secrets {
     /** A container for all related OpenWeather secret values. */
     OpenWeather: OpenWeather;
 
+    /** A container for all related GoogleAPI secret values. */
+    GoogleAPI: GoogleAPI;
+
     /** Other & general configuration values. */
     Other: Other;
   }
@@ -54,6 +57,15 @@ export namespace Secrets {
 
     /** The bot token for the Discord application (Bot). */
     BotToken: string;
+  }
+
+  interface GoogleAPI {
+    ActivityReportTempSpreadsheetID: string;
+
+    /** The service account email. */
+    ServiceAccountEmail: string;
+    PrivateKey: string;
+    APIScopes: string[];
   }
 
   interface MongoDB {
