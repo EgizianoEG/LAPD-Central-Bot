@@ -47,6 +47,7 @@
       "@Typings/*": ["./Source/Typings/*"],
       "@Resources/*": ["./Source/Resources/*"],
       "@Utilities/*": ["./Source/Utilities/*"],
+      "@Handlers/*": ["./Source/Handlers/*"],
       "@DiscordApp": ["./Source/Main.js"]
     },
 
