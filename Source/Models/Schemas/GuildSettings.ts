@@ -79,7 +79,28 @@ const GuildSettings = new Schema({
         required: false,
         match: SnowflakeIDValidation,
       },
+
+      loa_approvals: {
+        type: String,
+        default: null,
+        required: false,
+        match: SnowflakeIDValidation,
+      },
+
+      loa_logs: {
+        type: String,
+        default: null,
+        required: false,
+        match: SnowflakeIDValidation,
+      },
     },
+  },
+
+  on_leave_role: {
+    type: String,
+    match: SnowflakeIDValidation,
+    default: null,
+    required: false,
   },
 
   // Role permissions that are going to be used to limit the use of specific commands and operations

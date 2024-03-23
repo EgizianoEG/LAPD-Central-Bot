@@ -25,9 +25,16 @@ import { PascalToNormal } from "@Utilities/Strings/Converters.js";
 import { IsValidUserPermsObj } from "@Utilities/Other/Validators.js";
 
 import UserHasPerms from "@Utilities/Database/UserHasPermissions.js";
+import DHumanizer from "humanize-duration";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import AppError from "@Utilities/Classes/AppError.js";
 import Dedent from "dedent";
+
+const ReadableDuration = DHumanizer.humanizer({
+  conjunction: " and ",
+  largest: 4,
+  round: true,
+});
 
 const DefaultCmdCooldownDuration = 3;
 const LogLabel = "Events:InteractionCreate:CommandHandler";
@@ -54,17 +61,6 @@ export default async function CommandHandler(
     .join(" ");
 
   try {
-    AppLogger.debug({
-      message: "Handling execution of slash command %o...",
-      label: LogLabel,
-      splat: [FullCmdName],
-      details: {
-        full_name: FullCmdName,
-        cmd_options: Interaction.options,
-        stringified: Interaction.toString(),
-      },
-    });
-
     if (!CommandObject) {
       AppLogger.warn({
         message:
@@ -91,6 +87,18 @@ export default async function CommandHandler(
       } else {
         await (CommandObject.callback as AnySlashCmdCallback)(Interaction);
       }
+
+      AppLogger.debug({
+        message: "Handled execution of slash command %o.",
+        label: LogLabel,
+        splat: [FullCmdName],
+        details: {
+          execution_time: ReadableDuration(Date.now() - Interaction.createdTimestamp),
+          full_name: FullCmdName,
+          cmd_options: Interaction.options,
+          stringified: Interaction.toString(),
+        },
+      });
 
       if (Interaction.replied || Interaction.deferred) return;
       await Interaction.reply({

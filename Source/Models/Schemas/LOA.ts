@@ -1,5 +1,6 @@
 import { HydratedDocumentFromSchema, Model, Schema } from "mongoose";
 import { GuildProfiles } from "@Typings/Utilities/Database.js";
+import { milliseconds } from "date-fns/milliseconds";
 import DHumanize from "humanize-duration";
 
 const DurationHumanize = DHumanize.humanizer({
@@ -27,12 +28,25 @@ const ProfileLOASchema = new Schema<LOAPlainDoc, LOAModelType>({
   end_date: {
     type: Date,
     required: true,
+
+    default(this: LOAPlainDoc) {
+      const AdditionDate = this.review_date || this.request_date || new Date();
+      return new Date(AdditionDate.getTime() + this.duration);
+    },
+
     validate: [
       function (this: LOAPlainDoc, v: Date) {
         return v.valueOf() > this.request_date.valueOf();
       },
       "End date must be after the requested date of a LOA.",
     ],
+  },
+
+  duration: {
+    type: Number,
+    required: true,
+    minlength: milliseconds({ days: 1 }),
+    maxlength: milliseconds({ months: 3 }),
   },
 
   review_date: {
@@ -74,12 +88,6 @@ const ProfileLOASchema = new Schema<LOAPlainDoc, LOAModelType>({
     default: "Pending",
     enum: ["Pending", "Approved", "Denied"],
   },
-});
-
-ProfileLOASchema.virtual("duration").get(function (
-  this: HydratedDocumentFromSchema<typeof ProfileLOASchema>
-) {
-  return this.end_date.valueOf() - this.request_date.valueOf();
 });
 
 ProfileLOASchema.virtual("duration_hr").get(function (

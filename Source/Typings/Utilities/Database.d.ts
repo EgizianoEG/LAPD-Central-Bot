@@ -271,7 +271,7 @@ export namespace GuildProfiles {
     status: "Pending" | "Approved" | "Denied";
     reason: string;
 
-    /** A virtual returns the duration of the leave of absence in milliseconds. */
+    /** The duration of the leave of absence in milliseconds. */
     duration: number;
 
     /** A virtual returns a human readable duration of the leave of absence. */
@@ -623,5 +623,11 @@ export namespace AggregateResults {
 
     /** Total shifts recorded. */
     total_shifts: number;
+  }
+
+  interface ActiveLOA {
+    user: string;
+    guild: string;
+    active_loa: GuildProfiles.LeaveOfAbsenceDocument;
   }
 }
