@@ -4,7 +4,7 @@
         <img src="https://github.com/EgizianoEG/LAPD-Central-Bot/actions/workflows/RunTests.yml/badge.svg?branch=main" alt="Status"/></a>
     <a href="https://opensource.org/licenses/MIT" target="_blank" title="License: MIT">
         <img src="https://img.shields.io/github/license/EgizianoEG/LAPD-Central-Bot?label=License&color=sandybrown" alt="License"/></a>
-    <a href="https://github.com/EgizianoEG/String-Plus/releases/" target="_blank" title="License">
+    <a href="https://github.com/EgizianoEG/LAPD-Central-Bot/releases/" target="_blank" title="License">
         <img src="https://img.shields.io/github/package-json/v/EgizianoEG/LAPD-Central-Bot/main?filename=package.json&label=Version&color=blue" alt="Version"/></a>
     <a href="https://uptime.betterstack.com/?utm_source=status_badge" target="_blank" title="Bot Uptime">
         <img src="https://uptime.betterstack.com/status-badges/v1/monitor/10ynq.svg" alt="Status"/></a>
