@@ -1,9 +1,9 @@
 /* eslint-disable sonarjs/no-duplicate-string */
 import { Collection, Guild, GuildMember } from "discord.js";
 import { AggregateResults } from "@Typings/Utilities/Database.js";
-import ProfileModel from "@Models/GuildProfile.js";
-import GetShiftTypes from "./GetShiftTypes.js";
 import GetGuildSettings from "./GetGuildSettings.js";
+import GetShiftTypes from "./GetShiftTypes.js";
+import ProfileModel from "@Models/GuildProfile.js";
 import DHumanize from "humanize-duration";
 import AppError from "@Utilities/Classes/AppError.js";
 
@@ -20,14 +20,24 @@ interface GetActivityReportDataOpts {
   /** The users to limit the activity report data to. */
   members: Collection<string, GuildMember>;
 
+  /** The date to return the activity report data after. If not provided, defaults to all the time. */
+  after?: Date | null;
+
   /** The shift type to get the activity report data for. */
   shift_type?: string | null;
 
   /** The duration in milliseconds of the quota that must be met. Defaults to 0 seconds, which means no quota. */
   quota_duration?: number | null;
 
-  /** The date to return the activity report data after. If not provided, defaults to all the time. */
-  after?: Date | null;
+  /** Whether or not to include member nicknames in the activity report data. Defaults to `false`. */
+  include_member_nicknames?: boolean;
+}
+
+function FormatName(Member: GuildMember | string, IncludeNickname?: boolean) {
+  if (typeof Member === "string") return Member;
+  return IncludeNickname && (Member.nickname || Member.displayName)
+    ? `${Member.nickname ?? Member.displayName} (@${Member.user.username})`
+    : `${Member.user.username}`;
 }
 
 /**
@@ -87,7 +97,11 @@ export default async function GetActivityReportData(Opts: GetActivityReportDataO
     return {
       values: [
         { userEnteredValue: { numberValue: Index + 1 } },
-        { userEnteredValue: { stringValue: Member?.user.username ?? Record.id } },
+        {
+          userEnteredValue: {
+            stringValue: FormatName(Member ?? Record.id, Opts.include_member_nicknames),
+          },
+        },
         { userEnteredValue: { stringValue: Member?.roles.highest.name ?? "N/A" } },
         {
           userEnteredValue: {

@@ -32,6 +32,7 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
   const InputQuotaDuration = CmdInteraction.options.getString("time-requirement", false);
   const InputShiftType = CmdInteraction.options.getString("shift-type", false);
   const InputSince = CmdInteraction.options.getString("since", true);
+  const IMNicknames = CmdInteraction.options.getBoolean("include-nicknames", false);
   let SinceDate: Date | null = null;
   let QuotaDur: number | null = null;
 
@@ -107,6 +108,7 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
     shift_type: InputShiftType,
     after: SinceDate,
     quota_duration: QuotaDur,
+    include_member_nicknames: !!IMNicknames,
   });
 
   const ShowReportButton = new ActionRowBuilder<ButtonBuilder>().setComponents(
@@ -126,6 +128,7 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
         - **Data Since:** ${SinceDate ? FormatTime(SinceDate, "F") : "Not Specified"}
         - **Shift Type:** ${InputShiftType ?? "All Shift Types"}
         - **Shift Time Requirement:** ${QuotaDur ? HumanizeDuration(QuotaDur) : "Disabled (No Quota)"}
+        - **Member Nicknames Included:** ${IMNicknames ? "Yes" : "No"}
         
         *Click the button below to view the report on Google Sheets.*
       `)
@@ -174,6 +177,13 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandBuilder> = {
         .setMaxLength(20)
         .setRequired(false)
         .setAutocomplete(true)
+    )
+    .addBooleanOption((Option) =>
+      Option.setName("include-nicknames")
+        .setRequired(false)
+        .setDescription(
+          "Include server nicknames in the report along with the usernames. Disabled by default."
+        )
     ),
 };
 

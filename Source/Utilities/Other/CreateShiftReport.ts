@@ -54,6 +54,22 @@ export default async function CreateShiftReport(
           },
         },
 
+        // 1.5. Set name column width if necessary depending on whether or not to include member nicknames:
+        {
+          updateDimensionProperties: {
+            fields: "pixelSize",
+            range: {
+              sheetId: CSpreadsheet.data.sheets![0].properties!.sheetId,
+              dimension: "COLUMNS",
+              startIndex: 2,
+              endIndex: 3,
+            },
+            properties: {
+              pixelSize: Opts.include_member_nicknames ? 380 : 210,
+            },
+          },
+        },
+
         // 2. Add necessary rows to insert data properly:
         {
           insertDimension: {
