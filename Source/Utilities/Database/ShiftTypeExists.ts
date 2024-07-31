@@ -4,6 +4,7 @@ export default async function ShiftTypeExists(
   GuildID: string,
   ShiftType: string
 ): Promise<boolean> {
+  if (ShiftType.match(/^Default$/i)) return true;
   return GuildModel.aggregate([
     {
       $match: {

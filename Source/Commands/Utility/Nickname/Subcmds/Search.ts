@@ -39,7 +39,9 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     const GuildMembers = await Interaction.guild.members.fetch();
     const MembersMatching = GuildMembers.filter((Member) => {
       return Regex.test(Member.nickname ?? Member.displayName);
-    });
+    }).sort((M1, M2) =>
+      (M1.nickname ?? M1.displayName).localeCompare(M2.nickname ?? M2.displayName)
+    );
 
     const EmbedPages = ToEmbedPages(MembersMatching.toJSON());
     if (EmbedPages.length) {
@@ -64,7 +66,7 @@ const CommandObject = {
   data: new SlashCommandSubcommandBuilder()
     .setName("search")
     .setDescription(
-      "Look up server member(s) by their nickname(s) using an ECMAScript regular expression."
+      "Look up server members by their nicknames using an ECMAScript regular expression."
     )
     .addStringOption((Opt) =>
       Opt.setName("regex")

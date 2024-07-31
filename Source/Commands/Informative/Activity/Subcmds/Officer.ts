@@ -141,6 +141,7 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandBuilder> = {
         .setMinLength(2)
         .setMaxLength(40)
         .setRequired(false)
+        .setAutocomplete(true)
     ),
 };
 

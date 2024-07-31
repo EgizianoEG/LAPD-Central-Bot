@@ -35,6 +35,22 @@ async function Autocomplete(Interaction: AutocompleteInteraction<"cached">): Pro
 
   if (name === "shift-type") {
     Suggestions = await AutocompleteShiftType(value, Interaction.guildId);
+  } else if (name === "since" && value.match(/^\s*$/)) {
+    Suggestions = ["yesterday", "3 days ago", "7 days ago", "14 days ago", "30 days ago"].map(
+      (Choice) => ({ name: Choice, value: Choice })
+    );
+  } else if (name === "time-requirement" && value.match(/^\s*$/)) {
+    Suggestions = [
+      "30 minutes",
+      "1 hour",
+      "2 hours",
+      "3 hours",
+      "4 hours",
+      "5 hours",
+      "6 hours",
+      "7 hours",
+      "8 hours",
+    ].map((Choice) => ({ name: Choice, value: Choice }));
   } else {
     Suggestions = [];
   }

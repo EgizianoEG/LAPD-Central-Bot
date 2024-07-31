@@ -153,6 +153,7 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandBuilder> = {
         .setMinLength(2)
         .setMaxLength(40)
         .setRequired(true)
+        .setAutocomplete(true)
     )
     .addStringOption((Option) =>
       Option.setName("time-requirement")
@@ -162,6 +163,7 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandBuilder> = {
         .setMinLength(2)
         .setMaxLength(20)
         .setRequired(false)
+        .setAutocomplete(true)
     )
     .addStringOption((Option) =>
       Option.setName("shift-type")

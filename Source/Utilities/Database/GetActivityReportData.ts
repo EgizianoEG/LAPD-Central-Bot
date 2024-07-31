@@ -36,7 +36,7 @@ interface GetActivityReportDataOpts {
  * @returns An object containing the guild, records, statistics, and shift type of the activity report.
  */
 export default async function GetActivityReportData(Opts: GetActivityReportDataOpts) {
-  if (Opts.shift_type) {
+  if (Opts.shift_type && !Opts.shift_type.match(/^Default$/i)) {
     const GuildShiftTypes = await GetShiftTypes(Opts.guild.id);
     const ShiftType = GuildShiftTypes.find((ST) => ST.name === Opts.shift_type)!;
     const FilteredMembers = Opts.members.filter((Member) =>
