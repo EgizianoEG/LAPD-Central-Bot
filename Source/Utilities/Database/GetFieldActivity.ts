@@ -96,7 +96,7 @@ export default async function GetStaffFieldActivity(
       $project: {
         _id: 0,
         arrests_made: { $size: "$arrests" },
-        arrests_assisted: { $size: "$assistedArrests" },
+        arrests_assisted: { $size: "$arrests_assisted" },
         citations_issued: {
           total: { $size: "$citations" },
           warnings: {
