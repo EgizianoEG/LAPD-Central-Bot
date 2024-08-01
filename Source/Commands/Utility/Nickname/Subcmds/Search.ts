@@ -51,7 +51,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
         .useInfoTemplate("NicknameRegexNoMatchingMembers")
         .replyToInteract(Interaction, true);
     }
-  } catch (Err) {
+  } catch {
     return new ErrorEmbed()
       .setDescription("Seems like an error occurred while searching for members.")
       .replyToInteract(Interaction, true, true);
