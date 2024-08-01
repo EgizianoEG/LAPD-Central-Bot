@@ -14,6 +14,7 @@ import {
   ButtonInteraction,
   InteractionResponse,
   SlashCommandBuilder,
+  PermissionFlagsBits,
   InteractionCollector,
   RoleSelectMenuBuilder,
   StringSelectMenuBuilder,
