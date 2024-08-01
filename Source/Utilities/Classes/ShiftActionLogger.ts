@@ -107,7 +107,7 @@ export default class ShiftActionLogger {
     const InteractDate =
       Options.init_interact instanceof GuildMember
         ? new Date()
-        : Options.init_interact?.createdAt ?? new Date();
+        : (Options.init_interact?.createdAt ?? new Date());
 
     const UserAvatarURL = UserInGuild.user.displayAvatarURL(this.AvatarIconOpts);
     const CurrNickname = UserInGuild.nickname ?? UserInGuild.user.displayName;

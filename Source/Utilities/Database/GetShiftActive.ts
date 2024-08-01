@@ -46,5 +46,5 @@ export default async function GetShiftActive<UOType extends boolean | undefined 
     end_timestamp: null,
   }).exec();
 
-  return (UserOnly ? ActiveShifts[0] ?? null : ActiveShifts) as any;
+  return (UserOnly ? (ActiveShifts[0] ?? null) : ActiveShifts) as any;
 }

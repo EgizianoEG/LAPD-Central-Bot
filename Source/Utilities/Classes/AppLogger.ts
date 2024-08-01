@@ -10,7 +10,6 @@ import Util from "node:util";
 
 // --------------------------------------------------------------------------------------
 type CustomLogger<Levels> = OmitByValue<Winston.Logger, Winston.LeveledLogMethod> & {
-  // eslint-disable-next-line no-unused-vars
   readonly [Level in keyof Levels]: Winston.LeveledLogMethod;
 } & { log(level: keyof Levels, message: any): Winston.Logger };
 
@@ -60,12 +59,12 @@ const AppLogger = Winston.createLogger({
         Format.metadata(),
 
         Format.printf((Info) => {
-          const LogLabel: string | undefined = LogLabels
-            ? Info.label ?? Info.metadata?.label
-            : null;
+          let Description: string = Info.message;
           const ErrorStack: string | undefined = Info.stack ?? Info.metadata?.stack;
           const Timestamp: string = Info.timestamp ?? Info.metadata.timestamp;
-          let Description: string = Info.message;
+          const LogLabel: string | undefined = LogLabels
+            ? (Info.label ?? Info.metadata?.label)
+            : null;
 
           if (ErrorStack) {
             Info.metadata.stack = ErrorStack.replace(

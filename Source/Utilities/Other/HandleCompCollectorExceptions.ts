@@ -37,7 +37,9 @@ export default async function HandleActionCollectorExceptions(
 
           await Disabler.edit({ components: DisabledMsgComponents });
         }
-      } catch (Err: any) {}
+      } catch {
+        // Ignored.
+      }
 
       return null;
     } else if (Err.message.match(/reason: \w+Delete/)) {

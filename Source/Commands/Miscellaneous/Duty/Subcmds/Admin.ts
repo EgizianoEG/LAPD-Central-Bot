@@ -374,7 +374,9 @@ async function PromptShiftModification(
       const LastInteract = CollectedInteracts.last() ?? Interact;
       ActionOptions.components[0].setDisabled(true);
       await LastInteract.editReply({ components: [ActionOptions] });
-    } catch (Err: any) {}
+    } catch {
+      // Ignored.
+    }
   });
 }
 

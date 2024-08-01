@@ -88,7 +88,9 @@ export default async function HandleAbandonedInteractions(
               )
               .catch(() => Interaction.deferUpdate());
           }
-        } catch (Err) {}
+        } catch {
+          // Ignored.
+        }
         return;
       }
 
