@@ -1,5 +1,4 @@
 import { CallbackWithoutResultAndOptionalError, Query } from "mongoose";
-import { ActiveShiftsCache } from "@Utilities/Other/Cache.js";
 import { Shifts } from "@Typings/Utilities/Database.js";
 import ProfileModel from "@Models/GuildProfile.js";
 import AppError from "@Utilities/Classes/AppError.js";
@@ -102,7 +101,6 @@ export async function ShiftEnd(this: ThisType, timestamp: Date | number = new Da
   else DBDocument.end_timestamp = new Date(timestamp);
 
   return DBDocument.save().then(async (ShiftDoc) => {
-    ActiveShiftsCache.del(ShiftDoc._id);
     return ShiftDoc;
   });
 }
@@ -167,7 +165,6 @@ export async function PreShiftDocDelete(
   this: ThisType,
   next: CallbackWithoutResultAndOptionalError = () => {}
 ) {
-  ActiveShiftsCache.del(this._id);
   const UserProfile = await ProfileModel.findOneAndUpdate(
     { user: this.user, guild: this.guild },
     { user: this.user, guild: this.guild },
@@ -214,10 +211,6 @@ export async function PreShiftModelDelete(
     const ShiftIds = ShiftDocs.map((Doc) => Doc._id);
     const OnDutyTime = ShiftDocs.reduce((Sum, CurrDoc) => Sum + CurrDoc.durations.on_duty, 0);
     const OnBreakTime = ShiftDocs.reduce((Sum, CurrDoc) => Sum + CurrDoc.durations.on_break, 0);
-
-    for (const ShiftId of ShiftIds) {
-      ActiveShiftsCache.del(ShiftId);
-    }
 
     await ProfileModel.updateOne(
       {

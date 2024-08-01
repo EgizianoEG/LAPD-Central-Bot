@@ -18,7 +18,6 @@ import {
 import { Types } from "mongoose";
 import { Guilds, Shifts } from "@Typings/Utilities/Database.js";
 import { Embeds, Emojis } from "@Config/Shared.js";
-import { ActiveShiftsCache } from "@Utilities/Other/Cache.js";
 import { NavButtonsActionRow } from "@Utilities/Other/GetNavButtons.js";
 import { ErrorEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
@@ -221,7 +220,6 @@ async function HandleNonActiveShift(
         start_timestamp: ButtonInteract!.createdTimestamp,
       });
 
-      ActiveShiftsCache.set(StartedShift._id, Interaction);
       await Promise.all([
         ShiftActionLogger.LogShiftStart(StartedShift, Interaction),
         Interaction.editReply({
