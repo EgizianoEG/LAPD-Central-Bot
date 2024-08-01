@@ -165,7 +165,6 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"
 
   CompCollector.once("end", async (CollectedInt, EndReason) => {
     const LastInteraction = CollectedInt.last() ?? Interaction;
-    CompCollector.removeAllListeners();
     if (EndReason.match(/\w+Delete/)) return;
 
     try {

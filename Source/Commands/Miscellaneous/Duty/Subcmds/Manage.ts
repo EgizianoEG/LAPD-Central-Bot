@@ -201,9 +201,7 @@ async function HandleNonActiveShift(
   });
 
   ComponentCollector.once("end", async (Collected, EndReason) => {
-    ComponentCollector.removeAllListeners();
     const ButtonInteract = Collected.last();
-
     if (EndReason.match(/\w+Delete/)) return;
     try {
       if (EndReason === "time") {
@@ -234,12 +232,7 @@ async function HandleNonActiveShift(
               ),
           ],
         }),
-        HandleRoleAssignment(
-          "on-duty",
-          Interaction.client,
-          Interaction.guildId,
-          Interaction.user.id
-        ),
+        HandleRoleAssignment("on-duty", Interaction.client, Interaction.guild, Interaction.user.id),
       ]);
     } catch (Err: any) {
       AppLogger.error({
@@ -283,7 +276,7 @@ async function HandleShiftBreakStart(
     HandleRoleAssignment(
       "on-break",
       ButtonInteract.client,
-      ButtonInteract.guildId,
+      ButtonInteract.guild,
       ButtonInteract.user.id
     ),
   ]);
@@ -342,7 +335,7 @@ async function HandleOnBreakShift(
         HandleRoleAssignment(
           "on-duty",
           ButtonInteract.client,
-          ButtonInteract.guildId,
+          ButtonInteract.guild,
           ButtonInteract.user.id
         ),
       ]);
@@ -426,7 +419,7 @@ async function HandleShiftEnd(
     HandleRoleAssignment(
       "off-duty",
       ButtonInteract.client,
-      ButtonInteract.guildId,
+      ButtonInteract.guild,
       ButtonInteract.user.id
     ),
   ]);

@@ -119,7 +119,6 @@ export default async function HandleEmbedPagination(
   });
 
   ComponentCollector.on("end", async (Collected, EndReason: string) => {
-    ComponentCollector.removeAllListeners();
     if (EndReason.match(/\w+Delete/)) return;
 
     try {

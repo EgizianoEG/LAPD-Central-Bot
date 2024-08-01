@@ -135,9 +135,7 @@ export default async function AnyCitationCallback(
     });
 
     ActionCollector.on("end", async (_, EndReason) => {
-      ActionCollector.removeAllListeners();
       if (EndReason.match(/reason: (?:\w+Delete|time)/)) return;
-
       try {
         RespMsgButtons.components.forEach((Btn) => Btn.setDisabled(true));
         await Interaction.editReply({ components: [RespMsgButtons] });

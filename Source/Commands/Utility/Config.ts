@@ -20,7 +20,6 @@ import {
   ChannelSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
   ModalActionRowComponentBuilder,
-  PermissionFlagsBits,
 } from "discord.js";
 
 import { ArraysAreEqual } from "@Utilities/Other/ArraysAreEqual.js";
@@ -433,7 +432,6 @@ async function HandleBasicConfigPageInteracts(
   });
 
   BCCompActionCollector.on("end", async (_, EndReason) => {
-    BCCompActionCollector.removeAllListeners();
     if (EndReason.match(/\w+Delete/)) return;
     if (EndReason !== "ConfirmConfig") {
       if (EndReason.includes("time")) {
@@ -538,7 +536,6 @@ async function HandleAddConfigPageInteracts(
   });
 
   BCCompActionCollector.on("end", async (_, EndReason) => {
-    BCCompActionCollector.removeAllListeners();
     if (EndReason.match(/\w+Delete/)) return;
     if (EndReason !== "ConfirmConfig") {
       if (EndReason.includes("time")) {
@@ -636,7 +633,6 @@ async function HandleShiftConfigPageInteracts(
   });
 
   SCCompActionCollector.on("end", async (_, EndReason) => {
-    SCCompActionCollector.removeAllListeners();
     if (EndReason.match(/\w+Delete/)) return;
     if (EndReason !== "ConfirmConfig") {
       if (EndReason.includes("time")) {
@@ -808,7 +804,6 @@ async function HandleLogConfigPageInteracts(
   });
 
   LCCompActionCollector.on("end", async (_, EndReason) => {
-    LCCompActionCollector.removeAllListeners();
     if (EndReason.match(/\w+Delete/)) return;
     if (EndReason !== "ConfirmConfig") {
       if (EndReason.includes("time")) {

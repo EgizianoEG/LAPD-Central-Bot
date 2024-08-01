@@ -312,7 +312,6 @@ async function OnChargesModalSubmission(
 
   ComponentCollector.once("end", async (CollectedInteracts, EndReason) => {
     const LastInteraction = CollectedInteracts.last();
-    ComponentCollector.removeAllListeners();
 
     if (EndReason.match(/reason: (?:\w+Delete|time)/)) {
       AsstOfficersMenu.components[0].setDisabled(true);

@@ -368,7 +368,6 @@ async function PromptShiftModification(
   });
 
   CompCollector.on("end", async (CollectedInteracts, EndReason) => {
-    CompCollector.removeAllListeners();
     if (EndReason.match(/\w+Delete/)) return;
 
     try {
@@ -513,7 +512,6 @@ async function HandleShiftModifications(
   });
 
   CompCollector.on("end", async (_, EndReason) => {
-    CompCollector.removeAllListeners();
     if (EndReason.match(/\w+Delete/)) return;
     ButtonsActionRow.components.forEach((Button) => Button.setDisabled(true));
     await Message.edit({ components: [ButtonsActionRow] }).catch(() => null);
@@ -898,7 +896,7 @@ async function HandleUserShiftEnd(
 
   return Promise.all([
     ShiftActionLogger.LogShiftEnd(EndedShift, BInteract, BInteract.user, TargetUser),
-    HandleRoleAssignment("off-duty", BInteract.client, BInteract.guildId, BInteract.user.id),
+    HandleRoleAssignment("off-duty", BInteract.client, BInteract.guild, BInteract.user.id),
     RespMessage.edit({
       components: GetButtonActionRows(false, BInteract),
       embeds: [RespEmbed],
@@ -948,7 +946,7 @@ async function HandleUserShiftDelete(BInteract: ButtonInteraction<"cached">, Tar
   }
 
   if (!ShiftFound.end_timestamp) {
-    HandleRoleAssignment("off-duty", BInteract.client, BInteract.guildId, BInteract.user.id).catch(
+    HandleRoleAssignment("off-duty", BInteract.client, BInteract.guild, BInteract.user.id).catch(
       () => null
     );
   }
@@ -1110,7 +1108,6 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   });
 
   ActionCollector.on("end", async (_, EndReason) => {
-    ActionCollector.removeAllListeners();
     if (EndReason.match(/\w+Delete/)) return;
     try {
       if (EndReason === "time") {
