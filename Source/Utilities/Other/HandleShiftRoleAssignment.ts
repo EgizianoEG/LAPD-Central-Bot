@@ -33,7 +33,6 @@ export default async function HandleRoleAssignment(
       UserId.map(async (User) => {
         const GuildMember = await Guild.members.fetch(User).catch(() => null);
         if (!GuildMember) return Promise.resolve();
-        console.log("2-2");
         return HandleSingleUserRoleAssignment(RASettings, GuildMember, CurrentStatus);
       })
     );

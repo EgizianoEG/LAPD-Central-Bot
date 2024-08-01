@@ -1,5 +1,9 @@
-import { AutocompleteInteraction, SlashCommandBuilder } from "discord.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import {
+  SlashCommandBuilder,
+  AutocompleteInteraction,
+  SlashCommandSubcommandsOnlyBuilder,
+} from "discord.js";
 
 import DutyTypesSubcommandGroup from "./Duty Types/Main.js";
 import AutocompleteShiftType from "@Utilities/Autocompletion/ShiftType.js";
@@ -92,7 +96,7 @@ async function Autocomplete(Interaction: AutocompleteInteraction<"cached">) {
 // ---------------------------------------------------------------------------------------
 // Command structure:
 // ------------------
-const CommandObject: SlashCommandObject = {
+const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
   callback: Callback,
   autocomplete: Autocomplete,
   options: {
