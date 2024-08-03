@@ -53,18 +53,18 @@ async function HandleSingleUserRoleAssignment(
   if (!GuildMember) return Promise.resolve();
   if (CurrentStatus === "on-duty") {
     return Promise.all([
-      GuildMember.roles.remove(RASettings.on_break, "User is no longer on-break."),
-      GuildMember.roles.add(RASettings.on_duty, "User is on an active shift and on-duty."),
+      GuildMember.roles.remove(RASettings.on_break, "Member is no longer on-break."),
+      GuildMember.roles.add(RASettings.on_duty, "Member is on an active shift and on-duty."),
     ]);
   } else if (CurrentStatus === "on-break") {
     return Promise.all([
-      GuildMember.roles.remove(RASettings.on_duty, "User is currently taking a shift break."),
-      GuildMember.roles.add(RASettings.on_break, "User has started a shift break."),
+      GuildMember.roles.remove(RASettings.on_duty, "Member is currently taking a shift break."),
+      GuildMember.roles.add(RASettings.on_break, "Member has started a shift break."),
     ]);
   } else {
     return GuildMember.roles.remove(
       [...RASettings.on_duty, ...RASettings.on_break],
-      "User is now off-duty and no longer on shift."
+      "Member is now off-duty and no longer on shift."
     );
   }
 }
