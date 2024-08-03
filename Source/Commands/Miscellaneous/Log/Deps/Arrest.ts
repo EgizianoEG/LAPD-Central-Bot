@@ -30,6 +30,7 @@ import { RandomString } from "@Utilities/Strings/Random.js";
 import { GuildArrests } from "@Typings/Utilities/Database.js";
 import { ReporterInfo } from "../Log.js";
 import { UserHasPermsV2 } from "@Utilities/Database/UserHasPermissions.js";
+import { RedactLinksAndEmails } from "@Utilities/Strings/Redactor.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { FormatCharges, FormatHeight, FormatAge } from "@Utilities/Strings/Formatters.js";
 import { IsValidPersonHeight, IsValidRobloxUsername } from "@Utilities/Other/Validators.js";
@@ -195,8 +196,13 @@ async function OnChargesModalSubmission(
   const GuildDoc = await GuildModel.findOne({ _id: CmdInteract.guildId }, { logs: 1, settings: 1 });
 
   let AsstOfficers: string[] = [];
-  const FCharges = FormatCharges(ModalInteraction.fields.getTextInputValue("charges-text"));
-  const ArrestNotes = ModalInteraction.fields.getTextInputValue("arrest-notes");
+  const RInputCharges = RedactLinksAndEmails(
+    ModalInteraction.fields.getTextInputValue("charges-text")
+  );
+  const ArrestNotes = RedactLinksAndEmails(
+    ModalInteraction.fields.getTextInputValue("arrest-notes")
+  );
+  const FCharges = FormatCharges(RInputCharges);
   const BookingNumber = GetBookingNumber(GuildDoc!.logs.arrests as any);
   const BookingMugshotURL = await GetBookingMugshot<true>({
     return_url: true,

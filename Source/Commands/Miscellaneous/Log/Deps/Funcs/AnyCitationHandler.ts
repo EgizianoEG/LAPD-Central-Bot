@@ -31,6 +31,7 @@ import {
 
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { EyeColors, HairColors } from "@Resources/ERLCPDColors.js";
+import { RedactLinksAndEmails } from "@Utilities/Strings/Redactor.js";
 import { GetFilledCitation } from "@Utilities/Other/GetFilledCitation.js";
 import { AllVehicleModels } from "@Resources/ERLCVehicles.js";
 import { ReporterInfo } from "../../Log.js";
@@ -379,12 +380,15 @@ async function OnModalSubmission(
     dow: WeekDayToNum(DateInfo!.groups!.dow),
     ampm: TimeInfo!.groups!.day_period as any,
     num: GenerateCitationNumber(GuildDoc.logs.citations),
-
     vehicle: PCitationData.vehicle,
     fine_amount: PCitationData.fine_amount,
-    violations: FormatCitViolations(ModalSubmission.fields.getTextInputValue("traffic-violations")),
+
+    violations: FormatCitViolations(
+      RedactLinksAndEmails(ModalSubmission.fields.getTextInputValue("traffic-violations"))
+    ),
+
     violation_loc: TitleCase(
-      ModalSubmission.fields.getTextInputValue("violations-location").trim(),
+      RedactLinksAndEmails(ModalSubmission.fields.getTextInputValue("violations-location").trim()),
       true
     ),
 
@@ -395,7 +399,9 @@ async function OnModalSubmission(
       name: FormatUsername(ViolatorRobloxInfo),
       city: "Los Angeles",
       address:
-        TitleCase(ModalSubmission.fields.getTextInputValue("residence-address")?.trim()) || "N/A",
+        TitleCase(
+          RedactLinksAndEmails(ModalSubmission.fields.getTextInputValue("residence-address").trim())
+        ) || "N/A",
     },
 
     citing_officer: {
