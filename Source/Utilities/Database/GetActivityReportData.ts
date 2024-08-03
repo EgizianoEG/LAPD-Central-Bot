@@ -534,7 +534,12 @@ function GetAggregationPipelineWithShiftType(
                     initialValue: false,
                     in: {
                       $cond: {
-                        if: { $gt: ["$$this.end_date", RetrieveDate ?? new Date()] },
+                        if: {
+                          $and: [
+                            { "$$this.status": "Approved" },
+                            { $gt: ["$$this.end_date", RetrieveDate ?? new Date()] },
+                          ],
+                        },
                         then: true,
                         else: false,
                       },
