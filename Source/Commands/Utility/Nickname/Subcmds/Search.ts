@@ -54,7 +54,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   } catch {
     return new ErrorEmbed()
       .setDescription("Seems like an error occurred while searching for members.")
-      .replyToInteract(Interaction, true, true);
+      .replyToInteract(Interaction, true);
   }
 }
 

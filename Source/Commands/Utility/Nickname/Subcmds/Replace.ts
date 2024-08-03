@@ -157,12 +157,12 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     if (Err instanceof SyntaxError) {
       return new ErrorEmbed()
         .useErrTemplate("InvalidRegexSyntax")
-        .replyToInteract(Interaction, true, true);
+        .replyToInteract(Interaction, true);
     }
 
     return new ErrorEmbed()
       .setDescription("Seems like an error occurred while doing nickname replacement for members.")
-      .replyToInteract(Interaction, true, true);
+      .replyToInteract(Interaction, true);
   }
 }
 

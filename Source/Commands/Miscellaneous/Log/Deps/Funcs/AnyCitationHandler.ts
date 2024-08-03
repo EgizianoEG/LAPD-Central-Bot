@@ -281,28 +281,26 @@ async function HandleCmdOptsValidation(
   | ReturnType<ErrorEmbed["replyToInteract"]>
 > {
   if (!ColorNames.includes(CitationInfo.vehicle.color)) {
-    return new ErrorEmbed()
-      .useErrTemplate("ACUnknownColor")
-      .replyToInteract(Interaction, true, true);
+    return new ErrorEmbed().useErrTemplate("ACUnknownColor").replyToInteract(Interaction, true);
   }
 
   // Validate the Roblox username. Notice that the `name` property only reflects the Roblox username yet.
   if (!IsValidRobloxUsername(CitationInfo.violator.name)) {
     return new ErrorEmbed()
       .useErrTemplate("MalformedRobloxUsername", CitationInfo.violator.name)
-      .replyToInteract(Interaction, true, true);
+      .replyToInteract(Interaction, true);
   }
 
   if (!IsValidLicensePlate(CitationInfo.vehicle.lic_num)) {
     return new ErrorEmbed()
       .useErrTemplate("InvalidLicensePlate")
-      .replyToInteract(Interaction, true, true);
+      .replyToInteract(Interaction, true);
   }
 
   if (CitationInfo.violator?.height && !IsValidPersonHeight(CitationInfo.violator.height)) {
     return new ErrorEmbed()
       .useErrTemplate("MalformedPersonHeight")
-      .replyToInteract(Interaction, true, true);
+      .replyToInteract(Interaction, true);
   }
 
   const VehicleFound = AllVehicleModels.find(
@@ -312,20 +310,18 @@ async function HandleCmdOptsValidation(
   );
 
   if (!VehicleFound) {
-    return new ErrorEmbed()
-      .useErrTemplate("ACUnknownVehicle")
-      .replyToInteract(Interaction, true, true);
+    return new ErrorEmbed().useErrTemplate("ACUnknownVehicle").replyToInteract(Interaction, true);
   }
 
   const [ViolatorID, , WasUserFound] = await GetIdByUsername(CitationInfo.violator.name, true);
   if (!WasUserFound) {
     return new ErrorEmbed()
       .useErrTemplate("NonexistentRobloxUsername", CitationInfo.violator.name)
-      .replyToInteract(Interaction, true, true);
+      .replyToInteract(Interaction, true);
   } else if (CitingOfficer.RobloxUserId === ViolatorID) {
     return new ErrorEmbed()
       .useErrTemplate("SelfCitationAttempt")
-      .replyToInteract(Interaction, true, true);
+      .replyToInteract(Interaction, true);
   }
 
   return {
@@ -498,6 +494,6 @@ async function OnModalSubmission(
       .setDescription(
         "Apologies; an error occurred while handling your traffic citation log request."
       )
-      .replyToInteract(ButtonResponse ?? ModalSubmission, true, true);
+      .replyToInteract(ButtonResponse ?? ModalSubmission, true);
   }
 }

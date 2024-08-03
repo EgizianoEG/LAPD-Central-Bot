@@ -43,7 +43,7 @@ async function HandleInteractValidation(Interaction: SlashCommandInteraction<"ca
     await new ErrorEmbed()
       .setTitle(ErrorMessages.RobloxUserNotLinked.Title)
       .setDescription(ErrorMessages.RobloxUserNotLinked.Description)
-      .replyToInteract(Interaction, true, true);
+      .replyToInteract(Interaction, true);
   }
 
   const HasActiveShift = await GetShiftActive({ Interaction, UserOnly: true });

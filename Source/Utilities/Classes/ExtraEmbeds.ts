@@ -83,12 +83,12 @@ class BaseEmbed extends EmbedBuilder {
    * Replies to a given *repliable* interaction with the current properties set.
    * @param interaction - The interaction to reply to.
    * @param ephemeral - Either `true` or `false`; whether the reply should be ephemeral (private); defaults to `false`.
-   * @param silent - Whether to catch any errors that might occur and ignore them.
+   * @param silent - Whether to catch any errors that might occur and ignore them. Defaults to `true`.
    */
   async replyToInteract(
     interaction: BaseInteraction & { replied: boolean; reply; followUp; editReply },
     ephemeral: boolean = false,
-    silent?: boolean,
+    silent: boolean = true,
     replyMethod?: "reply" | "editReply" | "followUp"
   ): Promise<InteractionResponse<boolean> | Message<boolean>> {
     let ReplyMethod = replyMethod ?? "reply";

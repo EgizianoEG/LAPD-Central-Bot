@@ -97,7 +97,7 @@ export default async function HandleAbandonedInteractions(
       if (OriginalUserId && Interaction.user.id !== OriginalUserId) {
         await new UnauthorizedEmbed()
           .useErrTemplate("UnauthorizedInteraction")
-          .replyToInteract(Interaction, true, true);
+          .replyToInteract(Interaction, true);
       } else {
         await Interaction.deferUpdate().catch(() => null);
       }

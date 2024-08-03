@@ -82,24 +82,22 @@ async function HandleCmdOptsValidation(
   if (!IsValidPersonHeight(CmdOptions.Height)) {
     return new ErrorEmbed()
       .useErrTemplate("MalformedPersonHeight")
-      .replyToInteract(Interaction, true, true);
+      .replyToInteract(Interaction, true);
   }
 
   if (!IsValidRobloxUsername(CmdOptions.Arrestee)) {
     return new ErrorEmbed()
       .useErrTemplate("MalformedRobloxUsername", CmdOptions.Arrestee)
-      .replyToInteract(Interaction, true, true);
+      .replyToInteract(Interaction, true);
   }
 
   const [ARobloxId, , WasUserFound] = await GetIdByUsername(CmdOptions.Arrestee, true);
   if (!WasUserFound) {
     return new ErrorEmbed()
       .useErrTemplate("NonexistentRobloxUsername", CmdOptions.Arrestee)
-      .replyToInteract(Interaction, true, true);
+      .replyToInteract(Interaction, true);
   } else if (Reporter.RobloxUserId === ARobloxId) {
-    return new ErrorEmbed()
-      .useErrTemplate("SelfArrestAttempt")
-      .replyToInteract(Interaction, true, true);
+    return new ErrorEmbed().useErrTemplate("SelfArrestAttempt").replyToInteract(Interaction, true);
   }
 
   return null;
@@ -374,7 +372,7 @@ async function OnChargesModalSubmission(
           .setDescription(
             "Apologies; an unknown error occurred while handling this report submission."
           )
-          .replyToInteract(LastInteraction, true, true);
+          .replyToInteract(LastInteraction, true);
       }
     }
   });

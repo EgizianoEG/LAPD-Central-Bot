@@ -72,7 +72,7 @@ export default async function CommandHandler(
 
       return new ErrorEmbed()
         .setDescription("Attempt execution of a non-existent command on the application.")
-        .replyToInteract(Interaction, true, true);
+        .replyToInteract(Interaction, true);
     }
 
     await HandleCommandCooldowns(Client, Interaction, CommandObject, FullCmdName);
@@ -128,12 +128,12 @@ export default async function CommandHandler(
         .setTitle(Err.title)
         .setDescription(Err.message)
         .setFooter({ text: `Error ID: ${ErrId}` })
-        .replyToInteract(Interaction, true, true);
+        .replyToInteract(Interaction, true);
     } else {
       await new ErrorEmbed()
         .useErrTemplate("AppError")
         .setFooter({ text: `Error ID: ${ErrId}` })
-        .replyToInteract(Interaction, true, true);
+        .replyToInteract(Interaction, true);
     }
   }
 }
@@ -300,7 +300,7 @@ async function HandleBotPermissions(
   if (!BotInGuild) {
     return new ErrorEmbed()
       .useErrTemplate("AppNotFoundInGuildForPerms")
-      .replyToInteract(Interaction, true, true);
+      .replyToInteract(Interaction, true);
   }
 
   if (Array.isArray(CommandObject.options.bot_perms)) {
@@ -452,6 +452,6 @@ async function HandleCommandUserPerms(
           - ${MissingListed.replace("\n", `\n${" ".repeat(10)}`)}
         `)
       )
-      .replyToInteract(Interaction, true, true);
+      .replyToInteract(Interaction, true);
   }
 }

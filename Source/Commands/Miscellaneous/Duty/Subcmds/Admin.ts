@@ -163,10 +163,10 @@ async function HandleShiftTimeModExceptions(
   Err: any
 ) {
   if (Err instanceof AppError && Err.is_showable) {
-    return new ErrorEmbed().useErrClass(Err).replyToInteract(Interact, true, true);
+    return new ErrorEmbed().useErrClass(Err).replyToInteract(Interact, true);
   }
 
-  await new ErrorEmbed().useErrTemplate("AppError").replyToInteract(Interact, true, true);
+  await new ErrorEmbed().useErrTemplate("AppError").replyToInteract(Interact, true);
   AppLogger.error({
     label: FileLabel,
     message: "Failed to modify shift time;",
@@ -223,11 +223,11 @@ async function HandleShiftTimeSet(
   if (!ParsedDuration) {
     return new ErrorEmbed()
       .useErrTemplate("UnknownDurationExp")
-      .replyToInteract(ModalSubmission, true, true);
+      .replyToInteract(ModalSubmission, true);
   } else if (RoundedDuration <= 30_000) {
     return new ErrorEmbed()
       .useErrTemplate("ShortTypedDuration")
-      .replyToInteract(ModalSubmission, true, true);
+      .replyToInteract(ModalSubmission, true);
   }
 
   try {
@@ -277,11 +277,11 @@ async function HandleShiftTimeAddSub(
   if (!ParsedDuration) {
     return new ErrorEmbed()
       .useErrTemplate("UnknownDurationExp")
-      .replyToInteract(ModalSubmission, true, true);
+      .replyToInteract(ModalSubmission, true);
   } else if (RoundedDuration <= 30_000) {
     return new ErrorEmbed()
       .useErrTemplate("ShortTypedDuration")
-      .replyToInteract(ModalSubmission, true, true);
+      .replyToInteract(ModalSubmission, true);
   }
 
   try {
