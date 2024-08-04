@@ -31,30 +31,102 @@ export namespace Guilds {
   }
 
   interface GuildSettings {
+    /**
+     * Whether or not staff members are required to link their Roblox account in order to execute specific set of commands.
+     * By default, this is `true` and linking account is always required to use certain commands.
+     */
     require_authorization: boolean;
 
-    log_channels: {
-      citations: string | null;
-      arrests: string | null;
-      shift_activities: string | null;
-    };
-
+    /**
+     * Role permissions that will be used to limit the execution of specific commands and operations, by comparing the executor's roles to the ones in this object.
+     * - Staff: Any member has one of the specified roles, authorized to use low-profile management commands and activities.
+     * - Management: Any member has at least one of the specified roles, allowed to execute high-profile management commands and actions like wiping data, removing shifts, and managing leave notices.
+     */
     role_perms: {
       staff: string[];
       management: string[];
     };
 
-    shifts: {
-      types: GuildShiftType[];
+    shift_management: {
+      /**
+       * Whether or not the shift management module is enabled. The default value is `true`.
+       * Disabling this module will prevent staff members from using its related slash commands (could include exceptions).
+       */
+      enabled: boolean;
+
+      /**
+       * The channel where the shift management module will send shift activities logs such as
+       * the shift start and end events and any shift modification done by management staff.
+       */
+      log_channel?: string | null;
+
+      /** Self-explanatory. */
+      shift_types: Types.DocumentArray<Guilds.ShiftType>[];
+
+      /** The roles that will be assigned to members when they start a shift or start a break while on shift. Maximum of two role IDs per shift state. */
       role_assignment: {
         on_duty: string[];
         on_break: string[];
       };
     };
 
-    durations: {
-      total_max: number;
-      on_break_max: number;
+    duty_activities: {
+      /**
+       * Whether or not the duty activities module is enabled. The default value is `false`.
+       * Disabling this module will prevent staff members from using the `log arrest`, `log citation`, and `log incident` commands.
+       */
+      enabled: boolean;
+
+      /* 
+        The interval in milliseconds that the application will delete logged records of citations, arrests, and incidents
+        if the current date minus the creation/reporting timestamp/date is greater than this value
+        Defaults to 0, which means that no records will be deleted over time
+        Value can be one of the following: `0 days` when disabled, `3 days`, `7 days`, `14 days`, and `30 days`
+      */
+      log_deletion_interval: number;
+
+      /**
+       * The logging channels for citations, arrests, and incidents.
+       * For citations and arrests, it is possible to add a maximum of two channels (one local, one outside of the guild).
+       * The following formats must be followed for these channels:
+       * - `[Joined guild Id]:[Available channel's Id In that guild]` for outside channels;
+       * - `[Channel Id]` for local channels (where the app is configured).
+       *
+       * Note: The application must be in the guild where the channels are and have the permissions to view and send messages in them to work properly.
+       */
+      log_channels: {
+        citations: string[];
+        arrests: string[];
+        incidents: string;
+      };
+    };
+
+    leave_notices: {
+      /**
+       * Whether or not the leave notices module is enabled. The default value is `false`.
+       * Disabling this module will prevent staff members from using the `loa-` commands (could include exceptions).
+       */
+      enabled: boolean;
+
+      /**
+       * The channel where the leave notice requests will be sent to for approval.
+       * Leaving this field as `null` will not prevent staff members from requesting LOAs
+       * but will result in management staff members not being aware about any new pending
+       * requests unless done manually by slash commands.
+       */
+      requests_channel?: string | null;
+
+      /**
+       * The channel where any updates to leave notice requests will be sent to. This includes when the request is approved, denied, or cancelled.\
+       * Could be left `null` if there is no need to log any updates.
+       */
+      log_channel?: string | null;
+
+      /**
+       * The role that will be assigned to members the moment their requests are approved and which will be removed when their LOA expires.
+       * This could be left `null` if no role should be assigned.
+       */
+      leave_role?: string | null;
     };
   }
 
