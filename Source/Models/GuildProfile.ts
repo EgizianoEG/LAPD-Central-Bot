@@ -2,7 +2,7 @@ import { PreDelete, ProfilePostFind } from "./Functions/ProfileModel.js";
 import { Model, Schema, model } from "mongoose";
 import { GuildProfiles } from "@Typings/Utilities/Database.js";
 import ShiftsDataSchema from "./Schemas/ShiftsData.js";
-import LOARecordSchema from "./Schemas/LOA.js";
+import LOARecordSchema from "./Schemas/LeaveOfAbsence.js";
 
 type ProfilePlainDoc = GuildProfiles.ProfileDocument;
 type ProfileModelType = Model<ProfilePlainDoc, unknown, GuildProfiles.ProfileOverrides>;

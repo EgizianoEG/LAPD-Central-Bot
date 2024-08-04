@@ -86,7 +86,7 @@ const ProfileLOASchema = new Schema<LOAPlainDoc, LOAModelType>({
     type: String,
     required: true,
     default: "Pending",
-    enum: ["Pending", "Approved", "Denied"],
+    enum: ["Pending", "Approved", "Denied", "Cancelled"],
   },
 });
 

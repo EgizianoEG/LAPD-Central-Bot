@@ -340,19 +340,19 @@ export namespace GuildProfiles {
   }
 
   interface LeaveOfAbsenceDocument {
-    status: "Pending" | "Approved" | "Denied";
+    status: "Pending" | "Approved" | "Denied" | "Cancelled";
     reason: string;
 
     /** The duration of the leave of absence in milliseconds. */
     duration: number;
 
-    /** A virtual returns a human readable duration of the leave of absence. */
-    duration_hr: number;
+    /** A virtual returns a human readable duration of the leave of absence. This is not stored in the database. */
+    duration_hr: string;
 
-    /** The date when the leave of absence supposed to end. */
+    /** The date when the leave of absence supposed to end starting from the request date. This value will be updated when the LOA is approved. */
     end_date: Date;
 
-    /** The date when the leave of absence was requested. */
+    /** The date when the leave of absence was requested. This is a read-only field once the LOA is requested/recorded. */
     request_date: Date;
 
     /** The reason or comment on the LOA approval or denial. */
@@ -697,9 +697,8 @@ export namespace AggregateResults {
     total_shifts: number;
   }
 
-  interface ActiveLOA {
+  interface GetLOAsRecord extends Omit<GuildProfiles.LeaveOfAbsenceDocument, "duration_hr"> {
     user: string;
     guild: string;
-    active_loa: GuildProfiles.LeaveOfAbsenceDocument;
   }
 }
