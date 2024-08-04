@@ -6,7 +6,9 @@ import { SlashCommandSubcommandBuilder } from "discord.js";
 // ---------------------------------------------------------------------------------------
 // Functions:
 // ----------
-async function Callback(_CmdInteraction: SlashCommandInteraction<"cached">) {}
+async function Callback() {
+  // TODO: Implement the callback function.
+}
 
 // ---------------------------------------------------------------------------------------
 // Command structure:
