@@ -4,7 +4,6 @@ import { CitationImgDimensions } from "./GetFilledCitation.js";
 import { Citations } from "@Typings/Utilities/Generic.js";
 
 import Dedent from "dedent";
-import GuildModel from "@Models/Guild.js";
 import UploadToImgBB from "./ImgBBUpload.js";
 import SendGuildMessages from "@Utilities/Other/SendGuildMessages.js";
 import GetPlaceholderImgURL from "./GetPlaceholderImg.js";
@@ -22,7 +21,7 @@ import IncrementActiveShiftEvent from "@Utilities/Database/IncrementActiveShiftE
 export default async function LogTrafficCitation(
   CitationType: Citations.CitationType,
   CachedInteract: SlashCommandInteraction<"cached">,
-  GuildDocument: HydratedDocumentFromSchema<typeof GuildModel.schema>,
+  GuildDocument: HydratedDocumentFromSchema<typeof import("../../Models/Guild.js").default.schema>,
   CitationData: Omit<Citations.AnyCitationData, "img_url">,
   CitationImg: string | Buffer
 ) {
@@ -60,7 +59,11 @@ export default async function LogTrafficCitation(
     .setColor(Colors.DarkBlue)
     .setImage(CitationImgURL);
 
-  return SendGuildMessages(CachedInteract, GuildDocument.settings.log_channels.citations, {
-    embeds: [CitationEmbed],
-  });
+  return SendGuildMessages(
+    CachedInteract,
+    GuildDocument.settings.duty_activities.log_channels.citations,
+    {
+      embeds: [CitationEmbed],
+    }
+  );
 }

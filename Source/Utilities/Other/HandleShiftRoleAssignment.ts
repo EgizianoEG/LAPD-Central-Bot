@@ -17,7 +17,7 @@ export default async function HandleRoleAssignment(
   Guild = typeof Guild === "string" ? await Client.guilds.fetch(Guild) : Guild;
   const RASettings = await GetGuildSettings(Guild.id).then((Settings) => {
     if (!Settings) return null;
-    return Settings.shifts.role_assignment;
+    return Settings.shift_management.role_assignment;
   });
 
   if (
@@ -46,7 +46,7 @@ export default async function HandleRoleAssignment(
 async function HandleSingleUserRoleAssignment(
   RASettings: NonNullable<
     Awaited<ReturnType<typeof GetGuildSettings>>
-  >["shifts"]["role_assignment"],
+  >["shift_management"]["role_assignment"],
   GuildMember: GuildMember,
   CurrentStatus: "on-duty" | "on-break" | "off-duty"
 ) {

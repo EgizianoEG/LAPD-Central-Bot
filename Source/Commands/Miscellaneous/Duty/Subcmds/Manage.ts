@@ -437,7 +437,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
       .replyToInteract(Interaction, true);
   }
 
-  const ShiftTypes = GuildSettings.shifts.types;
+  const ShiftTypes = GuildSettings.shift_management.shift_types;
   const CmdShiftType = Interaction.options.getString("type")?.trim();
   const CmdShiftTypeMDef = CmdShiftType?.match(/^Default$/i);
   const GuildDefaultST = ShiftTypes.findIndex((ShiftType) => ShiftType.is_default);

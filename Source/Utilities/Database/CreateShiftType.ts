@@ -9,7 +9,7 @@ import AppError from "../Classes/AppError.js";
  */
 export default async function CreateShiftType(Data: Guilds.CreateShiftTypeConfig) {
   const GuildDoc = await GuildModel.findById(Data.guild_id).select("settings.shifts.types").exec();
-  const ShiftTypeExists = GuildDoc?.settings.shifts.types.some(
+  const ShiftTypeExists = GuildDoc?.settings.shift_management.shift_types.some(
     (ShiftType) => ShiftType.name === Data.name
   );
 
@@ -25,19 +25,19 @@ export default async function CreateShiftType(Data: Guilds.CreateShiftTypeConfig
       template: "ShiftTypeAlreadyExists",
       showable: true,
     });
-  } else if (GuildDoc.settings.shifts.types.length > 9) {
+  } else if (GuildDoc.settings.shift_management.shift_types.length > 9) {
     return new AppError({
       template: "MaximumShiftTypesReached",
       showable: true,
     });
   } else {
     if (Data.is_default) {
-      GuildDoc.settings.shifts.types.forEach((Type) => {
+      GuildDoc.settings.shift_management.shift_types.forEach((Type) => {
         Type.is_default = false;
       });
     }
 
-    const Total = GuildDoc.settings.shifts.types.push({
+    const Total = GuildDoc.settings.shift_management.shift_types.push({
       name: Data.name,
       is_default: Data.is_default,
       access_roles: Data.access_roles,
@@ -45,7 +45,7 @@ export default async function CreateShiftType(Data: Guilds.CreateShiftTypeConfig
     });
 
     return GuildDoc.save().then((Res) => {
-      return Res.settings.shifts.types[Total - 1];
+      return Res.settings.shift_management.shift_types[Total - 1];
     });
   }
 }

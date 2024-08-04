@@ -72,7 +72,7 @@ export default class ShiftActionLogger {
       .select("settings")
       .then((GuildDoc) => {
         if (GuildDoc) {
-          return GuildDoc.settings.log_channels.shift_activities;
+          return GuildDoc.settings.shift_management.log_channel;
         }
         return null;
       });

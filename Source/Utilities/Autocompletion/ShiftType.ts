@@ -25,7 +25,7 @@ export default async function AutocompleteShiftType(
     .select("settings.shifts.types")
     .then((GuildData) => {
       if (!GuildData) return [];
-      return GuildData.settings.shifts.types
+      return GuildData.settings.shift_management.shift_types
         .map((ShiftType) => ShiftType.name)
         .sort((a, b) => a.localeCompare(b));
     });

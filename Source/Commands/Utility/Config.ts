@@ -23,6 +23,7 @@ import {
   ModalActionRowComponentBuilder,
 } from "discord.js";
 
+import { milliseconds } from "date-fns/milliseconds";
 import { ArraysAreEqual } from "@Utilities/Other/ArraysAreEqual.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
@@ -33,7 +34,7 @@ import Dedent from "dedent";
 
 // ---------------------------------------------------------------------------------------
 const ListFormatter = new Intl.ListFormat("en");
-const MillisInDay = 86_400_000;
+const MillisInDay = milliseconds({ days: 1 });
 const EmbedColor = "#5f9ea0";
 enum ConfigTopics {
   LogConfiguration = "LC",
@@ -159,7 +160,7 @@ function GetAddConfigComponents(
   CmdInteract: SlashCommandInteraction<"cached">,
   GuildConfig: NonNullable<Awaited<ReturnType<typeof GetGuildSettings>>>
 ) {
-  const SetIntervalInDays = GuildConfig.log_deletion_interval / MillisInDay;
+  const SetIntervalInDays = GuildConfig.duty_activities.log_deletion_interval / MillisInDay;
   const LogDelIntervalSMAR = new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(
     new StringSelectMenuBuilder()
       .setCustomId(`app-config-ac-ldi:${CmdInteract.user.id}:${CmdInteract.guildId}`)
@@ -213,7 +214,7 @@ function GetShiftConfigComponents(
       .setPlaceholder("On-Duty Role(s)")
       .setMinValues(0)
       .setMaxValues(3)
-      .setDefaultRoles(GuildConfig.shifts.role_assignment.on_duty)
+      .setDefaultRoles(GuildConfig.shift_management.role_assignment.on_duty)
   );
 
   const OnBreakRolesAR = new ActionRowBuilder<RoleSelectMenuBuilder>().setComponents(
@@ -222,7 +223,7 @@ function GetShiftConfigComponents(
       .setPlaceholder("On-Duty Role(s)")
       .setMinValues(0)
       .setMaxValues(3)
-      .setDefaultRoles(GuildConfig.shifts.role_assignment.on_break)
+      .setDefaultRoles(GuildConfig.shift_management.role_assignment.on_break)
   );
 
   return [OnDutyRolesAR, OnBreakRolesAR] as const;
@@ -232,9 +233,13 @@ function GetLogConfigComponents(
   CmdInteract: SlashCommandInteraction<"cached">,
   GuildConfig: NonNullable<Awaited<ReturnType<typeof GetGuildSettings>>>
 ) {
-  const SALogChannel = GuildConfig.log_channels.shift_activities || undefined;
-  const LArrestsLogChannel = GuildConfig.log_channels.arrests.find((C) => !C.includes(":"));
-  const LCitationLogChannel = GuildConfig.log_channels.citations.find((C) => !C.includes(":"));
+  const SALogChannel = GuildConfig.shift_management.log_channel || undefined;
+  const LArrestsLogChannel = GuildConfig.duty_activities.log_channels.arrests.find(
+    (C) => !C.includes(":")
+  );
+  const LCitationLogChannel = GuildConfig.duty_activities.log_channels.citations.find(
+    (C) => !C.includes(":")
+  );
 
   const ShiftActivitiesLogChannel = new ActionRowBuilder<ChannelSelectMenuBuilder>().setComponents(
     new ChannelSelectMenuBuilder()
@@ -506,8 +511,7 @@ async function HandleAddConfigPageInteracts(
   AddConfigComps: ReturnType<typeof GetAddConfigComponents>,
   CurrentConfiguration: NonNullable<Awaited<ReturnType<typeof GetGuildSettings>>>
 ) {
-  let LogIntervalChosen = CurrentConfiguration.log_deletion_interval;
-
+  let LogIntervalChosen = CurrentConfiguration.duty_activities.log_deletion_interval;
   const BCCompActionCollector = BCConfigPrompt.createMessageComponentCollector<
     ComponentType.Button | ComponentType.RoleSelect | ComponentType.StringSelect
   >({
@@ -552,7 +556,7 @@ async function HandleAddConfigPageInteracts(
       return;
     }
 
-    if (CurrentConfiguration.log_deletion_interval === LogIntervalChosen) {
+    if (CurrentConfiguration.duty_activities.log_deletion_interval === LogIntervalChosen) {
       await new InfoEmbed()
         .useInfoTemplate("ConfigTopicNoChangesMade", "additional")
         .replyToInteract(CmdInteract)
@@ -565,7 +569,7 @@ async function HandleAddConfigPageInteracts(
       CmdInteract.guildId,
       {
         $set: {
-          "settings.log_deletion_interval": LogIntervalChosen,
+          "settings.duty_activities.log_deletion_interval": LogIntervalChosen,
         },
       },
       {
@@ -581,7 +585,7 @@ async function HandleAddConfigPageInteracts(
 
     if (UpdatedGuild) {
       const LDIFormatted = GetHumanReadableLogDeletionInterval(
-        UpdatedGuild.settings.log_deletion_interval
+        UpdatedGuild.settings.duty_activities.log_deletion_interval
       );
 
       const FormattedDesc = Dedent(`
@@ -605,8 +609,9 @@ async function HandleShiftConfigPageInteracts(
   ],
   CurrentConfiguration: NonNullable<Awaited<ReturnType<typeof GetGuildSettings>>>
 ) {
-  let OnDutyRoles: string[] = CurrentConfiguration.shifts.role_assignment.on_duty.slice();
-  let OnBreakRoles: string[] = CurrentConfiguration.shifts.role_assignment.on_break.slice();
+  let OnDutyRoles: string[] = CurrentConfiguration.shift_management.role_assignment.on_duty.slice();
+  let OnBreakRoles: string[] =
+    CurrentConfiguration.shift_management.role_assignment.on_break.slice();
 
   const SCCompActionCollector = BCConfigPrompt.createMessageComponentCollector<
     ComponentType.Button | ComponentType.RoleSelect
@@ -650,8 +655,8 @@ async function HandleShiftConfigPageInteracts(
     }
 
     if (
-      ArraysAreEqual(CurrentConfiguration.shifts.role_assignment.on_duty, OnDutyRoles) &&
-      ArraysAreEqual(CurrentConfiguration.shifts.role_assignment.on_break, OnBreakRoles)
+      ArraysAreEqual(CurrentConfiguration.shift_management.role_assignment.on_duty, OnDutyRoles) &&
+      ArraysAreEqual(CurrentConfiguration.shift_management.role_assignment.on_break, OnBreakRoles)
     ) {
       await new InfoEmbed()
         .useInfoTemplate("ConfigTopicNoChangesMade", "shifts")
@@ -665,8 +670,8 @@ async function HandleShiftConfigPageInteracts(
       CmdInteract.guildId,
       {
         $set: {
-          "settings.shifts.role_assignment.on_duty": OnDutyRoles,
-          "settings.shifts.role_assignment.on_break": OnBreakRoles,
+          "settings.shift_management.role_assignment.on_duty": OnDutyRoles,
+          "settings.shift_management.role_assignment.on_break": OnBreakRoles,
         },
       },
       {
@@ -681,11 +686,11 @@ async function HandleShiftConfigPageInteracts(
     );
 
     if (UpdatedGuild) {
-      const OnDutySetRoles = UpdatedGuild.settings.shifts.role_assignment.on_duty.map(
+      const OnDutySetRoles = UpdatedGuild.settings.shift_management.role_assignment.on_duty.map(
         (R) => `<@&${R}>`
       );
 
-      const OnBreakSetRoles = UpdatedGuild.settings.shifts.role_assignment.on_break.map(
+      const OnBreakSetRoles = UpdatedGuild.settings.shift_management.role_assignment.on_break.map(
         (R) => `<@&${R}>`
       );
 
@@ -713,9 +718,9 @@ async function HandleLogConfigPageInteracts(
   ],
   CurrentConfiguration: NonNullable<Awaited<ReturnType<typeof GetGuildSettings>>>
 ) {
-  let ShiftActivitiesLogChannel = CurrentConfiguration.log_channels.shift_activities;
-  let ArrestReportsChannels = CurrentConfiguration.log_channels.arrests.slice();
-  let CitationLogsChannels = CurrentConfiguration.log_channels.citations.slice();
+  let ShiftActivitiesLogChannel = CurrentConfiguration.shift_management.log_channel;
+  let ArrestReportsChannels = CurrentConfiguration.duty_activities.log_channels.arrests.slice();
+  let CitationLogsChannels = CurrentConfiguration.duty_activities.log_channels.citations.slice();
 
   const LCCompActionCollector = BCConfigPrompt.createMessageComponentCollector<
     ComponentType.Button | ComponentType.ChannelSelect
@@ -821,9 +826,15 @@ async function HandleLogConfigPageInteracts(
     }
 
     if (
-      CurrentConfiguration.log_channels.shift_activities === ShiftActivitiesLogChannel &&
-      ArraysAreEqual(CurrentConfiguration.log_channels.arrests, ArrestReportsChannels) &&
-      ArraysAreEqual(CurrentConfiguration.log_channels.citations, CitationLogsChannels)
+      CurrentConfiguration.shift_management.log_channel === ShiftActivitiesLogChannel &&
+      ArraysAreEqual(
+        CurrentConfiguration.duty_activities.log_channels.arrests,
+        ArrestReportsChannels
+      ) &&
+      ArraysAreEqual(
+        CurrentConfiguration.duty_activities.log_channels.citations,
+        CitationLogsChannels
+      )
     ) {
       await new InfoEmbed()
         .useInfoTemplate("ConfigTopicNoChangesMade", "logging")
@@ -837,9 +848,9 @@ async function HandleLogConfigPageInteracts(
       CmdInteract.guildId,
       {
         $set: {
-          "settings.log_channels.arrests": ArrestReportsChannels,
-          "settings.log_channels.citations": CitationLogsChannels,
-          "settings.log_channels.shift_activities": ShiftActivitiesLogChannel,
+          "settings.duty_activities.log_channels.arrests": ArrestReportsChannels,
+          "settings.duty_activities.log_channels.citations": CitationLogsChannels,
+          "settings.shift_management.log_channel": ShiftActivitiesLogChannel,
         },
       },
       {
@@ -854,15 +865,15 @@ async function HandleLogConfigPageInteracts(
     );
 
     if (UpdatedGuild) {
-      const SASetChannel = UpdatedGuild.settings.log_channels.shift_activities
-        ? `<#${UpdatedGuild.settings.log_channels.shift_activities}>`
+      const SASetChannel = UpdatedGuild.settings.shift_management.log_channel
+        ? `<#${UpdatedGuild.settings.shift_management.log_channel}>`
         : "*None*";
 
-      const ARSetChannels = UpdatedGuild.settings.log_channels.arrests.map(
+      const ARSetChannels = UpdatedGuild.settings.duty_activities.log_channels.arrests.map(
         (CI) => `<#${CI.match(/:?(\d+)$/)?.[1]}>`
       );
 
-      const CLSetChannels = UpdatedGuild.settings.log_channels.citations.map(
+      const CLSetChannels = UpdatedGuild.settings.duty_activities.log_channels.citations.map(
         (CI) => `<#${CI.match(/:?(\d+)$/)?.[1]}>`
       );
 
@@ -1057,10 +1068,14 @@ async function HandleConfigShowSelection(CmdInteract: SlashCommandInteraction<"c
       > ${ManagementRoles.length ? ListFormatter.format(ManagementRoles) : "*None*"}
   `);
 
-  const OnDutyRoles = GuildSettings.shifts.role_assignment.on_duty.map((Role) => roleMention(Role));
-  const OnBreakRoles = GuildSettings.shifts.role_assignment.on_break.map((Role) =>
+  const OnDutyRoles = GuildSettings.shift_management.role_assignment.on_duty.map((Role) =>
     roleMention(Role)
   );
+
+  const OnBreakRoles = GuildSettings.shift_management.role_assignment.on_break.map((Role) =>
+    roleMention(Role)
+  );
+
   const ShiftConfigFieldDesc = Dedent(`
     - **Role Assignment:**
      - **On-Duty Roles:**
@@ -1069,13 +1084,13 @@ async function HandleConfigShowSelection(CmdInteract: SlashCommandInteraction<"c
        > ${OnBreakRoles.length ? ListFormatter.format(OnBreakRoles) : "*None*"}
   `);
 
-  const ShiftActivitiesChannel = GuildSettings.log_channels.shift_activities
-    ? channelMention(GuildSettings.log_channels.shift_activities)
+  const ShiftActivitiesChannel = GuildSettings.shift_management.log_channel
+    ? channelMention(GuildSettings.shift_management.log_channel)
     : "*None*";
-  const CitationLogChannels = GuildSettings.log_channels.citations.map(
+  const CitationLogChannels = GuildSettings.duty_activities.log_channels.citations.map(
     (CI) => `<#${CI.match(/:?(\d+)$/)?.[1]}>`
   );
-  const ArrestLogChannels = GuildSettings.log_channels.arrests.map(
+  const ArrestLogChannels = GuildSettings.duty_activities.log_channels.arrests.map(
     (CI) => `<#${CI.match(/:?(\d+)$/)?.[1]}>`
   );
 
@@ -1089,7 +1104,7 @@ async function HandleConfigShowSelection(CmdInteract: SlashCommandInteraction<"c
   `);
 
   const AdditionalConfigFieldDesc = Dedent(`
-    - **Log Deletion Interval:** ${GetHumanReadableLogDeletionInterval(GuildSettings.log_deletion_interval)}
+    - **Log Deletion Interval:** ${GetHumanReadableLogDeletionInterval(GuildSettings.duty_activities.log_deletion_interval)}
   `);
 
   const ResponseEmbed = new EmbedBuilder()

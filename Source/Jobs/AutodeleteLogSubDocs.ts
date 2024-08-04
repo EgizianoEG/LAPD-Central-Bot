@@ -10,7 +10,7 @@ async function AutodeleteGuildLogs() {
   ).exec();
 
   for (const GuildDoc of GuildDocuments) {
-    const LogDeletionInterval = GuildDoc.settings.log_deletion_interval;
+    const LogDeletionInterval = GuildDoc.settings.duty_activities.log_deletion_interval;
     const ArrestLogIdsToRemove: number[] = [];
     const CitationLogIdsToRemove: number[] = [];
     if (!LogDeletionInterval) continue;

@@ -29,7 +29,9 @@ import AppError from "../Classes/AppError.js";
 export default async function DeleteShiftType(Name: string, GuildId: string) {
   const GuildDoc = await GuildModel.findById(GuildId).select("settings.shifts.types").exec();
   const ShiftTypeIndex =
-    GuildDoc?.settings.shifts.types.findIndex((ShiftType) => ShiftType.name === Name) ?? -1;
+    GuildDoc?.settings.shift_management.shift_types.findIndex(
+      (ShiftType) => ShiftType.name === Name
+    ) ?? -1;
 
   if (!GuildDoc) {
     throw new AppError({
@@ -44,7 +46,7 @@ export default async function DeleteShiftType(Name: string, GuildId: string) {
       showable: true,
     });
   } else {
-    GuildDoc.settings.shifts.types.splice(ShiftTypeIndex, 1);
+    GuildDoc.settings.shift_management.shift_types.splice(ShiftTypeIndex, 1);
     return GuildDoc.save();
   }
 }
