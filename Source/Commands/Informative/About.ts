@@ -40,7 +40,7 @@ async function Callback(Client: DiscordClient, Interaction: SlashCommandInteract
   const ResponseEmbed = new InfoEmbed()
     .setTitle("About LAPD Central")
     .setDescription(
-      "A discord.js bot designed to assist in the management and operation of role-playing ER:LC LAPD Discord servers."
+      "A discord.js bot designed to assist in the management and operation of role-playing ER:LC LAPD Discord servers. Inspired by: ERM, Trident, and Robo."
     )
     .addFields({
       name: "Author",
