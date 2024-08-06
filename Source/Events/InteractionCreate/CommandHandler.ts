@@ -449,7 +449,7 @@ async function HandleCommandUserPerms(
         Dedent(`
           You do not have the necessary permission(s) to utilize this command.
           Permission(s) Required:
-          - ${MissingListed.replace("\n", `\n${" ".repeat(10)}`)}
+          - ${MissingListed.replaceAll("\n", `\n${" ".repeat(10)}`)}
         `)
       )
       .replyToInteract(Interaction, true);
