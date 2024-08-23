@@ -790,6 +790,9 @@ async function HandleExtensionApprovalOrDenial(
   ]);
 }
 
+// ---------------------------------------------------------------------------------------
+// Initial Logic:
+// --------------
 async function Callback(Interaction: CmdOrButtonInteraction) {
   const TargetMember = await GetTargetMember(Interaction);
   if (!TargetMember) return Interaction.isButton() && Interaction.deferUpdate().catch(() => null);
