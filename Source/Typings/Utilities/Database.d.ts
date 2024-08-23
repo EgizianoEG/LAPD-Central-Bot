@@ -1,7 +1,8 @@
-import type { Types, HydratedDocument, HydratedArraySubdocument } from "mongoose";
+import type { Types, HydratedDocument, HydratedArraySubdocument, Model } from "mongoose";
 import type { DeepPartial, Falsey, Overwrite } from "utility-types";
 import type ERLCAgeGroups from "@Resources/ERLCAgeGroups.ts";
 import type IncidentTypes from "@Resources/IncidentTypes.ts";
+import type AppError from "@Utilities/Classes/AppError.ts";
 
 export namespace Guilds {
   interface CreateShiftTypeConfig {
@@ -325,6 +326,7 @@ export namespace Shifts {
 }
 
 export namespace GuildProfiles {
+  type HydratedProfileDocument = HydratedDocument<ProfileDocument, ProfileOverrides>;
   interface TotalDurationsData {
     /** A `get` virtual and cannot be set/modified. */
     all: number;
@@ -339,31 +341,21 @@ export namespace GuildProfiles {
     average_periods: Types.Subdocument<undefined> & TotalDurationsData;
   }
 
-  interface LeaveOfAbsenceDocument {
-    status: "Pending" | "Approved" | "Denied" | "Cancelled";
-    reason: string;
-
-    /** The duration of the leave of absence in milliseconds. */
-    duration: number;
-
-    /** A virtual returns a human readable duration of the leave of absence. This is not stored in the database. */
-    duration_hr: string;
-
-    /** The date when the leave of absence supposed to end starting from the request date. This value will be updated when the LOA is approved. */
-    end_date: Date;
-
-    /** The date when the leave of absence was requested. This is a read-only field once the LOA is requested/recorded. */
-    request_date: Date;
-
-    /** The reason or comment on the LOA approval or denial. */
-    reviewer_comment: string | null;
-
-    /** The date when the leave of absence was reviewed. */
-    review_date: Date | null;
-    reviewed_by: {
-      id: string;
-      username: string;
-    } | null;
+  interface ProfileModelType extends Model<ProfileDocument, unknown, ProfileOverrides> {
+    /**
+     * Finds a document by the given filter. If no document is found, a new document is created.
+     * @param {FilterQuery<GuildProfiles.ProfileDocument>} filter - The filter to find the document. The `guild` and `user`
+     * fields must be present and of type `string` to correctly return the newly created document if wanted.
+     * This means no usage of query operators is allowed for these two fields.
+     * @param {ProjectionType<GuildProfiles.ProfileDocument>} [projection] - The projection to apply to the document if found.
+     * Projection won't apply if the document is newly created.
+     * @returns The found or newly created document.
+     * @throws {AppError} Throws an error if the find or create operation fails.
+     */
+    findOneOrCreate: (
+      filter: FilterQuery<ProfileDocument> & { guild: string; user: string },
+      projection?: ProjectionType<ProfileDocument> | null
+    ) => Promise<HydratedDocument<ProfileDocument>>;
   }
 
   interface ProfileDocument {
@@ -385,13 +377,150 @@ export namespace GuildProfiles {
     };
 
     /** Leave of absence records. */
-    loas: HydratedArraySubdocument<LeaveOfAbsenceDocument>[];
+    loas: string[];
 
     shifts: {
       total_durations: TotalDurationsData;
       average_periods: TotalDurationsData;
       logs: string[];
     };
+  }
+}
+
+export namespace LeaveOfAbsence {
+  type LeaveStatus = "Pending" | "Approved" | "Denied" | "Cancelled";
+  type Virtuals = "duration_hr" | "original_duration_hr" | "extended_duration_hr";
+  type LeaveModel = Model<LeaveOfAbsenceDocument, {}, DocumentMethods, DocumentVirtuals>;
+  type LeaveOfAbsenceHydratedDocument = HydratedDocument<
+    LeaveOfAbsence.LeaveOfAbsenceDocument,
+    DocumentVirtuals & DocumentMethods
+  >;
+
+  interface DocumentMethods {
+    /**
+     * Returns the leave of absence document with the latest data from the database.
+     */
+    getUpToDate(): Promise<LeaveOfAbsenceHydratedDocument>;
+  }
+
+  interface DocumentVirtuals {
+    /**
+     * @virtual - Not stored in the database.
+     * Indicates if the leave of absence is active or not. `new Date()` is used.
+     */
+    is_active: boolean;
+
+    /**
+     * @virtual - Not stored in the database.
+     * Indicates if the leave of absence has ended or not. `new Date()` is used.
+     */
+    is_over: boolean;
+
+    /**
+     * @virtual - Not stored in the database.
+     * Indicates if the leave of absence is approved or not based on the `status` and `review_date` fields.
+     */
+    is_approved: boolean;
+
+    /**
+     * @virtual - Not stored in the database.
+     * Returns the leave's actual duration in human readable format, taking into considration if it was ended early and if it was extended.
+     */
+    duration_hr: string;
+
+    /**
+     * @virtual - Not stored in the database.
+     * Returns the original duration (`duration` field) of the leave in a human readable format.
+     * (i.e. the duration between the review (start) date and end date).
+     */
+    original_duration_hr: string;
+
+    /**
+     * @virtual - Not stored in the database.
+     * Returns a human readable duration of the leave of absence's extended duration (without adding the leave's actual/original duration).
+     */
+    extended_duration_hr: string;
+  }
+
+  interface LeaveOfAbsenceDocument {
+    _id: Types.ObjectId;
+
+    /** The Discord snowflake Id of the one who requested this leave of absence. Could be populated by a `GuildProfile` document. */
+    user: string;
+
+    /** The Discord snowflake Id of the guild where this leave of absence was requested. Could be populated by a `Guild` document. */
+    guild: string;
+
+    /**
+     * The status of the leave of absence.
+     * - Can be one of: `Pending`, `Approved`, `Denied`, `Cancelled`.
+     * - There is not status to state if the leave has ended/on-going or not.
+     */
+    status: LeaveStatus;
+
+    /** The reason for the leave of absence as stated by the requester. */
+    reason: string;
+
+    /** The original set duration of the leave of absence in milliseconds regardless if it was ended early or not. */
+    duration: number;
+
+    /** Indicates whether or not the leave of absence end has been handled; i.e. the process of logging leave end and updating the requester's roles. Defaults to `false`. */
+    end_handled: boolean;
+
+    /** Whether or not the leave of absence is manageable by the requester or the one who has this leave of absence. If not, only management staff can control it. */
+    is_manageable: boolean;
+
+    /** The date when the leave of absence supposed to end. This value will be updated once the LOA is approved and saved. */
+    end_date: Date;
+
+    /** The date when the leave of absence was ended regardless of its set duration. This is an optional field and should be set only when the LOA was early ended. */
+    early_end_date: Date | null;
+
+    /** The reason provided by *management* staff for the early end of the leave of absence. This is an optional field and should be set only when the LOA was early ended. */
+    early_end_reason: string | null;
+
+    /** The date when the leave of absence was requested. This is a read-only field once the LOA is requested/recorded. */
+    request_date: Date;
+
+    /** The leave of absence sent request message. This value is specifically being used for editing requests when they are cancelled and haven't been reviewed. */
+    request_msg: string | null;
+
+    /** A request to extend the leave of absence if any. Has the same structure as the leave request but with emitting fields. */
+    extension_req: {
+      /** The date of the extension request. */
+      date: Date;
+
+      /** The extension request's duration in milliseconds. */
+      duration: number;
+
+      /** The extension reason provided by who has the leave of absence. */
+      status: LeaveStatus;
+      reason?: string | null;
+      request_msg?: string | null;
+      review_date?: Date | null;
+      reviewer_notes?: string | null;
+      reviewed_by?: {
+        id: string;
+        username: string;
+      } | null;
+    } | null;
+
+    /** The reason, note, or comment on the LOA approval or denial. */
+    reviewer_notes: string | null;
+
+    /** The date when the leave of absence was reviewed. This could be set to the date when the leave was cancelled by the requester themselves. */
+    review_date: Date | null;
+
+    /**
+     * The information of who reviewed the leave of absence. This could be `null` if the LOA was not yet reviewed.
+     */
+    reviewed_by: {
+      /** The Discord user's unique identifier of who reviewed the LOA. */
+      id: string;
+
+      /** The Discord user's username of who reviewed the LOA. */
+      username: string;
+    } | null;
   }
 }
 
@@ -695,10 +824,5 @@ export namespace AggregateResults {
 
     /** Total shifts recorded. */
     total_shifts: number;
-  }
-
-  interface GetLOAsRecord extends Omit<GuildProfiles.LeaveOfAbsenceDocument, "duration_hr"> {
-    user: string;
-    guild: string;
   }
 }

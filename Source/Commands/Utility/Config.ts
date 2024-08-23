@@ -41,6 +41,7 @@ enum ConfigTopics {
   ShowConfigurations = "SH",
   BasicConfiguration = "BC",
   ShiftConfiguration = "SC",
+  LOAConfiguration = "LOA",
   AdditionalConfiguration = "AC",
 }
 
@@ -94,6 +95,12 @@ function GetConfigTopicsDropdownMenu(CmdInteract: SlashCommandInteraction<"cache
           .setLabel("Shift Configuration")
           .setDescription("The app's shift management settings; on-break and on-duty roles.")
           .setValue(ConfigTopics.ShiftConfiguration),
+        new StringSelectMenuOptionBuilder()
+          .setLabel("LOAs Configuration")
+          .setDescription(
+            "The app's leave of absence settings; on-leave roles, approval channel, etc."
+          )
+          .setValue(ConfigTopics.LOAConfiguration),
         new StringSelectMenuOptionBuilder()
           .setLabel("Log Configuration")
           .setDescription("The app's log settings.")
@@ -227,6 +234,43 @@ function GetShiftConfigComponents(
   );
 
   return [OnDutyRolesAR, OnBreakRolesAR] as const;
+}
+
+function GetLOAConfigComponents(
+  CmdInteract: SlashCommandInteraction<"cached">,
+  LeaveNoticesConfig: NonNullable<Awaited<ReturnType<typeof GetGuildSettings>>>["leave_notices"]
+) {
+  const OnLeaveRoleAR = new ActionRowBuilder<RoleSelectMenuBuilder>().setComponents(
+    new RoleSelectMenuBuilder()
+      .setCustomId(`app-config-loa-or:${CmdInteract.user.id}:${CmdInteract.guildId}`)
+      .setPlaceholder("On-Leave Role")
+      .setMinValues(0)
+      .setMaxValues(1)
+  );
+
+  if (LeaveNoticesConfig.leave_role) {
+    OnLeaveRoleAR.components[0].setDefaultRoles(LeaveNoticesConfig.leave_role);
+  }
+
+  const LOAsActivitiesLogChannel = new ActionRowBuilder<ChannelSelectMenuBuilder>().setComponents(
+    new ChannelSelectMenuBuilder()
+      .setChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+      .setCustomId(`app-config-loa-acl:${CmdInteract.user.id}:${CmdInteract.guildId}`)
+      .setPlaceholder("Channel for Logging LOA Activities")
+      .setMinValues(0)
+      .setMaxValues(1)
+  );
+
+  const LOAsApprovalsChannel = new ActionRowBuilder<ChannelSelectMenuBuilder>().setComponents(
+    new ChannelSelectMenuBuilder()
+      .setChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+      .setCustomId(`app-config-loa-apl:${CmdInteract.user.id}:${CmdInteract.guildId}`)
+      .setPlaceholder("Channel for Sending Pending LOAs")
+      .setMinValues(0)
+      .setMaxValues(1)
+  );
+
+  return [OnLeaveRoleAR, LOAsActivitiesLogChannel, LOAsApprovalsChannel] as const;
 }
 
 function GetLogConfigComponents(

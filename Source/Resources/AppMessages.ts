@@ -478,6 +478,122 @@ export const ErrorMessages = {
       For more information on regular expressions, please refer to the [MDN documentation](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions).
     `),
   },
+
+  LOAAlreadyExists: {
+    Title: "LOA Already Exists",
+    Description: "You cannot request a leave of absence while you have an active or pending one.",
+  },
+
+  LOADurationTooLong: {
+    Title: "LOA Duration Too Long",
+    Description:
+      "The leave duration you have entered is too long. Kindly specify a duration of at most 90 days (3 months).",
+  },
+
+  LOADurationTooShort: {
+    Title: "LOA Duration Too Short",
+    Description:
+      "The length of the leave you have entered is too short. Kindly specify a duration of at least 1 day long.",
+  },
+
+  LOAExtDurationTooLong: {
+    Title: "Extension Too Long",
+    Description:
+      "The extension duration you have entered is too long. Kindly specify a duration of at most 30 days (1 months).",
+  },
+
+  LOATotalDurationTooLong: {
+    Title: "Leave Duration Too Long",
+    Description:
+      "The total duration of your leave of absence would be too long. Please specify an extension that ensures the total duration of your leave is less than or equal to 90 days (3 months).",
+  },
+
+  LOAExtDurationTooShort: {
+    Title: "Extension Too Short",
+    Description:
+      "The length of the extension you have entered is too short. Kindly specify a duration of at least 12 hours.",
+  },
+
+  LOAExtensionNotFoundForReview: {
+    Title: "Extension Request Not Found",
+    Description:
+      "There is no pending extension request for this leave of absence to modify or act upon at this time.",
+  },
+
+  NoActiveLOAOrExistingExtension: {
+    Title: "No Active LOA Or Existing Extension",
+    Description:
+      "Either there is no active leave of absence or there is an existing extension for this leave at this time.",
+  },
+
+  LOAPreviouslyDenied: {
+    Title: "LOA Previously Denied",
+    Description:
+      "You cannot request a leave of absence while the previous one was denied less than 3 hours ago.",
+  },
+
+  LOAPreviouslyCancelled: {
+    Title: "LOA Previously Cancelled",
+    Description:
+      "You cannot request a leave of absence while the previous one was cancelled less than 1 hour ago.",
+  },
+
+  LOARecentlyEnded: {
+    Title: "LOA Recently Ended",
+    Description:
+      "You cannot request a new leave of absence while the previous one was ended or terminated less than 1 hour ago.",
+  },
+
+  LOAAlreadyEnded: {
+    Title: "Leave Already Ended",
+    Description: "Your leave of absence has already ended.",
+  },
+
+  LOANotActive: {
+    Title: "No Active Leave",
+    Description: "There is no active leave of absence to modify or take action on at the moment.",
+  },
+
+  NoPendingLOAToCancel: {
+    Title: "No Pending LOA",
+    Description: "You don't have any pending leave of absence to cancel at the moment.",
+  },
+
+  LOAIsOverForExtension: {
+    Title: "Leave of Absence Expired",
+    Description:
+      "It seems like your leave of absence has ended, thus you cannot request an extension. You can only request an extension while your leave of absence is still active.",
+  },
+
+  LOAExtensionLimitReached: {
+    Title: "Extension Limit Reached",
+    Description:
+      "You cannot request an extension of your current leave of absence. Only one extension request is allowed per leave, regardless of whether it was approved, denied, or cancelled.",
+  },
+
+  LOAAdminExistingExtension: {
+    Title: "Extension Limit Reached",
+    Description:
+      "You cannot extend this leave of absence further more. Only one extension is allowed per leave, regardless of whether it was approved, denied, or cancelled.",
+  },
+
+  LOAModuleDisabled: {
+    Title: "Module Disabled",
+    Description:
+      "The leave of absence module is currently disabled. You cannot request, manage, or administrate a leave without it being enabled.",
+  },
+
+  DutyActivitiesModuleDisabled: {
+    Title: "Module Disabled",
+    Description:
+      "The duty activities module is currently disabled. You cannot log any citations or arrests without it being enabled.",
+  },
+
+  ShiftManagementModuleDisabled: {
+    Title: "Module Disabled",
+    Description:
+      "The shift management module is currently disabled. You cannot initiate any of duty commands without it being enabled.",
+  },
 };
 
 export const InfoMessages = {
@@ -536,5 +652,15 @@ export const InfoMessages = {
   NoShiftsWipedFU: {
     Title: "No Shifts Wiped",
     Description: "There were no shifts found that could be wiped for the specified user.",
+  },
+
+  NoLOAsWithActiveStatus: {
+    Title: "No Leave of Absences",
+    Description: "There are currently no active leave of absences to display.",
+  },
+
+  NoLOAsWithSpecifiedStatus: {
+    Title: "No Leave of Absences",
+    Description: "There are currently no LOAs with the specified status to display.",
   },
 };
