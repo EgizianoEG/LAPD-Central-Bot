@@ -48,7 +48,7 @@ export default async function HandleAbandonedInteractions(
           "Handling an unhandled message component interaction after around 2 seconds of no response.",
       });
 
-      const OriginalUserId = Interaction.customId.split(":")?.[1];
+      const OriginUserId = Interaction.customId.split(":")?.[1];
       const TimeGap = differenceInMilliseconds(
         Interaction.createdAt.getTime(),
         Interaction.message.createdAt.getTime()
@@ -65,7 +65,7 @@ export default async function HandleAbandonedInteractions(
             });
           }) as any;
 
-          if (Interaction.user.id === OriginalUserId) {
+          if (Interaction.user.id === OriginUserId) {
             await Interaction.deferUpdate();
             await Promise.all([
               Interaction.editReply({
@@ -94,7 +94,7 @@ export default async function HandleAbandonedInteractions(
         return;
       }
 
-      if (OriginalUserId && Interaction.user.id !== OriginalUserId) {
+      if (OriginUserId && Interaction.user.id !== OriginUserId) {
         await new UnauthorizedEmbed()
           .useErrTemplate("UnauthorizedInteraction")
           .replyToInteract(Interaction, true);

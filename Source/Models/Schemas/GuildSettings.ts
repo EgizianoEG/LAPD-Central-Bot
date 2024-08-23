@@ -1,9 +1,14 @@
 import ShiftTypeSchema from "./ShiftType.js";
 import { Schema } from "mongoose";
 
-const SnowflakeIDValidation: [RegExp, string] = [
+const SnowflakeIDValidationN1: [RegExp, string] = [
   /^\d{15,22}$/,
   "Received an invalid snowflake Id; received '{VALUE}'.",
+];
+
+const SnowflakeIDValidationN2: [RegExp, string] = [
+  /^\d{15,22}$|^\d{15,22}:\d{15,22}$/,
+  "Received an invalid snowflake Id.",
 ];
 
 const RolePermsValidator = {
@@ -59,14 +64,14 @@ const GuildSettings = new Schema({
             {
               _id: false,
               type: String,
-              match: SnowflakeIDValidation,
+              match: SnowflakeIDValidationN1,
             },
           ],
           on_break: [
             {
               _id: false,
               type: String,
-              match: SnowflakeIDValidation,
+              match: SnowflakeIDValidationN1,
             },
           ],
         },
@@ -76,7 +81,7 @@ const GuildSettings = new Schema({
         type: String,
         default: null,
         required: false,
-        match: SnowflakeIDValidation,
+        match: SnowflakeIDValidationN1,
       },
     },
   },
@@ -110,7 +115,7 @@ const GuildSettings = new Schema({
                 _id: false,
                 default: null,
                 required: false,
-                match: SnowflakeIDValidation,
+                match: SnowflakeIDValidationN2,
               },
             ],
           },
@@ -123,7 +128,7 @@ const GuildSettings = new Schema({
                 _id: false,
                 default: null,
                 required: false,
-                match: SnowflakeIDValidation,
+                match: SnowflakeIDValidationN2,
               },
             ],
           },
@@ -132,7 +137,7 @@ const GuildSettings = new Schema({
             type: String,
             default: null,
             required: false,
-            match: SnowflakeIDValidation,
+            match: SnowflakeIDValidationN1,
           },
         },
       },
@@ -153,21 +158,21 @@ const GuildSettings = new Schema({
         type: String,
         default: null,
         required: false,
-        match: SnowflakeIDValidation,
+        match: SnowflakeIDValidationN1,
       },
 
       log_channel: {
         type: String,
         default: null,
         required: false,
-        match: SnowflakeIDValidation,
+        match: SnowflakeIDValidationN1,
       },
 
       leave_role: {
         type: String,
         default: null,
         required: false,
-        match: SnowflakeIDValidation,
+        match: SnowflakeIDValidationN1,
       },
     },
   },

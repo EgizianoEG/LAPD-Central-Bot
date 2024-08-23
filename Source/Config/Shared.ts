@@ -4,6 +4,9 @@ const SharedData = {
   Images: {
     LAPD_Logo: "https://i.ibb.co/HxqT7Xz/LAPD-Logo-2.png",
     LAPD_Header: "https://i.ibb.co/fXsLH03/LAPD-Header-500.jpg",
+
+    // Credits goes to Sapphire bot for that divider :)
+    FooterDivider: "https://i.ibb.co/6HWMHFS/Horizontal-Divider.png",
   },
 
   Embeds: {
@@ -17,6 +20,13 @@ const SharedData = {
       ShiftVoid: "#4E5052",
       ShiftStart: "#1F9D4B",
       ShiftBreak: "#FE8C2A",
+
+      // Cancelled color is only used in logging messages; leave requests uses LOARequestDenied when cancelled.
+      LOARequestCancelled: "#C2D1E6",
+      LOARequestEnded: "#CA2222",
+      LOARequestDenied: "#CA2222",
+      LOARequestPending: "#F2A265",
+      LOARequestApproved: "#227F46",
     },
 
     Thumbs: {
@@ -30,6 +40,7 @@ const SharedData = {
       AvatarFemale: "https://i.ibb.co/Lr37RGx/Female-Avatar-Placeholder.png",
 
       UnknownImage: "https://placehold.co/254x254/F7F8F9/202428/png?text=%3F",
+      Transparent: "https://i.ibb.co/qFtywJK/Transparent.png",
     },
   },
 
@@ -37,6 +48,7 @@ const SharedData = {
   // Some of the following emojis are made or distributed by:
   // - Flaticon (https://www.flaticon.com)
   // - Iconfinder (https://www.iconfinder.com)
+  // - Icons8 (https://icons8.com)
   Emojis: {
     Online: "<:Online:1185771482656297010>",
     Offline: "<:Offline:1185771486460526714>",
@@ -48,6 +60,10 @@ const SharedData = {
     Trash: "<:Trash:1185785496757088286>",
     Loading: "<a:LoadingBlue:1219792743383957565>",
 
+    MediaStop: "<:MediaStop:1220887197398470780>",
+    WhitePlus: "<:WhitePlus:1270733376533434471>",
+    WhiteCheck: "<:WhiteCheck:1272950397044133999>",
+    WhiteCross: "<:Crossed:1271079415027073114>",
     StopWatch: "<:Time:1185414712670826557>",
     LosAngeles: "<:LosAngeles:1185406541709463652>",
     HamburgerList: "<:Menu:1185793738212114484>",
