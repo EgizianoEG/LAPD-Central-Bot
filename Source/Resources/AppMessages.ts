@@ -227,7 +227,7 @@ export const ErrorMessages = {
    * @template ActiveShiftTypeName Type of the shift that currently active.
    */
   ShiftAlreadyActive: {
-    Title: "A Shift Already Active",
+    Title: "A Shift Is Already Active",
     Description:
       "You cannot begin a new shift while you have an active one, even if the shift type is different. You currently have an active shift of the `%s` type.",
   },
@@ -344,8 +344,9 @@ export const ErrorMessages = {
   },
 
   BotMemberSelected: {
-    Title: "Bot Member",
-    Description: "You cannot select a bot member as a target. Please select a person instead.",
+    Title: "Bot Member Selected",
+    Description:
+      "You cannot select a bot as a target. Please choose a human member for this action.",
   },
 
   UnknownDateFormat: {

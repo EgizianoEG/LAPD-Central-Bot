@@ -210,6 +210,49 @@ function GetAggregationPipelineNoShiftType(
       },
     },
     {
+      $lookup: {
+        as: "loas",
+        from: "leaves",
+        let: {
+          guild: "$guild",
+          user: "$user",
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  {
+                    $eq: ["$guild", "$$guild"],
+                  },
+                  {
+                    $eq: ["$user", "$$user"],
+                  },
+                  {
+                    $eq: ["$status", "Approved"],
+                  },
+                  {
+                    $eq: ["$early_end_date", null],
+                  },
+                  {
+                    $gte: ["$end_date", RetrieveDate ?? new Date()],
+                  },
+                ],
+              },
+            },
+          },
+          {
+            $project: {
+              status: 1,
+              duration: 1,
+              end_date: 1,
+              request_date: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
       $set: {
         guild: {
           $arrayElemAt: ["$guild_doc", 0],
@@ -267,19 +310,6 @@ function GetAggregationPipelineNoShiftType(
                     },
                     0,
                   ],
-                },
-                {
-                  $reduce: {
-                    input: "$loas",
-                    initialValue: false,
-                    in: {
-                      $cond: {
-                        if: { $gt: ["$$this.end_date", RetrieveDate ?? new Date()] },
-                        then: true,
-                        else: false,
-                      },
-                    },
-                  },
                 },
               ],
             },
@@ -470,6 +500,49 @@ function GetAggregationPipelineWithShiftType(
       },
     },
     {
+      $lookup: {
+        as: "loas",
+        from: "leaves",
+        let: {
+          guild: "$guild",
+          user: "$user",
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  {
+                    $eq: ["$guild", "$$guild"],
+                  },
+                  {
+                    $eq: ["$user", "$$user"],
+                  },
+                  {
+                    $eq: ["$status", "Approved"],
+                  },
+                  {
+                    $eq: ["$early_end_date", null],
+                  },
+                  {
+                    $gte: ["$end_date", RetrieveDate ?? new Date()],
+                  },
+                ],
+              },
+            },
+          },
+          {
+            $project: {
+              status: 1,
+              duration: 1,
+              end_date: 1,
+              request_date: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
       $set: {
         guild: {
           $arrayElemAt: ["$guild_doc", 0],
@@ -527,24 +600,6 @@ function GetAggregationPipelineWithShiftType(
                     },
                     0,
                   ],
-                },
-                {
-                  $reduce: {
-                    input: "$loas",
-                    initialValue: false,
-                    in: {
-                      $cond: {
-                        if: {
-                          $and: [
-                            { "$$this.status": "Approved" },
-                            { $gt: ["$$this.end_date", RetrieveDate ?? new Date()] },
-                          ],
-                        },
-                        then: true,
-                        else: false,
-                      },
-                    },
-                  },
                 },
               ],
             },

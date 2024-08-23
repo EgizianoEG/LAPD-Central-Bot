@@ -121,10 +121,17 @@ class BaseEmbed extends EmbedBuilder {
       files: RemoveComponents ? [] : undefined,
     })
       .catch(() => {
-        return interaction.followUp({
-          ephemeral,
-          embeds: [this],
-        });
+        if (ReplyMethod === "followUp") {
+          return interaction.reply({
+            ephemeral,
+            embeds: [this],
+          });
+        } else {
+          return interaction.followUp({
+            ephemeral,
+            embeds: [this],
+          });
+        }
       })
       .catch((err: UtilityTypes.Class<Error>) => {
         if (silent) return null;

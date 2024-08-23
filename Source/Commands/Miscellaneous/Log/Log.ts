@@ -4,7 +4,6 @@
 
 import { Shifts } from "@Typings/Utilities/Database.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import { ErrorMessages } from "@Resources/AppMessages.js";
 import {
   SlashCommandBuilder,
   AutocompleteInteraction,
@@ -16,6 +15,7 @@ import AutocompleteVehicle from "@Utilities/Autocompletion/Vehicle.js";
 import AutocompleteHeight from "@Utilities/Autocompletion/Height.js";
 import AutocompleteWeight from "@Utilities/Autocompletion/Weight.js";
 import AutocompleteColor from "@Utilities/Autocompletion/Color.js";
+import IsModuleEnabled from "@Utilities/Database/IsModuleEnabled.js";
 import GetShiftActive from "@Utilities/Database/GetShiftActive.js";
 import GetRobloxUserLinked from "@Utilities/Database/IsUserLoggedIn.js";
 
@@ -35,18 +35,25 @@ const Subcommands = [
  * and `ActiveShift` for additional processing; otherwise returns `false`.
  */
 async function HandleInteractValidation(Interaction: SlashCommandInteraction<"cached">) {
-  const HasRobloxLinked = await GetRobloxUserLinked(Interaction);
+  const ModuleEnabled = await IsModuleEnabled(Interaction.guildId, "duty_activities");
   let IsHandled = false;
 
+  if (ModuleEnabled === false) {
+    IsHandled = true;
+    await new ErrorEmbed()
+      .useErrTemplate("DutyActivitiesModuleDisabled")
+      .replyToInteract(Interaction, true, true);
+  }
+
+  const HasRobloxLinked = await GetRobloxUserLinked(Interaction);
   if (!HasRobloxLinked) {
     IsHandled = true;
     await new ErrorEmbed()
-      .setTitle(ErrorMessages.RobloxUserNotLinked.Title)
-      .setDescription(ErrorMessages.RobloxUserNotLinked.Description)
-      .replyToInteract(Interaction, true);
+      .useErrTemplate("RobloxUserNotLinked")
+      .replyToInteract(Interaction, true, true);
   }
 
-  const HasActiveShift = await GetShiftActive({ Interaction, UserOnly: true });
+  const ActiveShift = await GetShiftActive({ Interaction, UserOnly: true });
   // Functionality is unnecessary at the moment.
   // if (!HasActiveShift) {
   //   IsHandled = true;
@@ -59,8 +66,8 @@ async function HandleInteractValidation(Interaction: SlashCommandInteraction<"ca
   return IsHandled
     ? null
     : {
+        ActiveShift,
         RobloxUserId: HasRobloxLinked,
-        ActiveShift: HasActiveShift,
       };
 }
 

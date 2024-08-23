@@ -8,7 +8,7 @@ import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
  * @param GuildId - The ID of the user's guild/shift's guild.
  * @param UserId - The ID of the user whose shift status is being handled. Could be an array to handle multiple users at once.
  */
-export default async function HandleRoleAssignment(
+export default async function HandleShiftRoleAssignment(
   CurrentStatus: "on-duty" | "on-break" | "off-duty",
   Client: DiscordClient,
   Guild: Guild | string,

@@ -8,6 +8,7 @@ import {
 import DutyTypesSubcommandGroup from "./Duty Types/Main.js";
 import AutocompleteShiftType from "@Utilities/Autocompletion/ShiftType.js";
 import HasRobloxLinked from "@Utilities/Database/IsUserLoggedIn.js";
+import IsModuleEnabled from "@Utilities/Database/IsModuleEnabled.js";
 import UserHasPerms from "@Utilities/Database/UserHasPermissions.js";
 
 const Subcommands = [
@@ -25,20 +26,27 @@ const Subcommands = [
 // ----------
 /**
  * Authorize a management slash command usage; returns `true` is it is authorized or `false` otherwise.
- * All commands except management ones are usable by staff identified members.
  * Users may not utilize the `duty manage` subcommand if they have no linked Roblox account.
  * @param Interaction
  */
 async function IsAuthorizedCmdUsage(Interaction: SlashCommandInteraction<"cached">) {
   const SubcmdName = Interaction.options.getSubcommand();
+  const ModuleEnabled = await IsModuleEnabled(Interaction.guildId, "shift_management");
+
+  if (ModuleEnabled === false) {
+    return new ErrorEmbed()
+      .useErrTemplate("ShiftManagementModuleDisabled")
+      .replyToInteract(Interaction, true)
+      .then(() => false);
+  }
 
   if (SubcmdName === "manage") {
     const LinkedRobloxUser = await HasRobloxLinked(Interaction);
     if (!LinkedRobloxUser) {
-      await new ErrorEmbed()
+      return new ErrorEmbed()
         .useErrTemplate("SMRobloxUserNotLinked")
-        .replyToInteract(Interaction, true);
-      return false;
+        .replyToInteract(Interaction, true)
+        .then(() => false);
     }
   }
 
@@ -55,14 +63,10 @@ async function Callback(Client: DiscordClient, Interaction: SlashCommandInteract
 
   if (!(await IsAuthorizedCmdUsage(Interaction))) return;
   for (const SubCommand of Subcommands) {
-    if (SubCommand.data.name === SubCommandName) {
-      if (typeof SubCommand.callback === "function") {
-        return SubCommand.callback.length > 1
-          ? (SubCommand.callback as AnySlashCmdCallback)(Client, Interaction)
-          : (SubCommand.callback as AnySlashCmdCallback)(Interaction);
-      } else {
-        continue;
-      }
+    if (SubCommand.data.name === SubCommandName && typeof SubCommand.callback === "function") {
+      return SubCommand.callback.length > 1
+        ? (SubCommand.callback as AnySlashCmdCallback)(Client, Interaction)
+        : (SubCommand.callback as AnySlashCmdCallback)(Interaction);
     }
   }
 
