@@ -1,6 +1,3 @@
-// Dependencies:
-// -------------
-
 import {
   SlashCommandBuilder,
   PermissionFlagsBits,
