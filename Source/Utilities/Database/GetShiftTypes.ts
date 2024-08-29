@@ -11,7 +11,7 @@ export default async function GetShiftTypes(
   GuildId: string
 ): Promise<Types.DocumentArray<Guilds.ShiftType>> {
   return GuildModel.findById(GuildId)
-    .select("settings.shifts.types")
+    .select("settings.shift_management.shift_types")
     .then((GuildData) => {
       if (!GuildData) return [] as any;
       return GuildData.settings.shift_management.shift_types;

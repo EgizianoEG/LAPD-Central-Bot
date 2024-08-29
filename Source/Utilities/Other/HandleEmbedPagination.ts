@@ -1,7 +1,6 @@
 import { RandomString } from "@Utilities/Strings/Random.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import {
-  InteractionResponse,
   ButtonInteraction,
   DiscordAPIError,
   ComponentType,
@@ -28,28 +27,32 @@ const Clamp = (Value: number, Min: number, Max: number) => Math.min(Math.max(Val
  * @param Pages - The embeds to paginate between; i.e. embeds representing pages. This should be an array of at least one embed.
  * @param Interact - The interaction that triggered the pagination. Should be repliable either by `followUp` or `reply`.
  * @param Context - The context of which triggered the pagination handling (used for logging errors and such). e.g. `Commands:Miscellaneous:Duty:Leaderboard`.
+ * @param [Ephemeral=false] - Whether the pages should be ephemeral (only visible to the one initiated the pagination). Defaults to `false`.
  * @returns This function/handler does not return anything and it handles pagination on its own.
  */
 export default async function HandleEmbedPagination(
   Pages: EmbedBuilder[],
   Interact: SlashCommandInteraction | ButtonInteraction,
-  Context?: string
+  Context?: string,
+  Ephemeral: boolean = false
 ): Promise<void> {
   let CurrPageIndex = 0;
   const NavigationButtons = GetPredefinedNavButtons(Interact, Pages.length, true, true);
   const ReplyMethod = Interact.deferred ? "editReply" : Interact.replied ? "followUp" : "reply";
-  const ResponseMessage: Message | InteractionResponse = await Interact[ReplyMethod as any]({
+  const ResponseMessage: Message<true> = await Interact[ReplyMethod as any]({
     components: Pages.length > 1 ? [NavigationButtons] : undefined,
+    ephemeral: Ephemeral,
     fetchReply: true,
     embeds: [Pages[0]],
   });
 
-  // Do not paginate if there is only one page received.
+  // Do not handle pagination if there is only one page received.
   if (Pages.length === 1) return;
   const ComponentCollector = ResponseMessage.createMessageComponentCollector({
     filter: (Btn) => HandleCollectorFiltering(Interact, Btn),
     componentType: ComponentType.Button,
-    time: 5 * 60 * 1000,
+    time: 15 * 60 * 1000,
+    idle: 5 * 60 * 1000,
   });
 
   ComponentCollector.on("collect", async (NavInteraction: ButtonInteraction<"cached">) => {
@@ -67,7 +70,6 @@ export default async function HandleEmbedPagination(
     }
 
     if (NewPageIndex === -1) {
-      await NavInteraction.deferUpdate();
       switch (NavInteraction.customId.split(":")[0]) {
         case "nav-next":
           NewPageIndex = Clamp(CurrPageIndex + 1, 0, Pages.length);
@@ -97,37 +99,51 @@ export default async function HandleEmbedPagination(
       Pages.length
     );
 
-    NavInteraction.editReply({
-      embeds: [Pages[NewPageIndex]],
-      components: [NavigationButtons],
-    })
-      .then(() => {
-        CurrPageIndex = NewPageIndex;
-      })
-      .catch((Err: any) => {
-        if (Err instanceof DiscordAPIError && Err.code === 50_001) {
-          return;
-        }
-
-        AppLogger.error({
-          message: "An error occurred while handling embed pagination;",
-          label: "Utilities:Other:HandleEmbedPagination",
-          context: Context,
-          stack: Err.stack,
+    try {
+      if (NavInteraction.deferred) {
+        await NavInteraction.editReply({
+          embeds: [Pages[NewPageIndex]],
+          components: [NavigationButtons],
+        }).then(() => {
+          CurrPageIndex = NewPageIndex;
         });
+      } else {
+        await NavInteraction.update({
+          embeds: [Pages[NewPageIndex]],
+          components: [NavigationButtons],
+        }).then(() => {
+          CurrPageIndex = NewPageIndex;
+        });
+      }
+    } catch (Err: any) {
+      if (Err instanceof DiscordAPIError && [50_001, 10_008].includes(Number(Err.code))) {
+        return;
+      }
+
+      AppLogger.error({
+        message: "An error occurred while handling embed pagination;",
+        label: "Utilities:Other:HandleEmbedPagination",
+        context: Context,
+        stack: Err.stack,
       });
+    }
   });
 
   ComponentCollector.on("end", async (Collected, EndReason: string) => {
     if (EndReason.match(/\w+Delete/)) return;
-
     try {
       NavigationButtons.components.forEach((Btn) => Btn.setDisabled(true));
       const LastInteract = Collected.last();
       if (LastInteract) {
         await LastInteract.editReply({ components: [NavigationButtons] });
       } else {
-        await (await ResponseMessage.fetch()).edit({ components: [NavigationButtons] });
+        await Interact.editReply({ components: [NavigationButtons] }).catch(
+          async function CatchError() {
+            return (await ResponseMessage.fetch().catch(() => null))
+              ?.edit({ components: [NavigationButtons] })
+              .catch(() => null);
+          }
+        );
       }
     } catch (Err: any) {
       AppLogger.error({
@@ -135,9 +151,6 @@ export default async function HandleEmbedPagination(
         label: "Utilities:Other:HandleEmbedPagination",
         context: Context,
         stack: Err.stack,
-        details: {
-          ...Err,
-        },
       });
     }
   });
@@ -208,7 +221,7 @@ async function HandleModalPageSelection(
     return null;
   }
 
-  await ModalSubmission.deferUpdate();
+  ModalSubmission.deferUpdate();
   return ParsedNumber - 1;
 }
 

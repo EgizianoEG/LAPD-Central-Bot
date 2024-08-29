@@ -1220,7 +1220,7 @@ async function Callback(CmdInteract: SlashCommandInteraction<"cached">) {
     .setDescription("Please select a topic from the dropdown list below.");
 
   const CTopicsMenu = GetConfigTopicsDropdownMenu(CmdInteract);
-  const ReplyMethod = CmdInteract.replied ? "editReply" : "reply";
+  const ReplyMethod = CmdInteract.replied || CmdInteract.deferred ? "editReply" : "reply";
   const CmdRespMsg = await CmdInteract[ReplyMethod]({
     components: [CTopicsMenu],
     embeds: [CmdRespEmbed],

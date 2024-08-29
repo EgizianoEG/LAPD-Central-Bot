@@ -25,7 +25,7 @@ export default async function InitializeGoogleAPI(): Promise<void> {
       },
     });
 
-    Client = await GAuth.getClient();
+    Client = (await GAuth.getClient()) as JSONClient;
     SheetsAPI = google.sheets({ version: "v4", auth: Client as unknown as GoogleAuth<JSONClient> });
     DriveAPI = google.drive({ version: "v3", auth: Client as unknown as GoogleAuth<JSONClient> });
   } catch (Err: any) {

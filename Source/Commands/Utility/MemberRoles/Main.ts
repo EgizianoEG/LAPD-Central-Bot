@@ -1,6 +1,3 @@
-// Dependencies:
-// -------------
-
 import AutocompleteMemRolesSave from "@Utilities/Autocompletion/MemRolesSave.js";
 import {
   SlashCommandBuilder,

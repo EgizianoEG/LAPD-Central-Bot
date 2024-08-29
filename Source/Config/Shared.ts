@@ -64,6 +64,7 @@ const SharedData = {
     WhitePlus: "<:WhitePlus:1270733376533434471>",
     WhiteCheck: "<:WhiteCheck:1272950397044133999>",
     WhiteCross: "<:Crossed:1271079415027073114>",
+    WhiteBack: "<:TurnBack:1277740862821896272>",
     StopWatch: "<:Time:1185414712670826557>",
     LosAngeles: "<:LosAngeles:1185406541709463652>",
     HamburgerList: "<:Menu:1185793738212114484>",

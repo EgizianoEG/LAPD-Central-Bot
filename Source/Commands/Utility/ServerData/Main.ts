@@ -4,10 +4,7 @@ import {
   SlashCommandSubcommandsOnlyBuilder,
 } from "discord.js";
 
-const Subcommands = [
-  (await import("./Subcmds/Search.js")).default,
-  (await import("./Subcmds/Replace.js")).default,
-];
+const Subcommands = [(await import("./Subcmds/Manage.js")).default];
 
 // ---------------------------------------------------------------------------------------
 // Functions:
@@ -29,20 +26,17 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
 // Command structure:
 // ------------------
 const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
+  callback: Callback,
   options: {
     cooldown: 2.5,
-    bot_perms: { replace: [PermissionFlagsBits.ManageNicknames] },
-    user_perms: { replace: [PermissionFlagsBits.Administrator], $all_other: { staff: true } },
+    user_perms: { manage: [PermissionFlagsBits.Administrator], $all_other: { management: true } },
   },
 
   data: new SlashCommandBuilder()
-    .setName("nicknames")
-    .setDescription("Utility commands for member nicknames.")
+    .setName("server-data")
+    .setDescription("Server data management related commands.")
     .setDMPermission(false)
-    .addSubcommand(Subcommands[0].data)
-    .addSubcommand(Subcommands[1].data),
-
-  callback: Callback,
+    .addSubcommand(Subcommands[0].data),
 };
 
 // ---------------------------------------------------------------------------------------

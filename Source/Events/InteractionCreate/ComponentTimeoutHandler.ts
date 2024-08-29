@@ -1,6 +1,7 @@
 import AppLogger from "@Utilities/Classes/AppLogger.js";
-import { InfoEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { IsValidDiscordId } from "@Utilities/Other/Validators.js";
 import { differenceInMilliseconds } from "date-fns";
+import { InfoEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import {
   ComponentType,
   BaseInteraction,
@@ -34,9 +35,16 @@ export default async function HandleAbandonedInteractions(
     }
   }
 
+  const OriginUserId = Interaction.customId.split(":")?.[1];
+  if (IsValidDiscordId(OriginUserId) && Interaction.user.id !== OriginUserId) {
+    await new UnauthorizedEmbed()
+      .useErrTemplate("UnauthorizedInteraction")
+      .replyToInteract(Interaction, true);
+  }
+
   // Making sure that the interaction is not being processed
   // by any other callbacks/listeners even if it isn't stated
-  // in `Client....Listeners` before continuing.
+  // in `Client.Listeners` before continuing.
   setTimeout(
     async function OnUnhandledCompInteraction() {
       if (Interaction.replied || Interaction.deferred) return;
@@ -48,7 +56,6 @@ export default async function HandleAbandonedInteractions(
           "Handling an unhandled message component interaction after around 2 seconds of no response.",
       });
 
-      const OriginUserId = Interaction.customId.split(":")?.[1];
       const TimeGap = differenceInMilliseconds(
         Interaction.createdAt.getTime(),
         Interaction.message.createdAt.getTime()
@@ -76,17 +83,6 @@ export default async function HandleAbandonedInteractions(
                 embeds: [new InfoEmbed().useInfoTemplate("ProcessTimedOut")],
               }),
             ]);
-          } else {
-            await Interaction.message
-              .edit({
-                components: DisabledMsgComponents,
-              })
-              .catch(() =>
-                Interaction.editReply({
-                  components: DisabledMsgComponents,
-                })
-              )
-              .catch(() => Interaction.deferUpdate());
           }
         } catch {
           // Ignored.

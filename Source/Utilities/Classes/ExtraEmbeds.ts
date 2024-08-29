@@ -6,6 +6,7 @@ import {
   InteractionResponse,
   CommandInteraction,
   ButtonInteraction,
+  MessageComponentInteraction,
 } from "discord.js";
 
 import { ErrorMessages, InfoMessages } from "@Resources/AppMessages.js";
@@ -68,14 +69,20 @@ class BaseEmbed extends EmbedBuilder {
    * @returns The modified instance of the info embed.
    */
   useInfoTemplate(templateName: keyof typeof InfoMessages, ...args: any[]) {
+    const Thumbnail: string | null = Object.hasOwn(InfoMessages[templateName], "Thumb")
+      ? (InfoMessages[templateName] as any).Thumb || null
+      : this.data.thumbnail?.url || null;
+
     if (InfoMessages[templateName].Description.match(/%[scdjifoO%]/)) {
       return super
         .setTitle(InfoMessages[templateName].Title)
-        .setDescription(FormatString(InfoMessages[templateName].Description, ...args));
+        .setDescription(FormatString(InfoMessages[templateName].Description, ...args))
+        .setThumbnail(Thumbnail);
     } else {
       return super
         .setTitle(InfoMessages[templateName].Title)
-        .setDescription(InfoMessages[templateName].Description);
+        .setDescription(InfoMessages[templateName].Description)
+        .setThumbnail(Thumbnail);
     }
   }
 
@@ -89,7 +96,7 @@ class BaseEmbed extends EmbedBuilder {
     interaction: BaseInteraction & { replied: boolean; reply; followUp; editReply },
     ephemeral: boolean = false,
     silent: boolean = true,
-    replyMethod?: "reply" | "editReply" | "followUp"
+    replyMethod?: "reply" | "editReply" | "update" | "followUp"
   ): Promise<InteractionResponse<boolean> | Message<boolean>> {
     let ReplyMethod = replyMethod ?? "reply";
     let RemoveComponents: boolean = false;
@@ -124,6 +131,14 @@ class BaseEmbed extends EmbedBuilder {
         if (ReplyMethod === "followUp") {
           return interaction.reply({
             ephemeral,
+            embeds: [this],
+          });
+        } else if (
+          ReplyMethod === "editReply" &&
+          interaction instanceof MessageComponentInteraction &&
+          !ephemeral
+        ) {
+          return interaction.update({
             embeds: [this],
           });
         } else {

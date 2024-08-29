@@ -119,6 +119,7 @@ function GetPanelEmbed(
     ActiveOrPendingLOA.review_date &&
     ActiveOrPendingLOA.extension_req?.status !== "Pending"
   ) {
+    PanelEmbed.setColor(Embeds.Colors.LOARequestApproved);
     PanelEmbed.addFields({
       inline: true,
       name: "Active Leave",
@@ -131,6 +132,7 @@ function GetPanelEmbed(
       `),
     });
   } else if (ActiveOrPendingLOA?.status === "Pending") {
+    PanelEmbed.setColor(Embeds.Colors.LOARequestPending);
     PanelEmbed.addFields({
       inline: true,
       name: "Pending Leave",
@@ -145,6 +147,7 @@ function GetPanelEmbed(
     ActiveOrPendingLOA?.review_date &&
     ActiveOrPendingLOA?.extension_req?.status === "Pending"
   ) {
+    PanelEmbed.setColor(Embeds.Colors.LOARequestPending);
     PanelEmbed.addFields({
       inline: true,
       name: "Pending Extension",
@@ -790,6 +793,9 @@ async function HandleExtensionApprovalOrDenial(
   ]);
 }
 
+// ---------------------------------------------------------------------------------------
+// Initial Logic:
+// --------------
 async function Callback(Interaction: CmdOrButtonInteraction) {
   const TargetMember = await GetTargetMember(Interaction);
   if (!TargetMember) return Interaction.isButton() && Interaction.deferUpdate().catch(() => null);

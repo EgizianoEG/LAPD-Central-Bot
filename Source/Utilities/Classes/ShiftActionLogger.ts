@@ -69,7 +69,7 @@ export default class ShiftActionLogger {
    */
   private static async GetLoggingChannel(Guild: Guild) {
     const LoggingChannelId = await GuildModel.findById(Guild.id)
-      .select("settings")
+      .select("settings.shift_management.log_channel")
       .then((GuildDoc) => {
         if (GuildDoc) {
           return GuildDoc.settings.shift_management.log_channel;
@@ -574,8 +574,12 @@ export default class ShiftActionLogger {
    */
   public static async LogShiftsWipe(
     UserInteract: DiscordUserInteract,
-    WipeResult: Mongoose.mongo.DeleteResult & { totalTime: number },
-    ShiftType?: string | null,
+    WipeResult: Mongoose.mongo.DeleteResult & {
+      totalTime: number;
+      shiftsAfter?: Date;
+      shiftsBefore?: Date;
+    },
+    ShiftType?: string | string[] | null,
     TargettedUser?: User
   ) {
     const LoggingChannel = await this.GetLoggingChannel(UserInteract.guild);
@@ -585,16 +589,44 @@ export default class ShiftActionLogger {
       .setFooter({ text: `Wiped by: @${UserInteract.user.username}` })
       .setDescription(
         Dedent(`
-          ${TargettedUser ? `**Member:** <@${TargettedUser.id}>` : ""}
+          ${TargettedUser ? `**Member:** ${userMention(TargettedUser.id)}` : ""}
           **Shifts Deleted:** ${BluewishText(WipeResult.deletedCount, LoggingChannel?.id ?? UserInteract.id)}
-          **Shifts of Type:** ${ShiftType ? `${inlineCode(ShiftType)}` : "*All Shift Types*"}
-          **On-Duty Time Sum:** ${WipeResult.totalTime ? ReadableDuration(WipeResult.totalTime) : "*N/A*"}
         `)
       );
 
     if (!(UserInteract instanceof GuildMember)) {
       LogEmbed.setTimestamp(UserInteract.createdAt);
     }
+
+    if (Array.isArray(ShiftType) && ShiftType.length > 0) {
+      LogEmbed.setDescription(
+        `${LogEmbed.data.description}\n**Shifts of Type:** ${ShiftType.map((Type) =>
+          inlineCode(Type)
+        ).join(", ")}`
+      );
+    } else if (typeof ShiftType === "string") {
+      LogEmbed.setDescription(
+        `${LogEmbed.data.description}\n**Shifts of Type:** ${inlineCode(ShiftType)}`
+      );
+    } else {
+      LogEmbed.setDescription(
+        `${LogEmbed.data.description}\n**Shifts of Type:** *All Shift Types*`
+      );
+    }
+
+    if (WipeResult.shiftsAfter) {
+      LogEmbed.setDescription(
+        `${LogEmbed.data.description}\n**Shifts After:** ${FormatTime(WipeResult.shiftsAfter, "D")}`
+      );
+    } else if (WipeResult.shiftsBefore) {
+      LogEmbed.setDescription(
+        `${LogEmbed.data.description}\n**Shifts Before:** ${FormatTime(WipeResult.shiftsBefore, "D")}`
+      );
+    }
+
+    LogEmbed.setDescription(
+      `${LogEmbed.data.description}\n**On-Duty Time Sum:** ${WipeResult.totalTime ? ReadableDuration(WipeResult.totalTime) : "*N/A*"}`
+    );
 
     return LoggingChannel?.send({ embeds: [LogEmbed] });
   }

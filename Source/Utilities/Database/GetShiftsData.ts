@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/no-duplicate-string */
 import type { PropertiesToString } from "utility-types";
 import type { Shifts } from "@Typings/Utilities/Database.js";
 import type { FilterQuery } from "mongoose";
@@ -12,6 +13,9 @@ export type UserMainShiftsData = {
   total_citations: number;
   avg_onduty: number;
   avg_onbreak: number;
+
+  /** The shift type with the highest total on-duty time. **/
+  frequent_shift_type: string;
 };
 
 const HumanizeDuration = DHumanize.humanizer({
@@ -27,6 +31,16 @@ const HumanizeDuration = DHumanize.humanizer({
  * @param [HasActiveShift=false] - Whether the user has an active shift.
  * This parameter is mainly used to consider increasing shift count by one and without adding any durations.
  * @returns An object that contains main shifts data which also contains converted shift durations in human readable format.
+ *
+ * The returned object includes:
+ * - `shift_count`: Total number of shifts.
+ * - `total_onduty`: Total time spent on duty across all shifts.
+ * - `total_onbreak`: Total time spent on break across all shifts.
+ * - `total_arrests`: Total number of arrests across all shifts.
+ * - `total_citations`: Total number of citations issued across all shifts.
+ * - `avg_onduty`: Average time spent on duty per shift.
+ * - `avg_onbreak`: Average time spent on break per shift.
+ * - `frequent_shift_type`: The shift type with the highest total on-duty time.
  */
 export default async function GetMainShiftsData(
   QueryFilter: FilterQuery<Shifts.ShiftDocument>,
@@ -40,7 +54,7 @@ export default async function GetMainShiftsData(
     { $match: QueryFilter },
     {
       $group: {
-        _id: null,
+        _id: "$type",
         shift_count: { $sum: 1 },
         total_onduty: {
           $sum: {
@@ -52,15 +66,21 @@ export default async function GetMainShiftsData(
             ],
           },
         },
-        total_onbreak: {
-          $sum: "$durations.on_break",
-        },
-        total_arrests: {
-          $sum: "$events.arrests",
-        },
-        total_citations: {
-          $sum: "$events.citations",
-        },
+        total_onbreak: { $sum: "$durations.on_break" },
+        total_arrests: { $sum: "$events.arrests" },
+        total_citations: { $sum: "$events.citations" },
+      },
+    },
+    { $sort: { total_onduty: -1 } },
+    {
+      $group: {
+        _id: null,
+        frequent_shift_type: { $first: "$_id" },
+        shift_count: { $sum: "$shift_count" },
+        total_onduty: { $sum: "$total_onduty" },
+        total_onbreak: { $sum: "$total_onbreak" },
+        total_arrests: { $sum: "$total_arrests" },
+        total_citations: { $sum: "$total_citations" },
       },
     },
     {
@@ -71,6 +91,7 @@ export default async function GetMainShiftsData(
         total_onbreak: 1,
         total_arrests: 1,
         total_citations: 1,
+        frequent_shift_type: 1,
         avg_onduty: {
           $round: {
             $divide: ["$total_onduty", "$shift_count"],
@@ -93,6 +114,7 @@ export default async function GetMainShiftsData(
         total_citations: 0,
         avg_onduty: 0,
         avg_onbreak: 0,
+        frequent_shift_type: "N/A",
       };
     }
 
@@ -101,7 +123,7 @@ export default async function GetMainShiftsData(
     }
 
     for (const [Key, Duration] of Object.entries(Resp[0])) {
-      if (Key === "shift_count" || Key.endsWith("s")) continue;
+      if (Key === "shift_count" || Key.endsWith("s") || typeof Duration !== "number") continue;
       Resp[0][Key] = HumanizeDuration(Duration);
     }
 

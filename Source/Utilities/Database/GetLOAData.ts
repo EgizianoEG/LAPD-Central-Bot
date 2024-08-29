@@ -19,10 +19,10 @@ interface GetLOADataReturn {
   /** The currently pending leave of absence. */
   pending_loa: LeaveOfAbsence.LeaveOfAbsenceHydratedDocument | null;
 
-  /** All leave of absences taken; i.e. leaves that have been approved and ended. */
+  /** All leaves of absence taken; i.e. leaves that have been approved and ended. */
   loas_taken: LeaveOfAbsence.LeaveOfAbsenceHydratedDocument[];
 
-  /** All records of leave of absences including the ones that have been denied or cancelled. */
+  /** All records of leaves of absence including the ones that have been denied or cancelled. */
   all_loas: LeaveOfAbsence.LeaveOfAbsenceHydratedDocument[];
 }
 

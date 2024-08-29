@@ -387,9 +387,23 @@ async function PromptShiftModification(
  */
 async function HandleShiftModifications(
   Interaction: ButtonInteraction<"cached">,
-  TargetUser: User
+  TargetUser: User,
+  ShiftType?: string | null
 ) {
+  if (
+    (await ShiftModel.countDocuments({
+      guild: Interaction.guildId,
+      user: TargetUser.id,
+      type: ShiftType || { $exists: true },
+    })) === 0
+  ) {
+    return new ErrorEmbed()
+      .useErrTemplate(ShiftType ? "SANoShiftsToModifyWithType" : "SANoShiftsToModify")
+      .replyToInteract(Interaction, true);
+  }
+
   const IsShiftActive = !!(await GetShiftActive({
+    ShiftType,
     UserOnly: true,
     Interaction: {
       guildId: Interaction.guildId,
@@ -405,12 +419,12 @@ async function HandleShiftModifications(
 
   const ButtonsActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
-      .setCustomId(`da-modify-${CurrLastBtn.toLowerCase()}`)
+      .setCustomId(`da-modify-${CurrLastBtn.toLowerCase()}:${TargetUser.id}`)
       .setLabel(`Select ${CurrLastBtn} Shift`)
       .setDisabled(false)
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
-      .setCustomId("da-modify-id")
+      .setCustomId(`da-modify-id:${TargetUser.id}`)
       .setLabel("Select By Shift ID")
       .setDisabled(false)
       .setStyle(ButtonStyle.Secondary)
@@ -430,9 +444,10 @@ async function HandleShiftModifications(
   });
 
   CompCollector.on("collect", async (ButtonInteract) => {
-    if (ButtonInteract.customId === "da-modify-current") {
+    if (ButtonInteract.customId.includes("da-modify-current")) {
       await ButtonInteract.deferUpdate();
       const ActiveShift = await GetShiftActive({
+        ShiftType,
         UserOnly: true,
         Interaction: {
           guildId: Interaction.guildId,
@@ -450,11 +465,12 @@ async function HandleShiftModifications(
       return PromptShiftModification(ButtonInteract, ActiveShift);
     }
 
-    if (ButtonInteract.customId === "da-modify-last") {
+    if (ButtonInteract.customId.includes("da-modify-last")) {
       await ButtonInteract.deferUpdate();
       const LastShift = await ShiftModel.findOne({
         guild: Interaction.guildId,
         user: TargetUser.id,
+        type: ShiftType || { $exists: true },
       })
         .sort({ start_timestamp: -1 })
         .exec();
@@ -513,10 +529,15 @@ async function HandleShiftModifications(
     return PromptShiftModification(ModalSubmission, ShiftFound);
   });
 
-  CompCollector.on("end", async (_, EndReason) => {
+  CompCollector.on("end", async (CollectedInteracts, EndReason) => {
     if (EndReason.match(/\w+Delete/)) return;
     ButtonsActionRow.components.forEach((Button) => Button.setDisabled(true));
-    await Message.edit({ components: [ButtonsActionRow] }).catch(() => null);
+    const LastInteract = CollectedInteracts.last();
+    if (LastInteract) {
+      await LastInteract.editReply({ components: [ButtonsActionRow] }).catch(() => null);
+    } else {
+      await Interaction.editReply({ components: [ButtonsActionRow] }).catch(() => null);
+    }
   });
 }
 
@@ -570,6 +591,8 @@ async function WipeUserShifts(
 async function GetPaginatedShifts(TargetUser: User, GuildId: string, ShiftType?: Nullable<string>) {
   const ShiftData: {
     _id: string;
+    /** Shift type */
+    type: string;
     /** Start epoch in milliseconds */
     started: number;
     /** End epoch in milliseconds or `"Currently Active"` */
@@ -589,6 +612,7 @@ async function GetPaginatedShifts(TargetUser: User, GuildId: string, ShiftType?:
     {
       $project: {
         _id: 1,
+        type: 1,
         started: {
           $toLong: {
             $toDate: "$start_timestamp",
@@ -681,8 +705,8 @@ async function GetPaginatedShifts(TargetUser: User, GuildId: string, ShiftType?:
     },
   ]).exec();
 
-  // Split results into arrays of 4 shift details each & format them as embeds.
-  return Chunks(ShiftData, 4).map((Chunk) => {
+  // Split results into arrays of 2 shift records each & format them as embeds.
+  return Chunks(ShiftData, 2).map((Chunk) => {
     const EmbedDescription = Chunk.map((Data) => {
       const Started = FormatTime(Math.round(Data.started / 1000), "f");
       const Ended =
@@ -690,12 +714,22 @@ async function GetPaginatedShifts(TargetUser: User, GuildId: string, ShiftType?:
           ? Data.ended
           : FormatTime(Math.round(Data.started / 1000), "T");
 
-      return Dedent(`
-        - **Shift ID:** \`${Data._id}\`
-          - **Duration:** ${HumanizeDuration(Data.duration)}
-          - **Started:** ${Started}
-          - **Ended:** ${Ended}
-      `);
+      if (ShiftType) {
+        return Dedent(`
+          - **Shift ID:** \`${Data._id}\`
+            - **Duration:** ${HumanizeDuration(Data.duration)}
+            - **Started:** ${Started}
+            - **Ended:** ${Ended}
+        `);
+      } else {
+        return Dedent(`
+          - **Shift ID:** \`${Data._id}\`
+           - **Type:** \`${Data.type}\`
+           - **Duration:** ${HumanizeDuration(Data.duration)}
+           - **Started:** ${Started}
+           - **Ended:** ${Ended}
+        `);
+      }
     }).join("\n\n");
 
     const FooterAppend = ShiftType ? `type: ${ShiftType}` : "all shift types";
@@ -728,7 +762,7 @@ async function HandleShiftListing(
 ) {
   const Pages = await GetPaginatedShifts(TargetUser, BInteract.guildId, ShiftType);
   if (Pages.length) {
-    return HandleEmbedPagination(Pages, BInteract, "Commands:Miscellaneous:Duty:Admin");
+    return HandleEmbedPagination(Pages, BInteract, "Commands:Miscellaneous:Duty:Admin", true);
   } else {
     return new InfoEmbed()
       .setTitle("No Recorded Shifts")
@@ -795,7 +829,7 @@ async function HandleUserShiftsWipe(
 
     await ConfirmationInteract.deferUpdate();
     const WipeResult = await WipeUserShifts(TargetUser.id, BInteract.guildId, ShiftType);
-    let WipeEmbed = new SuccessEmbed()
+    const WipeEmbed = new SuccessEmbed()
       .setTimestamp(ConfirmationInteract.createdAt)
       .setDescription(null)
       .setTitle("Member Shifts Wiped")
@@ -809,7 +843,10 @@ async function HandleUserShiftsWipe(
       });
 
     if (WipeResult.deletedCount === 0) {
-      WipeEmbed = new InfoEmbed().useInfoTemplate("NoShiftsWipedFU");
+      return BInteract.editReply({
+        embeds: [new InfoEmbed().useInfoTemplate("NoShiftsWipedFU")],
+        components: [],
+      });
     }
 
     return Promise.allSettled([
@@ -980,7 +1017,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     end_timestamp: null,
     user: TargetUser.id,
     guild: Interaction.guildId,
-    type: CmdShiftType ?? { $exists: true },
+    type: CmdShiftType || { $exists: true },
   });
 
   const UserShiftsData = await GetMainShiftsData(
@@ -1047,7 +1084,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const ActionCollector = RespMessage.createMessageComponentCollector({
     filter: (BI) => HandleCollectorFiltering(Interaction, BI),
     componentType: ComponentType.Button,
-    time: 5 * 60_000,
+    time: 8 * 60_000,
   });
 
   ActionCollector.on("collect", async (ButtonInteract) => {
@@ -1078,7 +1115,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
           }
           break;
         case "da-modify":
-          await HandleShiftModifications(ButtonInteract, TargetUser);
+          await HandleShiftModifications(ButtonInteract, TargetUser, CmdShiftType);
           break;
         default:
           break;
@@ -1109,16 +1146,18 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     }
   });
 
-  ActionCollector.on("end", async (_, EndReason) => {
+  ActionCollector.on("end", async (Collected, EndReason) => {
     if (EndReason.match(/\w+Delete/)) return;
     try {
-      if (EndReason === "time") {
-        ButtonActionRows.forEach((ActionRow) =>
-          ActionRow.components.forEach((Comp) => Comp.setDisabled(true))
-        );
-        await RespMessage.edit({
-          components: ButtonActionRows,
-        });
+      const LastInteract = Collected.last();
+      ButtonActionRows.forEach((ActionRow) =>
+        ActionRow.components.forEach((Comp) => Comp.setDisabled(true))
+      );
+
+      if (LastInteract) {
+        await LastInteract.editReply({ components: ButtonActionRows });
+      } else {
+        await Interaction.editReply({ components: ButtonActionRows });
       }
     } catch (Err: any) {
       if (Err instanceof DiscordAPIError && Err.code === 50_001) {
