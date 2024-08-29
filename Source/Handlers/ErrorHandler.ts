@@ -2,9 +2,11 @@ import { DiscordAPIError } from "discord.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import AppError from "@Utilities/Classes/AppError.js";
 import Mongoose from "mongoose";
+
 const NonFatalDiscordAPIErrors: DiscordAPIError["code"][] = [
-  10_062, 40_060, 50_001, 50_013, 50_035,
+  10_062, 10_008, 40_060, 50_001, 50_013, 50_035,
 ];
+
 const NonFatalErrorNames = [
   "InteractionNotReplied",
   "InteractionAlreadyReplied",

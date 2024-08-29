@@ -8,7 +8,10 @@ import AppError from "../Classes/AppError.js";
  * @returns The shift type after being saved if creation succeeded or an `AppError` instance if there was an exception (would be thrown if the exception was from the database)
  */
 export default async function CreateShiftType(Data: Guilds.CreateShiftTypeConfig) {
-  const GuildDoc = await GuildModel.findById(Data.guild_id).select("settings.shifts.types").exec();
+  const GuildDoc = await GuildModel.findById(Data.guild_id)
+    .select("settings.shift_management.shift_types")
+    .exec();
+
   const ShiftTypeExists = GuildDoc?.settings.shift_management.shift_types.some(
     (ShiftType) => ShiftType.name === Data.name
   );

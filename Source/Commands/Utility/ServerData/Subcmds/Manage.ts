@@ -436,15 +436,14 @@ async function GetSummarizedShiftInfo(MatchQuery: Mongoose.FilterQuery<Shifts.Sh
 
 async function HandleNoShiftsToTakeActionOn(
   RecInteract: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">,
-  SSInfo: Awaited<ReturnType<typeof GetSummarizedShiftInfo>>,
-  NoticeMethod: "editReply" | "update" | "reply" = "editReply"
+  SSInfo: Awaited<ReturnType<typeof GetSummarizedShiftInfo>>
 ) {
   if (SSInfo.shift_count === 0) {
     return new InfoEmbed()
       .setThumbnail(null)
       .setTitle("No Shifts Found")
       .setDescription("There are no shifts found to delete or take action on.")
-      .replyToInteract(RecInteract, true, false, NoticeMethod)
+      .replyToInteract(RecInteract, true, false)
       .then(() => true);
   }
 

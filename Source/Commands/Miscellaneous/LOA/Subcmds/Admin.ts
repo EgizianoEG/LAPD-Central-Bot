@@ -119,6 +119,7 @@ function GetPanelEmbed(
     ActiveOrPendingLOA.review_date &&
     ActiveOrPendingLOA.extension_req?.status !== "Pending"
   ) {
+    PanelEmbed.setColor(Embeds.Colors.LOARequestApproved);
     PanelEmbed.addFields({
       inline: true,
       name: "Active Leave",
@@ -131,6 +132,7 @@ function GetPanelEmbed(
       `),
     });
   } else if (ActiveOrPendingLOA?.status === "Pending") {
+    PanelEmbed.setColor(Embeds.Colors.LOARequestPending);
     PanelEmbed.addFields({
       inline: true,
       name: "Pending Leave",
@@ -145,6 +147,7 @@ function GetPanelEmbed(
     ActiveOrPendingLOA?.review_date &&
     ActiveOrPendingLOA?.extension_req?.status === "Pending"
   ) {
+    PanelEmbed.setColor(Embeds.Colors.LOARequestPending);
     PanelEmbed.addFields({
       inline: true,
       name: "Pending Extension",

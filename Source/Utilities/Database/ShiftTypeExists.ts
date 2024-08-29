@@ -14,7 +14,7 @@ export default async function ShiftTypeExists(
     {
       $project: {
         exists: {
-          $in: [ShiftType, "$settings.shifts.types.name"],
+          $in: [ShiftType, "$settings.shift_management.shift_types.name"],
         },
       },
     },

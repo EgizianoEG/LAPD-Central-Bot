@@ -18,7 +18,8 @@ export function IsValidRobloxUsername(Str: string): boolean {
  * @param Input
  * @returns
  */
-export function IsValidDiscordId(Input: string): boolean {
+export function IsValidDiscordId(Input: any): boolean {
+  if (typeof Input !== "string") return false;
   if (!Input.match(/^\d{15,22}$/)) return false;
   const SnowflakeTS = SnowflakeUtil.timestampFrom(Input);
   return isBefore(SnowflakeTS, new Date()) && isAfter(SnowflakeTS, MinDiscordTimestamp);

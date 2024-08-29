@@ -2,6 +2,7 @@ import {
   MessageComponentInteraction,
   createComponentBuilder,
   ActionRowBuilder,
+  ComponentType,
   Message,
 } from "discord.js";
 
@@ -17,9 +18,9 @@ export default async function HandleActionCollectorExceptions(
         } else if (Disabler instanceof MessageComponentInteraction && Disabler.message) {
           const DisabledMsgComponents = Disabler.message.components.map((AR) => {
             return ActionRowBuilder.from({
-              // @ts-expect-error; Type conflict while this logic should be correct.
+              type: ComponentType.ActionRow,
               components: AR.components.map((Comp) =>
-                createComponentBuilder(Comp.data).setDisabled(true)
+                (createComponentBuilder(Comp.data) as any).setDisabled(true)
               ),
             });
           }) as any;
@@ -28,9 +29,9 @@ export default async function HandleActionCollectorExceptions(
         } else if (Disabler instanceof Message) {
           const DisabledMsgComponents = Disabler.components.map((AR) => {
             return ActionRowBuilder.from({
-              // @ts-expect-error; Type conflict while this logic should be correct.
+              type: ComponentType.ActionRow,
               components: AR.components.map((Comp) =>
-                createComponentBuilder(Comp.data).setDisabled(true)
+                (createComponentBuilder(Comp.data) as any).setDisabled(true)
               ),
             });
           }) as any;

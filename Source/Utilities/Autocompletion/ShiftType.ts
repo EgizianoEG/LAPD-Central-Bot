@@ -22,7 +22,7 @@ export default async function AutocompleteShiftType(
   let Suggestions: (string | { name: string; value: string })[];
   const EscapedValue = EscapeRegExp(TypedValue);
   const ShiftTypes = await GuildModel.findById(GuildId)
-    .select("settings.shifts.types")
+    .select("settings.shift_management.shift_types")
     .then((GuildData) => {
       if (!GuildData) return [];
       return GuildData.settings.shift_management.shift_types
