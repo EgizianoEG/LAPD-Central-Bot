@@ -1,4 +1,5 @@
 /* eslint-disable sonarjs/no-duplicate-string */
+import { Emojis } from "@Config/Shared.js";
 import Dedent from "dedent";
 
 /**
@@ -595,6 +596,21 @@ export const ErrorMessages = {
     Description:
       "The shift management module is currently disabled. You cannot initiate any of duty commands without it being enabled.",
   },
+
+  SANoShiftsToModify: {
+    Title: "No Shifts To Modify",
+    Description:
+      "There are no shifts to modify for the selected user. Please ensure the user has shifts before attempting to modify them.",
+  },
+
+  /**
+   * If there were no shifts under a specific type to modify.
+   */
+  SANoShiftsToModifyWithType: {
+    Title: "No Shifts To Modify",
+    Description:
+      "There are no shifts of the specified type to modify for the selected user. Please ensure the user has shifts of that type before attempting to modify them.",
+  },
 };
 
 export const InfoMessages = {
@@ -656,12 +672,42 @@ export const InfoMessages = {
   },
 
   NoLOAsWithActiveStatus: {
-    Title: "No Leave of Absences",
-    Description: "There are currently no active leave of absences to display.",
+    Title: "No Leaves of Absence",
+    Description: "There are currently no active leave of absence to display.",
   },
 
   NoLOAsWithSpecifiedStatus: {
-    Title: "No Leave of Absences",
+    Title: "No Leaves of Absences",
     Description: "There are currently no LOAs with the specified status to display.",
+  },
+
+  /**
+   * Shift records deletion in progress
+   */
+  SRDeletionInProgress: {
+    Thumb: null,
+    Title: `${Emojis.Loading}\u{2000}Deleting Shifts...`,
+    Description: "Please wait, this process might take a few seconds to complete.",
+  },
+
+  SRWipeAllInProgress: {
+    Thumb: null,
+    Title: `${Emojis.Loading}\u{2000}Wiping Shifts...`,
+    Description: "Hang tight! This process might take a few seconds to complete.",
+  },
+
+  LRWipeAllInProgress: {
+    Thumb: null,
+    Title: `${Emojis.Loading}\u{2000}Wiping Leave Records...`,
+    Description: "Hang tight! This process might take a few seconds to complete.",
+  },
+
+  /**
+   * Leave records deletion in progress
+   */
+  LRDeletionInProgress: {
+    Thumb: null,
+    Title: `${Emojis.Loading}\u{2000}Deleting Leave Records...`,
+    Description: "Please wait, this process might take a few seconds to complete.",
   },
 };

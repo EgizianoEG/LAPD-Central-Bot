@@ -1,11 +1,14 @@
 /* eslint-disable sonarjs/no-duplicate-string */
 import {
+  User,
   Guild,
   codeBlock,
   userMention,
+  GuildMember,
   ButtonStyle,
   EmbedBuilder,
   ButtonBuilder,
+  BaseInteraction,
   ImageURLOptions,
   ActionRowBuilder,
   TextBasedChannel,
@@ -586,7 +589,7 @@ export default class LOAEventLogger {
 
       RequestButtons.components.forEach((Button) => Button.setDisabled(true));
       await RequestMessage.edit({ embeds: [RequestEmbed], components: [RequestButtons] }).catch(
-        (Err) => console.log(Err)
+        () => null
       );
     }
   }
@@ -1236,5 +1239,48 @@ export default class LOAEventLogger {
 
       LogChannel.send({ embeds: [LogEmbed] }).catch(() => null);
     }
+  }
+
+  /**
+   * @param MgmtInteract - The received management interaction (button/cmd).
+   * @param WipeResult - The deletion result of mongoose/mongodb.
+   * @param RecordsStatus - The status of the records.
+   * @param TargettedUser - An optional parameter to only specify a targetted user.
+   * @returns A promise that resolves to the logging message sent or `undefined` if it wasn't.
+   */
+  public static async LogLOAsWipe(
+    MgmtInteract: BaseInteraction<"cached"> | GuildMember,
+    WipeResult: Mongoose.mongo.DeleteResult & { recordsAfter?: Date; recordsBefore?: Date },
+    RecordsStatus?: string,
+    TargettedUser?: User
+  ) {
+    const LoggingChannel = await this.GetLoggingChannel(MgmtInteract.guild, "log");
+    const LogEmbed = new EmbedBuilder()
+      .setColor(Embeds.Colors.LOARequestCancelled)
+      .setTitle(TargettedUser ? "Member LOA Records Wiped" : "LOA Records Wiped")
+      .setFooter({ text: `Wiped by: @${MgmtInteract.user.username} on` })
+      .setDescription(
+        Dedent(`
+          ${TargettedUser ? `**Member:** <@${TargettedUser.id}>` : ""}
+          **Records Deleted:** ${WipeResult.deletedCount}
+          **Records of Status:** ${RecordsStatus || "*All Statuses*"}
+        `)
+      );
+
+    if (!(MgmtInteract instanceof GuildMember)) {
+      LogEmbed.setTimestamp(MgmtInteract.createdAt);
+    }
+
+    if (WipeResult.recordsAfter) {
+      LogEmbed.setDescription(
+        `${LogEmbed.data.description}\n**Records After:** ${FormatTime(WipeResult.recordsAfter, "D")}`
+      );
+    } else if (WipeResult.recordsBefore) {
+      LogEmbed.setDescription(
+        `${LogEmbed.data.description}\n**Records Before:** ${FormatTime(WipeResult.recordsBefore, "D")}`
+      );
+    }
+
+    return LoggingChannel?.send({ embeds: [LogEmbed] });
   }
 }
