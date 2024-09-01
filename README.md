@@ -16,7 +16,7 @@
 
 
 <div id="Contribution" align="center">
-  <h1>Contributing</h1>
+  <h2>Contributing</h2>
   <p>
     See the <a href="https://github.com/EgizianoEG/LAPD-Central-Bot/blob/main/CONTRIBUTING.md">Contribution Guide</a>.
   </p>
