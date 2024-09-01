@@ -70,3 +70,12 @@ export function RandomString(
 export function DummyText(): string {
   return DummyTexts[Math.floor(Math.random() * DummyTexts.length)];
 }
+
+/**
+ * Straightforward function to generates a random error id string of 6 characters in length, containing alphanumeric characters
+ * without any capital letters, and excluding the string "error".
+ * @returns A random error Id string
+ */
+export function GetErrorId(): string {
+  return RandomString(6, /[\da-z]/i, ["error"]);
+}

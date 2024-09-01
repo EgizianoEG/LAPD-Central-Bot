@@ -11,7 +11,7 @@ export default async function HandleActionCollectorExceptions(
   Disabler?: MessageComponentInteraction | Message | (() => Promise<any>)
 ) {
   if (Err instanceof Error) {
-    if (Err.message.match(/reason: time/)) {
+    if (Err.message.match(/reason: time|idle/)) {
       try {
         if (typeof Disabler === "function") {
           await Disabler();

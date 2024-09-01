@@ -23,7 +23,7 @@ import {
 
 import { Emojis } from "@Config/Shared.js";
 import { isAfter } from "date-fns";
-import { RandomString } from "@Utilities/Strings/Random.js";
+import { GetErrorId } from "@Utilities/Strings/Random.js";
 import { LeaveOfAbsence, Shifts } from "@Typings/Utilities/Database.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed, WarnEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
@@ -829,7 +829,7 @@ async function HandleShiftRecordsManagement(
         return BtnInteract.deferUpdate().catch(() => null);
       }
     } catch (Err: any) {
-      const ErrorId = RandomString(6, /[\dA-Z]/i);
+      const ErrorId = GetErrorId();
       AppLogger.error({
         label: FileLabel,
         message: "Failed to handle shift data management button interaction;",
@@ -840,7 +840,7 @@ async function HandleShiftRecordsManagement(
       return new ErrorEmbed()
         .useErrTemplate("UnknownError")
         .setDescription("Something went wrong while handling your request.")
-        .setFooter({ text: `Error ID: ${ErrorId}` })
+        .setErrorId(ErrorId)
         .replyToInteract(BtnInteract, true, true, "reply");
     }
   });
@@ -1279,7 +1279,7 @@ async function HandleLeaveRecordsManagement(
         return BtnInteract.deferUpdate().catch(() => null);
       }
     } catch (Err: any) {
-      const ErrorId = RandomString(6, /[\dA-Z]/i);
+      const ErrorId = GetErrorId();
       AppLogger.error({
         label: FileLabel,
         message: "Failed to handle shift data management button interaction;",
@@ -1290,7 +1290,7 @@ async function HandleLeaveRecordsManagement(
       return new ErrorEmbed()
         .useErrTemplate("UnknownError")
         .setDescription("Something went wrong while handling your request.")
-        .setFooter({ text: `Error ID: ${ErrorId}` })
+        .setErrorId(ErrorId)
         .replyToInteract(BtnInteract, true, true, "reply");
     }
   });

@@ -113,8 +113,6 @@ const GuildSettings = new Schema({
               {
                 type: String,
                 _id: false,
-                default: null,
-                required: false,
                 match: SnowflakeIDValidationN2,
               },
             ],
@@ -126,8 +124,6 @@ const GuildSettings = new Schema({
               {
                 type: String,
                 _id: false,
-                default: null,
-                required: false,
                 match: SnowflakeIDValidationN2,
               },
             ],

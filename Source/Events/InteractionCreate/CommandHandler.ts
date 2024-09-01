@@ -19,7 +19,7 @@ import {
 } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import { Discord } from "@Config/Secrets.js";
-import { RandomString } from "@Utilities/Strings/Random.js";
+import { GetErrorId } from "@Utilities/Strings/Random.js";
 import { UnorderedList } from "@Utilities/Strings/Formatters.js";
 import { PascalToNormal } from "@Utilities/Strings/Converters.js";
 import { IsValidUserPermsObj } from "@Utilities/Other/Validators.js";
@@ -113,11 +113,11 @@ export default async function CommandHandler(
       throw new ReferenceError("The command's callback function has not been found.");
     }
   } catch (Err: any) {
-    const ErrId = RandomString(6, /[\dA-Z]/i);
+    const ErrorId = GetErrorId();
     AppLogger.error({
       message: "An error occurred while executing slash command %o;",
       label: LogLabel,
-      error_id: ErrId,
+      error_id: ErrorId,
       stack: Err.stack,
       splat: [FullCmdName],
       cmd_options: Object(Interaction.options)._hoistedOptions,
@@ -126,13 +126,13 @@ export default async function CommandHandler(
     if (Err instanceof AppError && Err.is_showable) {
       await new ErrorEmbed()
         .setTitle(Err.title)
+        .setErrorId(ErrorId)
         .setDescription(Err.message)
-        .setFooter({ text: `Error ID: ${ErrId}` })
         .replyToInteract(Interaction, true);
     } else {
       await new ErrorEmbed()
         .useErrTemplate("AppError")
-        .setFooter({ text: `Error ID: ${ErrId}` })
+        .setErrorId(ErrorId)
         .replyToInteract(Interaction, true);
     }
   }

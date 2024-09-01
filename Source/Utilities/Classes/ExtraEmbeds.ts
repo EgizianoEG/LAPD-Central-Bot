@@ -50,43 +50,6 @@ class BaseEmbed extends EmbedBuilder {
   }
 
   /**
-   * Uses the specified error object for the embed's title and description.
-   * @param {AppError | Error} Err - The error object to use.
-   * @returns The modified instance of the error embed.
-   */
-  useErrClass(Err: AppError | Error) {
-    if (Err instanceof AppError) {
-      return this.setTitle(Err.title).setDescription(Err.message);
-    } else {
-      return this.setTitle("Error").setDescription(Err.message);
-    }
-  }
-
-  /**
-   * Uses the specified informative template and arguments to set the title and description of it.
-   * @param templateName - The name of the info template to use.
-   * @param args - Additional arguments to be used in formatting the info description.
-   * @returns The modified instance of the info embed.
-   */
-  useInfoTemplate(templateName: keyof typeof InfoMessages, ...args: any[]) {
-    const Thumbnail: string | null = Object.hasOwn(InfoMessages[templateName], "Thumb")
-      ? (InfoMessages[templateName] as any).Thumb || null
-      : this.data.thumbnail?.url || null;
-
-    if (InfoMessages[templateName].Description.match(/%[scdjifoO%]/)) {
-      return super
-        .setTitle(InfoMessages[templateName].Title)
-        .setDescription(FormatString(InfoMessages[templateName].Description, ...args))
-        .setThumbnail(Thumbnail);
-    } else {
-      return super
-        .setTitle(InfoMessages[templateName].Title)
-        .setDescription(InfoMessages[templateName].Description)
-        .setThumbnail(Thumbnail);
-    }
-  }
-
-  /**
    * Replies to a given *repliable* interaction with the current properties set.
    * @param interaction - The interaction to reply to.
    * @param ephemeral - Either `true` or `false`; whether the reply should be ephemeral (private); defaults to `false`.
@@ -166,6 +129,30 @@ export class InfoEmbed extends BaseEmbed {
       this.setTitle("Information");
     }
   }
+
+  /**
+   * Uses the specified informative template and arguments to set the title and description of it.
+   * @param templateName - The name of the info template to use.
+   * @param args - Additional arguments to be used in formatting the info description.
+   * @returns The modified instance of the info embed.
+   */
+  useInfoTemplate(templateName: keyof typeof InfoMessages, ...args: any[]) {
+    const Thumbnail: string | null = Object.hasOwn(InfoMessages[templateName], "Thumb")
+      ? (InfoMessages[templateName] as any).Thumb || null
+      : this.data.thumbnail?.url || null;
+
+    if (InfoMessages[templateName].Description.match(/%[scdjifoO%]/)) {
+      return super
+        .setTitle(InfoMessages[templateName].Title)
+        .setDescription(FormatString(InfoMessages[templateName].Description, ...args))
+        .setThumbnail(Thumbnail);
+    } else {
+      return super
+        .setTitle(InfoMessages[templateName].Title)
+        .setDescription(InfoMessages[templateName].Description)
+        .setThumbnail(Thumbnail);
+    }
+  }
 }
 
 export class WarnEmbed extends BaseEmbed {
@@ -190,6 +177,28 @@ export class ErrorEmbed extends BaseEmbed {
     }
     if (!this.data.title) {
       this.setTitle("Error");
+    }
+  }
+
+  /**
+   * Sets the footer of the error embed with the provided error Id.
+   * @param ErrorId - The error Id to display in the footer.
+   * @returns The modified instance of the error embed.
+   */
+  setErrorId(ErrorId: string): this {
+    return this.setFooter({ text: `Error ID: ${ErrorId}` });
+  }
+
+  /**
+   * Uses the specified error object for the embed's title and description.
+   * @param {AppError | Error} Err - The error object to use.
+   * @returns The modified instance of the error embed.
+   */
+  useErrClass(Err: AppError | Error) {
+    if (Err instanceof AppError) {
+      return this.setTitle(Err.title).setDescription(Err.message);
+    } else {
+      return this.setTitle("Error").setDescription(Err.message);
     }
   }
 }

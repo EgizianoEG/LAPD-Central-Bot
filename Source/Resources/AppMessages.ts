@@ -290,7 +290,8 @@ export const ErrorMessages = {
 
   GuildConfigNotFound: {
     Title: "Database Error",
-    Description: "Something went wrong and the guild's current configuration could not be fetched.",
+    Description:
+      "Something went wrong and the guild's current configuration could not be fetched. Please try again later or attempt to readd the application.",
   },
 
   InvalidGuildChannelFormat: {
@@ -634,7 +635,7 @@ export const InfoMessages = {
    */
   ConfigTopicNoChangesMade: {
     Title: "No Changes Made",
-    Description: "There have been no alterations to the %s configuration of the app.",
+    Description: "There have been no alterations to the %s module configuration of the app.",
   },
 
   NicknameRegexNoMatchingMembers: {

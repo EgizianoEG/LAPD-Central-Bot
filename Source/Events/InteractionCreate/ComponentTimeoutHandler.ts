@@ -61,13 +61,13 @@ export default async function HandleAbandonedInteractions(
         Interaction.message.createdAt.getTime()
       );
 
-      if (TimeGap >= 5 * 60 * 1000) {
+      if (TimeGap >= 15 * 60 * 1000) {
         try {
           const DisabledMsgComponents = Interaction.message.components.map((AR) => {
             return ActionRowBuilder.from({
-              // @ts-expect-error; Type conflict while this logic should be correct.
+              type: ComponentType.ActionRow,
               components: AR.components.map((Comp) =>
-                createComponentBuilder(Comp.data).setDisabled(true)
+                (createComponentBuilder(Comp.data) as any).setDisabled(true)
               ),
             });
           }) as any;
@@ -98,6 +98,6 @@ export default async function HandleAbandonedInteractions(
         await Interaction.deferUpdate().catch(() => null);
       }
     } as () => void,
-    2.25 * 1000
+    2.5 * 1000
   );
 }

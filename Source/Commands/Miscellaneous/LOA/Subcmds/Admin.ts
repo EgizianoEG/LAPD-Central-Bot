@@ -20,9 +20,9 @@ import {
 } from "discord.js";
 
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import { RandomString } from "@Utilities/Strings/Random.js";
 import { Embeds, Emojis } from "@Config/Shared.js";
 import { LeaveOfAbsence } from "@Typings/Utilities/Database.js";
+import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
 import { HandleDurationValidation } from "./Request.js";
 import { ValidateExtendedDuration } from "./Manage.js";
 import { addMilliseconds, compareDesc } from "date-fns";
@@ -53,11 +53,11 @@ enum AdminActions {
 /**
  * A wrapper function that returns a single promise that resolves to `true` if all promises in the array resolve to `true`.
  * This is used to know if a modification was successful or not to the initial administration prompt and if so, to dispose the previous component collector and stop it.
- * @param Array
+ * @param Values
  * @returns
  */
-async function PromiseAllThenTrue<T>(Array: T[]): Promise<boolean> {
-  await Promise.allSettled(Array);
+async function PromiseAllThenTrue<T>(Values: T[]): Promise<boolean> {
+  await Promise.allSettled(Values);
   return true;
 }
 
@@ -843,7 +843,7 @@ async function Callback(Interaction: CmdOrButtonInteraction) {
         CompActionCollector.stop("CmdReinstated");
       }
     } catch (Err: any) {
-      const ErrorId = RandomString(6, /[\dA-Z]/i);
+      const ErrorId = GetErrorId();
       AppLogger.error({
         message: "An error occurred while handling button interaction;",
         label: FileLabel,
@@ -854,7 +854,7 @@ async function Callback(Interaction: CmdOrButtonInteraction) {
       return new ErrorEmbed()
         .setTitle("Error")
         .setDescription("Something went wrong while handling your request.")
-        .setFooter({ text: `Error ID: ${ErrorId}` })
+        .setErrorId(ErrorId)
         .replyToInteract(ButtonInteract, true, true, "followUp");
     }
   });

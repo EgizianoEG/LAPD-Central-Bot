@@ -11,8 +11,8 @@ import {
   ModalBuilder,
 } from "discord.js";
 
+import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
 import { LeaveOfAbsence } from "@Typings/Utilities/Database.js";
-import { RandomString } from "@Utilities/Strings/Random.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { Embeds } from "@Config/Shared.js";
 
@@ -45,7 +45,7 @@ export default async function LOAManagementHandlerWrapper(
   try {
     await LOAManagementHandler(Interaction);
   } catch (Err: any) {
-    const ErrorId = RandomString(6, /[\dA-Z]/i);
+    const ErrorId = GetErrorId();
     AppLogger.error({
       label: "Events:InteractionCreate:LOAManagementHandler.ts",
       message: "Failed to handle LOA management button interaction;",
@@ -56,7 +56,7 @@ export default async function LOAManagementHandlerWrapper(
     return new ErrorEmbed()
       .useErrTemplate("UnknownError")
       .setDescription("Something went wrong while handling your request.")
-      .setFooter({ text: `Error ID: ${ErrorId}` })
+      .setErrorId(ErrorId)
       .replyToInteract(Interaction, true);
   }
 }

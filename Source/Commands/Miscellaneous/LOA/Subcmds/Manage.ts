@@ -14,10 +14,10 @@ import {
   ModalSubmitInteraction,
 } from "discord.js";
 
-import { RandomString } from "@Utilities/Strings/Random.js";
 import { LeaveOfAbsence } from "@Typings/Utilities/Database.js";
 import { Embeds, Emojis } from "@Config/Shared.js";
 import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
 import { milliseconds, compareDesc, addMilliseconds } from "date-fns";
 
 import HandleLeaveRoleAssignment from "@Utilities/Other/HandleLeaveRoleAssignment.js";
@@ -656,7 +656,7 @@ async function Callback(
         await ButtonInteract.deferUpdate();
       }
     } catch (Err: any) {
-      const ErrorId = RandomString(6, /[\dA-Z]/i);
+      const ErrorId = GetErrorId();
       AppLogger.error({
         message: "An error occurred while handling button interaction;",
         label: FileLabel,
@@ -667,7 +667,7 @@ async function Callback(
       return new ErrorEmbed()
         .setTitle("Error")
         .setDescription("Something went wrong while handling your request.")
-        .setFooter({ text: `Error ID: ${ErrorId}` })
+        .setErrorId(ErrorId)
         .replyToInteract(ButtonInteract, true, true, "followUp");
     }
   });
