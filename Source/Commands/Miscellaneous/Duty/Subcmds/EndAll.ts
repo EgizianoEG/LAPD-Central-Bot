@@ -13,11 +13,11 @@ import { IsValidShiftTypeName } from "@Utilities/Other/Validators.js";
 import { InfoEmbed, WarnEmbed, SuccessEmbed, ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import HandleActionCollectorExceptions from "@Utilities/Other/HandleCompCollectorExceptions.js";
+import HandleShiftRoleAssignment from "@Utilities/Other/HandleShiftRoleAssignment.js";
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
 import ShiftActionLogger from "@Utilities/Classes/ShiftActionLogger.js";
-import ShiftModel from "@Models/Shift.js";
 import GetShiftActive from "@Utilities/Database/GetShiftActive.js";
-import HandleRoleAssignment from "@Utilities/Other/HandleShiftRoleAssignment.js";
+import ShiftModel from "@Models/Shift.js";
 
 // ---------------------------------------------------------------------------------------
 // Functions:
@@ -143,7 +143,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
 
   return Promise.allSettled([
     ShiftActionLogger.LogShiftsEndAll(ButtonInteract, ESLength, ShiftType).catch(() => null),
-    HandleRoleAssignment("off-duty", Interaction.client, Interaction.guild, ShiftsEndedFU),
+    HandleShiftRoleAssignment("off-duty", Interaction.client, Interaction.guild, ShiftsEndedFU),
     ButtonInteract.editReply({
       components: [],
       embeds: [

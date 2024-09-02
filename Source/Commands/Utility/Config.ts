@@ -391,13 +391,13 @@ function GetDutyActModuleConfigComponents(
 
   const SetOutsideLogChannelBtns = new ActionRowBuilder<ButtonBuilder>().setComponents(
     new ButtonBuilder()
-      .setLabel("Set Outside Citation Logs Channel")
+      .setLabel("Set Outside Citation Log Channel")
       .setStyle(ButtonStyle.Secondary)
       .setCustomId(
         `${CTAIds[ConfigTopics.DutyActConfiguration].OutsideCitationLogChannel}:${CmdInteract.user}`
       ),
     new ButtonBuilder()
-      .setLabel("Set Outside Arrest Logs Channel")
+      .setLabel("Set Outside Arrest Log Channel")
       .setStyle(ButtonStyle.Secondary)
       .setCustomId(
         `${CTAIds[ConfigTopics.DutyActConfiguration].OutsideArrestLogChannel}:${CmdInteract.user}`
@@ -548,14 +548,14 @@ function GetDutyActivitiesModuleConfigExplanationEmbed() {
       Dedent(`
         1. **Module Enabled**
           Toggle whether this module is enabled. Disabling it will prevent the use of any related commands, certain exceptions may be included.
-        2. **Citation Logs Channel**
+        2. **Citation Log Channel**
           The local channel within this server that will be used to log any citations issued by staff members.
-        3. **Arrest Logs Channel**
+        3. **Arrest Log Channel**
           The local channel within this server that will be used to log any arrests reported by staff members.
         4. **Outside Server Connections**
-          - **Outside Citation Logs Channel**
+          - **Outside Citation Log Channel**
             Add an external citation logs channel (from another server) to be used alongside the local channel.
-          - **Outside Arrest Logs Channel**
+          - **Outside Arrest Log Channel**
             Add an external arrest logs channel (from another server) to be used alongside the local set one.
       `)
     );
@@ -1572,10 +1572,8 @@ async function HandleConfigShowSelection(
     >>> **Module Enabled:** ${GuildSettings.shift_management.enabled ? "Yes" : "No"}
     **Shift Log Channel:** ${ShiftLogChannel}
     **Role Assignment:**
-    - **On-Duty Role${SMOnDutyRoles.length > 1 ? "s" : ""}:**
-      ${SMOnDutyRoles.length ? ListFormatter.format(SMOnDutyRoles) : "None"}
-    - **On-Break Role${SMOnDutyRoles.length > 1 ? "s" : ""}:**
-      ${SMOnBreakRoles.length ? ListFormatter.format(SMOnBreakRoles) : "None"}
+    - **On-Duty Role${SMOnDutyRoles.length > 1 ? "s" : ""}:** ${SMOnDutyRoles.length ? "\n" + ListFormatter.format(SMOnDutyRoles) : "None"}
+    - **On-Break Role${SMOnDutyRoles.length > 1 ? "s" : ""}:** ${SMOnBreakRoles.length ? "\n" + ListFormatter.format(SMOnBreakRoles) : "None"}
   `);
 
   const IncidentLogChannel = GuildSettings.duty_activities.log_channels.incidents
