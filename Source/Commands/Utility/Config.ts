@@ -735,6 +735,7 @@ async function HandleBasicConfigPageInteracts(
 
   BCCompActionCollector.on("collect", async (RecInteract) => {
     try {
+      if (!RecInteract.isButton()) RecInteract.deferUpdate().catch(() => null);
       if (RecInteract.isButton()) {
         if (RecInteract.customId.startsWith(`${ConfigTopics.BasicConfiguration}-cfm`)) {
           await HandleSettingsSave(RecInteract);
@@ -849,15 +850,15 @@ async function HandleAdditionalConfigPageInteracts(
           await RecInteract.deferUpdate();
           return Callback(CmdInteract);
         }
-      } else if (
-        RecInteract.isStringSelectMenu() &&
-        RecInteract.customId.startsWith(
-          CTAIds[ConfigTopics.AdditionalConfiguration].DActivitiesDeletionInterval
-        )
-      ) {
-        await RecInteract.deferUpdate();
-        LogDeletionInterval = Number(RecInteract.values[0].slice(0, -1)) || 0;
       } else {
+        if (
+          RecInteract.isStringSelectMenu() &&
+          RecInteract.customId.startsWith(
+            CTAIds[ConfigTopics.AdditionalConfiguration].DActivitiesDeletionInterval
+          )
+        ) {
+          LogDeletionInterval = Number(RecInteract.values[0].slice(0, -1)) || 0;
+        }
         await RecInteract.deferUpdate();
       }
     } catch (Err: any) {
@@ -898,7 +899,7 @@ async function HandleShiftConfigPageInteracts(
   let LogChannel = SMCurrConfiguration.log_channel;
 
   const SCCompActionCollector = ConfigPrompt.createMessageComponentCollector<
-    ComponentType.Button | ComponentType.RoleSelect
+    ComponentType.Button | ComponentType.RoleSelect | ComponentType.StringSelect
   >({
     filter: (Interact) => Interact.user.id === CmdInteract.user.id,
     time: 10 * 60 * 1000,
@@ -967,6 +968,7 @@ async function HandleShiftConfigPageInteracts(
   SCCompActionCollector.on("collect", async (RecInteract) => {
     const ActionId = RecInteract.customId;
     try {
+      if (!RecInteract.isButton()) RecInteract.deferUpdate().catch(() => null);
       if (RecInteract.isButton() && ActionId.startsWith(`${ConfigTopics.ShiftConfiguration}-cfm`)) {
         await HandleSettingsSave(RecInteract);
       } else if (
@@ -976,10 +978,13 @@ async function HandleShiftConfigPageInteracts(
         SCCompActionCollector.stop("Back");
         await RecInteract.deferUpdate();
         return Callback(CmdInteract);
+      } else if (
+        RecInteract.isStringSelectMenu() &&
+        ActionId.startsWith(CTAIds[ConfigTopics.ShiftConfiguration].ModuleEnabled)
+      ) {
+        ModuleEnabled = RecInteract.values[0] === "true";
       } else if (RecInteract.isRoleSelectMenu()) {
-        if (ActionId.startsWith(CTAIds[ConfigTopics.ShiftConfiguration].ModuleEnabled)) {
-          ModuleEnabled = RecInteract.values[0] === "true";
-        } else if (ActionId.startsWith(CTAIds[ConfigTopics.ShiftConfiguration].OnDutyRoles)) {
+        if (ActionId.startsWith(CTAIds[ConfigTopics.ShiftConfiguration].OnDutyRoles)) {
           OnDutyRoles = RecInteract.values;
         } else if (ActionId.startsWith(CTAIds[ConfigTopics.ShiftConfiguration].OnBreakRoles)) {
           OnBreakRoles = RecInteract.values;
@@ -1097,6 +1102,7 @@ async function HandleLeaveConfigPageInteracts(
   SCCompActionCollector.on("collect", async (RecInteract) => {
     const ActionId = RecInteract.customId;
     try {
+      if (!RecInteract.isButton()) RecInteract.deferUpdate().catch(() => null);
       if (RecInteract.isButton() && ActionId.startsWith(`${ConfigTopics.LeaveConfiguration}-cfm`)) {
         await HandleSettingsSave(RecInteract);
       } else if (
@@ -1122,8 +1128,6 @@ async function HandleLeaveConfigPageInteracts(
         ActionId.startsWith(CTAIds[ConfigTopics.LeaveConfiguration].OnLeaveRole)
       ) {
         OnLeaveRole = RecInteract.values[0] || null;
-      } else {
-        await RecInteract.deferUpdate();
       }
     } catch (Err: any) {
       const ErrorId = GetErrorId();
@@ -1163,7 +1167,7 @@ async function HandleDutyActivitiesConfigPageInteracts(
   let ModuleEnabled = DACurrentConfig.enabled;
 
   const LCCompActionCollector = ConfigPrompt.createMessageComponentCollector<
-    ComponentType.Button | ComponentType.ChannelSelect
+    ComponentType.Button | ComponentType.ChannelSelect | ComponentType.StringSelect
   >({
     filter: (Interact) => Interact.user.id === CmdInteract.user.id,
     time: 10 * 60 * 1000,
@@ -1233,16 +1237,12 @@ async function HandleDutyActivitiesConfigPageInteracts(
     }
   };
 
-  const HandleSelectMenuSettings = async (
+  const HandleChannelSelectMenuSettings = async (
     SelectInteract: ChannelSelectMenuInteraction<"cached">
   ) => {
     const OptionId = SelectInteract.customId;
 
-    if (OptionId.startsWith(CTAIds[ConfigTopics.DutyActConfiguration].ModuleEnabled)) {
-      ModuleEnabled = SelectInteract.values[0] === "true";
-    } else if (
-      OptionId.startsWith(CTAIds[ConfigTopics.DutyActConfiguration].ArrestLogLocalChannel)
-    ) {
+    if (OptionId.startsWith(CTAIds[ConfigTopics.DutyActConfiguration].ArrestLogLocalChannel)) {
       if (ArrestReportsChannels.length) {
         const ExistingChannelIndex = ArrestReportsChannels.findIndex((C) => !C.includes(":"));
         if (ExistingChannelIndex === -1) {
@@ -1326,7 +1326,13 @@ async function HandleDutyActivitiesConfigPageInteracts(
       if (RecInteract.isButton()) {
         await HandleButtonSelection(RecInteract);
       } else if (RecInteract.isChannelSelectMenu()) {
-        await HandleSelectMenuSettings(RecInteract);
+        await HandleChannelSelectMenuSettings(RecInteract);
+        await RecInteract.deferUpdate();
+      } else if (
+        RecInteract.isStringSelectMenu() &&
+        RecInteract.customId.startsWith(CTAIds[ConfigTopics.DutyActConfiguration].ModuleEnabled)
+      ) {
+        ModuleEnabled = RecInteract.values[0] === "true";
         await RecInteract.deferUpdate();
       }
     } catch (Err: any) {
