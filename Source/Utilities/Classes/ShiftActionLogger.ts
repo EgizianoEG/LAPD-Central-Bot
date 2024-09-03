@@ -12,6 +12,7 @@ import {
   BaseInteraction,
   ImageURLOptions,
   TextBasedChannel,
+GuildBasedChannel,
   time as FormatTime,
 } from "discord.js";
 
@@ -84,7 +85,7 @@ export default class ShiftActionLogger {
       ChannelExists.isTextBased() &&
       ChannelExists.permissionsFor(await Guild.members.fetchMe())?.has("SendMessages");
 
-    return AbleToSendMsgs === true ? (ChannelExists as TextBasedChannel) : null;
+    return AbleToSendMsgs === true ? (ChannelExists as GuildBasedChannel & TextBasedChannel) : null;
   }
 
   /**

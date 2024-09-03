@@ -13,6 +13,7 @@ import {
   ActionRowBuilder,
   TextBasedChannel,
   ButtonInteraction,
+  GuildBasedChannel,
   time as FormatTime,
   ModalSubmitInteraction,
 } from "discord.js";
@@ -62,7 +63,9 @@ export default class LOAEventLogger {
       LoggingChannel.isTextBased() &&
       LoggingChannel.permissionsFor(await Guild.members.fetchMe())?.has("SendMessages");
 
-    return AbleToSendMsgs === true ? (LoggingChannel as TextBasedChannel) : null;
+    return AbleToSendMsgs === true
+      ? (LoggingChannel as GuildBasedChannel & TextBasedChannel)
+      : null;
   }
 
   /**
