@@ -144,6 +144,17 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
           alt: "2018",
         },
       },
+      {
+        name: "Diplomat",
+        alias: "Foreman",
+        style: "Sedan",
+        class: "Car",
+        category: "Classic",
+        model_year: {
+          org: "1988",
+          alt: "1988",
+        },
+      },
     ],
   },
 
@@ -253,6 +264,17 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
           alt: "2023",
         },
       },
+      {
+        name: "Cybertruck",
+        alias: "Truckatron",
+        style: "Pickup",
+        class: "Truck",
+        category: "Electric",
+        model_year: {
+          org: "2024",
+          alt: "2024",
+        },
+      },
     ],
   },
 
@@ -312,8 +334,19 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         },
       },
       {
+        name: "Camaro SS",
+        alias: "Amigo S",
+        style: "Coupe",
+        class: "Car",
+        category: "Regular",
+        model_year: {
+          org: "2011",
+          alt: "2011",
+        },
+      },
+      {
         name: "Camaro ZL1",
-        alias: "Amigo ZL1",
+        alias: "Amigo LZR",
         style: "Coupe",
         class: "Car",
         category: "Regular",
@@ -485,6 +518,39 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         model_year: {
           org: "1999",
           alt: "",
+        },
+      },
+      {
+        name: "K5 Blazer",
+        alias: "Inferno",
+        style: "SUV",
+        class: "SUV",
+        category: "Classic",
+        model_year: {
+          org: "1981",
+          alt: "1981",
+        },
+      },
+      {
+        name: "C10 Silverado",
+        alias: "L/15",
+        style: "Pickup",
+        class: "Truck",
+        category: "Classic",
+        model_year: {
+          org: "1984",
+          alt: "1981",
+        },
+      },
+      {
+        name: "K30 Crew Cab",
+        alias: "L/35 Extended",
+        style: "Pickup",
+        class: "Truck",
+        category: "Classic",
+        model_year: {
+          org: "1985",
+          alt: "1981",
         },
       },
     ],
@@ -690,7 +756,7 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
     models: [
       {
         name: "Tacoma",
-        alias: "Evertt",
+        alias: "Evertt Extended Cab",
         style: "Pickup",
         class: "Truck",
         category: "Regular",
@@ -1117,7 +1183,7 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
     models: [
       {
         name: "TerraPro",
-        alias: "Garage Truck",
+        alias: "Garbage Truck",
         style: "Truck",
         class: "Industrial",
         category: "Regular",
@@ -1177,6 +1243,42 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         category: "Regular",
         model_year: {
           org: "2007",
+          alt: "",
+        },
+      },
+    ],
+  },
+
+  {
+    brand: "Can-Am",
+    counterpart: "Canyon",
+    models: [
+      {
+        name: "Defender DPS CAB HD9",
+        alias: "Descender",
+        style: "Truck",
+        class: "Truck",
+        category: "Regular",
+        model_year: {
+          org: "2023",
+          alt: "2023",
+        },
+      },
+    ],
+  },
+
+  {
+    brand: "Outlander",
+    counterpart: "",
+    models: [
+      {
+        name: "800R Can-Am ATV",
+        alias: "4-Wheeler",
+        style: "Truck",
+        class: "Truck",
+        category: "Regular",
+        model_year: {
+          org: "2013",
           alt: "",
         },
       },
