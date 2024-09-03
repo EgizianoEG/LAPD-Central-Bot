@@ -47,8 +47,7 @@ export default async function GetMainShiftsData(
   HasActiveShift: boolean = false
 ) {
   QueryFilter.end_timestamp = { $ne: null };
-  QueryFilter.type =
-    QueryFilter.type == null || QueryFilter === undefined ? { $exists: true } : QueryFilter.type;
+  QueryFilter.type = QueryFilter.type || { $exists: true };
 
   return ShiftModel.aggregate([
     { $match: QueryFilter },

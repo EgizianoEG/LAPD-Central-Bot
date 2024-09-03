@@ -1,6 +1,6 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle } from "discord.js";
-import { Emojis } from "@Config/Shared.js";
+import { ActionRowBuilder, BaseInteraction, ButtonBuilder, ButtonStyle } from "discord.js";
 import { RandomString } from "@Utilities/Strings/Random.js";
+import { Emojis } from "@Config/Shared.js";
 
 export type NavButtonsActionRow = ActionRowBuilder<
   ButtonBuilder & { data: { custom_id: string } }
@@ -33,7 +33,7 @@ export type NavButtonsActionRow = ActionRowBuilder<
  * - Button custom ids are in the format `nav-[first|prev|current|next|last]:[UserIdOfCommandInteraction]`;
  */
 export default function GetPredefinedNavButtons(
-  Interaction: SlashCommandInteraction | ButtonInteraction,
+  Interaction: BaseInteraction,
   TotalPages: number = 1,
   AddUniqueIds: boolean = false,
   EnablePageSelect: boolean = false
@@ -68,15 +68,9 @@ export default function GetPredefinedNavButtons(
 
   ARInstance.components.forEach((Button) => {
     if (AddUniqueIds) {
-      Button.setCustomId(
-        `nav-${Button.data.custom_id}:${Interaction.user.id}:${
-          Interaction?.guild?.id
-        }:${RandomString(4)}`
-      );
+      Button.setCustomId(`nav-${Button.data.custom_id}:${Interaction.user.id}:${RandomString(4)}`);
     } else {
-      Button.setCustomId(
-        `nav-${Button.data.custom_id}:${Interaction.user.id}:${Interaction?.guild?.id}`
-      );
+      Button.setCustomId(`nav-${Button.data.custom_id}:${Interaction.user.id}`);
     }
   });
 

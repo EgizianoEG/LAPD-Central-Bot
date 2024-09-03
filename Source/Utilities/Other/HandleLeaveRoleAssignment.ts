@@ -17,7 +17,7 @@ export default async function HandleLeaveRoleAssignment(
     return Settings.leave_notices.leave_role;
   });
 
-  if (!Guild || !LeaveRole) return;
+  if (!LeaveRole) return;
   if (Array.isArray(UserId)) {
     return Promise.all(
       UserId.map(async (User) => {

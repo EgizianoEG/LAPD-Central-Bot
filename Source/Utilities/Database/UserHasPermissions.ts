@@ -173,9 +173,8 @@ function CheckPerms(
   if (Perms.management) {
     if (typeof Perms.management === "boolean") {
       if (
-        Perms.management === true &&
-        (GuildMember.permissions.has(PermissionFlagsBits.ManageGuild) ||
-          GuildMember.roles.cache.hasAny(...DBRolePerms.management))
+        GuildMember.permissions.has(PermissionFlagsBits.ManageGuild) ||
+        GuildMember.roles.cache.hasAny(...DBRolePerms.management)
       ) {
         HasManagement = true;
       }

@@ -297,9 +297,7 @@ async function HandleLeaveEarlyEnd(
           .setTitle("Leave Early Termination")
           .setDescription(
             "Your leave of absence has not been changed." +
-              ButtonInteract?.customId.includes("cancel")
-              ? ""
-              : " Prompt timed out."
+              (ButtonInteract?.customId.includes("cancel") ? "" : " Prompt timed out.")
           ),
       ],
     }).catch(() => null);

@@ -54,8 +54,12 @@ export default async function GetBookingMugshot<AsURL extends boolean | undefine
 
   const ImgBuffer = ImgCanvas.toBuffer("image/jpeg", 100);
   if (Options.return_url) {
-    return (UploadToImgBB(ImgBuffer, `booking_mugshot_#${Options.booking_num}`) ??
-      Embeds.Thumbs.UnknownImage) as any;
+    const UploadedImgURL = await UploadToImgBB(
+      ImgBuffer,
+      `booking_mugshot_#${Options.booking_num}`
+    );
+
+    return (UploadedImgURL || Embeds.Thumbs.UnknownImage) as any;
   } else {
     return ImgBuffer as any;
   }

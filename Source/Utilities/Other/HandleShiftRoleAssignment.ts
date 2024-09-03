@@ -14,30 +14,29 @@ export default async function HandleShiftRoleAssignment(
   Guild: Guild | string,
   UserId: string | string[]
 ) {
-  Guild = typeof Guild === "string" ? await Client.guilds.fetch(Guild) : Guild;
-  const RASettings = await GetGuildSettings(Guild.id).then((Settings) => {
+  const TargetGuild =
+    typeof Guild === "string" ? await Client.guilds.fetch(Guild).catch(() => null) : Guild;
+
+  if (!TargetGuild) return;
+  const RASettings = await GetGuildSettings(TargetGuild.id).then((Settings) => {
     if (!Settings) return null;
     return Settings.shift_management.role_assignment;
   });
 
-  if (
-    !Guild ||
-    !RASettings ||
-    (RASettings.on_duty.length === 0 && RASettings.on_break.length === 0)
-  ) {
+  if (!RASettings || (RASettings.on_duty.length === 0 && RASettings.on_break.length === 0)) {
     return;
   }
 
   if (Array.isArray(UserId)) {
     return Promise.all(
       UserId.map(async (User) => {
-        const GuildMember = await Guild.members.fetch(User).catch(() => null);
+        const GuildMember = await TargetGuild.members.fetch(User).catch(() => null);
         if (!GuildMember) return Promise.resolve();
         return HandleSingleUserRoleAssignment(RASettings, GuildMember, CurrentStatus);
       })
     );
   } else {
-    const GuildMember = await Guild.members.fetch(UserId).catch(() => null);
+    const GuildMember = await TargetGuild.members.fetch(UserId).catch(() => null);
     if (!GuildMember) return;
     return HandleSingleUserRoleAssignment(RASettings, GuildMember, CurrentStatus);
   }

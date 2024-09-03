@@ -93,7 +93,7 @@ export function IsValidCmdObject(
     CmdObject?.data instanceof SlashCommandBuilder &&
     CmdObject.data.name &&
     CmdObject.data.description &&
-    !Exceptions.includes(CmdObject.data?.name)
+    !Exceptions.includes(CmdObject.data.name)
   );
 }
 

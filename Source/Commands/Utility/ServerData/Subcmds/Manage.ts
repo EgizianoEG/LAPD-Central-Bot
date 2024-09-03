@@ -1141,7 +1141,6 @@ async function HandleLeaveDataDeleteBeforeOrAfterDate(
     LeaveStatuses.push(InputLeaveStatus);
   }
 
-  if (!ModalSubmission) return;
   if (InputDate && !ParsedDate) {
     return new ErrorEmbed()
       .useErrTemplate("UnknownDateFormat")
