@@ -1,8 +1,15 @@
 import { randomInt as RandomInteger } from "node:crypto";
 import { Schema, Model, model } from "mongoose";
 import { Shifts } from "@Typings/Utilities/Database.js";
+import DHumanize from "humanize-duration";
 import ShiftDurations from "./Schemas/ShiftDurations.js";
 import ShiftInstFuncs, { PreShiftModelDelete, PreShiftDocDelete } from "./Functions/ShiftModel.js";
+
+const HumanizeDuration = DHumanize.humanizer({
+  conjunction: " and ",
+  largest: 3,
+  round: true,
+});
 
 type ShiftPlainDoc = Shifts.ShiftDocument;
 type ShiftModelType = Model<ShiftPlainDoc, unknown, Shifts.ShiftDocumentOverrides>;
@@ -77,6 +84,14 @@ const ShiftSchema = new Schema<Shifts.ShiftDocument, ShiftModelType, Shifts.Shif
 
 ShiftSchema.set("_id", false);
 ShiftSchema.set("versionKey", false);
+
+ShiftSchema.virtual("on_duty_time").get(function () {
+  return HumanizeDuration(this.durations.on_duty);
+});
+
+ShiftSchema.virtual("on_break_time").get(function () {
+  return HumanizeDuration(this.durations.on_break);
+});
 
 ShiftSchema.pre("deleteOne", { query: false, document: true }, function (next) {
   return PreShiftDocDelete.call(this, next);

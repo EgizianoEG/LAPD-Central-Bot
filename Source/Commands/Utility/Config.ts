@@ -1356,7 +1356,7 @@ async function HandleDutyActivitiesConfigPageInteracts(
       const LastInteract = Collected.last() || CmdInteract;
       return new InfoEmbed()
         .useInfoTemplate("TimedOutConfigPrompt")
-        .setTitle("Timed Out - Logging Configuration")
+        .setTitle("Timed Out - Activities Module Configuration")
         .replyToInteract(LastInteract, false, true, "editReply");
     }
   });

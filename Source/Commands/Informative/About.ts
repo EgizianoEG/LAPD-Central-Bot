@@ -11,6 +11,8 @@ const RepoURL = "https://github.com/EgizianoEG/LAPD-Central-Bot";
  * @param Interaction
  */
 async function Callback(Client: DiscordClient, Interaction: SlashCommandInteraction) {
+  await Interaction.deferReply();
+
   const SupportServer = Client.guilds.cache.get(Discord.SupportGuildId ?? Discord.TestGuildId);
   const SServerInvite =
     SupportServer?.invites.cache.find((Invite) => Invite.inviterId === Client.user.id) ??
@@ -78,7 +80,7 @@ async function Callback(Client: DiscordClient, Interaction: SlashCommandInteract
       inline: false,
     });
 
-  return Interaction.reply({ embeds: [ResponseEmbed] });
+  return Interaction.editReply({ embeds: [ResponseEmbed] });
 }
 
 // ---------------------------------------------------------------------------------------

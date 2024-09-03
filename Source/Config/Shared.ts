@@ -16,10 +16,11 @@ const SharedData = {
       Warning: "#E67E22",
       Error: "#ED4245",
 
-      ShiftEnd: "#C02942",
+      ShiftOn: "#1F9D4B",
+      ShiftOff: "#DB2626",
       ShiftVoid: "#4E5052",
-      ShiftStart: "#1F9D4B",
       ShiftBreak: "#FE8C2A",
+      ShiftNatural: "#C2D1E6",
 
       // Cancelled color is only used in logging messages; leave requests uses LOARequestDenied when cancelled.
       LOARequestCancelled: "#C2D1E6",

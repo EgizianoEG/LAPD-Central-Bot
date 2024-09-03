@@ -12,7 +12,7 @@ import {
 /**
  * For handling & responding to any component that have been abandoned activated.
  * Regular component Ids should have a truncated command origin (an abbreviation for what command was used),
- * the user id of who owns this component, and guild id (if applicable); all separated by a colon.
+ * the user id of who owns this component and any other additional information like a unique string; all separated by a colon.
  * @param Client
  * @param Interaction
  * @returns

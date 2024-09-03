@@ -1,7 +1,7 @@
+import { ButtonInteraction } from "discord.js";
 import { Shifts } from "@Typings/Utilities/Database.js";
 import { Falsey } from "utility-types";
 import ShiftModel from "@Models/Shift.js";
-import { ButtonInteraction } from "discord.js";
 
 /**
  * Retrieves and returns the active shifts (with the input ShiftType or with all by default)

@@ -95,7 +95,7 @@ function CreateEmbedPages(
  * It retrieves shift type data from the database, formats it into embed pages, and sets up a collector
  * for navigation buttons to paginate through the embed pages.
  */
-async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
+async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   await Interaction.deferReply();
   const GuildShiftTypes = await GetShiftTypes(Interaction.guildId);
   const Pages = CreateEmbedPages(GuildShiftTypes, DisplayedShiftTypesPerPage);

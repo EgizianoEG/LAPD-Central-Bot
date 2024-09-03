@@ -84,7 +84,7 @@ async function HandleNameValidation(
  *      - Respond with a message indicating shift type creation was canceled due to exceeding time limit.
  * 10. Handle any errors that occurred during the process by sending an error reply and logging the error.
  */
-async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
+async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const ShiftTypeName = Interaction.options.getString("name", true);
   const IsDefaultType = !!Interaction.options.getBoolean("default");
   let ShiftTypePermittedRoles: string[] = [];

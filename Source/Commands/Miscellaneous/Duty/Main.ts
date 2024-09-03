@@ -1,6 +1,7 @@
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import {
   SlashCommandBuilder,
+  InteractionContextType,
   AutocompleteInteraction,
   SlashCommandSubcommandsOnlyBuilder,
 } from "discord.js";
@@ -56,23 +57,19 @@ async function IsAuthorizedCmdUsage(Interaction: SlashCommandInteraction<"cached
  * @param Client
  * @param Interaction
  */
-async function Callback(Client: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
+async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const SubCommandName = Interaction.options.getSubcommand();
   const SubCommandGroupName = Interaction.options.getSubcommandGroup();
 
   if (!(await IsAuthorizedCmdUsage(Interaction))) return;
   for (const SubCommand of Subcommands) {
     if (SubCommand.data.name === SubCommandName && typeof SubCommand.callback === "function") {
-      return SubCommand.callback.length > 1
-        ? (SubCommand.callback as AnySlashCmdCallback)(Client, Interaction)
-        : (SubCommand.callback as AnySlashCmdCallback)(Interaction);
+      return (SubCommand.callback as AnySlashCmdCallback)(Interaction);
     }
   }
 
   if (SubCommandGroupName === "types" && typeof DutyTypesSubcommandGroup.callback === "function") {
-    return DutyTypesSubcommandGroup.callback.length > 1
-      ? (DutyTypesSubcommandGroup.callback as AnySlashCmdCallback)(Client, Interaction)
-      : (DutyTypesSubcommandGroup.callback as AnySlashCmdCallback)(Interaction);
+    return (DutyTypesSubcommandGroup.callback as AnySlashCmdCallback)(Interaction);
   }
 }
 
@@ -116,7 +113,7 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
     .setName("duty")
     .setDescription("Duty and shifts related actions.")
     .addSubcommandGroup(DutyTypesSubcommandGroup.data)
-    .setDMPermission(false),
+    .setContexts(InteractionContextType.Guild),
 };
 
 for (const SubCommand of Subcommands) {

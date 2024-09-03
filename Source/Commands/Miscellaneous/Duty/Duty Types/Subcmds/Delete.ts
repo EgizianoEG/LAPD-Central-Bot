@@ -72,7 +72,7 @@ async function HandleSTNameValidation(
  * 9. If deletion is successful, reply with a success message.
  * 10. If user clicks "Cancel Deletion," reply with a cancellation message.
  */
-async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
+async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const ShiftTypeName = Interaction.options.getString("name", true);
   if (await HandleSTNameValidation(Interaction, ShiftTypeName)) return;
 

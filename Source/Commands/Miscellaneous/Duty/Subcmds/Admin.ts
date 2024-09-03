@@ -903,7 +903,7 @@ async function HandleUserShiftEnd(
   `);
 
   const RespEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.ShiftEnd)
+    .setColor(Embeds.Colors.ShiftOff)
     .setTimestamp(EndedShift.end_timestamp)
     .setTitle("Shift Ended")
     .setFooter({ text: `Shift Type: ${EndedShift.type}` })
@@ -1047,7 +1047,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
       ActiveShift?.hasBreakActive()
         ? Embeds.Colors.ShiftBreak
         : ActiveShift
-          ? Embeds.Colors.ShiftStart
+          ? Embeds.Colors.ShiftOn
           : Colors.DarkBlue
     );
 

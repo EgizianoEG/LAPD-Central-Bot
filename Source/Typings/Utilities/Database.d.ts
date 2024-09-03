@@ -135,7 +135,11 @@ export namespace Guilds {
 }
 
 export namespace Shifts {
-  type HydratedShiftDocument = HydratedDocument<ShiftDocument, ShiftDocumentOverrides>;
+  type HydratedShiftDocument<IsActive extends boolean | undefined = undefined> = HydratedDocument<
+    ShiftDocument<true, IsActive>,
+    ShiftDocumentOverrides
+  >;
+
   interface ShiftDurations {
     /**
      * The total duration (on-duty and on-break sum) for the shift in milliseconds.
@@ -286,7 +290,10 @@ export namespace Shifts {
     citations: number;
   }
 
-  interface ShiftDocument<BreaksPossiblyActive extends boolean = true> {
+  interface ShiftDocument<
+    BreaksPossiblyActive extends boolean = true,
+    IsShiftActive extends boolean | undefined = undefined,
+  > {
     /**
      * The unique identifier (15 digits) of this shift
      * where the first 13 digits indicates the timestamp
@@ -312,13 +319,29 @@ export namespace Shifts {
     start_timestamp: Date;
 
     /** The end timestamp of this shift; defaults to `null` which indicates that this shift is currently active. */
-    end_timestamp: Date | null;
+    end_timestamp: IsShiftActive extends undefined
+      ? Date | null
+      : IsShiftActive extends true
+        ? null
+        : Date;
 
     /** The shift type; defaults to `"Default"`. */
     type: string;
 
     /** The shift logged durations. */
     durations: ShiftDurations;
+
+    /**
+     * @virtual - Not stored in the database.
+     * The on-duty time of this shift in a human-readable format.
+     */
+    on_duty_time: string;
+
+    /**
+     * @virtual - Not stored in the database.
+     * The on-break time of this shift in a human-readable format.
+     */
+    on_break_time: string;
 
     /** Logged events during this shift. */
     events: ShiftEvents<BreaksPossiblyActive>;

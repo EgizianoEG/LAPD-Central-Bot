@@ -13,13 +13,13 @@ const Subcommands = [
  * @param Client
  * @param Interaction
  */
-async function Callback(Client: DiscordClient, Interaction: SlashCommandInteraction<"cached">) {
+async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const SubcommandName = Interaction.options.getSubcommand();
 
   for (const Subcommand of Subcommands) {
     if (Subcommand.data.name === SubcommandName) {
       if (typeof Subcommand.callback === "function") {
-        return Subcommand.callback(Client, Interaction);
+        return Subcommand.callback(Interaction);
       } else {
         break;
       }
