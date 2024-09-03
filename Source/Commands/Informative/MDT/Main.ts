@@ -6,6 +6,7 @@ import AutocompleteUsername from "@Utilities/Autocompletion/Username.js";
 import SearchSubcmdGroup from "./Search/Search.js";
 import {
   SlashCommandBuilder,
+  InteractionContextType,
   type AutocompleteInteraction,
   type ApplicationCommandOptionChoiceData,
   type SlashCommandSubcommandsOnlyBuilder,
@@ -66,7 +67,7 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
   data: new SlashCommandBuilder()
     .setName("mdt")
     .setDescription("MDT commands.")
-    .setDMPermission(false)
+    .setContexts(InteractionContextType.Guild)
     .addSubcommand(Subcommands[0].data)
     .addSubcommandGroup(SearchSubcmdGroup.data),
 };

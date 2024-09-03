@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from "discord.js";
+import { InteractionContextType, SlashCommandBuilder } from "discord.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import IsModuleEnabled from "@Utilities/Database/IsModuleEnabled.js";
 
@@ -46,7 +46,7 @@ const CommandObject: SlashCommandObject = {
   data: new SlashCommandBuilder()
     .setName("loa")
     .setDescription("Leave of absence related actions.")
-    .setDMPermission(false),
+    .setContexts(InteractionContextType.Guild),
 };
 
 for (const SubCommand of Subcommands) {

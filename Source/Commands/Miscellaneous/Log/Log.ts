@@ -6,6 +6,7 @@ import { Shifts } from "@Typings/Utilities/Database.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import {
   SlashCommandBuilder,
+  InteractionContextType,
   AutocompleteInteraction,
   ApplicationCommandOptionChoiceData,
 } from "discord.js";
@@ -120,7 +121,7 @@ const CommandObject: SlashCommandObject<any> = {
   data: new SlashCommandBuilder()
     .setName("log")
     .setDescription("Logs a particular information into the database.")
-    .setDMPermission(false)
+    .setContexts(InteractionContextType.Guild)
     .addSubcommand(Subcommands[0].data)
     .addSubcommand(Subcommands[1].data)
     .addSubcommand(Subcommands[2].data),

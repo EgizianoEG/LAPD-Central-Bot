@@ -10,6 +10,7 @@ import {
   escapeMarkdown,
   ActionRowBuilder,
   SlashCommandBuilder,
+  InteractionContextType,
   AutocompleteInteraction,
 } from "discord.js";
 
@@ -200,7 +201,7 @@ const CommandObject: SlashCommandObject<any> = {
   data: new SlashCommandBuilder()
     .setName("log-in")
     .setDescription("Log into the application and get access to restricted actions.")
-    .setDMPermission(false)
+    .setContexts(InteractionContextType.Guild)
     .addStringOption((Option) =>
       Option.setName("username")
         .setDescription("The Roblox username to log in as.")

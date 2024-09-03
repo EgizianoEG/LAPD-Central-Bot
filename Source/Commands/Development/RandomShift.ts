@@ -1,6 +1,10 @@
-import { SlashCommandBuilder, SlashCommandSubcommandsOnlyBuilder } from "discord.js";
 import ShiftModel from "@Models/Shift.js";
 import Dedent from "dedent";
+import {
+  SlashCommandBuilder,
+  InteractionContextType,
+  SlashCommandSubcommandsOnlyBuilder,
+} from "discord.js";
 
 // ---------------------------------------------------------------------------------------
 /**
@@ -35,7 +39,7 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
   options: { dev_only: true },
   data: new SlashCommandBuilder()
     .setName("random-shift")
-    .setDMPermission(false)
+    .setContexts(InteractionContextType.Guild)
     .setDescription("Shows a random previously recorded shift."),
 };
 

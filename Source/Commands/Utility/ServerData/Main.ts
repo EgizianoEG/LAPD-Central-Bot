@@ -1,6 +1,7 @@
 import {
   SlashCommandBuilder,
   PermissionFlagsBits,
+  InteractionContextType,
   SlashCommandSubcommandsOnlyBuilder,
 } from "discord.js";
 
@@ -35,7 +36,7 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
   data: new SlashCommandBuilder()
     .setName("server-data")
     .setDescription("Server data management related commands.")
-    .setDMPermission(false)
+    .setContexts(InteractionContextType.Guild)
     .addSubcommand(Subcommands[0].data),
 };
 

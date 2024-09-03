@@ -17,6 +17,7 @@ import {
   SlashCommandBuilder,
   PermissionFlagsBits,
   RoleSelectMenuBuilder,
+  InteractionContextType,
   StringSelectMenuBuilder,
   ChannelSelectMenuBuilder,
   StringSelectMenuInteraction,
@@ -1719,7 +1720,7 @@ const CommandObject: SlashCommandObject = {
   data: new SlashCommandBuilder()
     .setName("config")
     .setDescription("View and manage the application configuration for this server.")
-    .setDMPermission(false),
+    .setContexts(InteractionContextType.Guild),
 
   callback: Callback,
 };

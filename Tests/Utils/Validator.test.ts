@@ -1,5 +1,5 @@
 /* eslint-disable no-new-object */
-import { SlashCommandBuilder } from "discord.js";
+import { InteractionContextType, SlashCommandBuilder } from "discord.js";
 import {
   IsPlainObject,
   IsEmptyObject,
@@ -85,7 +85,7 @@ describe("IsValidCmdObject", () => {
       data: new SlashCommandBuilder()
         .setName("ping")
         .setDescription("Pings the bot")
-        .setDMPermission(true),
+        .setContexts(InteractionContextType.Guild),
     };
 
     expect(IsValidCmdObject(CmdObject)).toBeTruthy();

@@ -3,6 +3,7 @@
 import AutocompleteShiftType from "@Utilities/Autocompletion/ShiftType.js";
 import {
   SlashCommandBuilder,
+  InteractionContextType,
   type AutocompleteInteraction,
   type ApplicationCommandOptionChoiceData,
   type SlashCommandSubcommandsOnlyBuilder,
@@ -72,7 +73,7 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
   data: new SlashCommandBuilder()
     .setName("activity")
     .setDescription("Get information about server activity.")
-    .setDMPermission(false)
+    .setContexts(InteractionContextType.Guild)
     .addSubcommand(Subcommands[0].data)
     .addSubcommand(Subcommands[1].data),
 };

@@ -2,6 +2,7 @@ import AutocompleteMemRolesSave from "@Utilities/Autocompletion/MemRolesSave.js"
 import {
   SlashCommandBuilder,
   PermissionFlagsBits,
+  InteractionContextType,
   AutocompleteInteraction,
   ApplicationCommandOptionChoiceData,
   SlashCommandSubcommandsOnlyBuilder,
@@ -62,7 +63,7 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
   data: new SlashCommandBuilder()
     .setName("member-roles")
     .setDescription("Utility commands for managing member roles.")
-    .setDMPermission(false),
+    .setContexts(InteractionContextType.Guild),
 
   callback: Callback,
   autocomplete: Autocomplete,
