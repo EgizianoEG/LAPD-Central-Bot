@@ -3,19 +3,19 @@ import {
   EmbedData,
   EmbedBuilder,
   BaseInteraction,
-  InteractionResponse,
-  CommandInteraction,
   ButtonInteraction,
+  CommandInteraction,
+  InteractionResponse,
   MessageComponentInteraction,
 } from "discord.js";
 
 import { ErrorMessages, InfoMessages } from "@Resources/AppMessages.js";
 import { format as FormatString } from "node:util";
-import SharedConfig from "@Config/Shared.js";
+import { Embeds } from "@Config/Shared.js";
 import AppError from "./AppError.js";
 
-const EmbedThumbs = SharedConfig.Embeds.Thumbs;
-const EmbedColors = SharedConfig.Embeds.Colors;
+const EmbedThumbs = Embeds.Thumbs;
+const EmbedColors = Embeds.Colors;
 
 class BaseEmbed extends EmbedBuilder {
   private static readonly ComponentRemovalRegex =

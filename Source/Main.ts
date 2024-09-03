@@ -39,6 +39,7 @@ App.buttonListeners = new Collection();
       if (typeof Module.default === "function") {
         return Module.default(App);
       }
+      return null;
     });
   }
 

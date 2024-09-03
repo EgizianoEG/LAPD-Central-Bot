@@ -100,9 +100,7 @@ export async function ShiftEnd(this: ThisType, timestamp: Date | number = new Da
     );
   else DBDocument.end_timestamp = new Date(timestamp);
 
-  return DBDocument.save().then(async (ShiftDoc) => {
-    return ShiftDoc;
-  });
+  return DBDocument.save();
 }
 
 export async function ResetShiftTime(this: ThisType, CurrentTimestamp: number = Date.now()) {

@@ -17,8 +17,8 @@ import {
 } from "discord.js";
 
 import { Shifts } from "@Typings/Utilities/Database.js";
+import { Embeds } from "@Config/Shared.js";
 import { App as DiscordApp } from "@DiscordApp";
-import SharedData, { Embeds } from "@Config/Shared.js";
 import GuildModel from "@Models/Guild.js";
 import HDuration from "humanize-duration";
 import Dedent from "dedent";
@@ -197,7 +197,7 @@ export default class ShiftActionLogger {
     });
 
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Started")
-      .setColor(SharedData.Embeds.Colors.ShiftOn)
+      .setColor(Embeds.Colors.ShiftOn)
       .setFields(
         {
           inline: true,
@@ -255,7 +255,7 @@ export default class ShiftActionLogger {
 
     const BreakStartedRT = FormatTime(Math.round(ShiftDoc.events.breaks[0]![0] / 1000), "R");
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Break Started")
-      .setColor(SharedData.Embeds.Colors.ShiftBreak)
+      .setColor(Embeds.Colors.ShiftBreak)
       .setFields(
         {
           inline: true,
@@ -321,7 +321,7 @@ export default class ShiftActionLogger {
     const AllBTEqualsEndedBreak = ShiftDoc.durations.on_break === EndedBreak[1] - EndedBreak[0];
 
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Break Ended")
-      .setColor(SharedData.Embeds.Colors.ShiftBreak)
+      .setColor(Embeds.Colors.ShiftBreak)
       .setFields(
         {
           inline: true,
@@ -386,7 +386,7 @@ export default class ShiftActionLogger {
     const OnBreakTime = ShiftDoc.hasBreaks() ? ReadableDuration(ShiftDoc.durations.on_break) : null;
 
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Ended")
-      .setColor(SharedData.Embeds.Colors.ShiftOff)
+      .setColor(Embeds.Colors.ShiftOff)
       .addFields(
         {
           inline: false,
@@ -455,7 +455,7 @@ export default class ShiftActionLogger {
     const OnBreakTime = ShiftDoc.hasBreaks() ? ReadableDuration(ShiftDoc.durations.on_break) : null;
 
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Automatically Ended")
-      .setColor(SharedData.Embeds.Colors.ShiftOff)
+      .setColor(Embeds.Colors.ShiftOff)
       .addFields(
         {
           inline: true,
@@ -517,7 +517,7 @@ export default class ShiftActionLogger {
     const OnBreakTime = ShiftDoc.hasBreaks() ? ReadableDuration(ShiftDoc.durations.on_break) : null;
 
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Voided")
-      .setColor(SharedData.Embeds.Colors.ShiftVoid)
+      .setColor(Embeds.Colors.ShiftVoid)
       .addFields(
         {
           inline: true,

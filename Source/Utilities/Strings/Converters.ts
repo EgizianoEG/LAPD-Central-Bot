@@ -109,7 +109,7 @@ export function TitleCase(Str: string, Strict: boolean = true): string {
  */
 export function CamelCase(Str: string): string {
   let SDSign = "";
-  const Sanitized = Str.replace(/^[\W\s_\uFEFF\xA0]+|[\W\s_\uFEFF\xA0]+$/g, "").replace(
+  const Sanitized = Str.replace(/^[\W\s_\uFEFF\xA0]+|[\W\s_\uFEFF\xA0]+$/gu, "").replace(
     /[^\w]+|[\s_]+/g,
     " "
   );
