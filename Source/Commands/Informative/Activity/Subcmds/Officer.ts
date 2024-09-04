@@ -1,9 +1,9 @@
 // Dependencies:
 // -------------
-import { SlashCommandSubcommandBuilder, userMention } from "discord.js";
+import { Colors, EmbedBuilder, SlashCommandSubcommandBuilder, userMention } from "discord.js";
 import { formatDistance, isAfter } from "date-fns";
-import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { FormatUsername } from "@Utilities/Strings/Formatters.js";
+import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import * as Chrono from "chrono-node";
 import GetStaffFieldActivity from "@Utilities/Database/GetFieldActivity.js";
@@ -70,15 +70,15 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     start_timestamp: SinceDate ? { $gte: SinceDate } : { $exists: true },
   });
 
-  const RespEmbed = new InfoEmbed()
+  const RespEmbed = new EmbedBuilder()
     .setTitle(`Officer Activity — @${OfficerSelected.user.username}`)
     .setThumbnail(TargetRUserThumb)
-    .setDescription(null)
+    .setColor(Colors.DarkBlue)
     .setFields(
       {
-        name: "**Basic Info:**",
+        name: "**Basic Information:**",
         value: Dedent(`
-          - User: ${userMention(OfficerSelected.id)}
+          - Officer: ${userMention(OfficerSelected.id)}
           - Linked Account: ${FormattedRobloxName}
           - Current Nickname: \`${CurrServerNickname}\`
         `),
@@ -111,9 +111,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
 
   if (SinceDate) {
     RespEmbed.setFooter({
-      text: `Showing activity since ${formatDistance(SinceDate, Interaction.createdAt, {
-        addSuffix: true,
-      })}`,
+      text: `Showing activity since ${formatDistance(SinceDate, Interaction.createdAt, { addSuffix: true })}`,
     });
   }
 
