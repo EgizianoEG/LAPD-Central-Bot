@@ -202,6 +202,76 @@ export function ObjKeysToSnakeCase(Obj: object): object {
   return Obj;
 }
 
+/**
+ * Converts a given number into its word representation.
+ * @param Num - The number to convert. If it is a string, remove any characters that aren't numbers to avoid unwanted results.
+ * @returns The word representation of the given number.
+ * @author This function was taken and modified from: https://stackoverflow.com/a/71276286, thanks to the author.
+ */
+export function NumberToWords(Num: number | string): string {
+  if (Num === 0) return "Zero";
+  const NumString = String(Num);
+  const NumMatchs = ("0".repeat((2 * NumString.length) % 3) + Num).match(/.{3}/g);
+
+  if (!NumMatchs) return "[Unknown]";
+  let Output = "";
+
+  const ScaleT = ["", "Thousand", "Million", "Billion", "Trillion", "Quadrillion"];
+  const T10s = [
+    "",
+    "One",
+    "Two",
+    "Three",
+    "Four",
+    "Five",
+    "Six",
+    "Seven",
+    "Eight",
+    "Nine",
+    "Ten",
+    "Eleven",
+    "Twelve",
+    "Thirteen",
+    "Fourteen",
+    "Fifteen",
+    "Sixteen",
+    "Seventeen",
+    "Eighteen",
+    "Nineteen",
+  ];
+
+  const T20s = [
+    "",
+    "",
+    "Twenty",
+    "Thirty",
+    "Forty",
+    "Fifty",
+    "Sixty",
+    "Seventy",
+    "Eighty",
+    "Ninety",
+  ];
+
+  return (
+    NumMatchs.forEach((n, i) => {
+      if (!+n) return;
+
+      const hund = +n[0];
+      const ten = +n.substring(1);
+      const scl = ScaleT[NumMatchs.length - i - 1];
+
+      Output +=
+        (Output ? " " : "") +
+        (hund ? `${T10s[hund]} Hundred` : "") +
+        (hund && ten ? " " : "") +
+        (ten < 20 ? T10s[ten] : T20s[+n[1]] + (+n[2] ? "-" : "") + T10s[+n[2]]);
+      Output += (Output && scl ? " " : "") + scl;
+    }),
+    Output
+  );
+}
+
 function SplitCaps(Str: string): string {
   return Str.replace(/([a-z])([A-Z]+)/g, (_, s1, s2) => s1 + " " + s2)
     .replace(/([A-Z])([A-Z]+)([^a-zA-Z0-9]*)$/, (_, s1, s2, s3) => s1 + s2.toLowerCase() + s3)
