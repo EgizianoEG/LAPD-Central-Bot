@@ -272,6 +272,67 @@ export function NumberToWords(Num: number | string): string {
   );
 }
 
+/**
+ * Converts a police code string to words.
+ * @param CodeStr - The police code string to convert. Must be prefixed with a word or something.
+ * @returns The converted string.
+ * @example
+ * console.log(CodeToWords("Code 1-A")); // Output: "Code One-Adam"
+ * console.log(CodeToWords("Code 30-V")); // Output: "Code Thirty-Victor"
+ * console.log(CodeToWords("Code 30-R")); // Output: "Code Thirty-Ringer"
+ * console.log(CodeToWords("Code 4")); // Output: "Code Four"
+ * console.log(CodeToWords("Code 10-8")); // Output: "Code Ten-Eight"
+ */
+export function PoliceCodeToWords(CodeStr: string): string {
+  /** A mapping of the phonetic alphabet to use for converting non-numeric codes. */
+  const PhoneticAlphabet: { [key: string]: string } = {
+    A: "Adam",
+    B: "Boy",
+    C: "Charles",
+    D: "David",
+    E: "Edward",
+    F: "Frank",
+    G: "George",
+    H: "Henry",
+    I: "Ida",
+    J: "John",
+    K: "King",
+    L: "Lincoln",
+    M: "Mary",
+    N: "Nora",
+    O: "Ocean",
+    P: "Paul",
+    Q: "Queen",
+    R: "Ringer",
+    S: "Sam",
+    T: "Tom",
+    U: "Union",
+    V: "Victor",
+    W: "William",
+    X: "X-ray",
+    Y: "Young",
+    Z: "Zebra",
+  };
+
+  /** Split the code string into the prefix and number parts. */
+  const [Prefix, NumberPart] = CodeStr.split(" ");
+  /** Split the number part into individual segments. */
+  const NumSegments = NumberPart.split("-");
+  /** Convert each segment to words. */
+  const WordSegments = NumSegments.map((Seg) => {
+    if (isNaN(Number(Seg))) {
+      /** If the segment is not a number, convert it using the phonetic alphabet. */
+      return PhoneticAlphabet[Seg.toUpperCase()] || Seg;
+    } else {
+      /** If the segment is a number, convert it to words. */
+      return NumberToWords(parseInt(Seg, 10));
+    }
+  });
+
+  /** Join the converted segments and prefix with spaces and return the result. */
+  return `${Prefix} ${WordSegments.join("-")}`;
+}
+
 function SplitCaps(Str: string): string {
   return Str.replace(/([a-z])([A-Z]+)/g, (_, s1, s2) => s1 + " " + s2)
     .replace(/([A-Z])([A-Z]+)([^a-zA-Z0-9]*)$/, (_, s1, s2, s3) => s1 + s2.toLowerCase() + s3)
