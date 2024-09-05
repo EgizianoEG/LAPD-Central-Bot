@@ -70,17 +70,16 @@ export function TitleCase(Str: string, Strict: boolean = true): string {
   if (Strict) {
     for (const Lower of Lowers) {
       const Regex = new RegExp("\\b" + Lower + "\\b", "gi");
-      Modified = Modified.replace(Regex, (Cap) => {
-        return Modified.startsWith(Cap) ? Cap : Lower;
-      });
+      Modified = Modified.replace(Regex, Lower.toLowerCase());
     }
+
     for (const Acronym of Uppers) {
       const Regex = new RegExp("\\b" + Acronym + "\\b", "gi");
       Modified = Modified.replace(Regex, Acronym.toUpperCase());
     }
   }
 
-  return Modified;
+  return UpperFirst(Modified, false);
 }
 
 /**
@@ -138,16 +137,17 @@ export function CamelCase(Str: string): string {
 }
 
 /**
- * Uppers the first character of a string and lowers the rest of its length.
+ * Uppers the first character of a string and lowers the rest of its length by default.
  * @notice This does not behave the same as lodash's upperFirst function implementation and converts the rest of the string to lowercase.
  * @param Str - The string to process
+ * @param [LowerRest=true] - Whether to lower the rest of the string or not.
  * @returns
  * @example
  * UpperFirst("heLLo!")  // returns "Hello!"
  * UpperFirst("1. item")  // returns "1. item"
  */
-export function UpperFirst(Str: string): string {
-  return Str.charAt(0)?.toUpperCase() + Str.slice(1).toLowerCase();
+export function UpperFirst(Str: string, LowerRest: boolean = true): string {
+  return Str.charAt(0)?.toUpperCase() + (LowerRest ? Str.slice(1).toLowerCase() : Str.slice(1));
 }
 
 /**
