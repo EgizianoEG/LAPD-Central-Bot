@@ -12,8 +12,8 @@ export interface CodeType {
   /** The code itself which consists of numbers and dashes (except some literal codes) */
   code: string;
 
-  /** The code title/name (10-11 -> Traffic Stop) */
-  title: string;
+  /** The meaning of the code summarized */
+  title?: string;
 
   /** A detailed code description explaining what the code means */
   description: string;
@@ -227,9 +227,8 @@ export const ElevenCodes: CodeType[] = [];
 export const LiteralCodes: CodeType[] = [
   {
     code: "Code 1",
-    title: "Code One",
+    title: "Acknowledge Call/Respond over Radio",
     description: `
-      **Acknowledge Call/Respond over Radio.**
       **As defined in Volume-4[${SuperNums[1]}](${Volume4}):**
       When the control operator (Dispatch) fails to receive an acknowledgment of a communication, \
       a 'Code One' shall be given. The unit or officer to which a 'Code One' is directed shall \
@@ -250,9 +249,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code 2",
-    title: "Code Two",
+    title: "Routine Call, No Sirens",
     description: `
-      **Routine Call, No Sirens.**
       Code Two signifies an urgent situation requiring immediate attention, but not necessarily a life-threatening emergency. \
       Responding officers are expected to proceed as quickly as possible while adhering to all traffic laws and avoiding the use of sirens.
     `,
@@ -278,9 +276,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code 2-H",
-    title: "Code Two High",
+    title: "Priority Call, Lights and Sirens Can Be Used",
     description: `
-      **Priority Call, Lights and Sirens Can Be Used.**
       This code is almost equivalent to the 'Code Two' code, with the exception that the lights \
       and siren can be utilized only if necessary to get through traffic.
     `,
@@ -296,9 +293,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code 3",
-    title: "Code Three",
+    title: "Emergency Call, Proceed with Lights and Sirens",
     description: `
-      **Emergency Call, Proceed with Lights and Sirens.**
       Code 3 signifies an emergency situation requiring immediate response with lights and sirens. \
       It indicates a critical threat to public safety, life, or property that demands the officer's prompt and decisive action without delay.
     `,
@@ -334,11 +330,11 @@ export const LiteralCodes: CodeType[] = [
           the victim is in the upstairs closet. Code Three, Incident number 1267, RD 167.
         `,
       },
-      "[In Action 1](https://youtu.be/ItcyoXmGiAE?si=V2A4-BWbhd3Q0l8X)",
-      "[In Action 2](https://youtu.be/gigAXFw9yzQ?si=JUo-_CSL2ziiga4-)",
-      "[In Action 3](https://youtu.be/IqMbjypnmvw?si=ILdlTIzf-j_iWfPa)",
-      "[In Action 4](https://youtu.be/GN_P_1Vx36c?si=53wtEUxh19Yj1E6b)",
-      "[In Action 5](https://youtu.be/i4epuHr7sNY?si=OEDu4h-UPJXpHq-L)",
+      "[In Action 1](https://youtu.be/ItcyoXmGiAE?si=V2A4-BWbhd3Q0l8X), " +
+        "[In Action 2](https://youtu.be/gigAXFw9yzQ?si=JUo-_CSL2ziiga4-), " +
+        "[In Action 3](https://youtu.be/IqMbjypnmvw?si=ILdlTIzf-j_iWfPa), " +
+        "[In Action 4](https://youtu.be/GN_P_1Vx36c?si=53wtEUxh19Yj1E6b), " +
+        "[In Action 5](https://youtu.be/i4epuHr7sNY?si=OEDu4h-UPJXpHq-L)",
     ],
 
     notes: [
@@ -358,9 +354,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code 4",
-    title: "Code Four",
+    title: "No Further Assistance Needed",
     description: `
-      **No Further Assistance Needed.**
       **As defined in Volume-4[${SuperNums[1]}](${Volume4}):**
       When additional assistance is not needed at the scene of an "All Units" call, a "Code Four," \
       followed by the location of the call, shall be broadcast. Radio units which are not assigned \
@@ -407,9 +402,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code 4-A",
-    title: "Code Four Adam",
+    title: "No Further Assistance Needed, Suspect Not in Custody",
     description: `
-      **No Further Assistance Needed, Suspect Not in Custody.**
       Code 4-Adam signifies that a situation is currently under control and no longer requires \
       immediate assistance from other units. However, it notably emphasizes that the suspect \
       involved in the incident is still not in custody, necessitating continued awareness and potential follow-up actions.
@@ -451,9 +445,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code 5",
-    title: "Code Five",
+    title: "Stakeout, Uniformed Officers Stay Away",
     description: `
-      **Stakeout. Uniformed Officers Stay Away.**
       Code Five signifies an ongoing operation where officers are conducting a surveillance or stakeout \
       on a location or individual. It serves as an alert to other units regarding the occupied position \
       and potential need for assistance.
@@ -497,9 +490,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code 5-E",
-    title: "Code Five Edward",
+    title: "Explosive Hazard, Low-Altitude Aircraft Stay Away",
     description: `
-      **Explosive Hazard. Low-Altitude Aircraft Stay Away.**
       Code Five Edward is a critical alert used to warn Air Support Division personnel of a potential \
       explosive hazard in the vicinity. It emphasizes the need for caution and avoiding the area to ensure \
       the safety of air units and personnel on the ground. All units shall avoid the vicinity except in an \
@@ -542,9 +534,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code 6",
-    title: "Code Six",
+    title: "Conducting a Field Investigation, No Assistance Anticipated",
     description: `
-      **Conducting a Field Investigation, No Assistance Anticipated.**
       **As defined in Volume-4[${SuperNums[1]}](${Volume4}):**
       When a unit is conducting a field investigation and no assistance is anticipated, a "Code Six,” followed \
       by the location, shall be broadcast. A unit shall not go "Code Six" until it arrives at the scene of a call.
@@ -591,9 +582,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code 6-A",
-    title: "Code Six Adam",
+    title: "Conducting a Field Investigation, May Need Assistance",
     description: `
-      **Conducting a Field Investigation, May Need Assistance in Conducting.**
       **As defined in Volume-4[${SuperNums[1]}](${Volume4}):**
       When an officer may need assistance in conducting an investigation, the officer should broadcast "Code Six Adam" with his or her location.
       
@@ -639,9 +629,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code 6-C",
-    title: "Code Six Charles",
+    title: "High-Risk Suspect Encounter, Use Caution",
     description: `
-      **High-Risk Suspect Encounter, Use Caution.**
       **As defined in CDM[${SuperNums[2]}](${CDManual}):**
       A Code Six Charles (C6C) indicates that a Data Base Response (DBR) may involve a felony \
       want, possible felony suspect(s), an armed and dangerous suspect(s), individuals with suicidal \
@@ -694,9 +683,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code 6-G",
-    title: "Code Six George",
+    title: "Potential Gang Activity, Possible Need for Assistance",
     description: `
-      **Potential Gang Activity, Possible Need for Assistance.**
       This code signifies that an officer is conducting an investigation involving potential gang activity \
       and may require assistance from the Gang Enforcement Detail. While the officer is out of their vehicle \
       and actively investigating, they haven't encountered immediate danger and are assessing the situation.
@@ -731,9 +719,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code 6-M",
-    title: "Code Six Mary",
+    title: "Possible Militant Activity, Potential Need for Assistance",
     description: `
-      **Possible Militant Activity, Potential Need for Assistance**
       This code signifies that an officer is conducting an investigation outside their vehicle and might need \
       assistance due to *suspected militant activity*. It alerts dispatch and nearby units to prepare for \
       potential backup while the officer gathers information.
@@ -780,9 +767,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code 7",
-    title: "Code Seven",
+    title: "Request for Out-of-Service",
     description: `
-      **Request for Out-of-Service for Free Time.**
       This code signifies that an officer wishes to go out of service temporarily for personal time, such as a meal break or rest period.
     `,
 
@@ -810,9 +796,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code 8",
-    title: "Code Eight",
+    title: "Fire Reported in High-Hazard Area or Threat to Firefighters",
     description: `
-      **Fire Reported in High-Hazard Area or Threat to Firefighters.**
       This code signifies a reported fire at a location where there's a significant risk of spreading flames \
       or potential danger to firefighters from hostile groups. It alerts nearby units to be aware of the situation \
       and potentially respond but remain on duty and available for other emergencies.
@@ -843,9 +828,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code 8-A",
-    title: "Code Eight Adam",
+    title: "Fire Department Confirmed Fire, Request for Assistance",
     description: `
-      **Fire Department Confirmed Fire, Request for Assistance.**
       This code signifies that the Fire Department has confirmed an active fire at a specific location and the \
       senior officer at the scene needs additional fire units. Additionally, a specific police unit is assigned \
       to assist with traffic or crowd control.
@@ -877,9 +861,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code 10",
-    title: "Code Ten",
+    title: "Request for Clear Frequency for Warrant Check",
     description: `
-      **Request for Clear Frequency for Warrant Check.**
       This code signifies that an officer needs a clear radio frequency to perform a background check on a suspect for outstanding warrants or wanted person status.
     `,
 
@@ -910,9 +893,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code 12",
-    title: "Code Twelve",
+    title: "False Alarm, No Evidence of Burglary or Robbery",
     description: `
-      **False Alarm - No Evidence of Burglary or Robbery.**
       This code signifies that an officer responded to an alarm call (such as Code Thirty, Code Thirty Adam, \
       Code Thirty-Ringer, Code Thirty Victor, or a silent 211) and found no evidence of a burglary or robbery. \
       The officer believes the false alarm was likely caused by malfunctioning equipment, subscriber error, or other factors beyond the subscriber's control.
@@ -943,9 +925,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code 20",
-    title: "Code Twenty",
+    title: "Request for Media Notification of Major Incident",
     description: `
-      **Request for Media Notification of Major Incident.**
       This code signifies a request from a field unit to notify LAPD Media Relations about a major incident or event that would likely attract significant public interest.
     `,
 
@@ -975,9 +956,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code 30",
-    title: "Code Thirty",
+    title: "Silent Burglar Alarm Reported",
     description: `
-      **Silent Burglar Alarm Reported.**
       This code signifies a reported silent burglar alarm received by the LAPD from an alarm company or automated \
       recording. It alerts nearby units to be aware of the situation and potentially respond, but without committing \
       their full resources unless necessary.
@@ -1008,9 +988,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code 30-A",
-    title: "Code Thirty Adam",
+    title: "Silent Alarm with Audible Monitoring",
     description: `
-      **Silent Alarm with Audible Monitoring.**
       This code signifies a report of a silent burglar alarm from an alarm company where the location is actively monitored for sounds and movement inside. \
       This monitoring might involve microphones, motion sensors, or other technological solutions.
     `,
@@ -1039,9 +1018,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code 30-R",
-    title: "Code Thirty Ringer",
+    title: "Audible Burglar Alarm Activated",
     description: `
-      **Audible Burglar Alarm Activated.**
       This code signifies a report of a ringing burglar alarm, meaning the alarm is actively emitting an audible sound and/or \
       flashing lights to indicate a potential break-in. The report can come from an individual witness, the alarm company itself, or even a field unit responding to another call.
     `,
@@ -1053,9 +1031,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code 30-V",
-    title: "Code Thirty Victor",
+    title: "Silent Alarm with Video Surveillance",
     description: `
-      **Silent Alarm with Video Surveillance.**
       This code signifies a report of a silent burglar alarm from an alarm company where the location is monitored via remote \
       video surveillance. This means the alarm itself doesn't make any noise, but the alarm company can remotely see what's \
       happening inside and capture photos of potential intruders.
@@ -1068,9 +1045,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code 37",
-    title: "Code Thirty Seven",
+    title: "Stolen Vehicle Database Hit",
     description: `
-      **Stolen Vehicle Database Hit.**
       This code signifies that a vehicle license plate check conducted by Communications Division personnel has returned a \
       positive hit in the stolen vehicle database. This means the car associated with the license plate is reported stolen \
       and potentially requires immediate action.
@@ -1112,9 +1088,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code 100",
-    title: "Code One Hundred",
+    title: "Temporary Surveillance at Escape Route",
     description: `
-      **Temporary Surveillance at Escape Route**
       This code signifies a field unit's notification to establish temporary surveillance at a location believed to be a potential escape route from a recent crime scene.
     `,
 
@@ -1149,9 +1124,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code Tom",
-    title: "...",
+    title: "Urgent Call for Unit with TASER",
     description: `
-      **Urgent Call for Unit with TASER.**
       Code Tom signifies a request from a field unit for a unit equipped with a TASER to respond to an occurrence involving a potentially violent person.
     `,
 
@@ -1173,9 +1147,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code Sam",
-    title: "...",
+    title: "Urgent Call for Unit with Beanbag Shotgun",
     description: `
-      **Urgent Call for Unit with Beanbag Shotgun.**
       Code Sam signifies a request from a field unit for a unit equipped with a beanbag shotgun to respond to an occurrence requiring less-lethal force.
     `,
 
@@ -1197,9 +1170,8 @@ export const LiteralCodes: CodeType[] = [
   },
   {
     code: "Code Robert-Rifle/Robert-Slug",
-    title: "...",
+    title: "High-Risk Situation Requiring Patrol Rifle or Slug Ammunition",
     description: `
-      **High-Risk Situation Requiring Patrol Rifle or Slug Ammunition.**
       Code Robert, in its two variations (Rifle and Slug), signifies a request from a field unit for immediate assistance \
       from a patrol unit equipped with a rifle or slug ammunition. This indicates a high-risk situation where potentially lethal force might be necessary.
     `,
@@ -1252,9 +1224,9 @@ export const LiteralCodes: CodeType[] = [
 // ----------------------
 function FormatTD(Input: TDSType[number]) {
   if (typeof Input === "string") {
-    return Dedent(Input.replace(/\s{2,}/g, " "));
+    return Dedent(Input).replace(/[ \t]{2,}/g, " ");
   } else {
-    Input.description = Dedent(Input.description.replace(/\s{2,}/g, " "));
+    Input.description = Dedent(Input.description).replace(/[ \t]{2,}/g, " ");
     if (!Input.title.startsWith("**")) {
       if (Input.title.match(/\(.+\)/)) {
         const TMs = Input.title.match(/(.+) \**\((.+)\)\**/);
@@ -1267,9 +1239,14 @@ function FormatTD(Input: TDSType[number]) {
   }
 }
 
-LiteralCodes.forEach((Code) => {
-  Code.description = Dedent(Code.description);
-  Code.usage_contexts?.forEach((Ct) => FormatTD(Ct));
-  Code.usage_examples?.forEach((Ex) => FormatTD(Ex));
-  Code.notes?.forEach((Note) => FormatTD(Note));
-});
+function FormatCodes(Codes: CodeType[]) {
+  Codes.forEach((Code) => {
+    Code.description = Dedent(Code.description).replace(/[ \t]{2,}/g, " ");
+    Code.usage_contexts?.forEach((Ct) => FormatTD(Ct));
+    Code.usage_examples?.forEach((Ex) => FormatTD(Ex));
+    Code.notes?.forEach((Note) => FormatTD(Note));
+  });
+}
+
+FormatCodes(LiteralCodes);
+FormatCodes(TenCodes);
