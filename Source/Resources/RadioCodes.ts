@@ -221,6 +221,37 @@ export const TenCodes: CodeType[] = [
       },
     ],
   },
+  {
+    code: "Code 10-80",
+    title: "Pursuit in Progress",
+    description: `
+      **As commonly used:**
+      Code 10-80 is used to signal that a pursuit is in progress, typically when law enforcement officers are actively chasing a suspect vehicle.
+    `,
+
+    usage_contexts: [
+      "During a vehicle pursuit of a fleeing suspect.",
+      "When a suspect refuses to stop after being instructed by law enforcement, necessitating a pursuit.",
+    ],
+
+    notes: [
+      "Ten-Eighty initiates a heightened state of alert for nearby units, often prompting backup or additional units to join the pursuit.",
+      "While not a universal or standard code across all departments, it is commonly used by many agencies to indicate active vehicle pursuit.",
+    ],
+
+    usage_examples: [
+      {
+        title: "Officer:",
+        description:
+          "Dispatch, 10-80 in progress. Suspect vehicle heading south on justice avenue, refusing to pull over.",
+      },
+      {
+        title: "Dispatch:",
+        description:
+          "10-4. Units in the vicinity, respond to assist. An airship is en route for aerial support.",
+      },
+    ],
+  },
 ];
 
 export const ElevenCodes: CodeType[] = [];
