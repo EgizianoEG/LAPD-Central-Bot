@@ -39,7 +39,190 @@ export interface CodeType {
   references?: string[];
 }
 
-export const TenCodes: CodeType[] = [];
+export const TenCodes: CodeType[] = [
+  {
+    code: "Code 10-4",
+    title: "Message Received, understood, or acknowledged",
+    description: `
+      Used to acknowledge that a message has been received and understood. It's a common way to confirm receipt of information or instructions.
+    `,
+
+    notes: [
+      "Although `10-4` is a universal code, some agencies, like the LAPD, prefer to use plain language like 'Copy' or 'Affirmative' instead. This is why you might not hear this ten-code used as frequently among LAPD officers.",
+    ],
+
+    usage_contexts: [
+      "Responding to dispatch instructions.",
+      "Confirming receipt of an update or directive from a fellow officer.",
+      "Acknowledging any general communication where no further elaboration is needed.",
+    ],
+
+    usage_examples: [
+      {
+        title: "Dispatch:",
+        description: "Unit 7 Adam 23, respond to 123 Main Street for a burglary in progress.",
+      },
+      {
+        title: "Officer:",
+        description: "10-4, en route code 3.",
+      },
+    ],
+
+    references: ["[Police Radar Information Center](https://copradar.com/tencodes/)"],
+  },
+  {
+    code: "Code 10-7",
+    title: "Out of Service",
+    description: `
+      This code is used to indicate that a unit is out of service or unavailable for active duty. \
+      When this code is broadcasted, it means that an officer or unit is temporarily off duty and cannot respond to calls or emergencies. \
+      It could refer to a break, administrative duties, or the end of a shift.
+    `,
+
+    usage_contexts: [
+      "During periods of vehicle maintenance or equipment failure.",
+      "At the end of a shift or patrol when the officer is signing off for the day.",
+      "When an officer needs to take a break or handle personal matters during a shift.",
+      "While handling administrative tasks or paperwork that take the unit out of service.",
+    ],
+
+    notes: [
+      "Once an officer declares `10-7`, they are no longer expected to respond to calls for assistance until they return to service.",
+      "In some situations, officers might need to provide additional details, such as the reason for going out of service or an estimated return time.",
+      "Officers must inform dispatch when they go back into service, typically using Code 10-8 (In Service).",
+    ],
+
+    usage_examples: [
+      {
+        title: "Officer:",
+        description: "Dispatch, unit 1 Lincoln 12, code 10-7, vehicle maintenance required.",
+      },
+      {
+        title: "Dispatch:",
+        description:
+          "Copy, unit 1L-12. Do you need DOT or a maintenance crew sent to your location?",
+      },
+    ],
+  },
+  {
+    code: "Code 10-8",
+    title: "In Service and Available for Assignment",
+    description: `
+      Code 10-8 signifies that an officer or unit is back in service and available for calls or assignments. \
+      It is the opposite of 10-7 (Out of Service). When broadcasted, it informs dispatch that the officer is ready to respond to new tasks or emergencies.
+    `,
+
+    usage_contexts: [
+      "At the beginning of a new patrol shift.",
+      "After returning from a break or completing paperwork/administrative duties.",
+      "When an officer has completed an investigation or handled a previous call.",
+    ],
+
+    usage_examples: [
+      {
+        title: "Officer:",
+        description: "Dispatch, Unit 7A-64, Code 10-8, back on patrol.",
+      },
+      {
+        title: "Dispatch:",
+        description: "10-4, Unit 7 Adam 64.",
+      },
+    ],
+  },
+  {
+    code: "Code 10-20",
+    title: "Location Request or Report",
+    description: `
+      This code is used to request or provide a location. It's a quick way to get an officer's current position or to \
+      report your own location to dispatch or other units during active calls, investigations, or pursuits.
+    `,
+
+    usage_contexts: [
+      "When dispatch needs to verify the location of an officer or unit for assignment or backup.",
+      "During incidents where the exact position of officers is critical (e.g., pursuits or emergencies).",
+      "Officers may use it to update their location as they move to new areas or investigate scenes.",
+    ],
+
+    usage_examples: [
+      {
+        title: "Officer 1:",
+        description:
+          "Dispatch, 10-20 is the intersection of Broadway and Elm. Awaiting further instructions.",
+      },
+      {
+        title: "Officer 2:",
+        description:
+          "Be advised, suspect heading northbound. My 10-20 is Westbrook Ave, heading towards the freeway.",
+      },
+    ],
+  },
+  {
+    code: "Code 10-23",
+    title: "Arrived at Scene",
+    description: `
+      Code 10-23 is used by officers to inform dispatch that they have arrived at the location of an incident or call. \
+      This ensures that dispatch and other units are aware that the officer is now on-site and can begin handling the situation.
+    `,
+
+    usage_contexts: [
+      "When an officer arrives at the scene of an incident after being dispatched.",
+      "During ongoing investigations or calls where multiple units are responding, and each unit needs to confirm their arrival.",
+      "In situations where officer safety is a concern, broadcasting 10-23 ensures that other officers and dispatch know the exact moment the officer has arrived.",
+    ],
+
+    usage_examples: [
+      {
+        title: "Officer:",
+        description:
+          "Dispatch, 10-23 at the traffic collision site, need medical assistance, over.",
+      },
+      {
+        title: "Dispatch:",
+        description: "10-4, a bus has been directed to the site. ETA is 4 minutes.",
+      },
+    ],
+  },
+  {
+    code: "Code 10-28",
+    title: "Vehicle Registration Check",
+    description: `
+      Code 10-28 is used when an officer requests information about a vehicle's registration status, including details such as the owner's name, \
+      registration validity, and any flags for issues like stolen vehicles.
+      
+      This code is often used during traffic stops or vehicle-related investigations \
+      to ensure the vehicle is properly registered and to check for any violations or warnings related to it.
+    `,
+
+    usage_contexts: [
+      "When identifying abandoned or suspicious vehicles.",
+      "During traffic stops when the officer needs to verify the vehicle’s registration.",
+      "In investigations where a vehicle is suspected to be involved in illegal activity.",
+    ],
+
+    notes: [
+      "Officers typically provide the license plate number along with the 10-28 request to retrieve the registration details.",
+      "In some cases, if a vehicle is found to be stolen or improperly registered, further actions such as impounding the vehicle or arresting the driver may follow.",
+    ],
+
+    usage_examples: [
+      {
+        title: "Officer:",
+        description:
+          "Dispatch, unit 7A-82 proceeding, can I get a 10-28 on a silver sedan, license plate XYT456?",
+      },
+      {
+        title: "Dispatch:",
+        description: "Copy, unit 7A-82. Stand by for the 10-28.",
+      },
+      {
+        title: "Dispatch:",
+        description:
+          "Unit 7A-82, 10-28 returns as registered to John Doe, valid registration, no flags.",
+      },
+    ],
+  },
+];
+
 export const ElevenCodes: CodeType[] = [];
 export const LiteralCodes: CodeType[] = [
   {
