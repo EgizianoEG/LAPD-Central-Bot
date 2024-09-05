@@ -1,6 +1,8 @@
-import { AutocompleteInteraction, SlashCommandBuilder } from "discord.js";
+import { AutocompleteInteraction, EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import { TenCodes, ElevenCodes, LiteralCodes } from "@Resources/RadioCodes.js";
-import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { PoliceCodeToWords, TitleCase } from "@Utilities/Strings/Converters.js";
+import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { Embeds } from "@Config/Shared.js";
 import AutocompleteRadioCode from "@Utilities/Autocompletion/RadioCode.js";
 const AllCodes = [...TenCodes, ...ElevenCodes, ...LiteralCodes];
 // ---------------------------------------------------------------------------------------
@@ -8,15 +10,22 @@ const AllCodes = [...TenCodes, ...ElevenCodes, ...LiteralCodes];
 async function Callback(Interaction: SlashCommandInteraction) {
   const CodeTyped = Interaction.options.getString("code", true);
   const CodeFound = AllCodes.find(
-    (Code) => Code.code.toLowerCase() === CodeTyped.match(/(.+) \(.+\)/)?.[1].toLowerCase()
+    (CodeObj) => CodeObj.code.toLowerCase() === CodeTyped.match(/(.+) \(.+\)/)?.[1].toLowerCase()
   );
 
   if (!CodeFound) {
     return new ErrorEmbed().useErrTemplate("UnknownRadioCode").replyToInteract(Interaction, true);
   }
 
-  const Title = CodeFound.title.match(/\w+/) ? CodeFound.title : CodeFound.code;
-  const ResponseEmbed = new InfoEmbed().setTitle(Title).setDescription(CodeFound.description);
+  const Title = PoliceCodeToWords(CodeFound.code);
+  const ResponseEmbed = new EmbedBuilder()
+    .setDescription(CodeFound.description)
+    .setColor(Embeds.Colors.Info)
+    .setTitle(Title);
+
+  if (CodeFound.title) {
+    ResponseEmbed.setTitle(`${Title} — ${TitleCase(CodeFound.title, true)}`);
+  }
 
   if (CodeFound.usage_contexts?.length) {
     const UContexts = CodeFound.usage_contexts.map((u) => {
@@ -74,12 +83,12 @@ async function Callback(Interaction: SlashCommandInteraction) {
     });
   }
 
-  return Interaction.reply({ embeds: [ResponseEmbed] });
+  return Interaction.reply({ embeds: [ResponseEmbed], ephemeral: true });
 }
 
 async function Autocomplete(Interaction: AutocompleteInteraction) {
   const { name, value } = Interaction.options.getFocused(true);
-  const Suggestions = name === "code" ? AutocompleteRadioCode(value) : [];
+  const Suggestions = name === "code" ? AutocompleteRadioCode(value.trim()) : [];
   return Interaction.respond(Suggestions);
 }
 

@@ -1,10 +1,12 @@
 import type { ApplicationCommandOptionChoiceData } from "discord.js";
 import { TenCodes, ElevenCodes, LiteralCodes } from "@Resources/RadioCodes.js";
+import { PoliceCodeToWords } from "@Utilities/Strings/Converters.js";
 
 const AllCodes = [...LiteralCodes, ...TenCodes, ...ElevenCodes];
 const CodeNames: string[] = [];
 for (const Code of AllCodes) {
-  CodeNames.push(`${Code.code} (${Code.title})`);
+  const CodeInWords = PoliceCodeToWords(Code.code);
+  CodeNames.push(`${Code.code} (${Code.code === CodeInWords ? "..." : CodeInWords})`);
 }
 
 /**
@@ -19,6 +21,12 @@ export default function AutocompleteRadioCode(
 
   if (Typed.match(/^\s*$/)) {
     Suggestions = CodeNames;
+  } else if (Typed.match(/^C[\d-]+$/i)) {
+    const CodeNumber = Typed.slice(1);
+    const CodeName = `Code ${CodeNumber}`;
+    Suggestions = CodeNames.filter((Name) => {
+      return Name.toLowerCase().includes(CodeName.toLowerCase());
+    });
   } else {
     Suggestions = CodeNames.filter((Name) => {
       return Name.toLowerCase().includes(Typed.toLowerCase());
