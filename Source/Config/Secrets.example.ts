@@ -29,7 +29,7 @@ export const MongoDB: Secrets.MongoDB = {
 
 export const GoogleAPI: Secrets.GoogleAPI = {
   ActivityReportTempSpreadsheetID:
-    Env.ACTIVITY_REPORT_TEMP_SPREADSHEET_ID ?? "1Ew_ZG2XBvOcYguEU5zUj_dJJnktBJ-x41K6y6wdMXLI",
+    Env.ACTIVITY_REPORT_TEMP_SPREADSHEET_ID ?? "1rTaUjFSqP4g0CdjCuZpDD9kmfc5ZFjwmhp5cq2xJHL0",
   ServiceAccountEmail:
     Env.GAPI_SERVICE_ACCOUNT_EMAIL ?? "lapd-central-bot@project.iam.gserviceaccount.com",
   PrivateKey:
