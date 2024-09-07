@@ -56,14 +56,17 @@ const LeaveOfAbsenceSchema = new Schema<
     required: true,
 
     default() {
-      return addMilliseconds(this.review_date || this.request_date, this.duration);
+      return addMilliseconds(
+        this.review_date || this.request_date,
+        this.duration + (this.extension_req?.duration || 0)
+      );
     },
 
     validate: [
-      function (this: LeaveDocument, d: Date) {
-        return isAfter(d, this.review_date || this.request_date);
+      function (this: LeaveDocument, end_date: Date) {
+        return isAfter(end_date, this.review_date || this.request_date);
       },
-      "End date must be after the requested date of a LOA.",
+      "The end date must be after the review and request dates of a leave of absence. Value received: {VALUE}.",
     ],
   },
 
@@ -72,10 +75,10 @@ const LeaveOfAbsenceSchema = new Schema<
     default: null,
     required: false,
     validate: [
-      function (this: LeaveDocument, d: Date) {
-        return d === null ? true : isAfter(d, this.review_date || this.request_date);
+      function (this: LeaveDocument, date: Date) {
+        return date === null ? true : isAfter(date, this.review_date || this.request_date);
       },
-      "Early end date must be after the requested date of a LOA.",
+      "The early end date must be after the review and request date of a LOA. Value received: {VALUE}.",
     ],
   },
 
@@ -92,7 +95,7 @@ const LeaveOfAbsenceSchema = new Schema<
     required: false,
     validate: [
       (s: string | null) => s === null || /^\d{15,22}:\d{15,22}$/.test(s),
-      "Invalid format for request message id. Format: <requests_channel>:<request_msg_id>.",
+      "Invalid format for request message id; received: {VALUE}. Format: <requests_channel>:<request_msg_id>.",
     ],
   },
 
@@ -113,7 +116,7 @@ const LeaveOfAbsenceSchema = new Schema<
         required: false,
         validate: [
           (s: string | null) => s === null || /^\d{15,22}:\d{15,22}$/.test(s),
-          "Invalid format for request message id. Format: <requests_channel>:<request_msg_id>.",
+          "Invalid format for request message id; received: {VALUE}. Format: <requests_channel>:<request_msg_id>.",
         ],
       },
 
@@ -122,7 +125,7 @@ const LeaveOfAbsenceSchema = new Schema<
         required: true,
         validate: [
           (d: number) => d <= milliseconds({ months: 1 }) && d >= milliseconds({ hours: 12 }),
-          "Extended duration must be between 12 hours and 30 days (1 months).",
+          "Extended duration must be between 12 hours and 30 days (1 months). Duration received: {VALUE}.",
         ],
       },
 
@@ -223,7 +226,7 @@ const LeaveOfAbsenceSchema = new Schema<
     type: String,
     required: true,
     default: "Pending",
-    enum: ["Pending", "Approved", "Denied", "Cancelled", "EndedEarly"],
+    enum: ["Pending", "Approved", "Denied", "Cancelled"],
     validate: [
       function (this: LeaveDocument, s: string) {
         if (this.review_date) {
@@ -296,15 +299,13 @@ LeaveOfAbsenceSchema.virtual("total_duration_hr").get(function (this: LeaveDocum
   return DurationHumanize(this.duration);
 });
 
-LeaveOfAbsenceSchema.pre("save", function PreProfileLOASave(next) {
-  if (this.status === "Pending" || this.status === "Cancelled") next();
-  this.end_date = new Date(
-    addMilliseconds(
-      addMilliseconds(this.review_date || this.request_date, this.extension_req?.duration || 0),
-      this.duration
-    )
+LeaveOfAbsenceSchema.pre("validate", function PreLeaveValidate() {
+  if (this.status === "Pending" || this.status === "Cancelled") return;
+
+  this.end_date = addMilliseconds(
+    this.review_date || this.request_date,
+    this.duration + (this.extension_req?.duration || 0)
   );
-  next();
 });
 
 LeaveOfAbsenceSchema.methods.getUpToDate = async function (this: LeaveDocument) {

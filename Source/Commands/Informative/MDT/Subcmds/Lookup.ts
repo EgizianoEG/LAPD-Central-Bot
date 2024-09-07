@@ -73,7 +73,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
       inline: true,
       name: "Recent Arrest",
       value: Dedent(`
-        - **Booking:** \`${RecentArr._id}\`
+        - **Booking:** [\`${RecentArr._id}\`](${channelLink(Interaction.channelId)})
         - **Made On:** ${time(RecentArr.made_on, "R")}
         - **Mugshot:** [See Here ⎋](${RecentArr.arrestee.mugshot_url})
         - **Arresting Officer:** ${userMention(RecentArr.arresting_officer.discord_id)}
@@ -103,7 +103,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
       inline: true,
       name: "Recent Citation",
       value: Dedent(`
-        - **Num:** [\`${RecentCit.num}\`](${RecentCit.img_url})
+        - **Num:** [\`${RecentCit.num}\`](${RecentCit.img_url || channelLink(Interaction.channelId)})
         - **Type:** \`${RecentCit.type}\`
         - **Issued:** ${time(RecentCit.issued_on, "R")}
         - **Citing Officer:** ${userMention(RecentCit.citing_officer.discord_id)}
