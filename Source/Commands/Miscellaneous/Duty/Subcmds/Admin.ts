@@ -349,7 +349,7 @@ async function PromptShiftModification(
   const CompCollector = Prompt.createMessageComponentCollector({
     filter: (BInteract) => HandleCollectorFiltering(Interact, BInteract),
     componentType: ComponentType.StringSelect,
-    time: 5 * 60_000,
+    time: 10 * 60_000,
   });
 
   CompCollector.on("collect", async (SMInteract: StringSelectMenuInteraction<"cached">) => {
@@ -1084,7 +1084,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const ActionCollector = RespMessage.createMessageComponentCollector({
     filter: (BI) => HandleCollectorFiltering(Interaction, BI),
     componentType: ComponentType.Button,
-    time: 8 * 60_000,
+    time: 10 * 60_000,
   });
 
   ActionCollector.on("collect", async (ButtonInteract) => {

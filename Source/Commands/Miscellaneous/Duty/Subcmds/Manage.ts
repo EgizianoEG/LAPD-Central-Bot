@@ -296,7 +296,7 @@ async function HandleNonActiveShift(
     const RecInteract = await PromptMessage.awaitMessageComponent({
       componentType: ComponentType.Button,
       filter: (Interact) => Interact.user.id === CmdInteract.user.id,
-      time: 10 * 60 * 1000,
+      time: 15 * 60 * 1000,
     });
 
     const BtnCustomId = RecInteract.customId;
@@ -393,7 +393,7 @@ async function HandleOnBreakShift(
     const RecInteract = await PromptMessage.awaitMessageComponent({
       componentType: ComponentType.Button,
       filter: (Interact) => Interact.user.id === CmdInteract.user.id,
-      time: 10 * 60 * 1000,
+      time: 15 * 60 * 1000,
     });
 
     const BtnCustomId = RecInteract.customId;
@@ -507,7 +507,7 @@ async function HandleActiveShift(
     const RecInteract = await PromptMessage.awaitMessageComponent({
       componentType: ComponentType.Button,
       filter: (Interact) => Interact.user.id === CmdInteract.user.id,
-      time: 10 * 60 * 1000,
+      time: 15 * 60 * 1000,
     });
 
     const BtnCustomId = RecInteract.customId;

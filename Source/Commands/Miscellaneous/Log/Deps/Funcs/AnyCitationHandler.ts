@@ -104,7 +104,7 @@ export default async function AnyCitationCallback(
     const ActionCollector = ResponseMsg.createMessageComponentCollector({
       filter: (BI) => BI.user.id === Interaction.user.id,
       componentType: ComponentType.Button,
-      time: 5 * 60_000,
+      time: 8 * 60_000,
     });
 
     ActionCollector.on("collect", async (BInteract) => {
@@ -441,7 +441,7 @@ async function OnModalSubmission(
   const ButtonResponse = await ConfirmationMsg.awaitMessageComponent({
     filter: (BI) => BI.user.id === CmdInteract.user.id,
     componentType: ComponentType.Button,
-    time: 5 * 60_000,
+    time: 8 * 60_000,
   }).catch((Err) => HandleActionCollectorExceptions(Err, DisablePrompt));
 
   try {

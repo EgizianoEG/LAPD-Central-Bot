@@ -282,7 +282,7 @@ async function OnChargesModalSubmission(
 
   const ComponentCollector = ConfirmationMsg.createMessageComponentCollector({
     filter: (Interact) => HandleCollectorFiltering(CmdInteract, Interact),
-    time: 5 * 60_000,
+    time: 8 * 60_000,
   });
 
   ComponentCollector.on("collect", async (ReceivedInteract) => {
@@ -425,7 +425,7 @@ async function CmdCallback(Interaction: SlashCommandInteraction<"cached">, Repor
 
   try {
     await Interaction.showModal(AdditionalDataModal);
-    await Interaction.awaitModalSubmit({ time: 5 * 60_000, filter: ModalFilter }).then(
+    await Interaction.awaitModalSubmit({ time: 8 * 60_000, filter: ModalFilter }).then(
       async (Submission) => {
         await OnChargesModalSubmission(Interaction, CmdOptions, Reporter, Submission);
       }
