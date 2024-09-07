@@ -164,12 +164,13 @@ export default async function GetActivityReportData(
         { userEnteredValue: { numberValue: Record.arrests } },
         { userEnteredValue: { numberValue: Record.arrests_assisted } },
         { userEnteredValue: { numberValue: Record.citations } },
-        { userEnteredValue: { boolValue: Record.quota_met } },
-        { userEnteredValue: { boolValue: LeaveActive }, note: LeaveNote },
+        { userEnteredValue: { stringValue: Record.quota_met ? "Yes" : "No" } },
+        { userEnteredValue: { stringValue: LeaveActive ? "Yes" : "No" }, note: LeaveNote },
       ],
     };
   });
 
+  // Add remaining members whose data was not available on the database to the report.
   Opts.members.forEach((Member) => {
     Records.push({
       values: [
@@ -180,8 +181,8 @@ export default async function GetActivityReportData(
         { userEnteredValue: { numberValue: 0 } },
         { userEnteredValue: { numberValue: 0 } },
         { userEnteredValue: { numberValue: 0 } },
-        { userEnteredValue: { boolValue: !Opts.quota_duration } },
-        { userEnteredValue: { boolValue: false } },
+        { userEnteredValue: { stringValue: Opts.quota_duration ? "No" : "Yes" } },
+        { userEnteredValue: { stringValue: "No" } },
       ],
     });
   });
