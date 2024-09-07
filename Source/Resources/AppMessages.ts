@@ -711,4 +711,11 @@ export const InfoMessages = {
     Title: `${Emojis.Loading}\u{2000}Deleting Leave Records...`,
     Description: "Please wait, this process might take a few seconds to complete.",
   },
+
+  CreatingActivityReport: {
+    Thumb: null,
+    Title: `${Emojis.Loading}\u{2000}Creating Report...`,
+    Description:
+      "Please wait while your activity report is being created. This process may take a few seconds to complete.",
+  },
 };

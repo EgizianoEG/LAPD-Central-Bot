@@ -20,6 +20,7 @@ export default async function CreateShiftReport(
   );
 
   const FirstSheetName = GetFirstSheetName(new Date(), Opts.after);
+  const RowEndIndex = ReportData.records.length === 1 ? 13 : ReportData.records.length + 10;
   const CSpreadsheet = await SheetsAPI.spreadsheets.get({
     spreadsheetId: Copy.data.id!,
   });
@@ -29,16 +30,16 @@ export default async function CreateShiftReport(
     requestBody: {
       requests: [
         // Sheet 1: Detailed Report
-        // 1. Set guild name and thumbnail into the report:
+        // 1. Set the guild name:
         {
           updateCells: {
             fields: "userEnteredValue",
             range: {
               sheetId: CSpreadsheet.data.sheets![0].properties!.sheetId,
-              startRowIndex: 1, // Refers to row 4
-              endRowIndex: 2, // Up to row 5
+              startRowIndex: 1, // Refers to row 2
+              endRowIndex: 2, // Up to row 3
               startColumnIndex: 2, // Column 'C'
-              endColumnIndex: 3, // Up to column 'E'
+              endColumnIndex: 3, // Up to column 'D'
             },
             rows: [
               {
@@ -78,16 +79,16 @@ export default async function CreateShiftReport(
               sheetId: CSpreadsheet.data.sheets![0].properties!.sheetId,
               dimension: "ROWS",
               startIndex: 11, // Insert after the 11th row (0-based index)
-              endIndex: ReportData.records.length === 1 ? 13 : ReportData.records.length + 10,
+              endIndex: RowEndIndex,
             },
           },
         },
 
-        // 3. Set the data for the report:
+        // 3. Set the data for the report, including any notes on cells:
         {
           updateCells: {
             rows: ReportData.records,
-            fields: "userEnteredValue",
+            fields: "userEnteredValue,note",
             start: {
               sheetId: CSpreadsheet.data.sheets![0].properties!.sheetId,
               rowIndex: 10,
@@ -96,14 +97,32 @@ export default async function CreateShiftReport(
           },
         },
 
+        // 4. Set the quota field:
         {
-          updateSpreadsheetProperties: {
-            fields: "title",
-            properties: {
-              title: SpreadsheetTitle,
+          updateCells: {
+            fields: "userEnteredValue",
+            range: {
+              sheetId: CSpreadsheet.data.sheets![0].properties!.sheetId,
+              startRowIndex: 7, // Refers to row 8
+              endRowIndex: 8, // Up to row 9
+              startColumnIndex: 11, // Column 'L'
+              endColumnIndex: 12, // Up to column 'M'
             },
+            rows: [
+              {
+                values: [
+                  {
+                    userEnteredValue: {
+                      stringValue: ReportData.quota,
+                    },
+                  },
+                ],
+              },
+            ],
           },
         },
+
+        // 5. Set the first sheet title:
         {
           updateSheetProperties: {
             fields: "title",
@@ -114,16 +133,27 @@ export default async function CreateShiftReport(
           },
         },
 
+        // 6. Set the spreadsheet title:
+        {
+          updateSpreadsheetProperties: {
+            fields: "title",
+            properties: {
+              title: SpreadsheetTitle,
+            },
+          },
+        },
+
         // Sheet 2: Statistics
+        // 1. Set the total time field:
         {
           updateCells: {
             fields: "userEnteredValue",
             range: {
               sheetId: CSpreadsheet.data.sheets![1].properties!.sheetId,
               startRowIndex: 3, // Refers to row 4
-              endRowIndex: 5, // Up to row 5
+              endRowIndex: 5, // Up to row 6
               startColumnIndex: 2, // Column 'C'
-              endColumnIndex: 5, // Up to column 'E'
+              endColumnIndex: 5, // Up to column 'F'
             },
             rows: [
               {
@@ -138,15 +168,17 @@ export default async function CreateShiftReport(
             ],
           },
         },
+
+        // 2. Set the total shifts field:
         {
           updateCells: {
             fields: "userEnteredValue",
             range: {
               sheetId: CSpreadsheet.data.sheets![1].properties!.sheetId,
               startRowIndex: 3, // Refers to row 4
-              endRowIndex: 5, // Refers to up to row 5
+              endRowIndex: 5, // Refers to up to row 6
               startColumnIndex: 1, // Refers to column B
-              endColumnIndex: 2, // Up to column B
+              endColumnIndex: 2, // Up to column C
             },
             rows: [
               {
@@ -203,6 +235,6 @@ function GetFirstSheetName(EndDate: Date, StartDate?: Date | null): string {
 
   const IsDifferentYear = StartDate.getFullYear() !== EndDate.getFullYear();
   const FPortion = format(StartDate, `MMMM do${IsDifferentYear ? ", yyyy" : ""}`);
-  const SPortion = format(EndDate, "MMMM do");
+  const SPortion = format(EndDate, "MMMM do 'at' p O");
   return `Report: ${FPortion} — ${SPortion}`;
 }

@@ -828,7 +828,18 @@ export namespace AggregateResults {
     display_name: string;
     total_shifts: number;
     total_time: T;
-    loa_active: boolean;
+
+    recent_loa: Pick<
+      LeaveOfAbsence.LeaveOfAbsenceDocument,
+      | "status"
+      | "request_date"
+      | "review_date"
+      | "end_date"
+      | "reviewed_by"
+      | "early_end_date"
+      | "extension_req"
+    > | null;
+
     quota_met: boolean;
 
     /** Total number of citations issued. */

@@ -11,7 +11,6 @@ import {
 import { differenceInMilliseconds, isAfter, milliseconds } from "date-fns";
 import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { IsValidShiftTypeName } from "@Utilities/Other/Validators.js";
-import { Emojis } from "@Config/Shared.js";
 
 import * as Chrono from "chrono-node";
 import Dedent from "dedent";
@@ -94,13 +93,10 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
       .replyToInteract(CmdInteraction, true, false);
   }
 
-  await new InfoEmbed()
-    .setThumbnail(null)
-    .setTitle(Emojis.Loading + "\u{2000}" + "Creating Report...")
-    .setDescription(
-      "This may take a few moments. Please wait while your activity report is being created."
-    )
-    .replyToInteract(CmdInteraction, true, false);
+  await CmdInteraction.reply({
+    embeds: [new InfoEmbed().useInfoTemplate("CreatingActivityReport")],
+    ephemeral: false,
+  });
 
   const ReportSpredsheetURL = await CreateShiftReport({
     guild: CmdInteraction.guild,
