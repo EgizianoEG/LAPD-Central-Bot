@@ -13,11 +13,11 @@ const RepoURL = "https://github.com/EgizianoEG/LAPD-Central-Bot";
 async function Callback(Client: DiscordClient, Interaction: SlashCommandInteraction) {
   await Interaction.deferReply();
 
-  const SupportServer = Client.guilds.cache.get(Discord.SupportGuildId ?? Discord.TestGuildId);
+  const SupportServer = Client.guilds.cache.get(Discord.SupportGuildId || "000");
   const SServerInvite =
     SupportServer?.invites.cache.find((Invite) => Invite.inviterId === Client.user.id) ??
     (await SupportServer?.invites
-      .create(SupportServer.rulesChannelId ?? SupportServer.afkChannelId ?? "[]")
+      .create(SupportServer.rulesChannelId ?? SupportServer.afkChannelId ?? "000")
       .catch(() => null));
 
   const AppDevsJoined = ListFormatter.format(Discord.BotDevs.map((Id) => `<@${Id}>`));
@@ -56,7 +56,7 @@ async function Callback(Client: DiscordClient, Interaction: SlashCommandInteract
     })
     .addFields({
       name: "Uptime",
-      value: AppUptime,
+      value: `around ${AppUptime}`,
       inline: true,
     })
     .addFields({
@@ -66,19 +66,22 @@ async function Callback(Client: DiscordClient, Interaction: SlashCommandInteract
     })
     .addFields({
       name: "Support Server",
-      value: SServerInvite ? `[Invite Link](${SServerInvite?.url})` : "[Unavailable]",
+      value: SServerInvite?.url ? `[Invite Link](${SServerInvite.url})` : "[Unavailable]",
       inline: true,
     })
     .addFields({
       name: "Github",
       value: `[Repository Link](${RepoURL})`,
       inline: true,
-    })
-    .addFields({
+    });
+
+  if (Discord.BotDevs.length) {
+    ResponseEmbed.addFields({
       name: "Contributors",
       value: AppDevsJoined,
       inline: false,
     });
+  }
 
   return Interaction.editReply({ embeds: [ResponseEmbed] });
 }
