@@ -23,7 +23,7 @@ const FineTemplate = await loadImage(TFCTemplateImgBuffer);
 const WarnTemplate = await loadImage(TWCTemplateImgBuffer);
 
 export async function GetFilledCitation<
-  Type extends "Warning" | "Fine",
+  Type extends "Warning" | "Fine" = "Warning" | "Fine",
   AsURL extends boolean | undefined = undefined,
 >(
   CitType: Type,
