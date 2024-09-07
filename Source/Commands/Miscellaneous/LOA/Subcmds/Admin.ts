@@ -137,6 +137,7 @@ function GetPanelEmbed(
       inline: true,
       name: "Pending Leave",
       value: Dedent(`
+        **Requested:** ${FormatTime(ActiveOrPendingLOA.request_date, "R")}
         **Starts On**: *once approved.*
         **Ends On**: around ${FormatTime(addMilliseconds(Interaction.createdAt, ActiveOrPendingLOA.duration), "d")}
         **Duration**: ${ActiveOrPendingLOA.duration_hr}
@@ -152,6 +153,7 @@ function GetPanelEmbed(
       inline: true,
       name: "Pending Extension",
       value: Dedent(`
+        **Requested:** ${FormatTime(ActiveOrPendingLOA.extension_req.date, "R")}**
         **LOA Started**: ${FormatTime(ActiveOrPendingLOA.review_date, "D")}
         **LOA Ends**: after extension, ${FormatTime(ActiveOrPendingLOA.end_date, "d")}
         **Duration**: ${ActiveOrPendingLOA.extended_duration_hr}
