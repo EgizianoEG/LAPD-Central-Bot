@@ -1,4 +1,6 @@
 import { ErrorMessages } from "@Resources/AppMessages.js";
+import { format as FormatString } from "node:util";
+
 export interface AppErrorOptions {
   /** Error code; defaults to `1`.
    *   - `0`: A fatal error,
@@ -21,6 +23,9 @@ export interface AppErrorOptions {
 
   /** A predefined template to use for title and message properties. */
   template?: keyof typeof ErrorMessages;
+
+  /** Additional arguments to use in formatting the error message. Different between templates. */
+  template_args?: any[];
 }
 
 export default class AppError extends Error {
@@ -36,15 +41,19 @@ export default class AppError extends Error {
    */
   constructor(Options: AppErrorOptions) {
     super(Options.message);
-    if (Options.template) {
-      this.title = ErrorMessages[Options.template].Title;
-      this.message = ErrorMessages[Options.template].Description;
-    }
 
     this.code = Options.code ?? this.code;
     this.title = Options.title ?? this.title;
     this.message = Options.message ?? this.message;
     this.is_showable = !!Options.showable;
+
+    if (Options.template) {
+      this.title = ErrorMessages[Options.template].Title;
+      this.message = ErrorMessages[Options.template].Description;
+      if (Options.template_args && this.message.match(/%[scdjifoO%]/)) {
+        this.message = FormatString(this.message, ...Options.template_args);
+      }
+    }
 
     if (Options.stack) {
       this.stack = Options.stack;
