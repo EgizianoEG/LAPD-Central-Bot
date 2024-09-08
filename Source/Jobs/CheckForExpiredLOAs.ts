@@ -6,7 +6,14 @@ import HandleLeaveRoleAssignment from "@Utilities/Other/HandleLeaveRoleAssignmen
 import LeaveOfAbsenceModel from "@Models/LeaveOfAbsence.js";
 import LOAEventLogger from "@Utilities/Classes/LOAEventLogger.js";
 
-async function AutodeleteGuildLogs(_: any, Client: DiscordClient) {
+/**
+ * Handle leave of absence expiration and role assignment if the `end_handled` property is still `false`.
+ * This will only handle leaves expired in the last 7 days or less to avoid false positives or very late responses.
+ * @param _
+ * @param Client
+ * @returns
+ */
+async function HandledExpiredLeaves(_: any, Client: DiscordClient) {
   const CurrentDate = new Date();
   const SevenDaysAgo = subDays(CurrentDate, 7);
   const LOAsHandled: string[] = [];
@@ -92,5 +99,5 @@ async function AutodeleteGuildLogs(_: any, Client: DiscordClient) {
 export default {
   cron_exp: "*/3 * * * *",
   cron_opts: { timezone: "America/Los_Angeles", runOnInit: true },
-  cron_func: AutodeleteGuildLogs as any,
+  cron_func: HandledExpiredLeaves as any,
 } as CronJobFileDefReturn;
