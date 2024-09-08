@@ -31,6 +31,8 @@ yarn-error.log
 # PM2 related
 pm2.ecosystem.config.*js
 ecosystem.config.*js
+!ecosystem.config.example.*js
+!pm2.ecosystem.config.example.*js
 
 # dotenv environment variable files
 *.env
