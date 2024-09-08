@@ -371,7 +371,8 @@ export const ErrorMessages = {
 
   ShiftVoidMismatch: {
     Title: "Shift Mismatch",
-    Description: "The current active shift does not match the shift being requested to be void.",
+    Description:
+      "The currently active shift does not match the shift you requested to void. You might want to contact a management person for assistance.",
   },
 
   /**
