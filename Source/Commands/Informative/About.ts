@@ -2,7 +2,9 @@ import { OAuth2Scopes, SlashCommandBuilder } from "discord.js";
 import { InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { Discord } from "@Config/Secrets.js";
 import Humanizer from "humanize-duration";
+
 const ListFormatter = new Intl.ListFormat("en");
+const AppAuthorId = "560396280497438731";
 const RepoURL = "https://github.com/EgizianoEG/LAPD-Central-Bot";
 // ---------------------------------------------------------------------------------------
 
@@ -20,8 +22,11 @@ async function Callback(Client: DiscordClient, Interaction: SlashCommandInteract
       .create(SupportServer.rulesChannelId ?? SupportServer.afkChannelId ?? "000")
       .catch(() => null));
 
-  const AppDevsJoined = ListFormatter.format(Discord.BotDevs.map((Id) => `<@${Id}>`));
-  const RunningVersion = process.env.version ?? process.env.npm_package_version ?? "[Unknown]";
+  const AppDevsJoined = ListFormatter.format(
+    Discord.BotDevs.filter((Id) => Id !== AppAuthorId).map((Id) => `<@${Id}>`)
+  );
+
+  const RunningAppVersion = process.env.version ?? process.env.npm_package_version ?? "[Unknown]";
   const AppInviteLink = Client.generateInvite({
     scopes: [OAuth2Scopes.Bot, OAuth2Scopes.ApplicationsCommands],
     permissions: [
@@ -46,12 +51,12 @@ async function Callback(Client: DiscordClient, Interaction: SlashCommandInteract
     )
     .addFields({
       name: "Author",
-      value: "<@560396280497438731>",
+      value: `<@${AppAuthorId}>`,
       inline: true,
     })
     .addFields({
       name: "Version",
-      value: RunningVersion,
+      value: RunningAppVersion,
       inline: true,
     })
     .addFields({
