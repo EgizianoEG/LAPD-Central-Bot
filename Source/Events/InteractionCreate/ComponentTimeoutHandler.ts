@@ -53,15 +53,15 @@ export default async function HandleAbandonedInteractions(
         custom_id: Interaction.customId,
         label: "Events:InteractionCreate:ComponentTimeoutHandler",
         message:
-          "Handling an unhandled message component interaction after around 2 seconds of no response.",
+          "Handling an unhandled message component interaction after around 2.5 seconds of no response.",
       });
 
       const TimeGap = differenceInMilliseconds(
         Interaction.createdAt.getTime(),
-        Interaction.message.createdAt.getTime()
+        Interaction.message.editedTimestamp || Interaction.message.createdAt.getTime()
       );
 
-      if (TimeGap >= 15 * 60 * 1000) {
+      if (TimeGap >= 10 * 60 * 1000) {
         try {
           const DisabledMsgComponents = Interaction.message.components.map((AR) => {
             return ActionRowBuilder.from({
@@ -86,18 +86,14 @@ export default async function HandleAbandonedInteractions(
           }
         } catch {
           // Ignored.
+          // There is no need to handle any errors output while
+          // trying to disable the message components or provide feedback.
         }
         return;
       }
 
-      if (OriginUserId && Interaction.user.id !== OriginUserId) {
-        await new UnauthorizedEmbed()
-          .useErrTemplate("UnauthorizedInteraction")
-          .replyToInteract(Interaction, true);
-      } else {
-        await Interaction.deferUpdate().catch(() => null);
-      }
+      await Interaction.deferUpdate().catch(() => null);
     } as () => void,
-    2.5 * 1000
+    2.35 * 1000
   );
 }
