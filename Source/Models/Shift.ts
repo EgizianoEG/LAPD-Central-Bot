@@ -60,6 +60,7 @@ const ShiftSchema = new Schema<
   type: {
     type: String,
     trim: true,
+    required: true,
     default: "Default",
   },
 
@@ -73,14 +74,37 @@ const ShiftSchema = new Schema<
     _id: false,
     default: {},
     type: {
-      breaks: [[Number, Number]],
       arrests: {
         type: Number,
         default: 0,
+        min: 0,
       },
+
       citations: {
         type: Number,
         default: 0,
+        min: 0,
+      },
+
+      breaks: {
+        type: [[Number, Number]],
+        default: [],
+        validate: {
+          validator(breaks) {
+            return (
+              Array.isArray(breaks) &&
+              breaks.every(
+                (item) =>
+                  Array.isArray(item) &&
+                  item.length === 2 &&
+                  typeof item[0] === "number" &&
+                  (item[1] === null || typeof item[1] === "number")
+              )
+            );
+          },
+          message:
+            "Each break must be an array with two elements: [start timestamp, end timestamp or null (null = break still active)]",
+        },
       },
     },
   },

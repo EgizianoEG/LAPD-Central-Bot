@@ -609,7 +609,7 @@ async function Callback(
           }
         );
       }
-    } else if (RecentAction === RecentShiftAction.BreakEnd && ShiftActive) {
+    } else if (RecentAction === RecentShiftAction.BreakEnd && ShiftActive?.hasBreaks()) {
       const EndedBreak = ShiftActive.events.breaks.findLast((v) => v[0] && v[1])!;
       BasePromptEmbed.setFields({
         name: "Current Shift",
@@ -621,7 +621,7 @@ async function Callback(
           ${ShiftActive.events.breaks.length > 1 ? `**Breaks Taken:** ${ShiftActive.events.breaks.length}` : ""}
         `),
       });
-    } else if (RecentAction === RecentShiftAction.BreakStart && ShiftActive) {
+    } else if (RecentAction === RecentShiftAction.BreakStart && ShiftActive?.hasBreakActive()) {
       const StartedBreak = ShiftActive.events.breaks.findLast((v) => !v[1])!;
       BasePromptEmbed.setFields({
         name: "Current Shift",
