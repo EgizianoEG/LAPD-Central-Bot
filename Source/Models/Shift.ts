@@ -83,7 +83,7 @@ const ShiftSchema = new Schema<Shifts.ShiftDocument, ShiftModelType, Shifts.Shif
 );
 
 ShiftSchema.set("_id", false);
-ShiftSchema.set("versionKey", false);
+ShiftSchema.set("optimisticConcurrency", true);
 
 ShiftSchema.virtual("on_duty_time").get(function () {
   return HumanizeDuration(this.durations.on_duty);

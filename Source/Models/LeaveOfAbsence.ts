@@ -242,7 +242,7 @@ const LeaveOfAbsenceSchema = new Schema<
 // ---------------------------------------------------------------------------------------
 // Helpers Definitions:
 // --------------------
-LeaveOfAbsenceSchema.set("versionKey", false);
+LeaveOfAbsenceSchema.set("optimisticConcurrency", true);
 LeaveOfAbsenceSchema.virtual("is_over").get(function (this: LeaveDocument) {
   return (
     this.status === "Approved" &&

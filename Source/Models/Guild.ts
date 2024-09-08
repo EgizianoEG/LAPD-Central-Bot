@@ -42,6 +42,6 @@ const GuildSchema = new Schema({
 });
 
 GuildSchema.set("_id", false);
-GuildSchema.set("versionKey", false);
+GuildSchema.set("optimisticConcurrency", true);
 
 export default model("Guild", GuildSchema);
