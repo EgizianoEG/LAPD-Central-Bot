@@ -103,7 +103,7 @@ const CommandObject: SlashCommandObject<any> = {
     .setDescription("Search for information regarding a radio code.")
     .addStringOption((Option) =>
       Option.setName("code")
-        .setDescription("The radio code name or title.")
+        .setDescription("The radio code to get information about.")
         .setMinLength(4)
         .setMaxLength(45)
         .setRequired(true)
