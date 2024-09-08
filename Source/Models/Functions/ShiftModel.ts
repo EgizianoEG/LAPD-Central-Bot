@@ -1,4 +1,5 @@
-import { CallbackWithoutResultAndOptionalError, Query } from "mongoose";
+import { CallbackWithoutResultAndOptionalError, Model, Query } from "mongoose";
+import { randomInt as RandomInteger } from "node:crypto";
 import { Shifts } from "@Typings/Utilities/Database.js";
 import ProfileModel from "@Models/GuildProfile.js";
 import AppError from "@Utilities/Classes/AppError.js";
@@ -48,59 +49,159 @@ export async function GetLatestVersion<GOIFailed extends boolean = false>(
   return GetUpdatedDocument(this, OldFallback, Silent);
 }
 
-export async function ShiftBreakStart(this: ThisType, timestamp: number = Date.now()) {
-  const DBDocument = await this.getLatestVersion(true, true);
+export async function StartNewShift(
+  this: Model<Shifts.ShiftDocument, unknown, Shifts.ShiftDocumentOverrides>,
+  opts: Omit<
+    Required<Pick<Shifts.ShiftDocument, "user" | "guild">> & Partial<Shifts.ShiftDocument>,
+    "end_timestamp"
+  >
+) {
+  const StartTimestamp = opts.start_timestamp || new Date();
+  const ShiftUniqueId =
+    opts._id || `${StartTimestamp.getTime()}${RandomInteger(10, 99)}`.slice(0, 15);
 
-  if (this.hasBreakActive()) {
+  const ActiveShift = await this.findOneAndUpdate(
+    { user: opts.user, guild: opts.guild, end_timestamp: null },
+    {
+      $setOnInsert: {
+        _id: ShiftUniqueId,
+        user: opts.user,
+        guild: opts.guild,
+        type: opts.type || "Default",
+        start_timestamp: StartTimestamp,
+        end_timestamp: null,
+      },
+    },
+    { upsert: true, new: true }
+  ).exec();
+
+  if (ActiveShift._id !== ShiftUniqueId && ActiveShift.end_timestamp === null) {
+    throw new AppError({
+      template: "ShiftAlreadyActive",
+      template_args: [ActiveShift.type],
+      showable: true,
+      code: 2,
+    });
+  }
+
+  return ActiveShift;
+}
+
+export async function ShiftBreakStart(this: ThisType, timestamp: number = Date.now()) {
+  const UpdateDocument = await this.$model()
+    .findOneAndUpdate(
+      {
+        _id: this._id,
+        end_timestamp: null,
+
+        // Negation; match if there is *no* active break already.
+        $nor: [
+          {
+            $expr: {
+              $eq: [
+                {
+                  $arrayElemAt: [
+                    {
+                      $arrayElemAt: ["$events.breaks", -1],
+                    }, // Get the last element of the breaks array
+                    1, // Access the second element of the last sub-array
+                  ],
+                },
+                null, // Check if it's null (active break)
+              ],
+            },
+          },
+        ], // Check if there is no active break
+      },
+      {
+        $push: { "events.breaks": [timestamp, null] },
+      },
+      { new: true }
+    )
+    .exec();
+
+  if (!UpdateDocument) {
     return Promise.reject(
       new AppError({
         title: ErrorTitle,
-        message:
-          "There is already an active break. Please end the current break before starting another.",
+        message: "An active break already exists or the shift is no longer active.",
         showable: true,
       })
     );
   }
 
-  DBDocument.events.breaks.push([timestamp, null]);
-  return DBDocument.save();
+  return UpdateDocument as ThisType;
 }
 
 export async function ShiftBreakEnd(this: ThisType, timestamp: number = Date.now()) {
-  const DBDocument = await this.getLatestVersion(true, true);
+  const UpdatedDocument = await this.$model()
+    .findOneAndUpdate(
+      {
+        _id: this._id,
+        end_timestamp: null,
+        $expr: {
+          $eq: [
+            {
+              $arrayElemAt: [
+                {
+                  $arrayElemAt: ["$events.breaks", -1],
+                }, // Get the last element of the breaks array
+                1, // Access the second element of the last sub-array
+              ],
+            },
+            null, // Check if it's null (active break)
+          ],
+        },
+      },
+      {
+        $set: { "events.breaks.$[elem].1": timestamp },
+      },
+      {
+        arrayFilters: [{ "elem.1": null }], // Update the first active break found
+        new: true,
+      }
+    )
+    .exec();
 
-  if (DBDocument.events.breaks.length) {
-    const BreakActive = this.events.breaks.findIndex(([, end]) => end === null);
-    if (BreakActive !== -1) {
-      DBDocument.events.breaks[BreakActive][1] = timestamp;
-      return DBDocument.save();
-    }
-  }
-
-  return Promise.reject(
-    new AppError({
-      title: ErrorTitle,
-      message: "There is no active break to end. Make sure to start a break before ending it.",
-      showable: true,
-    })
-  );
-}
-
-export async function ShiftEnd(this: ThisType, timestamp: Date | number = new Date()) {
-  const DBDocument = await this.getLatestVersion(true, true);
-
-  if (DBDocument.end_timestamp)
+  if (!UpdatedDocument) {
     return Promise.reject(
       new AppError({
         title: ErrorTitle,
         message:
-          "It appears that this shift has already ended. Make sure you start a new shift before you attempt to end it.",
+          "There is currently no active break to end. Please start a break before attempting to end it.",
         showable: true,
       })
     );
-  else DBDocument.end_timestamp = new Date(timestamp);
+  }
 
-  return DBDocument.save();
+  return UpdatedDocument as ThisType;
+}
+
+export async function ShiftEnd(this: ThisType, timestamp: Date | number = new Date()) {
+  const EndTimestamp = new Date(timestamp);
+  const UpdatedDocument = await this.$model()
+    .findOneAndUpdate(
+      {
+        _id: this._id,
+        end_timestamp: null,
+      },
+      { $set: { end_timestamp: EndTimestamp } },
+      { new: true }
+    )
+    .exec();
+
+  if (!UpdatedDocument) {
+    return Promise.reject(
+      new AppError({
+        title: ErrorTitle,
+        message:
+          "This shift may have already ended, or it might have been recently voided or deleted.",
+        showable: true,
+      })
+    );
+  }
+
+  return UpdatedDocument as ThisType;
 }
 
 export async function ResetShiftTime(this: ThisType, CurrentTimestamp: number = Date.now()) {

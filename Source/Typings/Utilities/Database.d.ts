@@ -140,6 +140,28 @@ export namespace Shifts {
     ShiftDocumentOverrides
   >;
 
+  interface ShiftModel extends Model<Shifts.ShiftDocument, unknown, Shifts.ShiftDocumentOverrides> {
+    /**
+     * Starts a new shift for a user in a specific guild, ensuring that no duplicate active shifts exist.
+     * This function atomically checks if the user already has an active shift (i.e., a shift without an `end_timestamp`)
+     * and creates a new shift document if none exists. If an active shift is found, it throws an error.
+     *
+     * @param opts - An object containing the data required to start a new shift.
+     *               - `user` (string, required): The id of the user starting the shift.
+     *               - `guild` (string, required): The id of the guild in which the shift is being started.
+     *               - `start_timestamp` (Date, optional): The timestamp when the shift started. Defaults to the current date and time
+     *                  (there might be time difference between local machine and the received interaction).
+     *               - `type` (string, optional): The type of shift. Defaults to `"Default"`.
+     *               - Additional fields from `Shifts.ShiftDocument` can be included except for the `end_timestamp`, but they are optional.
+     *
+     * @returns A promise that resolves to the newly created shift document.
+     * @throws {AppError} - If an active shift already exists for the user in the specified guild. The error contains a pre-formatted user-friendly message.
+     */
+    startNewShift(
+      opts: Required<Pick<Shifts.ShiftDocument, "user" | "guild">> & Partial<Shifts.ShiftDocument>
+    ): Promise<Shifts.HydratedShiftDocument<true>>;
+  }
+
   interface ShiftDurations {
     /**
      * The total duration (on-duty and on-break sum) for the shift in milliseconds.

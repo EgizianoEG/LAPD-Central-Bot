@@ -16,10 +16,11 @@ import {
 } from "discord.js";
 
 import { Types } from "mongoose";
-import { RandomString } from "@Utilities/Strings/Random.js";
+import { ErrorMessages } from "@Resources/AppMessages.js";
 import { Guilds, Shifts } from "@Typings/Utilities/Database.js";
 import { Embeds, Emojis } from "@Config/Shared.js";
 import { NavButtonsActionRow } from "@Utilities/Other/GetNavButtons.js";
+import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
 import { ErrorEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import HandleRoleAssignment from "@Utilities/Other/HandleShiftRoleAssignment.js";
@@ -27,7 +28,6 @@ import GetMainShiftsData from "@Utilities/Database/GetShiftsData.js";
 import ShiftActionLogger from "@Utilities/Classes/ShiftActionLogger.js";
 import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
 import GetShiftActive from "@Utilities/Database/GetShiftActive.js";
-import FunctionQueue from "@Utilities/Classes/FunctionQueue.js";
 import UserHasPerms from "@Utilities/Database/UserHasPermissions.js";
 import ShiftModel from "@Models/Shift.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
@@ -231,27 +231,12 @@ async function HandleShiftStartConfirmation(
 ) {
   if (!BtnInteract.deferred) await BtnInteract.deferUpdate();
   if (!BtnInteract.customId.startsWith(ShiftMgmtActions.ShiftOn)) return;
-
-  const ShiftActive = await GetShiftActive({
-    Interaction: CmdInteract,
-    UserOnly: true,
-  });
-
-  if (ShiftActive) {
-    return Promise.all([
-      Callback(CmdInteract),
-      new ErrorEmbed()
-        .useErrTemplate("ShiftAlreadyActive", ShiftActive.type)
-        .replyToInteract(BtnInteract, true, true, "followUp"),
-    ]);
-  }
-
   try {
-    const StartedShift = await ShiftModel.create({
+    const StartedShift = await ShiftModel.startNewShift({
       type: TargetShiftType,
       user: BtnInteract.user.id,
       guild: BtnInteract.guildId,
-      start_timestamp: BtnInteract.createdTimestamp,
+      start_timestamp: BtnInteract.createdAt,
     });
 
     await Promise.all([
@@ -260,11 +245,27 @@ async function HandleShiftStartConfirmation(
       HandleRoleAssignment("on-duty", BtnInteract.client, BtnInteract.guild, BtnInteract.user.id),
     ]);
   } catch (Err: any) {
+    const ErrorId = GetErrorId();
+    if (Err instanceof AppError && Err.is_showable) {
+      if (Err.title === ErrorMessages.ShiftAlreadyActive.Title) {
+        return Promise.all([
+          Callback(CmdInteract),
+          new ErrorEmbed().useErrClass(Err).replyToInteract(BtnInteract, true, true, "followUp"),
+        ]);
+      }
+
+      new ErrorEmbed()
+        .useErrClass(Err)
+        .setErrorId(ErrorId)
+        .replyToInteract(BtnInteract, true, true, "followUp");
+    }
+
     AppLogger.error({
       message: "An error occurred while creating a new shift record;",
       label: "Commands:Miscellaneous:Duty:Manage",
       user_id: BtnInteract.user.id,
       guild_id: BtnInteract.guildId,
+      error_id: ErrorId,
       stack: Err.stack,
     });
   }
@@ -273,8 +274,7 @@ async function HandleShiftStartConfirmation(
 async function HandleNonActiveShift(
   CmdInteract: SlashCommandInteraction<"cached">,
   MgmtPromptEmbed: EmbedBuilder,
-  MgmtShiftType: string,
-  ActionQueueId: string
+  MgmtShiftType: string
 ) {
   const ReplyMethod = CmdInteract.deferred || CmdInteract.replied ? "editReply" : "reply";
   const PromptEmbed = EmbedBuilder.from(MgmtPromptEmbed).setColor(
@@ -300,17 +300,10 @@ async function HandleNonActiveShift(
     });
 
     const BtnCustomId = RecInteract.customId;
-    const ActionQueueInstance = FunctionQueue.GetInstance(ActionQueueId);
     await RecInteract.deferUpdate();
 
     if (BtnCustomId.startsWith(ShiftMgmtActions.ShiftOn)) {
-      ActionQueueInstance.Enqueue(
-        HandleShiftStartConfirmation,
-        undefined,
-        CmdInteract,
-        RecInteract,
-        MgmtShiftType
-      );
+      await HandleShiftStartConfirmation(CmdInteract, RecInteract, MgmtShiftType);
     }
   } catch (Err: any) {
     if (Err.message.match(/reason: \w+Delete/)) return;
@@ -444,8 +437,9 @@ async function HandleShiftEnd(
   });
 
   if (UpdatedShift instanceof AppError) {
+    const ShiftExists = await ShiftModel.exists({ _id: ShiftActive._id });
     return Promise.allSettled([
-      Callback(CmdInteract, RecentShiftAction.End),
+      Callback(CmdInteract, ShiftExists ? RecentShiftAction.End : undefined),
       new ErrorEmbed()
         .useErrClass(UpdatedShift)
         .replyToInteract(ButtonInteract, true, true, "followUp"),
@@ -467,8 +461,7 @@ async function HandleShiftEnd(
 async function HandleActiveShift(
   CmdInteract: SlashCommandInteraction<"cached">,
   ShiftActive: ShiftDocument,
-  MgmtPromptEmbed: EmbedBuilder,
-  ActionQueueId: string
+  MgmtPromptEmbed: EmbedBuilder
 ) {
   const MgmtButtonComponents = GetManagementButtons(CmdInteract, ShiftActive);
   const PromptEmbed = EmbedBuilder.from(MgmtPromptEmbed).setColor(Embeds.Colors.ShiftOn);
@@ -496,7 +489,6 @@ async function HandleActiveShift(
   }
 
   const ReplyMethod = CmdInteract.deferred || CmdInteract.replied ? "editReply" : "reply";
-  const ActionQueueInstance = FunctionQueue.GetInstance(ActionQueueId);
   const PromptMessage = await CmdInteract[ReplyMethod]({
     fetchReply: true,
     components: [MgmtButtonComponents.updateButtons({ start: false, break: true, end: true })],
@@ -512,16 +504,11 @@ async function HandleActiveShift(
 
     const BtnCustomId = RecInteract.customId;
     await RecInteract.deferUpdate();
+
     if (BtnCustomId.startsWith(ShiftMgmtActions.ShiftBreakToggle)) {
-      ActionQueueInstance.Enqueue(
-        HandleShiftBreakStart,
-        undefined,
-        CmdInteract,
-        ShiftActive,
-        RecInteract
-      );
+      await HandleShiftBreakStart(CmdInteract, ShiftActive, RecInteract);
     } else if (BtnCustomId.startsWith(ShiftMgmtActions.ShiftOff)) {
-      ActionQueueInstance.Enqueue(HandleShiftEnd, undefined, CmdInteract, ShiftActive, RecInteract);
+      await HandleShiftEnd(CmdInteract, ShiftActive, RecInteract);
     }
   } catch (Err: any) {
     if (Err.message.match(/reason: \w+Delete/)) return;
@@ -535,7 +522,7 @@ async function HandleActiveShift(
 
     AppLogger.error({
       message:
-        "An unhandled error occurred while waiting for a duty management button interaction.",
+        "An unhandled error occurred while handling duty management button interactions for active shift.",
       label: FileLabel,
       stack: Err.stack,
     });
@@ -569,7 +556,6 @@ async function Callback(
     !!ShiftActive
   );
 
-  const ActionQueueId = `duty-manage:${CmdInteract.user.id}}`;
   const MgmtEmbedTitle = `Shift Management: \`${TargetShiftType}\` Type`;
   const MgmtPromptMainDesc = Dedent(`
     >>> **Shift Count:** \`${MemberShiftsData.shift_count}\`
@@ -600,7 +586,7 @@ async function Callback(
       if (LatestEndedShift) {
         const BreakTimeText =
           LatestEndedShift.durations.on_break > 500
-            ? `**Total Break Time:** ${LatestEndedShift.on_break_time}`
+            ? `**Break Time:** ${LatestEndedShift.on_break_time}`
             : "";
 
         BasePromptEmbed.addFields(
@@ -643,6 +629,7 @@ async function Callback(
           **Status:** (${Emojis.Idle}) On Break
           **Shift Started:** ${FormatTime(ShiftActive.start_timestamp, "R")}
           **Break Started:** ${FormatTime(Math.round(StartedBreak[0] / 1000), "R")}
+          **On-Duty Time:** ${ShiftActive.on_duty_time}**
           ${ShiftActive.events.breaks.length > 1 ? `**Total Break Time:** ${ShiftActive.on_break_time}` : ""}
         `),
       });
@@ -650,12 +637,12 @@ async function Callback(
   }
 
   if (!ShiftActive) {
-    return HandleNonActiveShift(CmdInteract, BasePromptEmbed, TargetShiftType, ActionQueueId);
+    return HandleNonActiveShift(CmdInteract, BasePromptEmbed, TargetShiftType);
   } else if (ShiftActive.hasBreakActive()) {
     return HandleOnBreakShift(CmdInteract, ShiftActive, BasePromptEmbed.data.title!);
   }
 
-  return HandleActiveShift(CmdInteract, ShiftActive, BasePromptEmbed, ActionQueueId);
+  return HandleActiveShift(CmdInteract, ShiftActive, BasePromptEmbed);
 }
 
 // ---------------------------------------------------------------------------------------
