@@ -182,7 +182,7 @@ describe("String Conversion Utilities", () => {
     it("Should handle strings with acronyms and words that should be always capitalized (when Strict is `true`)", () => {
       expect(TitleCase("lapd central bot")).toEqual("LAPD Central Bot");
       expect(TitleCase("atm (at the moment), he is charged with adw by the LaSd.")).toEqual(
-        "ATM (At the Moment), He Is Charged with ADW by the LASD."
+        "ATM (at the Moment), He Is Charged with ADW by the LASD."
       );
     });
 
