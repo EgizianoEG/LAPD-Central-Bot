@@ -93,25 +93,37 @@ export async function ShiftBreakStart(this: ThisType, timestamp: number = Date.n
       {
         _id: this._id,
         end_timestamp: null,
+        $expr: {
+          $or: [
+            // Case 1: No breaks at all
+            {
+              // eslint-disable-next-line sonarjs/no-duplicate-string
+              $eq: [{ $size: "$events.breaks" }, 0],
+            },
 
-        // Negation; match if there is *no* active break already.
-        $nor: [
-          {
-            $expr: {
-              $eq: [
+            // Case 2: Last break in the array has an end timestamp of null (active break)
+            {
+              $and: [
                 {
-                  $arrayElemAt: [
+                  $gt: [{ $size: "$events.breaks" }, 0],
+                },
+                {
+                  $ne: [
                     {
-                      $arrayElemAt: ["$events.breaks", -1],
-                    }, // Get the last element of the breaks array
-                    1, // Access the second element of the last sub-array
+                      $arrayElemAt: [
+                        {
+                          $arrayElemAt: ["$events.breaks", -1],
+                        },
+                        1,
+                      ],
+                    },
+                    null,
                   ],
                 },
-                null, // Check if it's null (active break)
               ],
             },
-          },
-        ], // Check if there is no active break
+          ],
+        },
       },
       {
         $push: { "events.breaks": [timestamp, null] },
