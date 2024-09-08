@@ -44,7 +44,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
       .setStyle(ButtonStyle.Danger),
     new ButtonBuilder()
       .setCustomId(`cancel-void:${Interaction.user.id}`)
-      .setLabel("Cancel Void")
+      .setLabel("Cancel Shift Void")
       .setStyle(ButtonStyle.Secondary)
   );
 
@@ -57,11 +57,8 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
 
   const DisablePrompt = () => {
     PromptButtons.components.forEach((Button) => Button.setDisabled(true));
-    return PromptMessage.edit({
+    return Interaction.editReply({
       components: [PromptButtons],
-    }).catch((Err) => {
-      if (Err.code === 50_001) return;
-      throw Err;
     });
   };
 
@@ -72,19 +69,19 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   })
     .then(async (ButtonInteract) => {
       await ButtonInteract.deferUpdate();
-      const ActiveShiftLatest = await GetActiveShifts({ Interaction, UserOnly: true });
-      if (!ActiveShiftLatest) {
+      const ActiveShiftLatestVer = await GetActiveShifts({ Interaction, UserOnly: true });
+      if (!ActiveShiftLatestVer) {
         return new ErrorEmbed()
           .useErrTemplate("ShiftMustBeActive")
           .replyToInteract(ButtonInteract, true);
-      } else if (ActiveShift._id !== ActiveShiftLatest._id) {
+      } else if (ActiveShift._id !== ActiveShiftLatestVer._id) {
         return new ErrorEmbed()
           .useErrTemplate("ShiftVoidMismatch")
           .replyToInteract(ButtonInteract, true);
       }
 
       if (ButtonInteract.customId.includes("confirm-void")) {
-        const DelResponse = await ActiveShiftLatest.deleteOne().exec();
+        const DelResponse = await ActiveShiftLatestVer.deleteOne().exec();
         if (!DelResponse.acknowledged) {
           return new ErrorEmbed()
             .useErrTemplate("FailedToVoidShift")
@@ -92,7 +89,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
         }
 
         return Promise.all([
-          ShiftActionLogger.LogShiftVoid(ActiveShiftLatest, ButtonInteract),
+          ShiftActionLogger.LogShiftVoid(ActiveShiftLatestVer, ButtonInteract),
           ButtonInteract.editReply({
             components: [],
             embeds: [
@@ -108,7 +105,9 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
           embeds: [
             new InfoEmbed()
               .setTitle("Shift Void Cancelled")
-              .setDescription("Voiding the currently active shift has been cancelled."),
+              .setDescription(
+                "Voiding the currently active shift has been cancelled and no changes have been made."
+              ),
           ],
         });
       }
