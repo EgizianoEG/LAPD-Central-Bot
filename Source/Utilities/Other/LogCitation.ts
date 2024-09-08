@@ -50,6 +50,7 @@ export default async function LogTrafficCitation(
   const CitationDescription = Dedent(`
     **Citation issued by:** <@${CachedInteract.user.id}>
     **Issued on:** ${time(CachedInteract.createdAt, "f")}
+    **Violator:** ${CitationData.violator.name}
     **Number:** \`${CitationData.num}\`
   `);
 
