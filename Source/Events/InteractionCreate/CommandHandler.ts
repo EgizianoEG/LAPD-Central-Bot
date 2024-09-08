@@ -226,9 +226,13 @@ async function HandleDevOnlyCommands(
   Interaction: ChatInputCommandInteraction
 ) {
   if (Interaction.replied) return;
-  if (CommandObject.options?.dev_only && !Discord.BotDevs.includes(Interaction.user.id)) {
+  if (
+    CommandObject.options?.dev_only &&
+    !Discord.BotDevs.includes(Interaction.user.id) &&
+    Interaction.client.application.owner?.id !== Interaction.user.id
+  ) {
     return new UnauthorizedEmbed()
-      .setDescription("This command can only be executed by the bot's developers.")
+      .setDescription("Only the bot's developers can execute this command.")
       .replyToInteract(Interaction, true);
   }
 }
