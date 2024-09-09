@@ -57,7 +57,7 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
   options: {
     cooldown: { load: 10, backup: 10 },
     bot_perms: { load: [PermissionFlagsBits.ManageRoles] },
-    user_perms: { $all_other: { management: true }, load: [PermissionFlagsBits.Administrator] },
+    user_perms: { $all_other: { management: true }, load: [PermissionFlagsBits.ManageGuild] },
   },
 
   data: new SlashCommandBuilder()

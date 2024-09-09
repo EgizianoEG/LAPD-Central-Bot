@@ -1716,7 +1716,7 @@ async function Callback(CmdInteract: SlashCommandInteraction<"cached">) {
 // Command structure:
 // ------------------
 const CommandObject: SlashCommandObject = {
-  options: { user_perms: [PermissionFlagsBits.Administrator] },
+  options: { user_perms: [PermissionFlagsBits.ManageGuild] },
   data: new SlashCommandBuilder()
     .setName("config")
     .setDescription("View and manage the application configuration for this server.")

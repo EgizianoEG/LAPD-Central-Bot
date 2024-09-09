@@ -30,7 +30,7 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
   callback: Callback,
   options: {
     cooldown: 2.5,
-    user_perms: { manage: [PermissionFlagsBits.Administrator], $all_other: { management: true } },
+    user_perms: { manage: [PermissionFlagsBits.ManageGuild], $all_other: { management: true } },
   },
 
   data: new SlashCommandBuilder()
