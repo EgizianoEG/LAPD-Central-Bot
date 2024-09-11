@@ -52,7 +52,7 @@ export default async function HandleEmbedPagination(
     filter: (Btn) => HandleCollectorFiltering(Interact, Btn),
     componentType: ComponentType.Button,
     time: 15 * 60 * 1000,
-    idle: 5 * 60 * 1000,
+    idle: 8 * 60 * 1000,
   });
 
   ComponentCollector.on("collect", async (NavInteraction: ButtonInteraction<"cached">) => {
