@@ -2,10 +2,14 @@ import { type CronJobFileDefReturn } from "@Typings/Global.js";
 import { differenceInMilliseconds } from "date-fns";
 import GuildModel from "@Models/Guild.js";
 
-async function AutodeleteGuildLogs() {
-  const CurrentDate = new Date();
+async function AutodeleteGuildLogs(Now: Date | "init" | "manual") {
+  const CurrentDate = Now instanceof Date ? Now : new Date();
   const GuildDocuments = await GuildModel.find(
-    { logs: { $exists: true }, "settings.duty_activities.log_deletion_interval": { $gt: 0 } },
+    {
+      logs: { $exists: true },
+      deletion_scheduled_on: { $eq: null },
+      "settings.duty_activities.log_deletion_interval": { $gt: 0 },
+    },
     { logs: 1, "settings.duty_activities.log_deletion_interval": 1 }
   )
     .lean()
@@ -43,6 +47,9 @@ async function AutodeleteGuildLogs() {
 
 export default {
   cron_exp: "*/5 * * * *",
-  cron_opts: { timezone: "America/Los_Angeles", runOnInit: true },
   cron_func: AutodeleteGuildLogs as any,
+  cron_opts: {
+    timezone: "America/Los_Angeles",
+    errorHandlingMechanism: "silent/log",
+  },
 } as CronJobFileDefReturn;
