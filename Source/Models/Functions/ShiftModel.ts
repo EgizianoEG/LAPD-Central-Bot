@@ -191,13 +191,18 @@ export async function ShiftBreakEnd(this: ThisType, timestamp: number = Date.now
 
 export async function ShiftEnd(this: ThisType, timestamp: Date | number = new Date()) {
   const EndTimestamp = new Date(timestamp);
+  const ShiftBreaks = this.events.breaks.map(([Started, Ended]) => [
+    Started,
+    Ended || EndTimestamp.getTime(),
+  ]);
+
   const UpdatedDocument = await this.$model()
     .findOneAndUpdate(
       {
         _id: this._id,
         end_timestamp: null,
       },
-      { $set: { end_timestamp: EndTimestamp } },
+      { $set: { end_timestamp: EndTimestamp, "events.breaks": ShiftBreaks } },
       { new: true }
     )
     .exec();
