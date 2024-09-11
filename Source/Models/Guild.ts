@@ -1,4 +1,5 @@
 import { Schema, model } from "mongoose";
+import { isAfter } from "date-fns";
 import ArrestSchema from "./Schemas/Arrest.js";
 import CitationSchema from "./Schemas/Citation.js";
 import IncidentSchema from "./Schemas/Incident.js";
@@ -27,16 +28,12 @@ const GuildSchema = new Schema({
     type: GSettingsSchema,
   },
 
-  // Members who have interacted with particular application commands are included in the
-  // guild members array, which is an array of object Ids that refer to member profiles.
-  // Currently unused due to the usage of the GuildProfile model.
-  members: {
-    type: [
-      {
-        type: String,
-        match: /^\d{15,22}$/,
-        ref: "GuildProfile",
-      },
+  deletion_scheduled_on: {
+    type: Date,
+    default: null,
+    validate: [
+      (d: Date) => d === null || isAfter(d, Date.now()),
+      "The deletion date, if set, must be in the future; otherwise, it must be null. Value received: {VALUE}.",
     ],
   },
 });

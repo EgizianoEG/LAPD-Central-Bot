@@ -12,14 +12,20 @@ export default async function UpdateDatabase(_: DiscordClient, GuildInst: Guild)
   if (
     Discord.WLGuilds &&
     !Discord.WLGuilds.includes(GuildInst.id) &&
-    Discord.TestGuildId !== GuildInst.id
+    Discord.TestGuildId !== GuildInst.id &&
+    Discord.SupportGuildId !== GuildInst.id
   ) {
     await GuildInst.leave();
     return;
   }
 
   const GuildExists = await GuildModel.exists({ _id: GuildInst.id }).exec();
-  if (!GuildExists) {
+  if (GuildExists) {
+    await GuildModel.updateOne(
+      { _id: GuildInst.id, deletion_scheduled_on: { $ne: null } },
+      { $set: { deletion_scheduled_on: null } }
+    );
+  } else {
     await GuildModel.create({
       _id: GuildInst.id,
     });
