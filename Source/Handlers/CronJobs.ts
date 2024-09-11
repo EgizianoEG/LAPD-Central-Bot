@@ -7,27 +7,35 @@ import Chalk from "chalk";
 import Cron from "node-cron";
 import Path from "node:path";
 const HandlerLabel = "Handlers:CronJobs";
+const ScheduledTasks = new Map<string, Cron.ScheduledTask>();
 
 export default async function CronJobsHandler(Client: DiscordClient) {
   const CronJobPaths = GetFiles(Path.join(GetDirName(import.meta.url), "..", "Jobs"));
-  let CronJobsScheduled = 0;
 
   for (const JobPath of CronJobPaths) {
     const JobData = (await import(JobPath)).default as CronJobFileDefReturn;
     const JobFileName = Path.basename(JobPath);
+    const ErrorHandlingOpt = JobData.cron_opts?.errorHandlingMechanism;
+
     if (typeof JobData === "object") {
       if (typeof JobData.cron_func === "function") {
-        Cron.schedule(
+        const CronTask = Cron.schedule(
           JobData.cron_exp,
-          function CSFMask(Now) {
-            return (JobData.cron_func as NonNullable<CronJobFileDefReturn["cron_func"]>)(
-              Now,
-              Client
-            );
+          async function CSFMask(Now) {
+            try {
+              await (JobData.cron_func as unknown as (_: any, __: any) => Promise<any>)(
+                Now,
+                Client
+              );
+            } catch (Err: any) {
+              HandleErrorMechanism(Err, JobFileName, ErrorHandlingOpt);
+            }
           },
           JobData.cron_opts
-        ).start();
-        CronJobsScheduled++;
+        );
+
+        CronTask.start();
+        ScheduledTasks.set(JobFileName, CronTask);
       } else {
         AppLogger.warn({
           label: HandlerLabel,
@@ -45,9 +53,55 @@ export default async function CronJobsHandler(Client: DiscordClient) {
     }
   }
 
-  AppLogger.info({
-    label: HandlerLabel,
-    splat: [CronJobsScheduled],
-    message: "Successfully scheduled %o cron job(s).",
-  });
+  if (ScheduledTasks.size > 0) {
+    AppLogger.info({
+      label: HandlerLabel,
+      splat: [ScheduledTasks.size],
+      message: "Successfully scheduled %o cron job(s).",
+    });
+  }
+}
+
+/**
+ * Handles the error mechanism for a scheduled task.
+ * @param Err - The error object.
+ * @param ScheduledTaskName - The name of the scheduled task.
+ * @param ErrorHandlingMechanism - The error handling mechanism for the scheduled task.
+ */
+function HandleErrorMechanism(
+  Err: any,
+  ScheduledTaskName: string,
+  ErrorHandlingMechanism: NonNullable<CronJobFileDefReturn["cron_opts"]>["errorHandlingMechanism"]
+) {
+  if (ErrorHandlingMechanism === "silent/log") {
+    AppLogger.error({
+      stack: Err.stack,
+      label: HandlerLabel,
+      splat: [Chalk.bold(ScheduledTaskName)],
+      message: "An error occurred while executing the cron job '%s'; see stack trace for details.",
+    });
+  } else if (ErrorHandlingMechanism === "silent/log/end_job") {
+    AppLogger.error({
+      stack: Err.stack,
+      label: HandlerLabel,
+      splat: [Chalk.bold(ScheduledTaskName)],
+      message: "An error occurred while executing the cron job '%s'; see stack trace for details.",
+    });
+
+    const Task = ScheduledTasks.get(ScheduledTaskName);
+    if (Task) {
+      Task.stop();
+      ScheduledTasks.delete(ScheduledTaskName);
+    }
+  } else if (ErrorHandlingMechanism === "silent/ignore/end_job") {
+    const Task = ScheduledTasks.get(ScheduledTaskName);
+    if (Task) {
+      Task.stop();
+      ScheduledTasks.delete(ScheduledTaskName);
+    }
+  } else if (typeof ErrorHandlingMechanism === "function") {
+    ErrorHandlingMechanism(Err);
+  } else if (ErrorHandlingMechanism === "throw" || ErrorHandlingMechanism === null) {
+    throw Err;
+  }
 }
