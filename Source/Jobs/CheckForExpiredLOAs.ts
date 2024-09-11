@@ -13,8 +13,8 @@ import LOAEventLogger from "@Utilities/Classes/LOAEventLogger.js";
  * @param Client
  * @returns
  */
-async function HandledExpiredLeaves(_: any, Client: DiscordClient) {
-  const CurrentDate = new Date();
+async function HandledExpiredLeaves(Now: Date | "init" | "manual", Client: DiscordClient) {
+  const CurrentDate = Now instanceof Date ? Now : new Date();
   const SevenDaysAgo = subDays(CurrentDate, 7);
   const LOAsHandled: string[] = [];
   const LeaveDocuments = await LeaveOfAbsenceModel.aggregate<LeaveOfAbsence.LeaveOfAbsenceDocument>(
@@ -98,6 +98,9 @@ async function HandledExpiredLeaves(_: any, Client: DiscordClient) {
 
 export default {
   cron_exp: "*/3 * * * *",
-  cron_opts: { timezone: "America/Los_Angeles", runOnInit: true },
   cron_func: HandledExpiredLeaves as any,
+  cron_opts: {
+    timezone: "America/Los_Angeles",
+    errorHandlingMechanism: "silent/log",
+  },
 } as CronJobFileDefReturn;

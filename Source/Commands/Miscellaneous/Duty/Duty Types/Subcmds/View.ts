@@ -1,7 +1,3 @@
-// Dependencies:
-// -------------
-
-import { Embeds } from "@Config/Shared.js";
 import { Guilds } from "@Typings/Utilities/Database.js";
 import { InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { SlashCommandSubcommandBuilder, EmbedBuilder, Colors } from "discord.js";
@@ -12,7 +8,7 @@ import Dedent from "dedent";
 import Util from "node:util";
 
 const ListFormatter = new Intl.ListFormat("en");
-const DisplayedShiftTypesPerPage = 3;
+const DisplayedShiftTypesPerPage = 2;
 
 // ---------------------------------------------------------------------------------------
 // Functions:
@@ -24,11 +20,12 @@ const DisplayedShiftTypesPerPage = 3;
  */
 function FormatEmbedDescription(ShiftTypeData: Guilds.ShiftType[]): string {
   const Formatted: string[] = [];
+
   for (const ShiftType of ShiftTypeData) {
     const Template = Dedent(`
         **Name:** \`%s\`
-        **Default Type:** \`%s\`
-        **Access Roles:**
+        **Default Type:** %s
+        **Access Roles** [%i]**:**
         > %s
     `);
 
@@ -36,6 +33,7 @@ function FormatEmbedDescription(ShiftTypeData: Guilds.ShiftType[]): string {
       Template + "\n\n",
       ShiftType.name,
       ShiftType.is_default ? "Yes" : "No",
+      ShiftType.access_roles.length,
       ShiftType.access_roles.length
         ? ListFormatter.format(ShiftType.access_roles.map((RoleId) => `<@&${RoleId}>`))
         : "*Usable by all identified staff members*"
@@ -43,6 +41,7 @@ function FormatEmbedDescription(ShiftTypeData: Guilds.ShiftType[]): string {
 
     Formatted.push(ShiftTypeDesc);
   }
+
   return Formatted.join("");
 }
 
@@ -68,17 +67,17 @@ function CreateEmbedPages(
     for (const Segment of SegmentedData) {
       const EmbedPage = new EmbedBuilder()
         .setColor(Colors.DarkBlue)
-        .setThumbnail(Embeds.Thumbs.Info)
         .setTitle("Created Duty Shift Types")
         .setDescription(FormatEmbedDescription(Segment));
+
       Pages.push(EmbedPage);
     }
   } else {
     Pages.push(
       new InfoEmbed()
-        .setTitle("No Created Duty Shift Types")
+        .setTitle("No Custom Types Found")
         .setDescription(
-          "This server has no created duty shift types. There is only the default shift type of the application."
+          "This server has no created duty shift types. There is only the default shift type available for use."
         )
     );
   }

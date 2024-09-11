@@ -31,6 +31,9 @@ async function MetricsLog(_: any, Client: DiscordClient) {
 
 export default {
   cron_exp: "*/5 * * * *",
-  cron_opts: { timezone: "America/Los_Angeles" },
   cron_func: OtherSecrets.IsProdEnv ? MetricsLog : undefined,
+  cron_opts: {
+    timezone: "America/Los_Angeles",
+    errorHandlingMechanism: "silent/log",
+  },
 } as CronJobFileDefReturn;
