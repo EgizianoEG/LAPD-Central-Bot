@@ -572,9 +572,7 @@ async function Callback(
     });
 
   if (RecentAction) {
-    BasePromptEmbed.setTitle(RecentAction);
     BasePromptEmbed.setFooter({ text: `Shift Type: ${TargetShiftType}` });
-
     if (RecentAction === RecentShiftAction.End) {
       BasePromptEmbed.setColor(Embeds.Colors.ShiftOff);
       const LatestEndedShift = await ShiftModel.findOne({
@@ -584,6 +582,7 @@ async function Callback(
       }).sort({ end_timestamp: -1 });
 
       if (LatestEndedShift) {
+        BasePromptEmbed.setTitle(RecentAction);
         const BreakTimeText =
           LatestEndedShift.durations.on_break > 500
             ? `**Break Time:** ${LatestEndedShift.on_break_time}`
@@ -611,6 +610,7 @@ async function Callback(
       }
     } else if (RecentAction === RecentShiftAction.BreakEnd && ShiftActive?.hasBreaks()) {
       const EndedBreak = ShiftActive.events.breaks.findLast((v) => v[0] && v[1])!;
+      BasePromptEmbed.setTitle(RecentAction);
       BasePromptEmbed.setFields({
         name: "Current Shift",
         value: Dedent(`
@@ -623,6 +623,7 @@ async function Callback(
       });
     } else if (RecentAction === RecentShiftAction.BreakStart && ShiftActive?.hasBreakActive()) {
       const StartedBreak = ShiftActive.events.breaks.findLast((v) => !v[1])!;
+      BasePromptEmbed.setTitle(RecentAction);
       BasePromptEmbed.setFields({
         name: "Current Shift",
         value: Dedent(`
