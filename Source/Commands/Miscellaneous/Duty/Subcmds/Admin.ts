@@ -372,7 +372,7 @@ async function PromptShiftModification(
 
     try {
       const LastInteract = CollectedInteracts.last() ?? Interact;
-      ActionOptions.components[0].setDisabled(true);
+      ActionOptions.components.forEach((Comp) => Comp.setDisabled(true));
       await LastInteract.editReply({ components: [ActionOptions] });
     } catch {
       // Ignored.
@@ -859,7 +859,7 @@ async function HandleUserShiftsWipe(
     ]);
   } catch (Err: any) {
     if (Err.message.match(/reason: time/)) {
-      ButtonAR.components[0].setDisabled(true);
+      ButtonAR.components.forEach((Btn) => Btn.setDisabled(true));
       await BInteract.editReply({ components: [ButtonAR] }).catch((Err) => {
         if (Err.code === 50_001) return;
         throw Err;
