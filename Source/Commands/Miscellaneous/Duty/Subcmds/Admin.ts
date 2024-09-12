@@ -606,7 +606,7 @@ async function GetPaginatedShifts(TargetUser: User, GuildId: string, ShiftType?:
       $match: {
         user: TargetUser.id,
         guild: GuildId,
-        type: ShiftType ?? { $exists: true },
+        type: ShiftType || { $exists: true },
       },
     },
     {
@@ -673,15 +673,19 @@ async function GetPaginatedShifts(TargetUser: User, GuildId: string, ShiftType?:
                 {
                   $subtract: [
                     {
-                      $ifNull: [
-                        {
-                          $arrayElemAt: ["$$this", 1],
-                        },
-                        new Date(),
-                      ],
+                      $toLong: {
+                        $ifNull: [
+                          {
+                            $arrayElemAt: ["$$this", 1],
+                          },
+                          new Date(),
+                        ],
+                      },
                     },
                     {
-                      $arrayElemAt: ["$$this", 0],
+                      $toLong: {
+                        $arrayElemAt: ["$$this", 0],
+                      },
                     },
                   ],
                 },
@@ -913,19 +917,20 @@ async function HandleUserShiftEnd(
     })
     .setFields(
       {
-        name: "All Time Info:",
+        name: "All Time Statistics:",
         value: ShiftsInfo,
       },
       {
-        name: "Last Shift:",
+        inline: true,
+        name: "Previous Shift:",
         value: Dedent(`
-          **Status:** ${Emojis.Offline} Ended (Off-Duty)
           **Total Shift Time:** ${HumanizeDuration(EndedShift.durations.on_duty)}
           ${TotalBreakTime || ""}
         `),
       },
       {
-        name: "Last Shift Statics:",
+        inline: true,
+        name: "Duty Activities:",
         value: Dedent(`
           **Arrests Made:** \`${EndedShift.events.arrests}\`
           **Citations Issued:** \`${EndedShift.events.citations}\`
