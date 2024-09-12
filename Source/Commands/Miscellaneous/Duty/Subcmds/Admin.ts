@@ -1060,7 +1060,6 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
       ? `**Total Break Time:** ${HumanizeDuration(ActiveShift.durations.on_break)}`
       : null;
 
-    ActiveShift.durations.on_duty = -1;
     RespEmbed.addFields({
       name: "Active Shift:",
       value: Dedent(`

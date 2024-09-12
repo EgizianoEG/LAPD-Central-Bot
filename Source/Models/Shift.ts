@@ -1,4 +1,5 @@
 import ShiftInstFuncs, {
+  UpdateShiftDurations,
   PreShiftModelDelete,
   PreShiftDocDelete,
   StartNewShift,
@@ -67,6 +68,7 @@ const ShiftSchema = new Schema<
   durations: {
     _id: false,
     default: {},
+    required: true,
     type: ShiftDurations,
   },
 
@@ -135,10 +137,7 @@ ShiftSchema.pre("deleteMany", function (next) {
 });
 
 ShiftSchema.pre("save", function (next) {
-  // Make sure that durations are calculated and set before saving.
-  // Otherwise, they will be saved as `0`.
-  this.durations.on_duty = -1;
-  this.durations.on_break = -1;
+  UpdateShiftDurations(this);
   next();
 });
 

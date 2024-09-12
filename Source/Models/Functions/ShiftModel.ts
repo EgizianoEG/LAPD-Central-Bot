@@ -28,6 +28,42 @@ async function GetUpdatedDocument<GOIFailed extends boolean = false>(
     });
 }
 
+function GetUpdateShiftOnDutyDuration(SD: ThisType) {
+  const EndTimestamp = SD.end_timestamp?.valueOf() ?? Date.now();
+  if (!SD.start_timestamp) return 0;
+
+  const TotalShiftDuration = EndTimestamp - SD.start_timestamp.valueOf();
+  let OnDutyDuration = TotalShiftDuration;
+  OnDutyDuration -= GetUpdateShiftOnBreakDuration(SD);
+  OnDutyDuration += SD.durations.on_duty_mod;
+
+  return Math.max(OnDutyDuration, 0);
+}
+
+function GetUpdateShiftOnBreakDuration(SD: ThisType) {
+  const EndTimestamp = SD.end_timestamp?.valueOf() ?? Date.now();
+  if (!SD.start_timestamp || SD.events.breaks.length === 0) return 0;
+
+  const TotalShiftDuration = EndTimestamp - SD.start_timestamp.valueOf();
+  let OnBreakDuration = SD.events.breaks.reduce((Total, [StartEpoch, EndEpoch]) => {
+    return Total + Math.max((EndEpoch || EndTimestamp) - StartEpoch, 0);
+  }, 0);
+
+  OnBreakDuration = Math.min(OnBreakDuration, TotalShiftDuration);
+  return Math.max(OnBreakDuration, 0);
+}
+
+/**
+ * Updates the durations of a shift document. Alters it.
+ * @param ShiftDocument - The shift document to update.
+ * @returns The updated shift document.
+ */
+export function UpdateShiftDurations(ShiftDocument: ThisType) {
+  ShiftDocument.durations.on_duty = GetUpdateShiftOnDutyDuration(ShiftDocument);
+  ShiftDocument.durations.on_break = GetUpdateShiftOnBreakDuration(ShiftDocument);
+  return ShiftDocument;
+}
+
 export function HasBreakActive(this: ThisType) {
   return this.events.breaks.some(([, end]) => end === null);
 }
@@ -72,7 +108,7 @@ export async function StartNewShift(
         end_timestamp: null,
       },
     },
-    { upsert: true, new: true }
+    { upsert: true, new: true, setDefaultsOnInsert: true }
   ).exec();
 
   if (ActiveShift._id !== ShiftUniqueId && ActiveShift.end_timestamp === null) {
@@ -127,6 +163,10 @@ export async function ShiftBreakStart(this: ThisType, timestamp: number = Date.n
       },
       {
         $push: { "events.breaks": [timestamp, null] },
+        $set: {
+          "durations.on_duty": this.durations.on_duty,
+          "durations.on_break": this.durations.on_break,
+        },
       },
       { new: true }
     )
@@ -166,7 +206,11 @@ export async function ShiftBreakEnd(this: ThisType, timestamp: number = Date.now
         },
       },
       {
-        $set: { "events.breaks.$[elem].1": timestamp },
+        $set: {
+          "events.breaks.$[elem].1": timestamp,
+          "durations.on_duty": this.durations.on_duty,
+          "durations.on_break": this.durations.on_break,
+        },
       },
       {
         arrayFilters: [{ "elem.1": null }], // Update the first active break found
@@ -202,7 +246,14 @@ export async function ShiftEnd(this: ThisType, timestamp: Date | number = new Da
         _id: this._id,
         end_timestamp: null,
       },
-      { $set: { end_timestamp: EndTimestamp, "events.breaks": ShiftBreaks } },
+      {
+        $set: {
+          end_timestamp: EndTimestamp,
+          "events.breaks": ShiftBreaks,
+          "durations.on_duty": this.durations.on_duty,
+          "durations.on_break": this.durations.on_break,
+        },
+      },
       { new: true }
     )
     .exec();
@@ -231,11 +282,36 @@ export async function ResetShiftTime(this: ThisType, CurrentTimestamp: number = 
     throw new AppError({ template: "ShiftTimeAlreadyReset", showable: true });
   }
 
-  DBShiftDoc.durations.on_duty_mod = -(
+  const OnDutyModTime = -(
     (DBShiftDoc.end_timestamp?.valueOf() || CurrentTimestamp) - DBShiftDoc.start_timestamp.valueOf()
   );
 
-  return DBShiftDoc.save();
+  const UpdatedDocument = await this.$model()
+    .findOneAndUpdate(
+      {
+        _id: this._id,
+      },
+      {
+        $set: {
+          "durations.on_duty_mod": OnDutyModTime,
+        },
+      },
+      { new: true }
+    )
+    .exec();
+
+  if (!UpdatedDocument) {
+    return Promise.reject(
+      new AppError({
+        title: ErrorTitle,
+        showable: true,
+        message:
+          "The shift you are trying to alter may have been recently voided or deleted or does no longer exist.",
+      })
+    );
+  }
+
+  return UpdatedDocument as ThisType;
 }
 
 export async function SetShiftTime(
