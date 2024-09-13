@@ -5,7 +5,7 @@ import IncidentTypes from "@Resources/IncidentTypes.js";
 type IncidentPlainDoc = GuildIncidents.IncidentRecord;
 type IncidentModelType = Model<IncidentPlainDoc, unknown>;
 
-const ArrestSchema = new Schema<IncidentPlainDoc, IncidentModelType>({
+const IncidentReportSchema = new Schema<IncidentPlainDoc, IncidentModelType>({
   _id: {
     type: Number,
     required: true,
@@ -110,4 +110,4 @@ const ArrestSchema = new Schema<IncidentPlainDoc, IncidentModelType>({
   },
 });
 
-export default ArrestSchema;
+export default IncidentReportSchema;
