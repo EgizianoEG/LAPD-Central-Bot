@@ -584,7 +584,7 @@ export const ErrorMessages = {
   LOAUnauthorizedManagement: {
     Title: "Unauthorized Leave Management",
     Description:
-      "You are not authorized to take action on this leave of absence unless you are a management or admin member.",
+      "You are not authorized to take action or view information on this leave of absence unless you are a management or administrator member.",
   },
 
   LOAModuleDisabled: {
