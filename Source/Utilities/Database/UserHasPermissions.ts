@@ -11,11 +11,16 @@ type DBRolePermsType = {
   management: string[];
 };
 
+type UHPV2Return<ArgType extends string | string[]> = ArgType extends string
+  ? boolean
+  : Record<string, boolean>;
+
 /**
  * Checks if a user has the required permissions based on the provided permissions configuration.
  * @param CmdInteraction - The user command interaction to process.
  * @param Permissions - Permissions to validate against.
- * @returns A `Promise` that resolves to a boolean value.
+ * @param ReturnMissing - Whether to return a boolean value or an array of missing permissions. Defaults to `undefined` or `false`.
+ * @returns A `Promise` that resolves to a boolean value or an array of missing permissions.
  */
 export default async function UserHasPerms<RMissing extends boolean = false>(
   CmdInteraction: BaseInteraction<"cached">,
@@ -79,7 +84,7 @@ export async function UserHasPermsV2<UType extends string | string[]>(
 
     const Result = CheckPerms(await GetDBRolePerms(GuildId, UseCache), Permissions, GuildMember);
     UserPermsCache.set(`${GuildId}:${User}:${JSON.stringify(Permissions)}`, Result);
-    return Result as any;
+    return Result[0] as UHPV2Return<UType>;
   } else if (Array.isArray(User)) {
     const Result = {};
     for (const UserId of User) {
@@ -102,12 +107,13 @@ export async function UserHasPermsV2<UType extends string | string[]>(
         Permissions,
         GuildMember
       );
+
       UserPermsCache.set(`${GuildId}:${User}:${JSON.stringify(Permissions)}`, Result[UserId]);
     }
 
-    return Result as any;
+    return Result[0] as UHPV2Return<UType>;
   } else {
-    return false as any;
+    return false as UHPV2Return<UType>;
   }
 }
 
