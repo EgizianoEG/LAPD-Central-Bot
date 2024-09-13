@@ -581,6 +581,12 @@ export const ErrorMessages = {
       "You cannot extend this leave of absence further more. Only one extension is allowed per leave, regardless of whether it was approved, denied, or cancelled.",
   },
 
+  LOAUnauthorizedManagement: {
+    Title: "Unauthorized Leave Management",
+    Description:
+      "You are not authorized to take action on this leave of absence unless you are a management or admin member.",
+  },
+
   LOAModuleDisabled: {
     Title: "Module Disabled",
     Description:

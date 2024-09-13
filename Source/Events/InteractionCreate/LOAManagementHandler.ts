@@ -12,6 +12,7 @@ import {
 } from "discord.js";
 
 import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
+import { UserHasPermsV2 } from "@Utilities/Database/UserHasPermissions.js";
 import { LeaveOfAbsence } from "@Typings/Utilities/Database.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { Embeds } from "@Config/Shared.js";
@@ -38,11 +39,12 @@ const FunctionMap = {
 // Functions:
 // ----------
 export default async function LOAManagementHandlerWrapper(
-  _,
+  _: DiscordClient,
   Interaction: BaseInteraction<"cached">
 ) {
   if (!Interaction.isButton() || !Interaction.customId.match(/^loa-(app|den|inf)[\w-]*:/)) return;
   try {
+    if (await HandleUnauthorizedLeaveManagement(Interaction)) return;
     await LOAManagementHandler(Interaction);
   } catch (Err: any) {
     const ErrorId = GetErrorId();
@@ -75,6 +77,26 @@ async function LOAManagementHandler(Interaction: ButtonInteraction<"cached">) {
   const RequestDocument = await LeaveOfAbsenceModel.findById(LeaveId).exec();
   if (await HandleLeaveReviewValidation(Interaction, RequestDocument)) return;
   return FunctionMap[Action](Interaction, RequestDocument);
+}
+
+/**
+ * Handles unauthorized leave management.
+ * @param Interaction - The button interaction.
+ * @returns A boolean indicating whether the action was authorized or not.
+ */
+async function HandleUnauthorizedLeaveManagement(Interaction: ButtonInteraction<"cached">) {
+  const IsActionAuthorized = await UserHasPermsV2(Interaction.user.id, Interaction.guildId, {
+    management: true,
+  });
+
+  if (!IsActionAuthorized) {
+    return new ErrorEmbed()
+      .useErrTemplate("LOAUnauthorizedManagement")
+      .replyToInteract(Interaction, true)
+      .then(() => true);
+  }
+
+  return false;
 }
 
 /**

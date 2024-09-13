@@ -9,6 +9,8 @@ import {
   createComponentBuilder,
 } from "discord.js";
 
+const UnauthorizedUsageIgnoredCompsWithCustomIds: RegExp[] = [/(?:loa|leave).+:\d+:\w+/i];
+
 /**
  * For handling & responding to any component that have been abandoned activated.
  * Regular component Ids should have a truncated command origin (an abbreviation for what command was used),
@@ -36,7 +38,11 @@ export default async function HandleAbandonedInteractions(
   }
 
   const OriginUserId = Interaction.customId.split(":")?.[1];
-  if (IsValidDiscordId(OriginUserId) && Interaction.user.id !== OriginUserId) {
+  if (
+    IsValidDiscordId(OriginUserId) &&
+    Interaction.user.id !== OriginUserId &&
+    !UnauthorizedUsageIgnoredCompsWithCustomIds.some((RegEx) => RegEx.test(Interaction.customId))
+  ) {
     await new UnauthorizedEmbed()
       .useErrTemplate("UnauthorizedInteraction")
       .replyToInteract(Interaction, true);
