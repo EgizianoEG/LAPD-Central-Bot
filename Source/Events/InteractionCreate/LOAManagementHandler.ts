@@ -11,10 +11,10 @@ import {
   ModalBuilder,
 } from "discord.js";
 
+import { ErrorEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
 import { UserHasPermsV2 } from "@Utilities/Database/UserHasPermissions.js";
 import { LeaveOfAbsence } from "@Typings/Utilities/Database.js";
-import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { Embeds } from "@Config/Shared.js";
 
 import HandleLeaveRoleAssignment from "@Utilities/Other/HandleLeaveRoleAssignment.js";
@@ -90,7 +90,7 @@ async function HandleUnauthorizedLeaveManagement(Interaction: ButtonInteraction<
   });
 
   if (!IsActionAuthorized) {
-    return new ErrorEmbed()
+    return new UnauthorizedEmbed()
       .useErrTemplate("LOAUnauthorizedManagement")
       .replyToInteract(Interaction, true)
       .then(() => true);
