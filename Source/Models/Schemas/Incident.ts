@@ -17,7 +17,7 @@ const IncidentReportSchema = new Schema<IncidentPlainDoc, IncidentModelType>({
     enum: IncidentTypes,
   },
 
-  made_on: {
+  reported_on: {
     type: Date,
     required: true,
     default: Date.now,
