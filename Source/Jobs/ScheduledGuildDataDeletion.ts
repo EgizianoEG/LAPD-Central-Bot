@@ -3,7 +3,7 @@ import DeleteAllAssociatedGuildData from "@Utilities/Database/DeleteAssociatedGu
 import GuildModel from "@Models/Guild.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 
-async function CleanupUnavailableGuilds(Now: Date | "init" | "manual") {
+async function CleanupUnavailableGuilds(Now: Date | "init" | "manual", Client: DiscordClient) {
   const CurrentDate = Now instanceof Date ? Now : new Date();
   const ScheduledGuilds = await GuildModel.find(
     {
@@ -14,19 +14,24 @@ async function CleanupUnavailableGuilds(Now: Date | "init" | "manual") {
   ).exec();
 
   if (ScheduledGuilds.length === 0) return;
+  const GuildIds = ScheduledGuilds.map((Guild) => Guild._id);
+  const GuildDataToDelete = GuildIds.filter((GuildId) => !Client.guilds.cache.has(GuildId));
+  
+  if (GuildDataToDelete.length === 0) return;
   return GuildModel.deleteMany({
+    _id: { $in: GuildDataToDelete },
     deletion_scheduled_on: { $lte: CurrentDate },
   })
     .exec()
     .then((DeleteResult) => {
       AppLogger.debug({
-        splat: [DeleteResult.deletedCount, ScheduledGuilds.length],
+        splat: [DeleteResult.deletedCount, GuildDataToDelete.length],
         label: "Jobs:ScheduledDataDeletion",
         message:
           "%i out of %i guilds was successfully deleted from the database due to their deletion schedule. Continuing to delete associated profiles and data...",
       });
 
-      return DeleteAllAssociatedGuildData(ScheduledGuilds.map((Guild) => Guild._id));
+      return DeleteAllAssociatedGuildData(GuildDataToDelete);
     });
 }
 
