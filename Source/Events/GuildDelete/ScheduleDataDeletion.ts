@@ -16,7 +16,7 @@ export default async function ScheduleGuildDataDeletion(Client: Client<true>, Gu
     },
     {
       $set: {
-        deletion_scheduled_on: addDays(new Date(), 3),
+        deletion_scheduled_on: addDays(new Date(), 7),
       },
     },
     { new: true, lean: true, projection: { _id: 1 } }
