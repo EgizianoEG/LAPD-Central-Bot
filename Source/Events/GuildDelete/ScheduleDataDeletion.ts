@@ -23,7 +23,7 @@ export default async function ScheduleGuildDataDeletion(_: Client<true>, GuildIn
   ).exec();
 
   if (UpdatedGuildDocument) {
-    AppLogger.info({
+    AppLogger.debug({
       message: "Scheduled data deletion for the guild with the id: %s",
       label: "Events:GuildDelete:ScheduleDataDeletion",
       splat: [GuildInst.id],
