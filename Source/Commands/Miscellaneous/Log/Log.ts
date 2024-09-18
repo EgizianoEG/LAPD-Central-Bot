@@ -117,7 +117,7 @@ async function Autocomplete(Interaction: AutocompleteInteraction) {
 // Command structure:
 // ------------------
 const CommandObject: SlashCommandObject<any> = {
-  options: { cooldown: 10 },
+  options: { cooldown: 10, user_perms: { staff: true } },
   data: new SlashCommandBuilder()
     .setName("log")
     .setDescription("Logs a particular information into the database.")
