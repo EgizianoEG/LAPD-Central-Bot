@@ -16,7 +16,7 @@ async function CleanupUnavailableGuilds(Now: Date | "init" | "manual", Client: D
   if (ScheduledGuilds.length === 0) return;
   const GuildIds = ScheduledGuilds.map((Guild) => Guild._id);
   const GuildDataToDelete = GuildIds.filter((GuildId) => !Client.guilds.cache.has(GuildId));
-  
+
   if (GuildDataToDelete.length === 0) return;
   return GuildModel.deleteMany({
     _id: { $in: GuildDataToDelete },
