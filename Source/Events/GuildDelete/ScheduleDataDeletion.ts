@@ -5,10 +5,10 @@ import GuildModel from "@Models/Guild.js";
 
 /**
  * Schedules the guild data deletion from the database after **3 days** of the client not being in it.
- * @param Client
+ * @param _
  * @param CreatedGuild
  */
-export default async function ScheduleGuildDataDeletion(Client: Client<true>, GuildInst: Guild) {
+export default async function ScheduleGuildDataDeletion(_: Client<true>, GuildInst: Guild) {
   const UpdatedGuildDocument = await GuildModel.findOneAndUpdate(
     {
       _id: GuildInst.id,
@@ -16,14 +16,14 @@ export default async function ScheduleGuildDataDeletion(Client: Client<true>, Gu
     },
     {
       $set: {
-        deletion_scheduled_on: addDays(new Date(), 3),
+        deletion_scheduled_on: addDays(new Date(), 7),
       },
     },
     { new: true, lean: true, projection: { _id: 1 } }
   ).exec();
 
   if (UpdatedGuildDocument) {
-    AppLogger.info({
+    AppLogger.debug({
       message: "Scheduled data deletion for the guild with the id: %s",
       label: "Events:GuildDelete:ScheduleDataDeletion",
       splat: [GuildInst.id],

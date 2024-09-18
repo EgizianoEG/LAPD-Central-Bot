@@ -776,7 +776,7 @@ export namespace GuildIncidents {
   interface IncidentRecord {
     _id: number;
     type: GuildIncidents.IncidentType;
-    made_on: Date;
+    reported_on: Date;
 
     notes?: string | null;
     location: string;
