@@ -25,7 +25,7 @@
 <div id="Documentation" align="center">
   <h2><b>Documentation</b></h2>
   <p>
-    <i>To be worked on.</i>
+    <a href="https://lapd-central-bot.gitbook.io/documentation">See the GitBook documentation page.</a>.
   </p>
 </div>
 

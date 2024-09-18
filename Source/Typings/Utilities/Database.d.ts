@@ -28,7 +28,7 @@ export namespace Guilds {
   interface GuildLogs {
     arrests: GuildArrests.ArrestRecord[];
     citations: GuildCitations.AnyCitationData[];
-    callsigns: [];
+    incidents: [];
   }
 
   interface GuildSettings {
@@ -131,7 +131,19 @@ export namespace Guilds {
     };
   }
 
-  interface GuildDocument {}
+  interface GuildDocument {
+    /** The Discord snowflake Id of the guild/server. */
+    _id: string;
+
+    /** The guild's logs. */
+    logs: GuildLogs;
+
+    /** The guild's configuration. */
+    settings: GuildSettings;
+
+    /** The date and time when the guild (the guild document) and it's associated data should be deleted from the database. */
+    deletion_scheduled_on: Date | null;
+  }
 }
 
 export namespace Shifts {
@@ -764,7 +776,7 @@ export namespace GuildIncidents {
   interface IncidentRecord {
     _id: number;
     type: GuildIncidents.IncidentType;
-    made_on: Date;
+    reported_on: Date;
 
     notes?: string | null;
     location: string;
