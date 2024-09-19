@@ -20,7 +20,7 @@ import Dedent from "dedent";
 export const ErrorMessages = {
   UnknownError: {
     Title: "Unknown Error",
-    Description: "An unknown error has occurred.",
+    Description: "An unknown error has occurred while processing your request.",
   },
 
   /**
@@ -618,6 +618,23 @@ export const ErrorMessages = {
     Title: "No Shifts To Modify",
     Description:
       "There are no shifts of the specified type to modify for the selected user. Please ensure the user has shifts of that type before attempting to modify them.",
+  },
+
+  LogIncidentInvalidAttachments: {
+    Title: "Invalid Attachment(s)",
+    Description: Dedent(`
+      One or more of the provided attachments are invalid. Please provide valid image or screenshot links (discord hosted).
+
+      A valid image link hosted on Discord may begin with
+      - \`https://cdn.discordapp.com/attachments/\` or,
+      - \`https://media.discordapp.net/attachments/\`  
+    `),
+  },
+
+  LogIncidentDatabaseInsertFailed: {
+    Title: "Database Insert Failed",
+    Description:
+      "An error occurred while attempting to insert the incident report into the application database. Please try again later.",
   },
 };
 
