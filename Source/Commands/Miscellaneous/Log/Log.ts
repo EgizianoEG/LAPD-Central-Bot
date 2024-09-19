@@ -24,6 +24,7 @@ const Subcommands = [
   (await import("./Deps/CitFine.js")).default,
   (await import("./Deps/CitWarn.js")).default,
   (await import("./Deps/Arrest.js")).default,
+  (await import("./Deps/Incident.js")).default,
 ];
 
 // ---------------------------------------------------------------------------------------
@@ -117,14 +118,15 @@ async function Autocomplete(Interaction: AutocompleteInteraction) {
 // Command structure:
 // ------------------
 const CommandObject: SlashCommandObject<any> = {
-  options: { cooldown: 10 },
+  options: { cooldown: 10, user_perms: { staff: true } },
   data: new SlashCommandBuilder()
     .setName("log")
     .setDescription("Logs a particular information into the database.")
     .setContexts(InteractionContextType.Guild)
     .addSubcommand(Subcommands[0].data)
     .addSubcommand(Subcommands[1].data)
-    .addSubcommand(Subcommands[2].data),
+    .addSubcommand(Subcommands[2].data)
+    .addSubcommand(Subcommands[3].data),
 
   callback: Callback,
   autocomplete: Autocomplete,

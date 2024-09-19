@@ -1,6 +1,11 @@
 import { GuildIncidents } from "@Typings/Utilities/Database.js";
 import { Model, Schema } from "mongoose";
-import IncidentTypes from "@Resources/IncidentTypes.js";
+import {
+  IncidentTypes,
+  IncidentNotesLength,
+  IncidentStatusesFlattened,
+  IncidentDescriptionLength,
+} from "@Resources/IncidentConstants.js";
 
 type IncidentPlainDoc = GuildIncidents.IncidentRecord;
 type IncidentModelType = Model<IncidentPlainDoc, unknown>;
@@ -48,6 +53,19 @@ const IncidentReportSchema = new Schema<IncidentPlainDoc, IncidentModelType>({
       {
         _id: false,
         type: String,
+        trim: true,
+      },
+    ],
+  },
+
+  witnesses: {
+    required: true,
+    default: [],
+    type: [
+      {
+        _id: false,
+        type: String,
+        trim: true,
       },
     ],
   },
@@ -59,6 +77,7 @@ const IncidentReportSchema = new Schema<IncidentPlainDoc, IncidentModelType>({
       {
         _id: false,
         type: String,
+        trim: true,
       },
     ],
   },
@@ -67,10 +86,10 @@ const IncidentReportSchema = new Schema<IncidentPlainDoc, IncidentModelType>({
     required: true,
     _id: false,
     type: {
-      id: Number,
-      username: String,
-      display_name: String,
+      roblox_id: Number,
+      roblox_username: String,
       discord_id: String,
+      display_name: String,
     },
   },
 
@@ -78,16 +97,15 @@ const IncidentReportSchema = new Schema<IncidentPlainDoc, IncidentModelType>({
     type: String,
     default: null,
     required: false,
-    minlength: 8,
-    maxlength: 100,
-    trim: true,
+    minlength: IncidentNotesLength.Min,
+    maxlength: IncidentNotesLength.Max,
   },
 
   status: {
     type: String,
     required: true,
     default: "Active",
-    enum: ["Active", "Resolved", "Closed"],
+    enum: IncidentStatusesFlattened,
   },
 
   attachments: {
@@ -104,8 +122,8 @@ const IncidentReportSchema = new Schema<IncidentPlainDoc, IncidentModelType>({
   description: {
     type: String,
     required: true,
-    minlength: 20,
-    maxlength: 850,
+    minlength: IncidentDescriptionLength.Min,
+    maxlength: IncidentDescriptionLength.Max,
     trim: true,
   },
 });

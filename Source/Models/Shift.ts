@@ -88,6 +88,12 @@ const ShiftSchema = new Schema<
         min: 0,
       },
 
+      incidents: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+
       breaks: {
         type: [[Number, Number]],
         default: [],

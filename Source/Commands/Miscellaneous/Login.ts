@@ -197,7 +197,7 @@ async function Autocomplete(Interaction: AutocompleteInteraction): Promise<void>
 // Command structure:
 // ------------------
 const CommandObject: SlashCommandObject<any> = {
-  options: { cooldown: 30 },
+  options: { cooldown: 30, user_perms: { staff: true } },
   data: new SlashCommandBuilder()
     .setName("log-in")
     .setDescription("Log into the application and get access to restricted actions.")

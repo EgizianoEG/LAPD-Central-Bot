@@ -459,13 +459,27 @@ function GetAdditionalConfigComponents(
       )
   );
 
+  const IncidentLogChannelAR = new ActionRowBuilder<ChannelSelectMenuBuilder>().setComponents(
+    new ChannelSelectMenuBuilder()
+      .setMinValues(0)
+      .setMaxValues(1)
+      .setPlaceholder("Incident Report Channel")
+      .setChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+      .setDefaultChannels(
+        [GuildConfig.duty_activities.log_channels.incidents].filter(Boolean) as string[]
+      )
+      .setCustomId(
+        `${CTAIds[ConfigTopics.DutyActConfiguration].IncidentLogLocalChannel}:${CmdInteract.user.id}`
+      )
+  );
+
   LogDelIntervalSMAR.components[0].options.forEach((Option) => {
     if (Option.data.value === `${SetIntervalInDays}d`) {
       Option.setDefault(true);
     }
   });
 
-  return [LogDelIntervalSMAR] as const;
+  return [LogDelIntervalSMAR, IncidentLogChannelAR] as const;
 }
 
 function GetShowConfigurationsPageComponents(CmdInteract: SlashCommandInteraction<"cached">) {
@@ -571,6 +585,8 @@ function GetAdditionalConfigExplanationEmbed() {
         1. **Log Deletion Interval**
           Specify the interval at which citation, arrest, and incident logs will be deleted. \
           The default setting is to never delete logs. Note that changing this setting will affect both existing and new logs.
+        2. **Incident Report Channel**
+          The channel where submitted incident reports will be sent. This channel is used to store and display incident reports in an organized manner.
       `)
         .replace(/\.\s{2,}(\w)/g, ". $1")
         .replace(/(\w)\s{2,}(\w)/g, "$1 $2")
@@ -791,18 +807,23 @@ async function HandleAdditionalConfigPageInteracts(
   CurrConfiguration: GuildSettings
 ) {
   let LogDeletionInterval = CurrConfiguration.duty_activities.log_deletion_interval;
+  let IncidentLogChannel = CurrConfiguration.duty_activities.log_channels.incidents;
+
   const BCCompActionCollector = AddConfigPrompt.createMessageComponentCollector<
-    ComponentType.Button | ComponentType.StringSelect
+    ComponentType.Button | ComponentType.StringSelect | ComponentType.ChannelSelect
   >({
     filter: (Interact) => Interact.user.id === CmdInteract.user.id,
     time: 10 * 60 * 1000,
   });
 
   const HandleSettingsSave = async (ButtonInteract: ButtonInteraction<"cached">) => {
-    if (CurrConfiguration.duty_activities.log_deletion_interval === LogDeletionInterval) {
+    if (
+      CurrConfiguration.duty_activities.log_deletion_interval === LogDeletionInterval &&
+      CurrConfiguration.duty_activities.log_channels.incidents === IncidentLogChannel
+    ) {
       return new InfoEmbed()
         .useInfoTemplate("ConfigTopicNoChangesMade", "additional")
-        .replyToInteract(CmdInteract, true);
+        .replyToInteract(ButtonInteract, true);
     }
 
     if (!ButtonInteract.deferred) await ButtonInteract.deferReply();
@@ -811,6 +832,7 @@ async function HandleAdditionalConfigPageInteracts(
       {
         $set: {
           "settings.duty_activities.log_deletion_interval": LogDeletionInterval,
+          "settings.duty_activities.log_channels.incidents": IncidentLogChannel,
         },
       },
       {
@@ -859,7 +881,15 @@ async function HandleAdditionalConfigPageInteracts(
           )
         ) {
           LogDeletionInterval = Number(RecInteract.values[0].slice(0, -1)) || 0;
+        } else if (
+          RecInteract.isChannelSelectMenu() &&
+          RecInteract.customId.startsWith(
+            CTAIds[ConfigTopics.DutyActConfiguration].IncidentLogLocalChannel
+          )
+        ) {
+          IncidentLogChannel = RecInteract.values[0];
         }
+
         await RecInteract.deferUpdate();
       }
     } catch (Err: any) {

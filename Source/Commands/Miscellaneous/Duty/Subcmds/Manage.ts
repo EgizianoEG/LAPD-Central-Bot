@@ -605,6 +605,7 @@ async function Callback(
             value: Dedent(`
               >>> **Arrests Made:** \`${LatestEndedShift.events.arrests}\`
               **Citations Issued:** \`${LatestEndedShift.events.citations}\`
+              **Incidents Reported:** \`${LatestEndedShift.events.incidents}\`
             `),
           }
         );

@@ -119,3 +119,52 @@ export function IsEmptyObject(Obj: any): boolean {
   }
   return true;
 }
+
+/**
+ *
+ * @param URLString - The string to be validated as a Discord attachment link.
+ * @param ValidateExpired - Whether to check if the attachment link is expired (return `false` if so).
+ * @param AttachmentType - Whether to check if the attachment link is an image or video.
+ * @returns
+ */
+export function IsValidDiscordAttachmentLink(
+  URLString: string,
+  ValidateExpired?: boolean,
+  AttachmentType?: "image" | "video" | "any"
+): boolean {
+  let FileExtensionRegex: string = "(?:png|jpg|jpeg|mp4|mov|mp3|webp|gif)";
+
+  if (AttachmentType === "image") {
+    FileExtensionRegex = "(?:png|jpg|jpeg|gif|webp)";
+  } else if (AttachmentType === "video") {
+    FileExtensionRegex = "(?:mp4|mov)";
+  }
+
+  const AttachmentUrlRegex = new RegExp(
+    `^https?://(?:media|cdn)\\.discordapp\\.(?:com|net)/attachments/(\\d+)/(\\d+)/(.+)\\.${FileExtensionRegex}`
+  );
+
+  const Matches = URLString.match(AttachmentUrlRegex);
+
+  if (
+    !Matches?.length ||
+    !URLString.includes("ex=") ||
+    !URLString.includes("hm=") ||
+    !URLString.includes("is=")
+  ) {
+    return false;
+  }
+
+  if (ValidateExpired) {
+    const URLInst = new URL(URLString);
+    const ExpirationHex = URLInst.searchParams.get("ex");
+    const IssueingHex = URLInst.searchParams.get("is");
+    const SignatureHex = URLInst.searchParams.get("hm");
+    if (!ExpirationHex || !IssueingHex || !SignatureHex) return false;
+
+    const ExpirationDate = new Date(parseInt(ExpirationHex, 16) * 1000);
+    return ExpirationDate > new Date();
+  }
+
+  return true;
+}

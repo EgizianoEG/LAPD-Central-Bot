@@ -1,7 +1,7 @@
 import type { Types, HydratedDocument, HydratedArraySubdocument, Model } from "mongoose";
 import type { DeepPartial, Falsey, Overwrite } from "utility-types";
 import type ERLCAgeGroups from "@Resources/ERLCAgeGroups.ts";
-import type IncidentTypes from "@Resources/IncidentTypes.ts";
+import type IncidentTypes from "@Resources/IncidentConstants.ts";
 import type AppError from "@Utilities/Classes/AppError.ts";
 
 export namespace Guilds {
@@ -98,7 +98,7 @@ export namespace Guilds {
       log_channels: {
         citations: string[];
         arrests: string[];
-        incidents: string;
+        incidents?: string | null;
       };
     };
 
@@ -319,6 +319,9 @@ export namespace Shifts {
 
     /** The number of arrests logged during this shift. */
     arrests: number;
+
+    /** The number of incidents reported during this shift. */
+    incidents: number;
 
     /** The number of citations logged during this shift. */
     citations: number;
@@ -761,10 +764,10 @@ export namespace GuildIncidents {
 
   interface OfficerInvolved {
     /** The Roblox user id. */
-    id: number;
+    roblox_id: number;
 
     /** The Roblox username. */
-    username: string;
+    roblox_username: string;
 
     /** The Roblox display name. */
     display_name: string;
@@ -784,14 +787,17 @@ export namespace GuildIncidents {
     status: IncidentStatus;
     reported_by: OfficerInvolved;
 
-    /** A list of involved suspects. */
+    /** A list of involved suspects (could be Roblox usernames). */
     suspects: string[];
 
-    /** A list of possible involved victims. */
+    /** A list of incident victims (could be Roblox usernames). */
     victims: string[];
 
+    /** A list of incident witnesses (could be Roblox usernames). */
+    witnesses: string[];
+
     /** A list of involved officers. */
-    officers: Omit<OfficerInvolved, "discord_id">[];
+    officers: string[];
 
     /**
      * An array of image urls of the incident.
@@ -799,6 +805,11 @@ export namespace GuildIncidents {
      */
     attachments: string[];
   }
+
+  type e = ExpandRecursively<IncidentRecordWithOptionalDetails>;
+  interface IncidentRecordWithOptionalDetails
+    extends Pick<IncidentRecord, "_id" | "description" | "location" | "reported_by" | "type">,
+      Partial<IncidentRecord> {}
 }
 
 export namespace AggregateResults {
@@ -875,6 +886,9 @@ export namespace AggregateResults {
     > | null;
 
     quota_met: boolean;
+
+    /** The total number of incidents reported. */
+    incidents: number;
 
     /** Total number of citations issued. */
     citations: number;

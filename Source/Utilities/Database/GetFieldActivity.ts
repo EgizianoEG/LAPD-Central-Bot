@@ -4,6 +4,7 @@ import GuildModel from "@Models/Guild.js";
 
 export interface StaffFieldActivityReturn {
   arrests_made: number;
+  incidents_reported: number;
   arrests_assisted: number;
   citations_issued: {
     warnings: number;
@@ -31,7 +32,15 @@ export default async function GetStaffFieldActivity(
     },
     {
       $project: {
-        logs: 1,
+        "logs.arrests.made_on": 1,
+        "logs.arrests.assisting_officers": 1,
+        "logs.arrests.arresting_officer.discord_id": 1,
+
+        "logs.citations.issued_at": 1,
+        "logs.citations.citing_officer.discord_id": 1,
+
+        "logs.incidents.reported_on": 1,
+        "logs.incidents.reported_by.discord_id": 1,
       },
     },
     {
@@ -90,6 +99,24 @@ export default async function GetStaffFieldActivity(
             },
           },
         },
+        incidents: {
+          $filter: {
+            input: "$logs.incidents",
+            as: "incident",
+            cond: {
+              $and: [
+                { $eq: [StaffMember.id, "$$incident.reported_by.discord_id"] },
+                {
+                  $cond: {
+                    if: After,
+                    then: { $gt: ["$$incident.reported_on", After] },
+                    else: true,
+                  },
+                },
+              ],
+            },
+          },
+        },
       },
     },
     {
@@ -97,6 +124,7 @@ export default async function GetStaffFieldActivity(
         _id: 0,
         arrests_made: { $size: "$arrests" },
         arrests_assisted: { $size: "$arrests_assisted" },
+        incidents_reported: { $size: "$incidents" },
         citations_issued: {
           total: { $size: "$citations" },
           warnings: {
@@ -126,6 +154,7 @@ export default async function GetStaffFieldActivity(
         {
           arrests_made: 0,
           arrests_assisted: 0,
+          incidents_reported: 0,
           citations_issued: {
             warnings: 0,
             fines: 0,

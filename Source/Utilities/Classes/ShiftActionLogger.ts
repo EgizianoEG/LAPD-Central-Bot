@@ -414,6 +414,7 @@ export default class ShiftActionLogger {
           value: Dedent(`
             Arrests Made: ${BluewishText(ShiftDoc.events.arrests, BaseData.LoggingChannel?.id ?? UserInteract.guild.id)}
             Citations Issued: ${BluewishText(ShiftDoc.events.citations, BaseData.LoggingChannel?.id ?? UserInteract.guild.id)}
+            Incidents Reported: ${BluewishText(ShiftDoc.events.incidents, BaseData.LoggingChannel?.id ?? UserInteract.guild.id)}
           `),
         }
       );
@@ -471,6 +472,7 @@ export default class ShiftActionLogger {
           value: Dedent(`
             Arrests Made: ${BluewishText(ShiftDoc.events.arrests, BaseData.LoggingChannel?.id ?? UserInteract.guild.id)}
             Citations Issued: ${BluewishText(ShiftDoc.events.citations, BaseData.LoggingChannel?.id ?? UserInteract.guild.id)}
+            Incidents Reported: ${BluewishText(ShiftDoc.events.incidents, BaseData.LoggingChannel?.id ?? UserInteract.guild.id)}
           `),
         },
         {
@@ -533,6 +535,7 @@ export default class ShiftActionLogger {
           value: Dedent(`
             Arrests Made: ${BluewishText(ShiftDoc.events.arrests, BaseData.LoggingChannel?.id ?? UserInteract.guild.id)}
             Citations Issued: ${BluewishText(ShiftDoc.events.citations, BaseData.LoggingChannel?.id ?? UserInteract.guild.id)}
+            Incidents Reported: ${BluewishText(ShiftDoc.events.incidents, BaseData.LoggingChannel?.id ?? UserInteract.guild.id)}
           `),
         },
         {

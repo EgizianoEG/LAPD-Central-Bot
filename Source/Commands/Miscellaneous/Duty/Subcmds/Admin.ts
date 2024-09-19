@@ -934,6 +934,7 @@ async function HandleUserShiftEnd(
         value: Dedent(`
           **Arrests Made:** \`${EndedShift.events.arrests}\`
           **Citations Issued:** \`${EndedShift.events.citations}\`
+          **Incidents Reported:** \`${EndedShift.events.incidents}\`
         `),
       }
     );

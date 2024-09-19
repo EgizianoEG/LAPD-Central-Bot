@@ -164,6 +164,7 @@ export default async function GetActivityReportData(
         { userEnteredValue: { numberValue: Record.arrests } },
         { userEnteredValue: { numberValue: Record.arrests_assisted } },
         { userEnteredValue: { numberValue: Record.citations } },
+        { userEnteredValue: { numberValue: Record.incidents } },
         { userEnteredValue: { stringValue: Record.quota_met ? "Yes" : "No" } },
         { userEnteredValue: { stringValue: LeaveActive ? "Yes" : "No" }, note: LeaveNote },
       ],
@@ -230,8 +231,15 @@ function GetAggregationPipelineNoShiftType(
           {
             $project: {
               _id: 0,
-              "logs.arrests": 1,
-              "logs.citations": 1,
+              "logs.arrests.made_on": 1,
+              "logs.arrests.arresting_officer": 1,
+              "logs.arrests.assisting_officers": 1,
+
+              "logs.citations.issued_on": 1,
+              "logs.citations.citing_officer": 1,
+
+              "logs.incidents.reported_on": 1,
+              "logs.incidents.reported_by": 1,
             },
           },
         ],
@@ -432,6 +440,30 @@ function GetAggregationPipelineNoShiftType(
             },
           },
         },
+        incidents: {
+          $size: {
+            $filter: {
+              input: "$guild.logs.incidents",
+              as: "incident",
+              cond: {
+                $and: [
+                  {
+                    $eq: ["$user", "$$incident.reported_by.discord_id"],
+                  },
+                  {
+                    $cond: {
+                      if: Opts.after,
+                      then: {
+                        $gte: ["$$incident.reported_on", Opts.after],
+                      },
+                      else: true,
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
         total_time: {
           $max: [
             {
@@ -456,6 +488,7 @@ function GetAggregationPipelineNoShiftType(
         arrests_assisted: 1,
         recent_loa: 1,
         citations: 1,
+        incidents: 1,
         arrests: 1,
         quota_met: {
           $gte: ["$total_time", Opts.quota_duration ?? 0],
