@@ -102,6 +102,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
         value: Dedent(`
           - Arrests Made: \`${FieldActivityData.arrests_made}\`
           - Arrests Assisted: \`${FieldActivityData.arrests_assisted}\`
+          - Incidents Reported: \`${FieldActivityData.incidents_reported}\`
           - Citations Issued:
            - Warnings: \`${FieldActivityData.citations_issued.warnings}\`
            - Fines: \`${FieldActivityData.citations_issued.fines}\`
