@@ -96,7 +96,7 @@ export default function GetIncidentReportEmbeds(
         ? channelLink(ReportTargetChannel.channel_id)
         : ReportTargetChannel?.guild_id
           ? `https://discord.com/channels/${ReportTargetChannel.guild_id}/`
-          : "https://.com";
+          : "https://discord.com";
 
       IncidentReportEmbed.setURL(SampleURL);
       for (const AttachmentLink of IncidentAttachments.slice(1)) {
