@@ -33,7 +33,7 @@ function SanitizeList(StrList: string[]): string[] {
  * Sends messages to specific *joined* guilds and channels with a given message payload.
  * @param Interact - The originally received interaction from the user.
  * @param MsgPayload - The message payload to send over the provided channels.
- * @param GuildChannelIds - An array of strings representing guild and channel Ids in the format "GuildId:ChannelId" or "ChannelId".
+ * @param GuildChannelIds - An array of strings or a single string representing guild and channel Ids in the format "GuildId:ChannelId" or "ChannelId".
  * 1. `Guild Id - Channel Id` format:
  * The string should be splittable by the `:` character and have both the guild id and the channel id where the message shall be sent.
  *
@@ -51,11 +51,13 @@ function SanitizeList(StrList: string[]): string[] {
  */
 export default async function SendGuildMessages(
   Interact: SlashCommandInteraction<"cached"> | ButtonInteraction<"cached">,
-  GuildChannelIds: string[],
+  GuildChannelIds: string | string[],
   MessagePayload: MessagePayload | MessageCreateOptions
 ) {
   let MainReportMsgLink: string | null = null;
-  GuildChannelIds = SanitizeList(GuildChannelIds);
+  GuildChannelIds = SanitizeList(
+    Array.isArray(GuildChannelIds) ? GuildChannelIds : [GuildChannelIds]
+  );
 
   for (const GuildChannelId of GuildChannelIds) {
     let GuildId: string;
