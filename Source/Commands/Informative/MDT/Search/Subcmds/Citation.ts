@@ -50,7 +50,7 @@ const CommandObject = {
   callback: Callback,
   data: new SlashCommandSubcommandBuilder()
     .setName("citation")
-    .setDescription("Search for an issued citation.")
+    .setDescription("See a copy of an issued traffic citation.")
     .addIntegerOption((Option) =>
       Option.setName("citation-num")
         .setDescription("The citation number.")

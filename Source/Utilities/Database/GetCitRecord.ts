@@ -6,15 +6,11 @@ export default async function GetCitationRecord(Guild: string, CitNum: number) {
     {
       $match: {
         _id: Guild,
+        "logs.citations.num": CitNum,
       },
     },
     {
       $unwind: "$logs.citations",
-    },
-    {
-      $match: {
-        "logs.citations.num": CitNum,
-      },
     },
     {
       $project: {
