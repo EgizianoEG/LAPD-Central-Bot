@@ -24,6 +24,7 @@ const Subcommands = [
   (await import("./Deps/CitFine.js")).default,
   (await import("./Deps/CitWarn.js")).default,
   (await import("./Deps/Arrest.js")).default,
+  (await import("./Deps/Incident.js")).default,
 ];
 
 // ---------------------------------------------------------------------------------------
@@ -124,7 +125,8 @@ const CommandObject: SlashCommandObject<any> = {
     .setContexts(InteractionContextType.Guild)
     .addSubcommand(Subcommands[0].data)
     .addSubcommand(Subcommands[1].data)
-    .addSubcommand(Subcommands[2].data),
+    .addSubcommand(Subcommands[2].data)
+    .addSubcommand(Subcommands[3].data),
 
   callback: Callback,
   autocomplete: Autocomplete,
