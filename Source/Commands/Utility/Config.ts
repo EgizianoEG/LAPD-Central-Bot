@@ -851,10 +851,15 @@ async function HandleAdditionalConfigPageInteracts(
         CurrConfiguration.duty_activities.log_deletion_interval
       );
 
+      const ILSetChannel = CurrConfiguration.duty_activities.log_channels.incidents
+        ? channelMention(CurrConfiguration.duty_activities.log_channels.incidents)
+        : "None";
+
       const FormattedDesc = Dedent(`
         Successfully set/updated the app's additional configuration.
         Current Configuration:
         - **Log Deletion Interval:** ${LDIFormatted}
+        - **Incidents Log Channel:** ${ILSetChannel}
       `);
 
       return new SuccessEmbed().setDescription(FormattedDesc).replyToInteract(ButtonInteract);
@@ -1194,7 +1199,6 @@ async function HandleDutyActivitiesConfigPageInteracts(
 ) {
   let ArrestReportsChannels = DACurrentConfig.log_channels.arrests.slice();
   let CitationsLogChannels = DACurrentConfig.log_channels.citations.slice();
-  let IncidentsLogChannel = DACurrentConfig.log_channels.incidents;
   let ModuleEnabled = DACurrentConfig.enabled;
 
   const LCCompActionCollector = ConfigPrompt.createMessageComponentCollector<
@@ -1207,7 +1211,6 @@ async function HandleDutyActivitiesConfigPageInteracts(
   const HandleSaveConfirmation = async (ButtonInteract: ButtonInteraction<"cached">) => {
     if (
       ModuleEnabled === DACurrentConfig.enabled &&
-      IncidentsLogChannel === DACurrentConfig.log_channels.incidents &&
       ArraysAreEqual(DACurrentConfig.log_channels.arrests, ArrestReportsChannels) &&
       ArraysAreEqual(DACurrentConfig.log_channels.citations, CitationsLogChannels)
     ) {
@@ -1224,7 +1227,6 @@ async function HandleDutyActivitiesConfigPageInteracts(
           "settings.duty_activities.enabled": ModuleEnabled,
           "settings.duty_activities.log_channels.arrests": ArrestReportsChannels,
           "settings.duty_activities.log_channels.citations": CitationsLogChannels,
-          "settings.shift_management.log_channels.incidents": IncidentsLogChannel,
         },
       },
       {
@@ -1239,10 +1241,6 @@ async function HandleDutyActivitiesConfigPageInteracts(
     ).then((GuildDoc) => GuildDoc?.settings.duty_activities);
 
     if (DACurrentConfig) {
-      const ILSetChannel = DACurrentConfig.log_channels.incidents
-        ? channelMention(DACurrentConfig.log_channels.incidents)
-        : "*None*";
-
       const ARSetChannels = DACurrentConfig.log_channels.arrests.map((CI) =>
         channelMention(CI.match(/:?(\d+)$/)?.[1] || "0")
       );
@@ -1255,7 +1253,6 @@ async function HandleDutyActivitiesConfigPageInteracts(
         Successfully set/updated the app's duty activities module configuration.
         Current Configuration:
         - **Module Enabled:** ${DACurrentConfig.enabled ? "Yes" : "No"}
-        - **Incidents Log Channel:** ${ILSetChannel}
         - **Arrest Reports Log Channel(s):**
           > ${ARSetChannels.length ? ListFormatter.format(ARSetChannels) : "*None*"}
         - **Citation Issued Log Channel(s):**
@@ -1305,10 +1302,6 @@ async function HandleDutyActivitiesConfigPageInteracts(
       } else {
         CitationsLogChannels = SelectInteract.values;
       }
-    } else if (
-      OptionId.startsWith(CTAIds[ConfigTopics.DutyActConfiguration].IncidentLogLocalChannel)
-    ) {
-      IncidentsLogChannel = SelectInteract.values[0] || null;
     }
   };
 
