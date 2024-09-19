@@ -820,6 +820,13 @@ export namespace AggregateResults {
     }[];
   }
 
+  interface GetIncidentNumbers {
+    incidents: {
+      num: string;
+      autocomplete_label: string;
+    }[];
+  }
+
   interface GetBookingNumbers {
     bookings: {
       num: string;
@@ -829,6 +836,10 @@ export namespace AggregateResults {
 
   interface GetCitationRecord {
     citation: GuildCitations.AnyCitationData;
+  }
+
+  interface GetIncidentRecord {
+    incident: GuildIncidents.IncidentRecord;
   }
 
   interface GetArrestRecord {

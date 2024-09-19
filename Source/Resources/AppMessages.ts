@@ -470,6 +470,11 @@ export const ErrorMessages = {
     Description: "There is no citation found with the specified number.",
   },
 
+  IncidentRecordNotFound: {
+    Title: "Record Not Found",
+    Description: "There is no incident report found with the specified number.",
+  },
+
   /**
    * For nickname searches and replaces
    */

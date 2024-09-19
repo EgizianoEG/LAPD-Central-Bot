@@ -1,5 +1,6 @@
 // Dependencies:
 // -------------
+import AutocompleteIncidentNum from "@Utilities/Autocompletion/IncidentNum.js";
 import AutocompleteCitationNum from "@Utilities/Autocompletion/CitationNum.js";
 import AutocompleteBookingNum from "@Utilities/Autocompletion/BookingNum.js";
 import AutocompleteUsername from "@Utilities/Autocompletion/Username.js";
@@ -46,6 +47,8 @@ async function Autocomplete(Interaction: AutocompleteInteraction<"cached">): Pro
     Suggestions = await AutocompleteCitationNum(value, Interaction.guildId);
   } else if (name === "booking-num") {
     Suggestions = await AutocompleteBookingNum(value, Interaction.guildId);
+  } else if (name === "incident-num") {
+    Suggestions = await AutocompleteIncidentNum(value, Interaction.guildId);
   } else {
     Suggestions = [];
   }
