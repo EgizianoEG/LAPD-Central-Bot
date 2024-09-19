@@ -269,7 +269,7 @@ async function AwaitIncidentDetailsModalSubmission(
   const IncidentInfoModal = GetIncidentInformationModal(CmdInteract, IncidentType);
   return CmdInteract.showModal(IncidentInfoModal).then(() =>
     CmdInteract.awaitModalSubmit({
-      time: milliseconds({ minutes: 10 }),
+      time: milliseconds({ minutes: 12.5 }),
       filter: (Modal) =>
         Modal.user.id === CmdInteract.user.id &&
         Modal.customId === IncidentInfoModal.data.custom_id!,
