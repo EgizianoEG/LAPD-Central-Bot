@@ -105,8 +105,8 @@ export default async function CreateShiftReport(
               sheetId: CSpreadsheet.data.sheets![0].properties!.sheetId,
               startRowIndex: 7, // Refers to row 8
               endRowIndex: 8, // Up to row 9
-              startColumnIndex: 11, // Column 'L'
-              endColumnIndex: 12, // Up to column 'M'
+              startColumnIndex: 12, // Column 'L'
+              endColumnIndex: 13, // Up to column 'M'
             },
             rows: [
               {

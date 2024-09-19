@@ -887,6 +887,9 @@ export namespace AggregateResults {
 
     quota_met: boolean;
 
+    /** The total number of incidents reported. */
+    incidents: number;
+
     /** Total number of citations issued. */
     citations: number;
 
