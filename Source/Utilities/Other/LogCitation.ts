@@ -36,7 +36,7 @@ export default async function LogTrafficCitation(
 
   GuildDocument.logs.citations.addToSet({
     ...CitationData,
-    issued_at: CachedInteract.createdAt,
+    issued_on: CachedInteract.createdAt,
     img_url: CitationImgURL,
   });
 
