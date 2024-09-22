@@ -821,6 +821,7 @@ async function HandleBasicConfigPageInteracts(
   BCCompActionCollector.on("end", async (Collected, EndReason) => {
     if (EndReason.includes("time") || EndReason.includes("idle")) {
       const LastInteract = Collected.last() || CmdInteract;
+      if (!(await BasicConfigPrompt.fetch(true).catch(() => null))) return;
       await new InfoEmbed()
         .useInfoTemplate("TimedOutConfigPrompt")
         .setTitle("Timed Out - Basic Configuration")
@@ -959,6 +960,7 @@ async function HandleAdditionalConfigPageInteracts(
   BCCompActionCollector.on("end", async (Collected, EndReason) => {
     if (EndReason.includes("time") || EndReason.includes("idle")) {
       const LastInteract = Collected.last() || CmdInteract;
+      if (!(await AddConfigPrompt.fetch(true).catch(() => null))) return;
       await new InfoEmbed()
         .useInfoTemplate("TimedOutConfigPrompt")
         .setTitle("Timed Out - Additional Configuration")
@@ -1090,6 +1092,7 @@ async function HandleShiftConfigPageInteracts(
   SCCompActionCollector.on("end", async (Collected, EndReason) => {
     if (EndReason.includes("time") || EndReason.includes("idle")) {
       const LastInteract = Collected.last() || CmdInteract;
+      if (!(await ConfigPrompt.fetch(true).catch(() => null))) return;
       return new InfoEmbed()
         .useInfoTemplate("TimedOutConfigPrompt")
         .setTitle("Timed Out - Shift Module Configuration")
@@ -1227,6 +1230,7 @@ async function HandleLeaveConfigPageInteracts(
   SCCompActionCollector.on("end", async (Collected, EndReason) => {
     if (EndReason.includes("time") || EndReason.includes("idle")) {
       const LastInteract = Collected.last() || CmdInteract;
+      if (!(await ConfigPrompt.fetch(true).catch(() => null))) return;
       return new InfoEmbed()
         .useInfoTemplate("TimedOutConfigPrompt")
         .setTitle("Timed Out - Shift Module Configuration")
@@ -1421,6 +1425,7 @@ async function HandleDutyActivitiesConfigPageInteracts(
   LCCompActionCollector.on("end", async (Collected, EndReason) => {
     if (EndReason.includes("time") || EndReason.includes("idle")) {
       const LastInteract = Collected.last() || CmdInteract;
+      if (!(await ConfigPrompt.fetch(true).catch(() => null))) return;
       return new InfoEmbed()
         .useInfoTemplate("TimedOutConfigPrompt")
         .setTitle("Timed Out - Activities Module Configuration")
