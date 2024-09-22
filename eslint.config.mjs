@@ -65,7 +65,7 @@ export default [
       "no-undef": "off",
       camelcase: "off",
       "no-useless-call": "error",
-      quotes: ["error", "double"],
+      quotes: ["error", "double", { avoidEscape: true }],
       semi: ["error", "always"],
       "sonarjs/cognitive-complexity": ["warn", 35],
       "no-extra-parens": ["off", "functions"],
