@@ -21,7 +21,7 @@ let FFIFuncs: null | Record<string, any> = null;
 type ReplacementType = "Word" | "Character";
 type RustRegexReplaceFun = (params: RustRegexReplaceParams) => string;
 
-interface FilterUserInputOptions {
+export interface FilterUserInputOptions {
   /**
    * The string to use as a replacement when redacting content.
    * @default "*"
@@ -51,6 +51,13 @@ interface FilterUserInputOptions {
    * - Only have the `SendAlertMessage` action or no action set at all.
    */
   guild_instance?: Guild;
+
+  /**
+   * Indicates whether user text input filtering is enabled for the guild. When set to `true`, the input string will be filtered; otherwise, it will not.
+   * @default
+   * true
+   */
+  utif_setting_enabled?: boolean;
 
   /**
    * The Id of the target channel where the input string will be sent.
@@ -158,7 +165,16 @@ export function RedactLinksAndEmails(
  * @returns The filtered user input string.
  */
 // eslint-disable-next-line sonarjs/cognitive-complexity
-export async function FilterUserInput(Input: string, Options: FilterUserInputOptions) {
+export async function FilterUserInput(Input: string, Options: FilterUserInputOptions = {}) {
+  if (/^\s*$/.test(Input)) return Input;
+  if (typeof Options.utif_setting_enabled !== "boolean") {
+    Options.utif_setting_enabled = true;
+  }
+
+  if (!Options.utif_setting_enabled) {
+    return Input;
+  }
+
   let ModifiedInput: string = Input;
   Options.replacement = Options.replacement ?? "*";
   Options.replacement_type = Options.replacement_type ?? "Character";

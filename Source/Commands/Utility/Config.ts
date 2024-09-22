@@ -90,6 +90,7 @@ const CTAIds = {
 
   [ConfigTopics.AdditionalConfiguration]: {
     DActivitiesDeletionInterval: `${ConfigTopics.AdditionalConfiguration}-dadi`,
+    UserTextInputFilteringEnabled: `${ConfigTopics.AdditionalConfiguration}-utfe`,
   },
 };
 
@@ -473,13 +474,35 @@ function GetAdditionalConfigComponents(
       )
   );
 
+  const UTIFilteringEnabledAR = new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(
+    new StringSelectMenuBuilder()
+      .setPlaceholder("Input Filtering Enabled/Disabled")
+      .setMinValues(1)
+      .setMaxValues(1)
+      .setCustomId(
+        `${CTAIds[ConfigTopics.AdditionalConfiguration].UserTextInputFilteringEnabled}:${CmdInteract.user.id}`
+      )
+      .setOptions(
+        new StringSelectMenuOptionBuilder()
+          .setLabel("Enabled")
+          .setValue("true")
+          .setDescription("Enable filtering of member text input.")
+          .setDefault(GuildConfig.utif_enabled),
+        new StringSelectMenuOptionBuilder()
+          .setLabel("Disabled")
+          .setValue("false")
+          .setDescription("Disable filtering of member text input (not recommended).")
+          .setDefault(!GuildConfig.utif_enabled)
+      )
+  );
+
   LogDelIntervalSMAR.components[0].options.forEach((Option) => {
     if (Option.data.value === `${SetIntervalInDays}d`) {
       Option.setDefault(true);
     }
   });
 
-  return [LogDelIntervalSMAR, IncidentLogChannelAR] as const;
+  return [LogDelIntervalSMAR, IncidentLogChannelAR, UTIFilteringEnabledAR] as const;
 }
 
 function GetShowConfigurationsPageComponents(CmdInteract: SlashCommandInteraction<"cached">) {
@@ -583,10 +606,15 @@ function GetAdditionalConfigExplanationEmbed() {
     .setDescription(
       Dedent(`
         1. **Log Deletion Interval**
-          Specify the interval at which citation, arrest, and incident logs will be deleted. \
-          The default setting is to never delete logs. Note that changing this setting will affect both existing and new logs.
+          Specify the interval, in days, at which citation, arrest, and incident logs will be automatically deleted. \
+          The default setting is to never delete logs. Note: changing this setting will affect both existing and new logs.
         2. **Incident Report Channel**
-          The channel where submitted incident reports will be sent. This channel is used to store and display incident reports in an organized manner.
+          Select the channel where submitted incident reports will be sent. This channel should be accessible to relevant \
+          staff members for reviewing and managing incident reports.
+        3. **Member Text Inputs Filtering**
+          Enable or disable filtering of member text input in certain commands to help prevent abuse within the application. \
+          This setting is enabled by default and uses the server's auto-moderation rules to attempt to redact profane words \
+          and offensive language, in addition to the link filtering provided by the application.
       `)
         .replace(/\.\s{2,}(\w)/g, ". $1")
         .replace(/(\w)\s{2,}(\w)/g, "$1 $2")
@@ -808,6 +836,7 @@ async function HandleAdditionalConfigPageInteracts(
 ) {
   let LogDeletionInterval = CurrConfiguration.duty_activities.log_deletion_interval;
   let IncidentLogChannel = CurrConfiguration.duty_activities.log_channels.incidents;
+  let UTIFEnabled = CurrConfiguration.utif_enabled;
 
   const BCCompActionCollector = AddConfigPrompt.createMessageComponentCollector<
     ComponentType.Button | ComponentType.StringSelect | ComponentType.ChannelSelect
@@ -819,7 +848,8 @@ async function HandleAdditionalConfigPageInteracts(
   const HandleSettingsSave = async (ButtonInteract: ButtonInteraction<"cached">) => {
     if (
       CurrConfiguration.duty_activities.log_deletion_interval === LogDeletionInterval &&
-      CurrConfiguration.duty_activities.log_channels.incidents === IncidentLogChannel
+      CurrConfiguration.duty_activities.log_channels.incidents === IncidentLogChannel &&
+      CurrConfiguration.utif_enabled === UTIFEnabled
     ) {
       return new InfoEmbed()
         .useInfoTemplate("ConfigTopicNoChangesMade", "additional")
@@ -833,6 +863,7 @@ async function HandleAdditionalConfigPageInteracts(
         $set: {
           "settings.duty_activities.log_deletion_interval": LogDeletionInterval,
           "settings.duty_activities.log_channels.incidents": IncidentLogChannel,
+          "settings.utif_enabled": UTIFEnabled,
         },
       },
       {
@@ -860,6 +891,7 @@ async function HandleAdditionalConfigPageInteracts(
         Current Configuration:
         - **Log Deletion Interval:** ${LDIFormatted}
         - **Incidents Log Channel:** ${ILSetChannel}
+        - **Input Filtering Enabled:** ${CurrConfiguration.utif_enabled ? "Yes" : "No"}
       `);
 
       return new SuccessEmbed().setDescription(FormattedDesc).replyToInteract(ButtonInteract);
@@ -886,13 +918,24 @@ async function HandleAdditionalConfigPageInteracts(
           )
         ) {
           LogDeletionInterval = Number(RecInteract.values[0].slice(0, -1)) || 0;
-        } else if (
+        }
+
+        if (
           RecInteract.isChannelSelectMenu() &&
           RecInteract.customId.startsWith(
             CTAIds[ConfigTopics.DutyActConfiguration].IncidentLogLocalChannel
           )
         ) {
           IncidentLogChannel = RecInteract.values[0];
+        }
+
+        if (
+          RecInteract.isStringSelectMenu() &&
+          RecInteract.customId.startsWith(
+            CTAIds[ConfigTopics.AdditionalConfiguration].UserTextInputFilteringEnabled
+          )
+        ) {
+          UTIFEnabled = RecInteract.values[0] === "true";
         }
 
         await RecInteract.deferUpdate();

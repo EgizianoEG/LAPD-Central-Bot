@@ -27,6 +27,12 @@ const GuildSettings = new Schema({
     required: true,
   },
 
+  utif_enabled: {
+    type: Boolean,
+    default: false,
+    required: true,
+  },
+
   role_perms: {
     _id: false,
     required: true,

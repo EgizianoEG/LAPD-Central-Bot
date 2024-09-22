@@ -39,6 +39,16 @@ export namespace Guilds {
     require_authorization: boolean;
 
     /**
+     * **User Text Input Filtering Enabled**
+     * Indicates whether user text input filtering is enabled. When enabled, the application will attempt to filter user-submitted text
+     * to remove inappropriate content such as links, emails, and profanities before saving it to the database or sending it to logging channels.
+     *
+     * Note: This feature is not available for all application commands that require user input where it might not be necessary or desirable to filter.
+     * @default true
+     */
+    utif_enabled: boolean;
+
+    /**
      * Role permissions that will be used to limit the execution of specific commands and operations, by comparing the executor's roles to the ones in this object.
      * - Staff: Any member has one of the specified roles, authorized to use low-profile management commands and activities.
      * - Management: Any member has at least one of the specified roles, allowed to execute high-profile management commands and actions like wiping data, removing shifts, and managing leave notices.
