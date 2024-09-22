@@ -22,6 +22,7 @@ const TWCTemplateImgBuffer = await FileSystem.readFile(
 const FineTemplate = await loadImage(TFCTemplateImgBuffer);
 const WarnTemplate = await loadImage(TWCTemplateImgBuffer);
 
+// eslint-disable-next-line sonarjs/cognitive-complexity
 export async function GetFilledCitation<
   Type extends "Warning" | "Fine" = "Warning" | "Fine",
   AsURL extends boolean | undefined = undefined,

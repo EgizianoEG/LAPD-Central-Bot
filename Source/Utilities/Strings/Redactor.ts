@@ -157,6 +157,7 @@ export function RedactLinksAndEmails(
  * @param Options - The options for filtering the user input.
  * @returns The filtered user input string.
  */
+// eslint-disable-next-line sonarjs/cognitive-complexity
 export async function FilterUserInput(Input: string, Options: FilterUserInputOptions) {
   let ModifiedInput: string = Input;
   Options.replacement = Options.replacement ?? "*";
