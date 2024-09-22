@@ -1,8 +1,9 @@
 import { FilterUserInput } from "@Utilities/Strings/Redactor.js";
+import Dedent from "dedent";
 import {
-  SlashCommandBuilder,
-  InteractionContextType,
   SlashCommandSubcommandsOnlyBuilder,
+  InteractionContextType,
+  SlashCommandBuilder,
   ActionRowBuilder,
   TextInputBuilder,
   TextInputStyle,
@@ -47,9 +48,14 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     replacement: "#",
   });
 
-  const ResponseMessage = new EmbedBuilder()
-    .setColor(Colors.DarkAqua)
-    .setDescription(`**Here is the filtered input:**\n${codeBlock(FilteredString)}`);
+  const ResponseMessage = new EmbedBuilder().setColor(Colors.DarkAqua).setDescription(
+    Dedent(`
+      ### Original input:
+      ${codeBlock(InputString)}
+      ### Filtered input:
+      ${codeBlock(FilteredString)}  
+    `)
+  );
 
   return ModalSubmission.editReply({ embeds: [ResponseMessage] });
 }
