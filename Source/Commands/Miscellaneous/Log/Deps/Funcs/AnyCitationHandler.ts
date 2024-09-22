@@ -29,9 +29,9 @@ import {
   IsValidRobloxUsername,
 } from "@Utilities/Other/Validators.js";
 
+import { FilterUserInput, FilterUserInputOptions } from "@Utilities/Strings/Redactor.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { EyeColors, HairColors } from "@Resources/ERLCPDColors.js";
-import { RedactLinksAndEmails } from "@Utilities/Strings/Redactor.js";
 import { GetFilledCitation } from "@Utilities/Other/GetFilledCitation.js";
 import { AllVehicleModels } from "@Resources/ERLCVehicles.js";
 import { ReporterInfo } from "../../Log.js";
@@ -352,6 +352,14 @@ async function OnModalSubmission(
     new: true,
   });
 
+  const UTIFOpts: FilterUserInputOptions = {
+    replacement: "#",
+    guild_instance: CmdInteract.guild,
+    replacement_type: "Character",
+    filter_links_emails: true,
+    utif_setting_enabled: GuildDoc?.settings.utif_enabled,
+  };
+
   const DateInfo = CmdInteract.createdAt
     .toLocaleDateString("en-US", {
       timeZone: "America/Los_Angeles",
@@ -380,11 +388,17 @@ async function OnModalSubmission(
     fine_amount: PCitationData.fine_amount,
 
     violations: FormatCitViolations(
-      RedactLinksAndEmails(ModalSubmission.fields.getTextInputValue("traffic-violations"))
+      await FilterUserInput(
+        ModalSubmission.fields.getTextInputValue("traffic-violations"),
+        UTIFOpts
+      )
     ),
 
     violation_loc: TitleCase(
-      RedactLinksAndEmails(ModalSubmission.fields.getTextInputValue("violations-location").trim()),
+      await FilterUserInput(
+        ModalSubmission.fields.getTextInputValue("violations-location"),
+        UTIFOpts
+      ),
       true
     ),
 
@@ -396,7 +410,10 @@ async function OnModalSubmission(
       city: "Los Angeles",
       address:
         TitleCase(
-          RedactLinksAndEmails(ModalSubmission.fields.getTextInputValue("residence-address").trim())
+          await FilterUserInput(
+            ModalSubmission.fields.getTextInputValue("residence-address"),
+            UTIFOpts
+          )
         ) || "N/A",
     },
 

@@ -30,9 +30,9 @@ import { RandomString } from "@Utilities/Strings/Random.js";
 import { GuildArrests } from "@Typings/Utilities/Database.js";
 import { ReporterInfo } from "../Log.js";
 import { UserHasPermsV2 } from "@Utilities/Database/UserHasPermissions.js";
-import { RedactLinksAndEmails } from "@Utilities/Strings/Redactor.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { FormatCharges, FormatHeight, FormatAge } from "@Utilities/Strings/Formatters.js";
+import { FilterUserInput, FilterUserInputOptions } from "@Utilities/Strings/Redactor.js";
 import { IsValidPersonHeight, IsValidRobloxUsername } from "@Utilities/Other/Validators.js";
 
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
@@ -194,11 +194,22 @@ async function OnChargesModalSubmission(
   const GuildDoc = await GuildModel.findOne({ _id: CmdInteract.guildId }, { logs: 1, settings: 1 });
 
   let AsstOfficers: string[] = [];
-  const RInputCharges = RedactLinksAndEmails(
-    ModalInteraction.fields.getTextInputValue("charges-text")
+  const UTIFOpts: FilterUserInputOptions = {
+    replacement: "#",
+    guild_instance: CmdInteract.guild,
+    replacement_type: "Character",
+    filter_links_emails: true,
+    utif_setting_enabled: GuildDoc?.settings.utif_enabled,
+  };
+
+  const RInputCharges = await FilterUserInput(
+    ModalInteraction.fields.getTextInputValue("charges-text"),
+    UTIFOpts
   );
-  const ArrestNotes = RedactLinksAndEmails(
-    ModalInteraction.fields.getTextInputValue("arrest-notes")
+
+  const ArrestNotes = await FilterUserInput(
+    ModalInteraction.fields.getTextInputValue("arrest-notes"),
+    UTIFOpts
   );
   const FCharges = FormatCharges(RInputCharges);
   const BookingNumber = GetBookingNumber(GuildDoc!.logs.arrests as any);
