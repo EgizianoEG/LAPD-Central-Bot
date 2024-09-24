@@ -1,6 +1,7 @@
 // Dependencies:
 // -------------
 import AutocompleteShiftType from "@Utilities/Autocompletion/ShiftType.js";
+import AutocompleteTimeDuration from "../../../Utilities/Autocompletion/TimeDuration.js";
 import {
   SlashCommandBuilder,
   InteractionContextType,
@@ -8,7 +9,6 @@ import {
   type ApplicationCommandOptionChoiceData,
   type SlashCommandSubcommandsOnlyBuilder,
 } from "discord.js";
-import AutocompleteTimeDuration from "../../../Utilities/Autocompletion/TimeDuration.js";
 
 const Subcommands = [
   (await import("./Subcmds/Officer.js")).default,
