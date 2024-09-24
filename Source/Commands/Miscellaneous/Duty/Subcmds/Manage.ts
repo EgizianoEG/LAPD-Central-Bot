@@ -9,9 +9,11 @@ import {
   EmbedBuilder,
   ComponentType,
   ButtonBuilder,
+  MessagePayload,
   ActionRowBuilder,
   ButtonInteraction,
   time as FormatTime,
+  InteractionReplyOptions,
   SlashCommandSubcommandBuilder,
 } from "discord.js";
 
@@ -221,6 +223,32 @@ async function HandleCommandUsageVerification(
   };
 }
 
+/**
+ * Replies to or edits a reply *safely* to a slash command interaction.
+ * @notice The main point of this function is to handle repeated interactions after the webhook token expires.
+ *         If the token expires, the function will then attempt to fetch the original command reply (the message)
+ *         and edit it with message methods.
+ *
+ * @param CmdInteract - The slash command interaction object.
+ * @param ReplyOpts - The options for the reply or edit.
+ * @returns A promise that resolves to the reply or edited message or `null` if nothing were done or an error occurred.
+ */
+async function CmdInteractSafeReplyOrEditReply(
+  CmdInteract: SlashCommandInteraction<"cached">,
+  ReplyOpts: MessagePayload | InteractionReplyOptions
+) {
+  const ReplyMethod = CmdInteract.deferred || CmdInteract.replied ? "editReply" : "reply";
+  return CmdInteract[ReplyMethod]({ ...ReplyOpts, fetchReply: true } as any).catch(async () => {
+    try {
+      const CmdReplyMsg = await CmdInteract.fetchReply().catch(() => null);
+      if (!CmdReplyMsg?.editable) return null;
+      return CmdReplyMsg?.edit(ReplyOpts as any);
+    } catch {
+      return null;
+    }
+  });
+}
+
 // ---------------------------------------------------------------------------------------
 // Action Handlers:
 // ----------------
@@ -276,8 +304,7 @@ async function HandleNonActiveShift(
   MgmtPromptEmbed: EmbedBuilder,
   MgmtShiftType: string
 ) {
-  const ReplyMethod = CmdInteract.deferred || CmdInteract.replied ? "editReply" : "reply";
-  const PromptEmbed = EmbedBuilder.from(MgmtPromptEmbed).setColor(
+  const PromptEmbed = MgmtPromptEmbed.setColor(
     MgmtPromptEmbed.data.color || Embeds.Colors.ShiftNatural
   );
 
@@ -287,15 +314,17 @@ async function HandleNonActiveShift(
     end: false,
   });
 
-  const PromptMessage = await CmdInteract[ReplyMethod]({
-    components: [MgmtComps],
+  const PromptMessage = await CmdInteractSafeReplyOrEditReply(CmdInteract, {
     embeds: [PromptEmbed],
+    components: [MgmtComps],
+    fetchReply: true,
   });
 
+  if (!PromptMessage) return;
   try {
     const RecInteract = await PromptMessage.awaitMessageComponent({
-      componentType: ComponentType.Button,
       filter: (Interact) => Interact.user.id === CmdInteract.user.id,
+      componentType: ComponentType.Button,
       time: 15 * 60 * 1000,
     });
 
@@ -308,7 +337,7 @@ async function HandleNonActiveShift(
   } catch (Err: any) {
     if (Err.message.match(/reason: \w+Delete/)) return;
     if (Err.message.match(/reason: time|idle/)) {
-      return CmdInteract.editReply({
+      return PromptMessage.edit({
         components: [MgmtComps.updateButtons({ start: false, break: false, end: false })],
       }).catch(() => null);
     }
@@ -362,7 +391,6 @@ async function HandleOnBreakShift(
   ShiftActive: Shifts.HydratedShiftDocument,
   BaseEmbedTitle: string
 ) {
-  const ReplyMethod = CmdInteract.deferred || CmdInteract.replied ? "editReply" : "reply";
   const BreakEpochs = ShiftActive.events.breaks.findLast(([, end]) => end === null);
   const MgmtComps = GetManagementButtons(CmdInteract);
   const FieldDescription = Dedent(`
@@ -377,11 +405,13 @@ async function HandleOnBreakShift(
     .setTitle(BaseEmbedTitle)
     .setFields({ name: "Current Shift", value: FieldDescription });
 
-  const PromptMessage = await CmdInteract[ReplyMethod]({
+  const PromptMessage = await CmdInteractSafeReplyOrEditReply(CmdInteract, {
     components: [MgmtComps.updateButtons({ start: false, break: true, end: false })],
     embeds: [PromptEmbed],
+    fetchReply: true,
   });
 
+  if (!PromptMessage) return;
   try {
     const RecInteract = await PromptMessage.awaitMessageComponent({
       componentType: ComponentType.Button,
@@ -403,7 +433,7 @@ async function HandleOnBreakShift(
   } catch (Err: any) {
     if (Err.message.match(/reason: \w+Delete/)) return;
     if (Err.message.match(/reason: time|idle/)) {
-      return CmdInteract.editReply({
+      return PromptMessage.edit({
         components: [MgmtComps.updateButtons({ start: false, break: false, end: false })],
       }).catch(() => null);
     }
@@ -464,7 +494,7 @@ async function HandleActiveShift(
   MgmtPromptEmbed: EmbedBuilder
 ) {
   const MgmtButtonComponents = GetManagementButtons(CmdInteract, ShiftActive);
-  const PromptEmbed = EmbedBuilder.from(MgmtPromptEmbed).setColor(Embeds.Colors.ShiftOn);
+  const PromptEmbed = MgmtPromptEmbed.setColor(Embeds.Colors.ShiftOn);
 
   if (!PromptEmbed.data.fields?.find((Field) => Field.name === "Current Shift")) {
     if (ShiftActive.durations.on_break > 500) {
@@ -488,13 +518,13 @@ async function HandleActiveShift(
     }
   }
 
-  const ReplyMethod = CmdInteract.deferred || CmdInteract.replied ? "editReply" : "reply";
-  const PromptMessage = await CmdInteract[ReplyMethod]({
-    fetchReply: true,
+  const PromptMessage = await CmdInteractSafeReplyOrEditReply(CmdInteract, {
     components: [MgmtButtonComponents.updateButtons({ start: false, break: true, end: true })],
     embeds: [PromptEmbed],
+    fetchReply: true,
   });
 
+  if (!PromptMessage) return;
   try {
     const RecInteract = await PromptMessage.awaitMessageComponent({
       componentType: ComponentType.Button,
@@ -513,7 +543,7 @@ async function HandleActiveShift(
   } catch (Err: any) {
     if (Err.message.match(/reason: \w+Delete/)) return;
     if (Err.message.match(/reason: time|idle/)) {
-      return CmdInteract.editReply({
+      return PromptMessage.edit({
         components: [
           MgmtButtonComponents.updateButtons({ start: false, break: false, end: false }),
         ],

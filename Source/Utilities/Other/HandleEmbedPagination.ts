@@ -133,18 +133,14 @@ export default async function HandleEmbedPagination(
     if (EndReason.match(/\w+Delete/)) return;
     try {
       NavigationButtons.components.forEach((Btn) => Btn.setDisabled(true));
-      const LastInteract = Collected.last();
-      if (LastInteract) {
-        await LastInteract.editReply({ components: [NavigationButtons] });
-      } else {
-        await Interact.editReply({ components: [NavigationButtons] }).catch(
-          async function CatchError() {
-            return (await ResponseMessage.fetch().catch(() => null))
-              ?.edit({ components: [NavigationButtons] })
-              .catch(() => null);
-          }
-        );
-      }
+      const LastInteract = Collected.last() || Interact;
+      await LastInteract.editReply({ components: [NavigationButtons] }).catch(
+        async function CatchError() {
+          const UpdatedResponseMsg = await ResponseMessage.fetch(true).catch(() => null);
+          if (!UpdatedResponseMsg?.editable) return;
+          return UpdatedResponseMsg.edit({ components: [NavigationButtons] });
+        }
+      );
     } catch (Err: any) {
       AppLogger.error({
         message: "An error occurred while ending the component collector for pagination;",
