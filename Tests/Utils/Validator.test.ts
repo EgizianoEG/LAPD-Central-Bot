@@ -1,4 +1,3 @@
-/* eslint-disable no-new-object */
 import { InteractionContextType, SlashCommandBuilder } from "discord.js";
 import {
   IsPlainObject,
@@ -158,7 +157,6 @@ describe("IsValidPersonHeight", () => {
     expect(IsValidPersonHeight("4'01\"1")).toBeFalsy();
     expect(IsValidPersonHeight("7'01\"a")).toBeFalsy();
     expect(IsValidPersonHeight("7'14\" ")).toBeFalsy();
-    // eslint-disable-next-line quotes
     expect(IsValidPersonHeight('7\'01""')).toBeFalsy();
   });
 
