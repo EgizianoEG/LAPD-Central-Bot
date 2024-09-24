@@ -149,6 +149,22 @@ async function CheckShiftTypeRestrictions(
   return false;
 }
 
+/**
+ * Verifies the usage of a specific shift type.
+ * @param CmdInteract - The interaction object for the slash command.
+ * @returns A promise that resolves to an object indicating whether the command was handled or not.
+ *          If handled, it returns `{ handled: true }`.
+ *          If not handled, it returns an object containing:
+ *          - `shift_types`: The available shift types from the guild settings.
+ *          - `guild_settings`: The guild settings object.
+ *          - `target_shift_type`: The determined target shift type.
+ *
+ * The function performs the following steps:
+ * 1. Retrieves the guild settings.
+ * 2. Determines the target shift type based on the command interaction options.
+ * 3. Checks if the specified shift type exists and if the user is authorized to use it.
+ * 4. Returns appropriate responses based on the checks.
+ */
 async function HandleCommandUsageVerification(
   CmdInteract: SlashCommandInteraction<"cached">
 ): Promise<
