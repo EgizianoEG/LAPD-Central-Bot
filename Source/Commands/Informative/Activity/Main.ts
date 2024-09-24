@@ -8,6 +8,7 @@ import {
   type ApplicationCommandOptionChoiceData,
   type SlashCommandSubcommandsOnlyBuilder,
 } from "discord.js";
+import AutocompleteTimeDuration from "../../../Utilities/Autocompletion/TimeDuration.js";
 
 const Subcommands = [
   (await import("./Subcmds/Officer.js")).default,
@@ -40,18 +41,8 @@ async function Autocomplete(Interaction: AutocompleteInteraction<"cached">): Pro
     Suggestions = ["yesterday", "3 days ago", "7 days ago", "14 days ago", "30 days ago"].map(
       (Choice) => ({ name: Choice, value: Choice })
     );
-  } else if (name === "time-requirement" && value.match(/^\s*$/)) {
-    Suggestions = [
-      "30 minutes",
-      "1 hour",
-      "2 hours",
-      "3 hours",
-      "4 hours",
-      "5 hours",
-      "6 hours",
-      "7 hours",
-      "8 hours",
-    ].map((Choice) => ({ name: Choice, value: Choice }));
+  } else if (name === "time-requirement") {
+    Suggestions = AutocompleteTimeDuration(value);
   } else {
     Suggestions = [];
   }

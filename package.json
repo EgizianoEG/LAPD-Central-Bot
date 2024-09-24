@@ -46,6 +46,7 @@
     "convert-units": "^2.3.4",
     "date-fns": "^4.0.0",
     "dedent": "^1.5.3",
+    "didyoumean2": "^7.0.4",
     "discord.js": "^14.16.1",
     "express": "^4.18.2",
     "ffi-rs": "^1.0.95",
