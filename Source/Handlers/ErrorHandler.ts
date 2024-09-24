@@ -1,33 +1,28 @@
-import { DiscordAPIError } from "discord.js";
+import { DiscordAPIError, DiscordjsError, DiscordjsErrorCodes } from "discord.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import AppError from "@Utilities/Classes/AppError.js";
 import Mongoose from "mongoose";
 
-const NonFatalDiscordAPIErrors: DiscordAPIError["code"][] = [
-  10_062, 10_008, 40_060, 50_001, 50_013, 50_035,
-];
-
-const NonFatalErrorNames = [
-  "InteractionNotReplied",
-  "InteractionAlreadyReplied",
-  "ModalSubmitInteractionFieldNotFound",
+const FatalDiscordAPIErrorCodes: DiscordAPIError["code"][] = [50_014, 50_017];
+const FatalDiscordJSErrors: DiscordjsErrorCodes[] = [
+  DiscordjsErrorCodes.TokenInvalid,
+  DiscordjsErrorCodes.TokenMissing,
+  DiscordjsErrorCodes.ClientNotReady,
+  DiscordjsErrorCodes.ClientMissingIntents,
 ];
 
 export default function ErrorHandler() {
   process.on("uncaughtException", (Err) => {
     if (
-      (Err instanceof DiscordAPIError && NonFatalDiscordAPIErrors.includes(Err.code)) ||
+      (Err instanceof DiscordAPIError && !FatalDiscordAPIErrorCodes.includes(Err.code)) ||
+      (Err instanceof DiscordjsError && !FatalDiscordJSErrors.includes(Err.code)) ||
       (Err instanceof AppError && Err.code !== 0) ||
-      Err instanceof Mongoose.mongo.MongoServerError ||
-      NonFatalErrorNames.some((Name) => Err.name.includes(Name))
+      Err instanceof Mongoose.mongo.MongoServerError
     ) {
       return AppLogger.error({
         message: "A non-fatal error has occurred - [UncaughtException].",
         label: "Handlers:ErrorHandler",
         stack: Err.stack,
-        details: {
-          ...Err,
-        },
       });
     }
 
@@ -35,9 +30,6 @@ export default function ErrorHandler() {
       message: "A fatal error has occurred [UncaughtException]. Terminating process.",
       label: "Handlers:ErrorHandler",
       stack: Err.stack,
-      details: {
-        ...Err,
-      },
     });
 
     process.exit(1);
