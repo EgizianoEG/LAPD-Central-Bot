@@ -37,7 +37,7 @@ const ReadableDuration = DHumanizer.humanizer({
 });
 
 const DefaultCmdCooldownDuration = 3;
-const LogLabel = "Events:InteractionCreate:CommandHandler";
+const LogLabel = "Events:InteractionCreate:SlashCommandHandler";
 
 // -----------------------------------------------------------------------------
 /**
@@ -45,7 +45,7 @@ const LogLabel = "Events:InteractionCreate:CommandHandler";
  * @param Client The discord.js client
  * @param Interaction The command interaction
  */
-export default async function CommandHandler(
+export default async function SlashCommandHandler(
   Client: DiscordClient,
   Interaction: ChatInputCommandInteraction
 ) {
