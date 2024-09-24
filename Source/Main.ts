@@ -27,6 +27,7 @@ export const App = new Client({
 
 App.commands = new Collection();
 App.cooldowns = new Collection();
+App.ctx_commands = new Collection();
 App.modalListeners = new Collection();
 App.buttonListeners = new Collection();
 

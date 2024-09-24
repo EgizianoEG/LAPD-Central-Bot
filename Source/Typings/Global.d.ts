@@ -6,7 +6,9 @@ import type { GeneralTypings } from "./Utilities/Generic.d.ts";
 import type {
   SlashCommandSubcommandsOnlyBuilder,
   SlashCommandSubcommandBuilder,
+  ContextMenuCommandInteraction,
   ChatInputCommandInteraction,
+  ContextMenuCommandBuilder,
   AutocompleteInteraction,
   PermissionResolvable,
   SlashCommandBuilder,
@@ -22,8 +24,7 @@ export type CommandObjectDataType =
   | SlashCommandBuilder
   | SlashCommandSubcommandBuilder
   | SlashCommandSubcommandsOnlyBuilder
-  | undefined
-  | any;
+  | undefined;
 
 /**
  * @note Each cron job will be automatically started even if not specified in cron options.
@@ -140,6 +141,11 @@ declare global {
     arg1?: SlashCommandInteraction
   ) => Promise<any>;
 
+  type AnyCtxMenuCmdCallback = (
+    arg0: DiscordClient | ContextMenuCommandInteraction,
+    arg1?: ContextMenuCommandInteraction
+  ) => Promise<any>;
+
   interface CommandObjectOptions {
     /** Whether or not this command will be removed if it already exists in the application or excluded from registration. */
     deleted?: boolean;
@@ -190,6 +196,21 @@ declare global {
      * This could also be a record mapped to each sub-command or sub-command group.
      */
     bot_perms?: PermissionResolvable[] | Record<string, PermissionResolvable[]>;
+  }
+
+  interface ContextMenuCommandObject {
+    callback:
+      | ((
+          arg0: DiscordClient,
+          arg1: ContextMenuCommandInteraction<Cached | undefined>
+        ) => Promise<any>)
+      | ((arg0: ContextMenuCommandInteraction<Cached | undefined>) => Promise<any>);
+
+    /** Optional configurations */
+    options?: CommandObjectOptions;
+
+    /** The context menu command itself */
+    data: ContextMenuCommandBuilder;
   }
 
   interface SlashCommandObject<ClassType extends CommandObjectDataType = SlashCommandBuilder> {

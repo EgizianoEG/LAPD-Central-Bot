@@ -1,4 +1,3 @@
-import { SlashCommandBuilder } from "discord.js";
 import { IsValidCmdObject } from "./Validators.js";
 import { GetDirName } from "./Paths.js";
 import GetFiles from "./GetFilesFrom.js";
@@ -11,7 +10,7 @@ import Path from "node:path";
  */
 export default async function GetLocalCommands(
   Exceptions: string[] = []
-): Promise<SlashCommandObject<SlashCommandBuilder>[]> {
+): Promise<Array<SlashCommandObject | ContextMenuCommandObject>> {
   const LocalCommands: SlashCommandObject[] = [];
   const CommandCats = GetFiles(
     Path.join(GetDirName(import.meta.url), "..", "..", "Commands"),
@@ -28,7 +27,7 @@ export default async function GetLocalCommands(
 
       for (const CommandPath of CommandPaths) {
         if (new RegExp(`(?:${CmdGroupName}|Main).[jt]s$`).exec(CommandPath)) {
-          const CommandObj = (await import(CommandPath)).default as SlashCommandObject;
+          const CommandObj = (await import(CommandPath)).default;
           if (IsValidCmdObject(CommandObj, Exceptions)) {
             LocalCommands.push(CommandObj);
           }
@@ -38,7 +37,7 @@ export default async function GetLocalCommands(
     }
 
     for (const Command of Commands) {
-      const CommandObj = (await import(Command)).default as SlashCommandObject;
+      const CommandObj = (await import(Command)).default;
       if (IsValidCmdObject(CommandObj, Exceptions)) {
         LocalCommands.push(CommandObj);
       }

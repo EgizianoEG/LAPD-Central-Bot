@@ -8,7 +8,7 @@ import {
   PermissionsBitField,
   PermissionFlagsBits,
   PermissionResolvable,
-  ChatInputCommandInteraction,
+  ContextMenuCommandInteraction,
 } from "discord.js";
 
 import {
@@ -25,57 +25,42 @@ import { PascalToNormal } from "@Utilities/Strings/Converters.js";
 import { IsValidUserPermsObj } from "@Utilities/Other/Validators.js";
 
 import UserHasPerms from "@Utilities/Database/UserHasPermissions.js";
-import DHumanizer from "humanize-duration";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import AppError from "@Utilities/Classes/AppError.js";
 import Dedent from "dedent";
 
-const ReadableDuration = DHumanizer.humanizer({
-  conjunction: " and ",
-  largest: 4,
-  round: true,
-});
-
 const DefaultCmdCooldownDuration = 3;
-const LogLabel = "Events:InteractionCreate:SlashCommandHandler";
+const LogLabel = "Events:InteractionCreate:ContextMenuCommandHandler";
 
 // -----------------------------------------------------------------------------
 /**
- * The function that handles *slash command* executions
+ * The function that handles *conext menu command* executions
  * @param Client The discord.js client
  * @param Interaction The command interaction
  */
-export default async function SlashCommandHandler(
+export default async function ContextMenuCommandHandler(
   Client: DiscordClient,
-  Interaction: ChatInputCommandInteraction
+  Interaction: ContextMenuCommandInteraction
 ) {
-  if (!Interaction.isChatInputCommand()) return;
+  if (!Interaction.isContextMenuCommand()) return;
   const CommandName = Interaction.commandName;
-  const CommandObject = Client.commands.get(CommandName);
-  const FullCmdName = [
-    CommandName,
-    Interaction.options.getSubcommandGroup(false),
-    Interaction.options.getSubcommand(false),
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const CommandObject = Client.ctx_commands.get(CommandName);
 
   try {
     if (!CommandObject) {
       AppLogger.warn({
         message:
-          "Could not find the command object of slash command %o; terminating command execution.",
+          "Could not find the command object of context menu command %o; terminating command execution.",
         label: LogLabel,
-        splat: [FullCmdName],
-        cmd_options: Object(Interaction.options)._hoistedOptions,
+        splat: [CommandName],
       });
 
       return new ErrorEmbed()
-        .setDescription("Attempt execution of a non-existent command on the application.")
+        .setDescription("Attempt execution of a non-registered ctx command on the application.")
         .replyToInteract(Interaction, true);
     }
 
-    await HandleCommandCooldowns(Client, Interaction, CommandObject, FullCmdName);
+    await HandleCommandCooldowns(Client, Interaction, CommandObject, CommandName);
     await HandleDevOnlyCommands(CommandObject, Interaction);
     await HandleUserPermissions(CommandObject, Interaction);
     await HandleBotPermissions(CommandObject, Interaction);
@@ -83,21 +68,15 @@ export default async function SlashCommandHandler(
 
     if (typeof CommandObject.callback === "function") {
       if (CommandObject.callback.length > 1) {
-        await (CommandObject.callback as AnySlashCmdCallback)(Client, Interaction);
+        await (CommandObject.callback as AnyCtxMenuCmdCallback)(Client, Interaction);
       } else {
-        await (CommandObject.callback as AnySlashCmdCallback)(Interaction);
+        await (CommandObject.callback as AnyCtxMenuCmdCallback)(Interaction);
       }
 
       AppLogger.debug({
-        message: "Handled execution of slash command %o.",
+        message: "Handled execution of context menu command %o.",
         label: LogLabel,
-        splat: [FullCmdName],
-        details: {
-          execution_time: ReadableDuration(Date.now() - Interaction.createdTimestamp),
-          full_name: FullCmdName,
-          cmd_options: Interaction.options,
-          stringified: Interaction.toString(),
-        },
+        splat: [CommandName],
       });
 
       if (Interaction.replied || Interaction.deferred) return;
@@ -119,8 +98,7 @@ export default async function SlashCommandHandler(
       label: LogLabel,
       error_id: ErrorId,
       stack: Err.stack,
-      splat: [FullCmdName],
-      cmd_options: Object(Interaction.options)._hoistedOptions,
+      splat: [CommandName],
     });
 
     if (Err instanceof AppError && Err.is_showable) {
@@ -146,51 +124,27 @@ export default async function SlashCommandHandler(
  * @param Client
  * @param CommandObject
  * @param Interaction
- * @param CommandName - The full name of the slash command.
+ * @param CommandName - The name of the context menu command.
  */
 async function HandleCommandCooldowns(
   Client: DiscordClient,
-  Interaction: ChatInputCommandInteraction,
-  CommandObject: SlashCommandObject,
+  Interaction: ContextMenuCommandInteraction,
+  CommandObject: ContextMenuCommandObject,
   CommandName: string
 ) {
   if (Interaction.replied) return;
   const CurrentTS = Date.now();
   const Cooldowns = Client.cooldowns;
-  const CommandID = Interaction.commandId;
 
   if (!Cooldowns.has(CommandName)) {
     Cooldowns.set(CommandName, new Collection());
   }
 
   const Timestamps = Cooldowns.get(CommandName);
-  let CooldownDuration: number = DefaultCmdCooldownDuration * 1000;
-  if (CommandObject.options?.cooldown) {
-    if (typeof CommandObject.options.cooldown === "number") {
-      CooldownDuration = CommandObject.options.cooldown * 1000;
-    } else {
-      const RunningCmdGS =
-        Interaction.options.getSubcommandGroup(false) ?? Interaction.options.getSubcommand(false);
-
-      if (RunningCmdGS) {
-        const MatchingSubcmdCooldown = CommandObject.options.cooldown[RunningCmdGS];
-        if (MatchingSubcmdCooldown) {
-          CooldownDuration = MatchingSubcmdCooldown * 1000;
-        } else {
-          // Handle '$all_other', '$other_cmds', '$all', as well as '$other' as a special case
-          // where these keys specify the permissions needed for all other subcommands not mentioned
-          // above in the user perms object structure.
-          const CooldownFallbackKey = Object.keys(CommandObject.options.cooldown).find(
-            (key) => !!key.match(/^\$all(?:_other)?$|^\$other(?:_cmds)?$/)
-          );
-
-          if (CooldownFallbackKey) {
-            CooldownDuration = CommandObject.options.cooldown[CooldownFallbackKey] * 1000;
-          }
-        }
-      }
-    }
-  }
+  const CooldownDuration: number =
+    CommandObject.options?.cooldown && typeof CommandObject.options.cooldown === "number"
+      ? CommandObject.options.cooldown * 1000
+      : DefaultCmdCooldownDuration * 1000;
 
   if (!Timestamps) return;
   if (Timestamps.has(Interaction.user.id)) {
@@ -202,9 +156,8 @@ async function HandleCommandCooldowns(
           new WarnEmbed()
             .setTitle("Cooldown")
             .setDescription(
-              "Kindly wait. You currently have a cooldown for the </%s:%s> slash command and you may use it again approximately %s.",
+              "Kindly wait. You currently have a cooldown for the `%s` context menu command and you may use it again approximately %s.",
               CommandName,
-              CommandID,
               time(Math.round(ExpTimestamp / 1000), "R")
             ),
         ],
@@ -222,8 +175,8 @@ async function HandleCommandCooldowns(
  * @param Interaction
  */
 async function HandleDevOnlyCommands(
-  CommandObject: SlashCommandObject,
-  Interaction: ChatInputCommandInteraction
+  CommandObject: ContextMenuCommandObject,
+  Interaction: ContextMenuCommandInteraction
 ) {
   if (Interaction.replied) return;
   if (
@@ -244,8 +197,8 @@ async function HandleDevOnlyCommands(
  * @returns
  */
 async function HandleUserPermissions(
-  CommandObject: SlashCommandObject,
-  Interaction: ChatInputCommandInteraction
+  CommandObject: ContextMenuCommandObject,
+  Interaction: ContextMenuCommandInteraction
 ) {
   if (Interaction.replied || !Interaction.inCachedGuild()) return;
   if (
@@ -261,17 +214,6 @@ async function HandleUserPermissions(
 
   if (IsValidUserPermsObj(CommandObject.options.user_perms)) {
     return HandleCommandUserPerms(CommandObject.options.user_perms as any, Interaction);
-  }
-
-  const SubCmdGroup = Interaction.options.getSubcommandGroup(false);
-  const SubCommand = Interaction.options.getSubcommand(false);
-
-  if (SubCmdGroup && Object.hasOwn(CommandObject.options.user_perms, SubCmdGroup)) {
-    return HandleCommandUserPerms(CommandObject.options.user_perms[SubCmdGroup], Interaction);
-  }
-
-  if (SubCommand && Object.hasOwn(CommandObject.options.user_perms, SubCommand)) {
-    return HandleCommandUserPerms(CommandObject.options.user_perms[SubCommand], Interaction);
   }
 
   // Handle '$all_other', '$other_cmds', '$all', as well as '$other' as a special case
@@ -292,8 +234,8 @@ async function HandleUserPermissions(
  * @param Interaction
  */
 async function HandleBotPermissions(
-  CommandObject: SlashCommandObject,
-  Interaction: ChatInputCommandInteraction
+  CommandObject: ContextMenuCommandObject,
+  Interaction: ContextMenuCommandInteraction
 ) {
   if (Interaction.replied || !Interaction.inCachedGuild()) return;
   if (!CommandObject.options?.bot_perms || !Object.keys(CommandObject.options.bot_perms).length) {
@@ -310,36 +252,17 @@ async function HandleBotPermissions(
   if (Array.isArray(CommandObject.options.bot_perms)) {
     return ValidateBotPermissionsArray(BotInGuild, CommandObject.options.bot_perms, Interaction);
   }
-
-  const SubCmdGroup = Interaction.options.getSubcommandGroup(false);
-  const SubCommand = Interaction.options.getSubcommand(false);
-
-  if (SubCmdGroup && Array.isArray(CommandObject.options.bot_perms[SubCmdGroup])) {
-    return ValidateBotPermissionsArray(
-      BotInGuild,
-      CommandObject.options.bot_perms[SubCmdGroup],
-      Interaction
-    );
-  }
-
-  if (SubCommand && Array.isArray(CommandObject.options.bot_perms[SubCommand])) {
-    return ValidateBotPermissionsArray(
-      BotInGuild,
-      CommandObject.options.bot_perms[SubCommand],
-      Interaction
-    );
-  }
 }
 
 /**
  * Checks if a user has the required permissions to run a command and returns an promise for a reply message if any permissions are missing.
  * @param {PermissionResolvable[]} PermsArray - An array of permissions to check for.
- * @param Interaction - The slash command interaction object received.
+ * @param Interaction - The context menu command interaction object received.
  * @returns
  */
 async function ValidateUserPermissionsArray(
   PermsArray: PermissionResolvable[],
-  Interaction: ChatInputCommandInteraction<"cached">
+  Interaction: ContextMenuCommandInteraction<"cached">
 ) {
   const MissingPerms: string[] = [];
   for (const Permission of PermsArray) {
@@ -371,7 +294,7 @@ async function ValidateUserPermissionsArray(
  * Checks if the app has the necessary permissions to perform a command and returns an promis to the error reply message if any permissions are missing.
  * @param {GuildMember} BotInGuild - The guild member object of the bot in the guild where the command is being executed.
  * @param {PermissionResolvable[]} PermsArray - An array of `PermissionResolvable` values. These values represent the permissions that the bot needs to have in order to perform a specific command.
- * @param Interaction - The slash command interaction object received.
+ * @param Interaction - The context menu command interaction object received.
  * @returns a reply to the interaction with an error message if the bot lacks any necessary
  * permissions. If there are missing permissions, it will reply with an ephemeral message containing an
  * error embed that lists the missing permissions. If there are no missing permissions, the function
@@ -380,7 +303,7 @@ async function ValidateUserPermissionsArray(
 async function ValidateBotPermissionsArray(
   BotInGuild: GuildMember,
   PermsArray: PermissionResolvable[],
-  Interaction: ChatInputCommandInteraction<"cached">
+  Interaction: ContextMenuCommandInteraction<"cached">
 ) {
   const MissingPerms: string[] = [];
   for (const Permission of PermsArray) {
@@ -414,12 +337,12 @@ async function ValidateBotPermissionsArray(
  * The function `HandleSubcommandUserPerms` checks if a user has the required permissions to use a
  * command and returns an unauthorized embed if they do not.
  * @param Perms - The permissions required for a member/user to execute a command. It could be an array of permissions or an object representing specific permissions.
- * @param Interaction - The slash command interaction object received.
+ * @param Interaction - The context menu command interaction object received.
  * @returns
  */
 async function HandleCommandUserPerms(
   Perms: NonNullable<CommandObjectOptions["bot_perms"]>,
-  Interaction: ChatInputCommandInteraction<"cached">
+  Interaction: ContextMenuCommandInteraction<"cached">
 ) {
   if (Array.isArray(Perms)) {
     return ValidateUserPermissionsArray(Perms, Interaction);

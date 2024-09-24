@@ -1,6 +1,7 @@
-import type {
-  ApplicationCommand,
-  RESTPostAPIChatInputApplicationCommandsJSONBody,
+import {
+  ContextMenuCommandBuilder,
+  type ApplicationCommand,
+  type RESTPostAPIChatInputApplicationCommandsJSONBody,
 } from "discord.js";
 
 /**
@@ -11,8 +12,9 @@ import type {
  */
 export default function CmdsAreEqual(
   Cmd_1: ApplicationCommand,
-  Cmd_2: SlashCommandObject
+  Cmd_2: SlashCommandObject | ContextMenuCommandObject
 ): boolean {
+  if (Cmd_2.data instanceof ContextMenuCommandBuilder) return true;
   const Cmd_Data_1 = Cmd_1.toJSON() as RESTPostAPIChatInputApplicationCommandsJSONBody;
   const Cmd_Data_2 = Cmd_2.data.toJSON();
 

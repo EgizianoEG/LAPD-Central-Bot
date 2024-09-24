@@ -1,5 +1,11 @@
-import { GuildApplicationCommandManager, ApplicationCommandManager, Collection } from "discord.js";
 import { Discord } from "@Config/Secrets.js";
+import {
+  GuildApplicationCommandManager,
+  ApplicationCommandManager,
+  ContextMenuCommandBuilder,
+  SlashCommandBuilder,
+  Collection,
+} from "discord.js";
 
 import GetDeployedCommands from "@Utilities/Other/GetAppCmds.js";
 import CmdsAreIdentical from "@Utilities/Other/CmdsAreIdentical.js";
@@ -65,7 +71,16 @@ export default async function RegisterCommands(Client: DiscordClient) {
             }
 
             await Guild.commands.create(LocalCommand.data).then(() => {
-              Client.commands.set(CmdName, LocalCommand);
+              if (LocalCommand.data instanceof ContextMenuCommandBuilder) {
+                Client.ctx_commands.set(CmdName, LocalCommand as ContextMenuCommandObject);
+                return AppLogger.info({
+                  message: "'%s' context menu command has been registered on '%s' server.",
+                  splat: [Chalk.bold(CmdName), Chalk.bold(Guild.name)],
+                  label: LogLabel,
+                });
+              }
+
+              Client.commands.set(CmdName, LocalCommand as SlashCommandObject<SlashCommandBuilder>);
               AppLogger.info({
                 message: "'%s' slash command has been registered on '%s' server.",
                 splat: [Chalk.bold(CmdName), Chalk.bold(Guild.name)],
@@ -78,7 +93,17 @@ export default async function RegisterCommands(Client: DiscordClient) {
 
         if (!(AppCommands instanceof Collection)) {
           await AppCommands.create(LocalCommand.data).then(() => {
-            Client.commands.set(CmdName, LocalCommand);
+            if (LocalCommand.data instanceof ContextMenuCommandBuilder) {
+              Client.ctx_commands.set(CmdName, LocalCommand as ContextMenuCommandObject);
+
+              return AppLogger.info({
+                message: "'%s' context menu command has been registered globally.",
+                splat: [Chalk.bold(CmdName)],
+                label: LogLabel,
+              });
+            }
+
+            Client.commands.set(CmdName, LocalCommand as SlashCommandObject<SlashCommandBuilder>);
             AppLogger.info({
               message: "'%s' slash command has been registered globally.",
               splat: [Chalk.bold(CmdName)],
@@ -92,7 +117,7 @@ export default async function RegisterCommands(Client: DiscordClient) {
     const GuildRegCmds = await Client.application.commands.fetch({ guildId: Discord.TestGuildId });
     const TotalRegCmds = Client.application.commands.cache.size;
     AppLogger.info({
-      message: "%o slash command(s) %s been registered locally; %o globally deployed.",
+      message: "%o application command(s) %s been registered; %o globally deployed.",
       splat: [TotalRegCmds, TotalRegCmds > 1 ? "have" : "has ", TotalRegCmds - GuildRegCmds.size],
       label: LogLabel,
     });
@@ -118,7 +143,7 @@ export default async function RegisterCommands(Client: DiscordClient) {
  */
 async function HandleExistingCommand(
   Client: DiscordClient,
-  LocalCmd: SlashCommandObject,
+  LocalCmd: SlashCommandObject | ContextMenuCommandObject,
   ExistingCmd: DiscordJS.ApplicationCommand
 ) {
   const CmdManager = ExistingCmd.manager;
@@ -164,7 +189,12 @@ async function HandleExistingCommand(
         throw new Error(`Failed to update '${ExistingCmd.name}' slash command;\n${OneTab + Err}`);
       });
   }
-  Client.commands.set(LocalCmd.data.name, LocalCmd);
+
+  if (LocalCmd.data instanceof ContextMenuCommandBuilder) {
+    Client.ctx_commands.set(LocalCmd.data.name, LocalCmd as ContextMenuCommandObject);
+  } else {
+    Client.commands.set(LocalCmd.data.name, LocalCmd as SlashCommandObject<SlashCommandBuilder>);
+  }
 }
 
 /**
@@ -176,7 +206,7 @@ async function HandleExistingCommand(
  */
 async function HandleCommandScopeSwitching(
   Client: DiscordClient,
-  LocalCmd: SlashCommandObject,
+  LocalCmd: SlashCommandObject | ContextMenuCommandObject,
   ExistingCmd: DiscordJS.ApplicationCommand
 ) {
   const OrgCmdManager = ExistingCmd.manager;
@@ -199,7 +229,17 @@ async function HandleCommandScopeSwitching(
   await Client.application.commands
     .create(LocalCmd.data, SwitchTo === "guild" ? Discord.TestGuildId : undefined)
     .then((Cmd) => {
-      Client.commands.set(Cmd.name, LocalCmd);
+      if (LocalCmd.data instanceof ContextMenuCommandBuilder) {
+        Client.ctx_commands.set(Cmd.name, LocalCmd as ContextMenuCommandObject);
+
+        return AppLogger.info({
+          label: LogLabel,
+          splat: [Chalk.bold(Cmd.name), Chalk.bold(SwitchTo), Chalk.bold(SwitchFrom)],
+          message: "Switched '%s' context menu command scope to %s rather than %s.",
+        });
+      }
+
+      Client.commands.set(Cmd.name, LocalCmd as SlashCommandObject<SlashCommandBuilder>);
       AppLogger.info({
         label: LogLabel,
         splat: [Chalk.bold(Cmd.name), Chalk.bold(SwitchTo), Chalk.bold(SwitchFrom)],

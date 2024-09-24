@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, SnowflakeUtil } from "discord.js";
+import { ContextMenuCommandBuilder, SlashCommandBuilder, SnowflakeUtil } from "discord.js";
 import { isAfter, isBefore } from "date-fns";
 import { FormatHeight } from "@Utilities/Strings/Formatters.js";
 const MinDiscordTimestamp = 1420070400000;
@@ -86,15 +86,26 @@ export function IsValidUserPermsObj(Obj: any): boolean {
  * @returns
  */
 export function IsValidCmdObject(
-  CmdObject: SlashCommandObject,
+  CmdObject: SlashCommandObject | ContextMenuCommandObject,
   Exceptions: Array<string> = []
 ): boolean {
-  return !!(
-    CmdObject?.data instanceof SlashCommandBuilder &&
-    CmdObject.data.name &&
-    CmdObject.data.description &&
-    !Exceptions.includes(CmdObject.data.name)
-  );
+  if (CmdObject?.data instanceof ContextMenuCommandBuilder) {
+    return !!(
+      CmdObject.data.name &&
+      CmdObject.data.type &&
+      !Exceptions.includes(CmdObject.data.name)
+    );
+  }
+
+  if (CmdObject?.data instanceof SlashCommandBuilder) {
+    return !!(
+      CmdObject.data.name &&
+      CmdObject instanceof SlashCommandBuilder &&
+      !Exceptions.includes(CmdObject.data.name)
+    );
+  }
+
+  return false;
 }
 
 /**
