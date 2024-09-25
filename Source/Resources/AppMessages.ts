@@ -641,6 +641,36 @@ export const ErrorMessages = {
     Description:
       "An error occurred while attempting to insert the incident report into the application database. Please try again later.",
   },
+
+  /**
+   * Indicates that the application sent the report log message is not the same as the running one,
+   * which received the interaction to update/modify the report (a different application.)
+   */
+  UpdateIncidentReportAppNotAuthor: {
+    Title: "Incorrect Action",
+    Description:
+      "A different application or user sent the target message. Ensure that the report log message was sent by the same application and try again.",
+  },
+
+  /**
+   * Indicates that there was no incident number included in the report log embed, making the application
+   * unable to fetch the target incident report from the database. Could be caused by removing message embeds manually by users.
+   */
+  UpdateIncidentReportNoIncNum: {
+    Title: "Incident Number Not Found",
+    Description:
+      "The incident report number could not be found in the report log message. Kindly ensure that the report log message remains intact prior to attempting to modify the corresponding report.",
+  },
+
+  /**
+   * Due to the application settings on certain guilds, management can decide to delete duty logs automatically after a certain amount of time,
+   * which may cause the target incident report to be deleted from the database. This message is shown when the application couldn't find the incident record.
+   */
+  UpdateIncidentReportIncNotFound: {
+    Title: "Incident Not Found",
+    Description:
+      "The incident report you specified doesn't seem to exist anymore in the application database. Kindly verify the report was not deleted prior to attempting to update it.",
+  },
 };
 
 export const InfoMessages = {
