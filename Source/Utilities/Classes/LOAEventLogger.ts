@@ -23,7 +23,13 @@ import { LeaveOfAbsence } from "@Typings/Utilities/Database.js";
 import { isAfter } from "date-fns";
 
 import GuildModel from "@Models/Guild.js";
-import Dedent from "dedent";
+import RegularDedent from "dedent";
+
+const Dedent = (Str: string) => {
+  return RegularDedent(Str)
+    .replace(/\.\s{2,}(\w)/g, ". $1")
+    .replace(/(\w)\s{2,}(\w)/g, "$1 $2");
+};
 
 type LOADocument = LeaveOfAbsence.LeaveOfAbsenceHydratedDocument;
 type ManagementInteraction = ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">;
