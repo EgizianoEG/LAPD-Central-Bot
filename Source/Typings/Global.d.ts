@@ -4,7 +4,9 @@ import type * as UtilityTypesMask from "utility-types";
 import type { ScheduleOptions } from "node-cron";
 import type { GeneralTypings } from "./Utilities/Generic.d.ts";
 import type {
+  MessageContextMenuCommandInteraction,
   SlashCommandSubcommandsOnlyBuilder,
+  UserContextMenuCommandInteraction,
   SlashCommandSubcommandBuilder,
   ContextMenuCommandInteraction,
   ChatInputCommandInteraction,
@@ -20,11 +22,17 @@ export type DiscordClient = Client<true>;
 export type RangedArray<T, Min extends number, Max extends number> = TupleMinMax<T, Min, Max>;
 export type SlashCommandInteraction<Cached extends CacheType = undefined> =
   ChatInputCommandInteraction<Cached>;
+
 export type CommandObjectDataType =
   | SlashCommandBuilder
   | SlashCommandSubcommandBuilder
   | SlashCommandSubcommandsOnlyBuilder
   | undefined;
+
+export type ContextMenuCmdInteractionType =
+  | ContextMenuCommandInteraction<Cached | undefined>
+  | UserContextMenuCommandInteraction<Cached | undefined>
+  | MessageContextMenuCommandInteraction<Cached | undefined>;
 
 /**
  * @note Each cron job will be automatically started even if not specified in cron options.
@@ -198,13 +206,12 @@ declare global {
     bot_perms?: PermissionResolvable[] | Record<string, PermissionResolvable[]>;
   }
 
-  interface ContextMenuCommandObject {
+  interface ContextMenuCommandObject<
+    CmdType extends ContextMenuCmdInteractionType = MessageContextMenuCommandInteraction,
+  > {
     callback:
-      | ((
-          arg0: DiscordClient,
-          arg1: ContextMenuCommandInteraction<Cached | undefined>
-        ) => Promise<any>)
-      | ((arg0: ContextMenuCommandInteraction<Cached | undefined>) => Promise<any>);
+      | ((arg0: DiscordClient, arg1: CmdType<Cached | undefined>) => Promise<any>)
+      | ((arg0: CmdType<Cached | undefined>) => Promise<any>);
 
     /** Optional configurations */
     options?: CommandObjectOptions;
