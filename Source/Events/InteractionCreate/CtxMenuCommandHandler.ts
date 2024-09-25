@@ -56,7 +56,9 @@ export default async function ContextMenuCommandHandler(
       });
 
       return new ErrorEmbed()
-        .setDescription("Attempt execution of a non-registered ctx command on the application.")
+        .setDescription(
+          "Attempt execution of a non-registered context menu command on the application."
+        )
         .replyToInteract(Interaction, true);
     }
 
@@ -89,12 +91,14 @@ export default async function ContextMenuCommandHandler(
         ],
       });
     } else {
-      throw new ReferenceError("The command's callback function has not been found.");
+      throw new ReferenceError(
+        `The '${CommandName}' context command callback function could not be found.`
+      );
     }
   } catch (Err: any) {
     const ErrorId = GetErrorId();
     AppLogger.error({
-      message: "An error occurred while executing slash command %o;",
+      message: "An error occurred while executing context menu command %o;",
       label: LogLabel,
       error_id: ErrorId,
       stack: Err.stack,
