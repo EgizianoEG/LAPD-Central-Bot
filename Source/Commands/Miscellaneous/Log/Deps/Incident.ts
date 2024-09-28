@@ -27,6 +27,7 @@ import {
 import { ReporterInfo } from "../Log.js";
 import { milliseconds } from "date-fns";
 import { RandomString } from "@Utilities/Strings/Random.js";
+import { SendGuildMessages } from "@Utilities/Other/GuildMessages.js";
 import { GuildIncidents, Guilds } from "@Typings/Utilities/Database.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { FilterUserInput, FilterUserInputOptions } from "@Utilities/Strings/Redactor.js";
@@ -34,7 +35,6 @@ import { IsValidDiscordId, IsValidDiscordAttachmentLink } from "@Utilities/Other
 
 import IncrementActiveShiftEvent from "@Utilities/Database/IncrementActiveShiftEvent.js";
 import GetIncidentReportEmbeds from "@Utilities/Other/GetIncidentReportEmbeds.js";
-import SendGuildMessages from "@Utilities/Other/SendGuildMessages.js";
 import GetUserInfo from "@Utilities/Roblox/GetUserInfo.js";
 import GuildModel from "@Models/Guild.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
@@ -329,9 +329,13 @@ async function PrepareIncidentData(
       .split(SplitRegexForInputs)
       .filter(Boolean),
 
+    last_updated: new Date(),
+    last_updated_by: null,
+
     reported_on: ModalSubmission.createdAt,
     reported_by: {
       discord_id: CmdInteract.user.id,
+      discord_username: CmdInteract.user.username,
       display_name: CmdInteract.member.nickname || CmdInteract.user.displayName,
       roblox_id: ReportingOfficer.RobloxUserId,
       roblox_username: await GetUserInfo(ReportingOfficer.RobloxUserId)
@@ -412,6 +416,27 @@ async function OnReportConfirmation(
     - Incident Number: \`${IncidentReport._id}\`
     - Logged Report Link: ${ReportSentMessageURL ?? "N/A"} 
   `);
+
+  if (ReportSentMessageURL) {
+    const SplatURL = ReportSentMessageURL.split("/");
+    GuildModel.updateOne(
+      {
+        _id: BtnInteract.guildId,
+        "logs.incidents._id": IncidentReport._id,
+      },
+      {
+        $set: {
+          "logs.incidents.$[record].log_message": `${SplatURL[SplatURL.length - 2]}:${SplatURL[SplatURL.length - 1]}`,
+        },
+      },
+      {
+        new: true,
+        arrayFilters: [{ "record._id": IncidentReport._id }],
+      }
+    )
+      .exec()
+      .catch(() => null);
+  }
 
   return BtnInteract.editReply({
     embeds: [new SuccessEmbed().setTitle("Report Logged").setDescription(REDescription)],

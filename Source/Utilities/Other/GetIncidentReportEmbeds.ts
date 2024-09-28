@@ -85,6 +85,12 @@ export default function GetIncidentReportEmbeds(
     });
   }
 
+  if (IncidentRecord.last_updated && IncidentRecord.last_updated_by) {
+    IncidentReportEmbed.setTimestamp(IncidentRecord.last_updated).setFooter({
+      text: `Last updated by @${IncidentRecord.last_updated_by.discord_username} on`,
+    });
+  }
+
   const IncidentAttachments = IncidentRecord.attachments.filter((AttachmentLink) =>
     IsValidDiscordAttachmentLink(AttachmentLink, true, "image")
   );
