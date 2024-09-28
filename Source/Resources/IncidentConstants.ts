@@ -14,36 +14,20 @@ export const IncidentNotesLength = {
 export enum IncidentStatuses {
   Active = "Active",
   Closed = "Closed",
-
-  /** The case has not been solved and is considered inactive, but may be reopened if new evidence becomes available. */
   ColdCase = "Cold Case",
-
-  /** The case has been transferred to another law enforcement agency for investigation. */
   ReferredToOtherAgency = "Referred to Other Agency",
 }
 
 export enum ActiveIncidentStatus {
-  /** The incident is being actively investigated by law enforcement. */
   UnderInvestigation = "Under Investigation",
-
-  /** The suspect is still on the loose and being sought by authorities. */
   SuspectAtLarge = "Suspect at Large",
-
-  /** The incident is still ongoing. */
   InProgress = "In Progress",
 }
 
 export enum ClosedIncidentStatus {
-  /** The suspect has been arrested and charged with the crime. */
   ClearedByArrest = "Cleared by Arrest",
-
-  /** The case has been closed due to factors outside of law enforcement's control (e.g., suspect deceased, victim unwilling to cooperate). */
   ClearedByExceptionalMeans = "Cleared by Exceptional Means",
-
-  /** The reported incident was found to be false or unsubstantiated. */
   Inactivated = "Inactivated",
-
-  /** The case has been temporarily suspended due to lack of evidence or leads. */
   Unfounded = "Unfounded",
 }
 
@@ -51,6 +35,50 @@ export const IncidentStatusesFlattened = [
   ...Object.values(IncidentStatuses).map((Status) => Status),
   ...Object.values(ActiveIncidentStatus).map((Status) => `${IncidentStatuses.Active}: ${Status}`),
   ...Object.values(ClosedIncidentStatus).map((Status) => `${IncidentStatuses.Closed}: ${Status}`),
+] as const;
+
+const StatusDescriptions: Record<string, string> = {
+  [IncidentStatuses.Active]: "Incident is currently active.",
+  [IncidentStatuses.Closed]: "Incident has been closed.",
+  [IncidentStatuses.ColdCase]: "Case has not been solved and is considered inactive.",
+  [IncidentStatuses.ReferredToOtherAgency]:
+    "Case has been transferred to another law enforcement agency for investigation.",
+
+  [`${[IncidentStatuses.Active]}: ${ActiveIncidentStatus.InProgress}`]:
+    "Incident is currently being worked on",
+
+  [`${[IncidentStatuses.Active]}: ${ActiveIncidentStatus.SuspectAtLarge}`]:
+    "The suspect is still on the loose and being sought by authorities.",
+
+  [`${[IncidentStatuses.Active]}: ${ActiveIncidentStatus.UnderInvestigation}`]:
+    "The incident is being actively investigated by law enforcement.",
+
+  [`${[IncidentStatuses.Closed]}: ${ClosedIncidentStatus.ClearedByArrest}`]:
+    "The suspect has been arrested and charged with the crime.",
+
+  [`${[IncidentStatuses.Closed]}: ${ClosedIncidentStatus.ClearedByExceptionalMeans}`]:
+    "The case has been closed due to factors outside of law enforcement's control.",
+
+  [`${[IncidentStatuses.Closed]}: ${ClosedIncidentStatus.Inactivated}`]:
+    "The reported incident was found to be false or unsubstantiated.",
+
+  [`${[IncidentStatuses.Closed]}: ${ClosedIncidentStatus.Unfounded}`]:
+    "The case has been temporarily suspended due to lack of evidence or leads.",
+};
+
+export const IncidentStatusesWithDescriptions = [
+  ...Object.values(IncidentStatuses).map((Status) => ({
+    status: Status,
+    description: StatusDescriptions[Status],
+  })),
+  ...Object.values(ActiveIncidentStatus).map((Status) => ({
+    status: `${IncidentStatuses.Active}: ${Status}`,
+    description: StatusDescriptions[`Active: ${Status}`],
+  })),
+  ...Object.values(ClosedIncidentStatus).map((Status) => ({
+    status: `${IncidentStatuses.Closed}: ${Status}`,
+    description: StatusDescriptions[`Closed: ${Status}`],
+  })),
 ] as const;
 
 export const IncidentTypes = [
