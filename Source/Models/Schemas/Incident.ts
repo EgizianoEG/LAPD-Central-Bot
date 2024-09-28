@@ -22,6 +22,13 @@ const IncidentReportSchema = new Schema<IncidentPlainDoc, IncidentModelType>({
     enum: IncidentTypes,
   },
 
+  log_message: {
+    type: String,
+    default: null,
+    required: false,
+    match: /^\d{15,22}$/,
+  },
+
   reported_on: {
     type: Date,
     required: true,
@@ -125,6 +132,34 @@ const IncidentReportSchema = new Schema<IncidentPlainDoc, IncidentModelType>({
     minlength: IncidentDescriptionLength.Min,
     maxlength: IncidentDescriptionLength.Max,
     trim: true,
+  },
+
+  last_updated: {
+    type: Date,
+    required: true,
+    default() {
+      return this.reported_on || Date.now();
+    },
+  },
+
+  last_updated_by: {
+    _id: false,
+    required: false,
+    default: null,
+    type: {
+      discord_id: {
+        type: String,
+        required: true,
+        match: /^\d{15,22}$/,
+      },
+
+      discord_username: {
+        type: String,
+        required: true,
+        minlength: 2,
+        maxlength: 32,
+      },
+    },
   },
 });
 

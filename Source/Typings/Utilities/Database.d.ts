@@ -1,7 +1,7 @@
 import type { Types, HydratedDocument, HydratedArraySubdocument, Model } from "mongoose";
+import type { IncidentTypes, IncidentStatusesFlattened } from "@Resources/IncidentConstants.ts";
 import type { DeepPartial, Falsey, Overwrite } from "utility-types";
 import type ERLCAgeGroups from "@Resources/ERLCAgeGroups.ts";
-import type IncidentTypes from "@Resources/IncidentConstants.ts";
 import type AppError from "@Utilities/Classes/AppError.ts";
 
 export namespace Guilds {
@@ -770,7 +770,7 @@ export namespace GuildArrests {
 
 export namespace GuildIncidents {
   type IncidentType = (typeof IncidentTypes)[number];
-  type IncidentStatus = "Active" | "Closed" | "Resolved";
+  type IncidentStatus = (typeof IncidentStatusesFlattened)[number];
 
   interface OfficerInvolved {
     /** The Roblox user id. */
@@ -784,11 +784,15 @@ export namespace GuildIncidents {
 
     /** The Discord user id. */
     discord_id: string;
+
+    /** The Discord user id. */
+    discord_username: string;
   }
 
   interface IncidentRecord {
     _id: number;
     type: GuildIncidents.IncidentType;
+    log_message?: string | null;
     reported_on: Date;
 
     notes?: string | null;
@@ -814,12 +818,10 @@ export namespace GuildIncidents {
      * Not currently and shouldn't be used due to possible misuse of the feature.
      */
     attachments: string[];
-  }
 
-  type e = ExpandRecursively<IncidentRecordWithOptionalDetails>;
-  interface IncidentRecordWithOptionalDetails
-    extends Pick<IncidentRecord, "_id" | "description" | "location" | "reported_by" | "type">,
-      Partial<IncidentRecord> {}
+    last_updated: Date;
+    last_updated_by?: Pick<OfficerInvolved, "discord_id" | "discord_username"> | null;
+  }
 }
 
 export namespace AggregateResults {
