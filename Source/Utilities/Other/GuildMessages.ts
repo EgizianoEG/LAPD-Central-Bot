@@ -1,9 +1,11 @@
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import {
+  BaseInteraction,
   DiscordAPIError,
-  type ButtonInteraction,
-  type MessageCreateOptions,
   type MessagePayload,
+  type ButtonInteraction,
+  type MessageEditOptions,
+  type MessageCreateOptions,
 } from "discord.js";
 
 /**
@@ -49,7 +51,7 @@ function SanitizeList(StrList: string[]): string[] {
  *  - The bot can't send messages in a provided channel (lack of perms)
  *  - An unexpected error occurred
  */
-export default async function SendGuildMessages(
+export async function SendGuildMessages(
   Interact: SlashCommandInteraction<"cached"> | ButtonInteraction<"cached">,
   GuildChannelIds: string | string[],
   MessagePayload: MessagePayload | MessageCreateOptions
@@ -102,4 +104,27 @@ export default async function SendGuildMessages(
   }
 
   return MainReportMsgLink;
+}
+
+/**
+ * Edits a message in a specified channel using interaction data.
+ * @param Interact - The interaction object containing client and other interaction data.
+ * @param ChannelMessageIds - A string in the format "ChannelId:MessageId" identifying the message to edit.
+ * @param EditPayload - The payload containing the new content or options for the message.
+ * @returns A promise that resolves to the edited message, or undefined if the channel or message is not found.
+ */
+export async function EditChannelMessageViaInteract(
+  Interact: BaseInteraction<"cached">,
+  ChannelMessageIds: string,
+  EditPayload: MessagePayload | MessageEditOptions
+) {
+  const [ChannelId, MessageId] = ChannelMessageIds.split(":");
+  const Channel = await Interact.client.channels.fetch(ChannelId);
+  if (!Channel) return;
+
+  if (!Channel.isTextBased()) return;
+  const Message = await Channel.messages.fetch(MessageId);
+  if (!Message) return;
+
+  return Message.edit(EditPayload);
 }
