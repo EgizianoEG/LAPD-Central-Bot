@@ -13,7 +13,7 @@ import Dedent from "dedent";
 const ListFormatter = new Intl.ListFormat("en");
 
 /**
- *
+ * Generates an array of embeds to display an incident report.
  * @param IncidentRecord - The incident record to generate the embed for.
  * @param ReportTargetChannel - The channel which the report will be sent to. Used to for the embed(s) title URL and gallray view feature.
  *                              If not provided, a dummy URL will be used that won't redirect user to any destination.
@@ -33,7 +33,7 @@ export default function GetIncidentReportEmbeds(
     .setColor(Colors.DarkBlue)
     .setDescription(
       Dedent(`
-        **Incident Number:** ${inlineCode(IncidentRecord._id.toString())}
+        **Incident Number:** ${inlineCode(IncidentRecord._id ? IncidentRecord._id.toString() : "[unknown]")}
         **Incident Reported By:** ${userMention(IncidentRecord.reported_by.discord_id)}
         **Incident Reported On:** ${FormatTime(IncidentRecord.reported_on, "f")}
         **Involved Officers:** ${IncidentRecord.officers.length ? ListFormatter.format(IncidentRecord.officers) : "None"}
