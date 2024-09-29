@@ -285,13 +285,13 @@ async function PrepareIncidentData(
     utif_setting_enabled: GuildDocument.settings.utif_enabled,
   };
 
+  const InputNotes = ModalSubmission.fields.getTextInputValue("notes").replace(/\s+/g, " ") || null;
   const Data = {
     ...CmdProvidedDetails,
     _id: GetIncidentNumber(GuildDocument.logs.incidents),
 
-    notes: await FilterUserInput(ModalSubmission.fields.getTextInputValue("notes"), UTIFOpts),
     description: await FilterUserInput(
-      ModalSubmission.fields.getTextInputValue("incident-desc"),
+      ModalSubmission.fields.getTextInputValue("incident-desc").replace(/\s+/g, " "),
       UTIFOpts
     ),
 
@@ -312,6 +312,7 @@ async function PrepareIncidentData(
       .split(SplitRegexForInputs)
       .filter(Boolean),
 
+    notes: InputNotes ? await FilterUserInput(InputNotes, UTIFOpts) : null,
     last_updated: new Date(),
     last_updated_by: null,
 
