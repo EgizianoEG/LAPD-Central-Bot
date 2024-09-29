@@ -9,5 +9,12 @@ export function ArraysAreEqual(Arr_1: Array<any>, Arr_2: Array<any>): boolean {
   if (Arr_1 == null || Arr_2 == null) return false;
   if (Arr_1.length !== Arr_2.length) return false;
 
-  return Arr_1.toSorted((a, b) => a - b).toString() === Arr_2.toSorted((a, b) => a - b).toString();
+  const Sorted_1 = Arr_1.toSorted((a, b) => a - b);
+  const Sorted_2 = Arr_2.toSorted((a, b) => a - b);
+
+  for (let i = 0; i < Sorted_1.length; ++i) {
+    if (Sorted_1[i] !== Sorted_2[i]) return false;
+  }
+
+  return true;
 }
