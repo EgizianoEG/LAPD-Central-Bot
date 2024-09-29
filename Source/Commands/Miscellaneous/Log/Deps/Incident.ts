@@ -29,6 +29,7 @@ import { milliseconds } from "date-fns";
 import { RandomString } from "@Utilities/Strings/Random.js";
 import { SendGuildMessages } from "@Utilities/Other/GuildMessages.js";
 import { GuildIncidents, Guilds } from "@Typings/Utilities/Database.js";
+import { SanitizeDiscordAttachmentLink } from "@Utilities/Strings/OtherUtils.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { FilterUserInput, FilterUserInputOptions } from "@Utilities/Strings/Redactor.js";
 import { IsValidDiscordId, IsValidDiscordAttachmentLink } from "@Utilities/Other/Validators.js";
@@ -205,24 +206,6 @@ function SanitizeInvolvedOfficersOrWitnessesInput(Input: string): string[] {
 }
 
 /**
- * Sanitizes a given attachment URL by removing any query parameters that are not related to authentication params.
- * @param Link - The URL string to be sanitized.
- * @returns The sanitized URL string with only the allowed query parameters.
- */
-function SanitizeAttachmentLink(Link: string): string {
-  const URLInst = new URL(Link);
-  const AllowedParams = new Set(["ex", "is", "hm"]);
-
-  for (const Param of URLInst.searchParams.keys()) {
-    if (!AllowedParams.has(Param)) {
-      URLInst.searchParams.delete(Param);
-    }
-  }
-
-  return URLInst.href;
-}
-
-/**
  * Updates the description of a field in an EmbedBuilder object. If the field
  * with the specified name exists, its value is updated. Otherwise, a new field is added to the embed.
  * @param Embed - The EmbedBuilder object to update.
@@ -348,7 +331,7 @@ async function PrepareIncidentData(
     return null;
   }
 
-  Data.attachments = Data.attachments.map(SanitizeAttachmentLink);
+  Data.attachments = Data.attachments.map(SanitizeDiscordAttachmentLink);
   return Data;
 }
 
