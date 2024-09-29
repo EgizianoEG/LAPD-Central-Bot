@@ -1,4 +1,3 @@
-import { GuildIncidents } from "@Typings/Utilities/Database.js";
 import {
   Colors,
   inlineCode,
@@ -8,8 +7,9 @@ import {
   time as FormatTime,
 } from "discord.js";
 
-import Dedent from "dedent";
 import { IsValidDiscordAttachmentLink } from "./Validators.js";
+import { GuildIncidents } from "@Typings/Utilities/Database.js";
+import Dedent from "dedent";
 const ListFormatter = new Intl.ListFormat("en");
 
 /**
