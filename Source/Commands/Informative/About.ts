@@ -2,6 +2,7 @@ import { OAuth2Scopes, SlashCommandBuilder } from "discord.js";
 import { InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { Discord } from "@Config/Secrets.js";
 import Humanizer from "humanize-duration";
+import { IsValidDiscordId } from "@Utilities/Other/Validators.js";
 
 const ListFormatter = new Intl.ListFormat("en");
 const AppAuthorId = "560396280497438731";
@@ -23,7 +24,9 @@ async function Callback(Client: DiscordClient, Interaction: SlashCommandInteract
       .catch(() => null));
 
   const AppDevsJoined = ListFormatter.format(
-    Discord.BotDevs.filter((Id) => Id !== AppAuthorId).map((Id) => `<@${Id}>`)
+    Discord.BotDevs.filter((Id) => IsValidDiscordId(Id) && Id !== AppAuthorId).map(
+      (Id) => `<@${Id}>`
+    )
   );
 
   const RunningAppVersion = process.env.version ?? process.env.npm_package_version ?? "[Unknown]";
@@ -80,7 +83,7 @@ async function Callback(Client: DiscordClient, Interaction: SlashCommandInteract
       inline: true,
     });
 
-  if (Discord.BotDevs.length) {
+  if (AppDevsJoined.length) {
     ResponseEmbed.addFields({
       name: "Contributors",
       value: AppDevsJoined,

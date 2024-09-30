@@ -33,6 +33,10 @@ const MinExtDuration = milliseconds({ hours: 12 });
 const MaxExtDuration = milliseconds({ months: 1 });
 const FileLabel = "Commands:Miscellaneous:LOA:Subcmds:Manage";
 type LOADocument = LeaveOfAbsence.LeaveOfAbsenceHydratedDocument;
+type PromptInteractType =
+  | ButtonInteraction<"cached">
+  | ModalSubmitInteraction<"cached">
+  | SlashCommandInteraction<"cached">;
 
 // ---------------------------------------------------------------------------------------
 // Functions:
@@ -75,7 +79,7 @@ export function ValidateExtendedDuration(
 }
 
 function GetManagementComponents(
-  Interaction: ButtonInteraction<"cached"> | SlashCommandInteraction<"cached">,
+  Interaction: PromptInteractType,
   LeaveDocument?: LOADocument | null
 ) {
   const ActionRow = new ActionRowBuilder<ButtonBuilder>();
@@ -120,7 +124,7 @@ function GetManagementComponents(
 
 async function HandleLeaveExtend(
   Interaction: ButtonInteraction<"cached">,
-  OriginalCmdInteract: SlashCommandInteraction<"cached"> | ButtonInteraction<"cached">
+  MainPromptMsgId: string
 ) {
   let ActiveLeave = await LeaveOfAbsenceModel.findOne({
     guild: Interaction.guildId,
@@ -133,7 +137,7 @@ async function HandleLeaveExtend(
   if (!ActiveLeave) {
     return Promise.allSettled([
       new ErrorEmbed().useErrTemplate("LOAIsOverForExtension").replyToInteract(Interaction, true),
-      Callback(OriginalCmdInteract, false),
+      Callback(Interaction, MainPromptMsgId),
     ]);
   }
 
@@ -142,7 +146,7 @@ async function HandleLeaveExtend(
       new ErrorEmbed()
         .useErrTemplate("LOAExtensionLimitReached")
         .replyToInteract(Interaction, true),
-      Callback(OriginalCmdInteract, false),
+      Callback(Interaction, MainPromptMsgId),
     ]);
   }
 
@@ -189,14 +193,14 @@ async function HandleLeaveExtend(
       if (!ActiveLeave.is_active) {
         return Promise.all([
           new ErrorEmbed().useErrTemplate("LOANotActive").replyToInteract(Submission, true),
-          Callback(OriginalCmdInteract, false),
+          Callback(Submission, MainPromptMsgId),
         ]);
       } else if (ActiveLeave.extension_req) {
         return Promise.all([
           new ErrorEmbed()
             .useErrTemplate("LOAExtensionLimitReached")
             .replyToInteract(Submission, true),
-          Callback(OriginalCmdInteract, false),
+          Callback(Submission, MainPromptMsgId),
         ]);
       }
 
@@ -223,7 +227,7 @@ async function HandleLeaveExtend(
       return Promise.all([
         ActiveLeave.save(),
         Submission.reply({ embeds: [ReplyEmbed], ephemeral: true }),
-        Callback(OriginalCmdInteract, false),
+        Callback(Submission, MainPromptMsgId),
       ]);
     })
     .catch(() => {
@@ -237,7 +241,7 @@ async function HandleLeaveExtend(
 
 async function HandleLeaveEarlyEnd(
   Interaction: ButtonInteraction<"cached">,
-  OriginalCmdInteract: SlashCommandInteraction<"cached"> | ButtonInteraction<"cached">
+  MainPromptMsgId: string
 ) {
   let ActiveLeave = await LeaveOfAbsenceModel.findOne({
     guild: Interaction.guildId,
@@ -249,7 +253,7 @@ async function HandleLeaveEarlyEnd(
 
   if (!ActiveLeave) {
     return Promise.all([
-      Callback(OriginalCmdInteract, false),
+      Callback(Interaction, MainPromptMsgId),
       new ErrorEmbed().useErrTemplate("LOANotActive").replyToInteract(Interaction, true),
     ]);
   }
@@ -326,7 +330,7 @@ async function HandleLeaveEarlyEnd(
     .setDescription("Your leave of absence has been successfully terminated at your request.");
 
   return Promise.allSettled([
-    Callback(OriginalCmdInteract, false),
+    Callback(ButtonInteract, MainPromptMsgId),
     LOAEventLogger.LogEarlyLeaveEnd(ButtonInteract, ActiveLeave, "Requester"),
     HandleLeaveRoleAssignment(ActiveLeave.user, ButtonInteract.guild, false),
     ConfirmationMsg.edit({ embeds: [ReplyEmbed], components: [] }).catch(() =>
@@ -337,7 +341,7 @@ async function HandleLeaveEarlyEnd(
 
 async function HandlePendingLeaveCancellation(
   Interaction: ButtonInteraction<"cached">,
-  OriginalCmdInteract: SlashCommandInteraction<"cached"> | ButtonInteraction<"cached">
+  MainPromptMsgId: string
 ) {
   const PendingLeave = await LeaveOfAbsenceModel.findOne({
     guild: Interaction.guildId,
@@ -348,7 +352,7 @@ async function HandlePendingLeaveCancellation(
   if (!PendingLeave) {
     return Promise.allSettled([
       new ErrorEmbed().useErrTemplate("NoPendingLOAToCancel").replyToInteract(Interaction, true),
-      Callback(OriginalCmdInteract, false),
+      Callback(Interaction, MainPromptMsgId),
     ]);
   }
 
@@ -365,11 +369,11 @@ async function HandlePendingLeaveCancellation(
   const ConfirmationBtns = new ActionRowBuilder<ButtonBuilder>().setComponents(
     new ButtonBuilder()
       .setCustomId("loa-cancel-confirm")
-      .setStyle(ButtonStyle.Success)
+      .setStyle(ButtonStyle.Danger)
       .setLabel("Yes, Cancel Request"),
     new ButtonBuilder()
       .setCustomId("loa-cancel-keep")
-      .setStyle(ButtonStyle.Danger)
+      .setStyle(ButtonStyle.Secondary)
       .setLabel("No, Keep It")
   );
 
@@ -383,14 +387,14 @@ async function HandlePendingLeaveCancellation(
   const ButtonInteract = await ConfirmationMsg.awaitMessageComponent({
     componentType: ComponentType.Button,
     filter: (i) => i.user.id === Interaction.user.id,
-    time: 5 * 60_000,
+    time: 8 * 60_000,
   }).catch(() => null);
 
   if (!ButtonInteract || ButtonInteract.customId === "loa-cancel-keep") {
     return Interaction.deleteReply().catch(() => null);
   }
 
-  await ButtonInteract.deferReply({ ephemeral: true });
+  await ButtonInteract.deferUpdate();
   if (await HandleLeaveReviewValidation(ButtonInteract, await PendingLeave.getUpToDate())) {
     return ConfirmationMsg.delete()
       .catch(() => Interaction.deleteReply())
@@ -407,7 +411,7 @@ async function HandlePendingLeaveCancellation(
     .setDescription("Your leave request was successfully cancelled at your request.");
 
   return Promise.allSettled([
-    Callback(OriginalCmdInteract, false),
+    Callback(ButtonInteract, MainPromptMsgId),
     LOAEventLogger.LogCancellation(ButtonInteract, PendingLeave),
     Interaction.editReply({ embeds: [ReplyEmbed], components: [] }),
   ]);
@@ -415,7 +419,7 @@ async function HandlePendingLeaveCancellation(
 
 async function HandlePendingExtensionCancellation(
   Interaction: ButtonInteraction<"cached">,
-  OriginalCmdInteract: SlashCommandInteraction<"cached"> | ButtonInteraction<"cached">
+  MainPromptMsgId: string
 ) {
   let ActiveLeave = await LeaveOfAbsenceModel.findOne({
     guild: Interaction.guildId,
@@ -428,7 +432,7 @@ async function HandlePendingExtensionCancellation(
   if (!ActiveLeave) {
     return Promise.allSettled([
       new ErrorEmbed().useErrTemplate("LOANotActive").replyToInteract(Interaction, true),
-      Callback(OriginalCmdInteract, false),
+      Callback(Interaction, MainPromptMsgId),
     ]);
   }
 
@@ -445,11 +449,11 @@ async function HandlePendingExtensionCancellation(
   const ConfirmationBtns = new ActionRowBuilder<ButtonBuilder>().setComponents(
     new ButtonBuilder()
       .setCustomId("loa-ext-cancel-confirm")
-      .setStyle(ButtonStyle.Success)
+      .setStyle(ButtonStyle.Danger)
       .setLabel("Yes, Cancel Request"),
     new ButtonBuilder()
       .setCustomId("loa-ext-cancel-keep")
-      .setStyle(ButtonStyle.Danger)
+      .setStyle(ButtonStyle.Secondary)
       .setLabel("No, Keep It")
   );
 
@@ -463,7 +467,7 @@ async function HandlePendingExtensionCancellation(
   const ButtonInteract = await ConfirmationMsg.awaitMessageComponent({
     componentType: ComponentType.Button,
     filter: (i) => i.user.id === Interaction.user.id,
-    time: 5 * 60_000,
+    time: 8 * 60_000,
   }).catch(() => null);
 
   if (!ButtonInteract || ButtonInteract.customId === "loa-ext-cancel-keep") {
@@ -471,7 +475,7 @@ async function HandlePendingExtensionCancellation(
   }
 
   ActiveLeave = await ActiveLeave.getUpToDate();
-  await ButtonInteract.deferReply({ ephemeral: true });
+  await ButtonInteract.deferUpdate();
   if (await HandleLeaveReviewValidation(ButtonInteract, ActiveLeave)) {
     return ConfirmationMsg.delete()
       .catch(() => Interaction.deleteReply())
@@ -488,15 +492,13 @@ async function HandlePendingExtensionCancellation(
     .setDescription("Your LOA extension request was successfully cancelled.");
 
   return Promise.allSettled([
-    Callback(OriginalCmdInteract, false),
+    Callback(ButtonInteract, MainPromptMsgId),
     LOAEventLogger.LogExtensionCancellation(Interaction, ActiveLeave),
     Interaction.editReply({ embeds: [ReplyEmbed], components: [] }),
   ]);
 }
 
-async function GetManagementEmbedAndLOA(
-  Interaction: ButtonInteraction<"cached"> | SlashCommandInteraction<"cached">
-) {
+async function GetManagementEmbedAndLOA(Interaction: PromptInteractType) {
   const LOAData = await GetLOAsData({
     guild_id: Interaction.guildId,
     user_id: Interaction.user.id,
@@ -593,38 +595,37 @@ async function HandleLeaveReviewValidation(
       RequestDocument?.extension_req?.status === "Pending");
 
   if (!RequestHasToBeReviewed) {
-    const ReplyEmbed = new EmbedBuilder()
-      .setColor(Embeds.Colors.Error)
+    return new ErrorEmbed()
       .setTitle("Leave of Absence Modified")
       .setDescription(
         "The request/leave you are taking action on either does not exist or has been modified."
-      );
-
-    return Interaction.reply({ embeds: [ReplyEmbed], ephemeral: true })
-      .catch(() => Interaction.editReply({ embeds: [ReplyEmbed] }))
+      )
+      .replyToInteract(Interaction, true, true, "editReply")
       .then(() => true);
   }
 
   return false;
 }
 
-async function Callback(
-  Interaction: SlashCommandInteraction<"cached"> | ButtonInteraction<"cached">,
-  FirstTime: boolean = true
-) {
-  if (FirstTime) await Interaction.deferReply({ ephemeral: true });
+async function Callback(Interaction: PromptInteractType, CmdInteractReplyMsgId?: string) {
+  if (Interaction.isButton() && !(await Interaction.fetchReply().catch(() => null))) return;
+  if (!Interaction.replied && !Interaction.deferred)
+    await Interaction.deferReply({ ephemeral: true }).catch(() => null);
+
   const [ReplyEmbed, ActiveOrPendingLOA] = await GetManagementEmbedAndLOA(Interaction);
   const ManagementComps = GetManagementComponents(Interaction, ActiveOrPendingLOA);
   const ReplyMsg = await Interaction.editReply({
     embeds: [ReplyEmbed],
     components: ManagementComps,
+    ...(CmdInteractReplyMsgId ? { message: CmdInteractReplyMsgId } : {}),
   });
 
   if (!ActiveOrPendingLOA) return;
+  CmdInteractReplyMsgId = CmdInteractReplyMsgId ?? ReplyMsg.id;
   const CompActionCollector = ReplyMsg.createMessageComponentCollector({
     filter: (ButtonInteract) => ButtonInteract.user.id === Interaction.user.id,
     componentType: ComponentType.Button,
-    time: 5 * 60_000,
+    time: 8 * 60_000,
   });
 
   CompActionCollector.on("collect", async (ButtonInteract) => {
@@ -643,13 +644,13 @@ async function Callback(
       }
 
       if (ButtonInteract.customId === "loa-mng-cancel") {
-        await HandlePendingLeaveCancellation(ButtonInteract, Interaction);
+        await HandlePendingLeaveCancellation(ButtonInteract, CmdInteractReplyMsgId);
       } else if (ButtonInteract.customId === "loa-mng-end") {
-        await HandleLeaveEarlyEnd(ButtonInteract, Interaction);
+        await HandleLeaveEarlyEnd(ButtonInteract, CmdInteractReplyMsgId);
       } else if (ButtonInteract.customId === "loa-mng-extend") {
-        await HandleLeaveExtend(ButtonInteract, Interaction);
+        await HandleLeaveExtend(ButtonInteract, CmdInteractReplyMsgId);
       } else if (ButtonInteract.customId === "loa-mng-ext-cancel") {
-        await HandlePendingExtensionCancellation(ButtonInteract, Interaction);
+        await HandlePendingExtensionCancellation(ButtonInteract, CmdInteractReplyMsgId);
       } else {
         await ButtonInteract.deferUpdate();
       }
