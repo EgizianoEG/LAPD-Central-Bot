@@ -44,7 +44,7 @@ async function Callback(CmdInteract: SlashCommandInteraction<"cached">) {
     .lean()
     .exec();
 
-  if (LinkedGuildProfile === null) {
+  if (!LinkedGuildProfile) {
     return new InfoEmbed()
       .setThumbnail(null)
       .setTitle("No Match Found")
