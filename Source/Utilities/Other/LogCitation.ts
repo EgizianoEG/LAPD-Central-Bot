@@ -1,11 +1,11 @@
 import { HydratedDocumentFromSchema } from "mongoose";
 import { Colors, EmbedBuilder, time } from "discord.js";
 import { CitationImgDimensions } from "./GetFilledCitation.js";
+import { SendGuildMessages } from "@Utilities/Other/GuildMessages.js";
 import { Citations } from "@Typings/Utilities/Generic.js";
 
 import Dedent from "dedent";
 import UploadToImgBB from "./ImgBBUpload.js";
-import SendGuildMessages from "@Utilities/Other/SendGuildMessages.js";
 import GetPlaceholderImgURL from "./GetPlaceholderImg.js";
 import IncrementActiveShiftEvent from "@Utilities/Database/IncrementActiveShiftEvent.js";
 

@@ -1,9 +1,9 @@
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import {
   DiscordAPIError,
+  type MessagePayload,
   type ButtonInteraction,
   type MessageCreateOptions,
-  type MessagePayload,
 } from "discord.js";
 
 /**
@@ -49,7 +49,7 @@ function SanitizeList(StrList: string[]): string[] {
  *  - The bot can't send messages in a provided channel (lack of perms)
  *  - An unexpected error occurred
  */
-export default async function SendGuildMessages(
+export async function SendGuildMessages(
   Interact: SlashCommandInteraction<"cached"> | ButtonInteraction<"cached">,
   GuildChannelIds: string | string[],
   MessagePayload: MessagePayload | MessageCreateOptions

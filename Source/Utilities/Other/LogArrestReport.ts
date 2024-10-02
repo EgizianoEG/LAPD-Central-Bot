@@ -1,11 +1,11 @@
 import { GuildArrests, Shifts } from "@Typings/Utilities/Database.js";
 import { ButtonInteraction } from "discord.js";
+import { SendGuildMessages } from "@Utilities/Other/GuildMessages.js";
 import { CmdOptionsType } from "@Cmds/Miscellaneous/Log/Deps/Arrest.js";
 import { FormatUsername } from "@Utilities/Strings/Formatters.js";
 import { Images } from "@Config/Shared.js";
 
 import GuildModel from "@Models/Guild.js";
-import SendGuildMessages from "@Utilities/Other/SendGuildMessages.js";
 import IncrementActiveShiftEvent from "@Utilities/Database/IncrementActiveShiftEvent.js";
 import GetFormattedArrestReportEmbed from "./FormatArrestReportEmbed.js";
 

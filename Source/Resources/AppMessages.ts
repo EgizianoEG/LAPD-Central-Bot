@@ -641,6 +641,48 @@ export const ErrorMessages = {
     Description:
       "An error occurred while attempting to insert the incident report into the application database. Please try again later.",
   },
+
+  /**
+   * Indicates that the application sent the report log message is not the same as the running one,
+   * which received the interaction to update/modify the report (a different application.)
+   */
+  UpdateIncidentReportAppNotAuthor: {
+    Title: "Incorrect Action",
+    Description:
+      "A different application or user sent the target message. Ensure that you are using the command on an incident report message that was sent by the same application, and try again.",
+  },
+
+  /**
+   * Indicates that there was no incident number included in the report log embed, making the application
+   * unable to fetch the target incident report from the database. Could be caused by removing message embeds manually by users.
+   */
+  UpdateIncidentReportNoIncNum: {
+    Title: "Incident Number Not Found",
+    Description:
+      "The incident report number could not be found in the report log message. Kindly ensure that you are targeting an incident report log message and that it remains intact prior to attempting to modify the corresponding report.",
+  },
+
+  /**
+   * Due to the application settings on certain guilds, management can decide to delete duty logs automatically after a certain amount of time,
+   * which may cause the target incident report to be deleted from the database. This message is shown when the application couldn't find the incident record.
+   */
+  UpdateIncidentReportIncNotFound: {
+    Title: "Incident Not Found",
+    Description:
+      "The incident report you are trying to update doesn't seem to exist anymore in the application database. Kindly verify that the report was not deleted before attempting to update it.",
+  },
+
+  UpdateIncidentReportDBFailed: {
+    Title: "Database Update Failed",
+    Description:
+      "An error occurred while attempting to update the incident report in the application database. Please try again later.",
+  },
+
+  UpdateIncidentReportNoMgmtPerms: {
+    Title: "Insufficient Permission",
+    Description:
+      "You do not have permission to update or take action on this incident report. Only the report submitter or staff with management permissions can perform this action.",
+  },
 };
 
 export const InfoMessages = {

@@ -27,14 +27,15 @@ import {
 import { ReporterInfo } from "../Log.js";
 import { milliseconds } from "date-fns";
 import { RandomString } from "@Utilities/Strings/Random.js";
+import { SendGuildMessages } from "@Utilities/Other/GuildMessages.js";
 import { GuildIncidents, Guilds } from "@Typings/Utilities/Database.js";
+import { SanitizeDiscordAttachmentLink } from "@Utilities/Strings/OtherUtils.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { FilterUserInput, FilterUserInputOptions } from "@Utilities/Strings/Redactor.js";
 import { IsValidDiscordId, IsValidDiscordAttachmentLink } from "@Utilities/Other/Validators.js";
 
 import IncrementActiveShiftEvent from "@Utilities/Database/IncrementActiveShiftEvent.js";
 import GetIncidentReportEmbeds from "@Utilities/Other/GetIncidentReportEmbeds.js";
-import SendGuildMessages from "@Utilities/Other/SendGuildMessages.js";
 import GetUserInfo from "@Utilities/Roblox/GetUserInfo.js";
 import GuildModel from "@Models/Guild.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
@@ -205,24 +206,6 @@ function SanitizeInvolvedOfficersOrWitnessesInput(Input: string): string[] {
 }
 
 /**
- * Sanitizes a given attachment URL by removing any query parameters that are not related to authentication params.
- * @param Link - The URL string to be sanitized.
- * @returns The sanitized URL string with only the allowed query parameters.
- */
-function SanitizeAttachmentLink(Link: string): string {
-  const URLInst = new URL(Link);
-  const AllowedParams = new Set(["ex", "is", "hm"]);
-
-  for (const Param of URLInst.searchParams.keys()) {
-    if (!AllowedParams.has(Param)) {
-      URLInst.searchParams.delete(Param);
-    }
-  }
-
-  return URLInst.href;
-}
-
-/**
  * Updates the description of a field in an EmbedBuilder object. If the field
  * with the specified name exists, its value is updated. Otherwise, a new field is added to the embed.
  * @param Embed - The EmbedBuilder object to update.
@@ -302,13 +285,13 @@ async function PrepareIncidentData(
     utif_setting_enabled: GuildDocument.settings.utif_enabled,
   };
 
+  const InputNotes = ModalSubmission.fields.getTextInputValue("notes").replace(/\s+/g, " ") || null;
   const Data = {
     ...CmdProvidedDetails,
     _id: GetIncidentNumber(GuildDocument.logs.incidents),
 
-    notes: await FilterUserInput(ModalSubmission.fields.getTextInputValue("notes"), UTIFOpts),
     description: await FilterUserInput(
-      ModalSubmission.fields.getTextInputValue("incident-desc"),
+      ModalSubmission.fields.getTextInputValue("incident-desc").replace(/\s+/g, " "),
       UTIFOpts
     ),
 
@@ -329,9 +312,14 @@ async function PrepareIncidentData(
       .split(SplitRegexForInputs)
       .filter(Boolean),
 
+    notes: InputNotes ? await FilterUserInput(InputNotes, UTIFOpts) : null,
+    last_updated: new Date(),
+    last_updated_by: null,
+
     reported_on: ModalSubmission.createdAt,
     reported_by: {
       discord_id: CmdInteract.user.id,
+      discord_username: CmdInteract.user.username,
       display_name: CmdInteract.member.nickname || CmdInteract.user.displayName,
       roblox_id: ReportingOfficer.RobloxUserId,
       roblox_username: await GetUserInfo(ReportingOfficer.RobloxUserId)
@@ -344,7 +332,7 @@ async function PrepareIncidentData(
     return null;
   }
 
-  Data.attachments = Data.attachments.map(SanitizeAttachmentLink);
+  Data.attachments = Data.attachments.map(SanitizeDiscordAttachmentLink);
   return Data;
 }
 
@@ -412,6 +400,27 @@ async function OnReportConfirmation(
     - Incident Number: \`${IncidentReport._id}\`
     - Logged Report Link: ${ReportSentMessageURL ?? "N/A"} 
   `);
+
+  if (ReportSentMessageURL) {
+    const SplatURL = ReportSentMessageURL.split("/");
+    GuildModel.updateOne(
+      {
+        _id: BtnInteract.guildId,
+        "logs.incidents._id": IncidentReport._id,
+      },
+      {
+        $set: {
+          "logs.incidents.$[record].log_message": `${SplatURL[SplatURL.length - 2]}:${SplatURL[SplatURL.length - 1]}`,
+        },
+      },
+      {
+        new: true,
+        arrayFilters: [{ "record._id": IncidentReport._id }],
+      }
+    )
+      .exec()
+      .catch(() => null);
+  }
 
   return BtnInteract.editReply({
     embeds: [new SuccessEmbed().setTitle("Report Logged").setDescription(REDescription)],
