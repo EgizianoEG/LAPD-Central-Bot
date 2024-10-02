@@ -22,9 +22,7 @@ async function Callback(Client: DiscordClient, Interaction: SlashCommandInteract
 
   for (const SubCommand of Subcommands) {
     if (SubCommand.data.name === SubCommandName && typeof SubCommand.callback === "function") {
-      return SubCommand.callback.length > 1
-        ? (SubCommand.callback as AnySlashCmdCallback)(Client, Interaction)
-        : (SubCommand.callback as AnySlashCmdCallback)(Interaction);
+      return SubCommand.callback(Interaction);
     }
   }
 }

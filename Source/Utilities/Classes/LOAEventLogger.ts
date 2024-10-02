@@ -23,7 +23,13 @@ import { LeaveOfAbsence } from "@Typings/Utilities/Database.js";
 import { isAfter } from "date-fns";
 
 import GuildModel from "@Models/Guild.js";
-import Dedent from "dedent";
+import RegularDedent from "dedent";
+
+const Dedent = (Str: string) => {
+  return RegularDedent(Str)
+    .replace(/\.\s{2,}(\w)/g, ". $1")
+    .replace(/(\w)\s{2,}(\w)/g, "$1 $2");
+};
 
 type LOADocument = LeaveOfAbsence.LeaveOfAbsenceHydratedDocument;
 type ManagementInteraction = ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">;
@@ -1073,16 +1079,25 @@ export default class LOAEventLogger {
    * Sends a log of a cancelled LOA extension to the logging channel, if one exists. Also sends a DM notice to the requester if it is possible.
    * This function is not for logging manual end (i.e. management staff end commands).
    * @param Client
-   * @param LOADocument
-   * @param CurrentDate
+   * @param LOADocument - The LOA document taking action based on.
+   *                      Required fields are: `_id`, `review_date`, `reviewed_by`, `status`, `end_date`, `user`, `guild`, and `duration_hr`.
+   * @param CurrentDate - The current date which will be used to determine if the LOA has ended.
    * @returns A Promise resolves to the sent log message if successful.
+   * @silent This function will try not to throw any errors when executed.
    */
   public static async LogLeaveEnd(
     Client: DiscordClient,
     LOADocument: LOADocument,
     CurrentDate: Date = new Date()
   ) {
-    if (!LOADocument.review_date || !isAfter(LOADocument.end_date, CurrentDate)) return;
+    if (
+      LOADocument.review_date === null ||
+      LOADocument.status !== "Approved" ||
+      isAfter(LOADocument.end_date, CurrentDate)
+    ) {
+      return;
+    }
+
     const Guild = await Client.guilds.fetch(LOADocument.guild).catch(() => null);
     const Requester = await Guild?.members.fetch(LOADocument.user).catch(() => null);
 

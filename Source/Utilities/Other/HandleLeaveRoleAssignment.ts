@@ -40,6 +40,6 @@ async function HandleSingleUserRoleAssignment(
 ) {
   if (!GuildMember) return Promise.resolve();
   return IsOnLeave
-    ? GuildMember.roles.add(OnLeaveRole, "Member is on leave.")
-    : GuildMember.roles.remove(OnLeaveRole, "Member is no longer on leave.");
+    ? GuildMember.roles.add(OnLeaveRole, "Staff member is on leave of absence.")
+    : GuildMember.roles.remove(OnLeaveRole, "Staff member is not on leave anymore.");
 }

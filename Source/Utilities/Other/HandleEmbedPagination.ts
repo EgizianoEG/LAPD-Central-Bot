@@ -175,7 +175,7 @@ async function HandleSelectMenuPageSelection(
   });
 
   const MenuSelection = await PromptMsg.awaitMessageComponent({
-    time: 5 * 60 * 1000,
+    time: 8 * 60 * 1000,
     componentType: ComponentType.StringSelect,
     filter: (IC) =>
       IC.user.id === BtnInteract.user.id &&
@@ -183,7 +183,10 @@ async function HandleSelectMenuPageSelection(
   }).catch(() => null);
 
   if (!MenuSelection) return null;
-  MenuSelection.deleteReply().catch(() => null);
+  MenuSelection.deferUpdate()
+    .then(() => MenuSelection.deleteReply())
+    .catch(() => null);
+
   return Number(MenuSelection.values[0]);
 }
 

@@ -13,7 +13,7 @@ import LOAEventLogger from "@Utilities/Classes/LOAEventLogger.js";
  * @param Client
  * @returns
  */
-async function HandledExpiredLeaves(Now: Date | "init" | "manual", Client: DiscordClient) {
+async function HandleExpiredLeaves(Now: Date | "init" | "manual", Client: DiscordClient) {
   const CurrentDate = Now instanceof Date ? Now : new Date();
   const SevenDaysAgo = subDays(CurrentDate, 7);
   const LOAsHandled: string[] = [];
@@ -73,20 +73,9 @@ async function HandledExpiredLeaves(Now: Date | "init" | "manual", Client: Disco
     if (!GuildInst) continue;
     if (!CategorizedByGuild[GuildId]?.length) continue;
     for (const Leave of CategorizedByGuild[GuildId]) {
-      const UsersActiveLeave = await LeaveOfAbsenceModel.findOne({
-        guild: GuildId,
-        user: Leave.user,
-        status: "Approved",
-        early_end_date: null,
-        end_date: { $gt: CurrentDate },
-      });
-
-      if (UsersActiveLeave) continue;
-      else {
-        LOAsHandled.push(Leave._id as unknown as string);
-        HandleLeaveRoleAssignment(Leave.user, GuildInst, false).catch(() => null);
-        LOAEventLogger.LogLeaveEnd(Client, LeaveOfAbsenceModel.hydrate(Leave)).catch(() => null);
-      }
+      LOAsHandled.push(Leave._id as unknown as string);
+      HandleLeaveRoleAssignment(Leave.user, GuildInst, false).catch(() => null);
+      LOAEventLogger.LogLeaveEnd(Client, LeaveOfAbsenceModel.hydrate(Leave), CurrentDate);
     }
   }
 
@@ -98,7 +87,7 @@ async function HandledExpiredLeaves(Now: Date | "init" | "manual", Client: Disco
 
 export default {
   cron_exp: "*/3 * * * *",
-  cron_func: HandledExpiredLeaves as any,
+  cron_func: HandleExpiredLeaves as any,
   cron_opts: {
     timezone: "America/Los_Angeles",
     errorHandlingMechanism: "silent/log",
