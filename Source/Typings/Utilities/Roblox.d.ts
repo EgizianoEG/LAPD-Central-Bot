@@ -29,61 +29,31 @@ export namespace APIResponses.Users {
     displayName: string;
   }
 
-  /** The API response for a user search by keyword using {@link https://www.roblox.com/search/users/results /search/users/results} Roblox endpoint */
-  interface UserSearchQueryResponse {
-    /** The search keyword. This field can be filtered and replaced with hashtags by Roblox and would be `null` if there wasn't a keyword parameter in the query. */
-    Keyword: string | null;
-
-    /** The maximum number of rows (search results) returned. Mirrors the original request parameter `maxRows`. */
-    MaxRows: number;
-
-    /** The starting index of the search results. Mirrors the original request parameter `startIndex`. */
-    StartIndex: number;
-
-    /** The total number of search results. Maximum of 500 results. */
-    TotalResults: number;
-
-    /** Users discovered through the api request. If no people were found using the current keyword, this value would be 'null'. */
-    UserSearchResults: Users.UserSearchResult[] | null;
+  /** The API response for a user search by keyword using {@link https://users.roblox.com/v1/usernames/users} Roblox endpoint */
+  interface UserSearchPOSTResponse {
+    /** Users discovered through the api request. */
+    data: Users.UserSearchResult[];
   }
 
-  /** An object representing a user search result for the endpoint "https://www.roblox.com/search/users/results" */
+  /** An object representing a user search result for the endpoint "https://users.roblox.com/v1/usernames/users" */
   interface UserSearchResult {
     /** The id of the user. */
-    UserId: number;
+    id: number;
+
+    /** The username used in the request. */
+    requestedUsername: string;
 
     /** The username of the user. */
-    Name: string;
+    name: string;
 
     /** The display name of the user. */
-    DisplayName: string;
-
-    /** The bio/description of the user. */
-    Blurb: string;
+    displayName: string;
 
     /** A comma-separated stringified list of the user's previous usernames e.g. "roblox, roblox2, roblox3" */
-    PreviousUserNamesCsv: string;
+    // previousUsernames: string[];
 
-    /** Whether the user is online. This property is not recommended to be used and depend on. */
-    IsOnline: boolean;
-
-    /** The user's last known location. This property is not recommended to be used and depend on. */
-    LastLocation: string | null;
-
-    /** The URL of the user's profile page. e.g. "/users/000000/profile" */
-    UserProfilePageUrl: string;
-
-    /** The user's last seen date. */
-    LastSeenDate: string | null;
-
-    /** The user's primary group. An empty string if the user has no primary group. */
-    PrimaryGroup: string;
-
-    /** The URL of the user's primary group if applicable. */
-    PrimaryGroupUrl: string;
-
-    /** Whether the user has a verified badge. Not recommended to be used. */
-    HasVerifiedBadge: boolean;
+    /** Whether the user has a verified badge. Not reliable. */
+    hasVerifiedBadge: boolean;
   }
 
   interface MultiGetByNameResponse {

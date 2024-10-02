@@ -332,12 +332,16 @@ async function AwaitDeleteConfirmation(
 
     if (ConfirmationInteract?.customId.includes("confirm")) {
       return ConfirmationFunc(ConfirmationInteract, ...AdditionalCFArgs);
-    } else {
-      return ConfirmationInteract.deleteReply();
+    } else if (ConfirmationInteract) {
+      return ConfirmationInteract.deferUpdate()
+        .then(() => ConfirmationInteract?.deleteReply())
+        .catch(() => null);
     }
   } catch (Err: any) {
     if (Err?.message.match(/reason: time/)) {
-      return ConfirmationInteract?.deleteReply() || ConfirmationMsg.delete();
+      return RecBtnInteract.deleteReply()
+        .catch(() => ConfirmationMsg.delete())
+        .catch(() => null);
     } else if (Err?.message.match(/reason: \w+Delete/)) {
       /* Ignore message/channel/guild deletion */
       return null;
