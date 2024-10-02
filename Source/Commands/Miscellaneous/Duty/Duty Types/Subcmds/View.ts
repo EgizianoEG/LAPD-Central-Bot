@@ -95,7 +95,7 @@ function CreateEmbedPages(
  * for navigation buttons to paginate through the embed pages.
  */
 async function Callback(Interaction: SlashCommandInteraction<"cached">) {
-  await Interaction.deferReply();
+  await Interaction.deferReply({ ephemeral: true });
   const GuildShiftTypes = await GetShiftTypes(Interaction.guildId);
   const Pages = CreateEmbedPages(GuildShiftTypes, DisplayedShiftTypesPerPage);
 
