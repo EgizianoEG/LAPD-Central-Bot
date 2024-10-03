@@ -103,12 +103,12 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
 
   const ProcessEmbed = new EmbedBuilder()
     .setColor(Colors.Aqua)
-    .setTitle("Login Process - " + escapeMarkdown(RobloxUsername))
+    .setTitle(`Login Process - @${escapeMarkdown(RobloxUsername)}`)
     .setDescription(
       "To verify your login, kindly modify the About/Description section of your Roblox Profile to include the provided sample text below.\n" +
         "- When finished, press the `Verify and Login` button\n" +
         "- To cancel the login process, press the `Cancel Login` button\n" +
-        "- **Note**: The login process will be automatically canceled if no response is received within 5 minutes.\n" +
+        "- **Note**: This login process will be automatically cancelled if no response is received within 10 minutes.\n" +
         `\`\`\`fix\n${SampleText}\n\`\`\``
     );
 
@@ -154,7 +154,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
             components: [],
             embeds: [
               new SuccessEmbed()
-                .setTitle("Successfully Verified")
+                .setTitle("Successfully Linked")
                 .setDescription(
                   "Your Roblox account has been successfully verified and linked to the application."
                 ),
