@@ -33,6 +33,7 @@ function ToEmbedPages(Members: GuildMember[]) {
 async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const InputRegex = Interaction.options.getString("regex", true);
   const InputRFlag = Interaction.options.getString("flags", false);
+  const ResponseEphemeral = Interaction.options.getBoolean("ephemeral", false) || false;
 
   try {
     const Regex = new RegExp(InputRegex, InputRFlag || undefined);
@@ -45,7 +46,12 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
 
     const EmbedPages = ToEmbedPages(MembersMatching.toJSON());
     if (EmbedPages.length) {
-      return HandleEmbedPagination(EmbedPages, Interaction);
+      return HandleEmbedPagination(
+        EmbedPages,
+        Interaction,
+        "Commands:Utility:Nickname:Search",
+        ResponseEphemeral
+      );
     } else {
       return new InfoEmbed()
         .useInfoTemplate("NicknameRegexNoMatchingMembers")
@@ -84,6 +90,11 @@ const CommandObject = {
             return { name: F, value: F };
           })
         )
+    )
+    .addBooleanOption((Opt) =>
+      Opt.setName("ephemeral")
+        .setDescription("Whether to show the result in an ephemeral message or not.")
+        .setRequired(false)
     ),
 };
 

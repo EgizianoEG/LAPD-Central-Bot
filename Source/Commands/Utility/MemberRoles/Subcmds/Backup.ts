@@ -48,31 +48,23 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
   });
 
   const RespEmbed = new EmbedBuilder()
-    .setTimestamp(CmdInteraction.createdAt)
     .setColor(Colors.Greyple)
     .setTitle("Backup Created")
     .setDescription(
       Dedent(`
-        ${userMention(SelectedMember.id)}'s currently assigned roles were successfully saved and backed up with the save id \`${Save.id}\`.
+        ${userMention(SelectedMember.id)}'s currently assigned roles were successfully saved and backed up with the save ID: \`${Save.id}\`.
         - **Current Nickname:** \`${Save.nickname}\`
         - **Current Username:** \`@${Save.username}\`
       `)
     )
     .addFields({
-      name: `Backed Up Roles - ${Save.roles.length}`,
+      name: `**Backed Up Roles - ${Save.roles.length}**`,
       value: Save.roles.map((Role) => roleMention(Role.role_id)).join(", "),
     });
 
   if (Save.reason) {
     RespEmbed.setDescription(
-      RespEmbed.data.description +
-        "\n" +
-        Dedent(`
-          - **Reason for Backup:** 
-          \`\`\`fix
-          ${Save.reason}
-          \`\`\`
-        `)
+      `${RespEmbed.data.description}\n- **Reason for Backup:** ${Save.reason}`
     );
   }
 

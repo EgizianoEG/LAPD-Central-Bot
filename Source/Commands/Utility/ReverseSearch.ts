@@ -81,7 +81,9 @@ const CommandObject: SlashCommandObject<any> = {
 
   data: new SlashCommandBuilder()
     .setName("reverse-search")
-    .setDescription("See who have a target Roblox account linked to their profile.")
+    .setDescription(
+      "See who has the Roblox account with the given username linked to their Discord account."
+    )
     .setContexts(InteractionContextType.Guild)
     .addStringOption((Option) =>
       Option.setName("roblox-username")

@@ -70,7 +70,7 @@ const CommandObject = {
         .setRequired(true)
         .setAutocomplete(true)
         .setDescription(
-          "The save to load. Type a date, nickname, username, or save ID to see autocomplete options."
+          "The save to delete. Type a date, nickname, username, or save ID to see autocomplete options."
         )
     ),
 };
