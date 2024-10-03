@@ -156,7 +156,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
               new SuccessEmbed()
                 .setTitle("Successfully Linked")
                 .setDescription(
-                  "Your Roblox account has been successfully verified and linked to the application."
+                  "Your Roblox account has successfully been verified and linked to the application. You may now remove the sample text from your profile description."
                 ),
             ],
           });
@@ -168,7 +168,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
       } else {
         return new InfoEmbed()
           .setTitle("Process Cancellation")
-          .setDescription("The login process has been canceled due to your request.")
+          .setDescription("The login process has been cancelled due to your request.")
           .replyToInteract(ButtonInteract, true);
       }
     })
