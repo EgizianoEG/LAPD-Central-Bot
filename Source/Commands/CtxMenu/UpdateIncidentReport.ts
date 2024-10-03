@@ -21,6 +21,7 @@ import {
   ButtonStyle,
   Message,
   Colors,
+  ApplicationIntegrationType,
 } from "discord.js";
 
 import {
@@ -735,6 +736,7 @@ const CommandObject: ContextMenuCommandObject = {
   options: { user_perms: { staff: true }, cooldown: 5 },
   data: new ContextMenuCommandBuilder()
     .setName("Update Incident Report")
+    .setIntegrationTypes(ApplicationIntegrationType.GuildInstall)
     .setContexts(InteractionContextType.Guild)
     .setType(ApplicationCommandType.Message),
 };
