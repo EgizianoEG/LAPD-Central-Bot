@@ -660,8 +660,19 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         },
       },
       {
-        name: "Bronco U725",
-        alias: "Rampage",
+        name: "Bronco U725 4-Door",
+        alias: "Rampage Beast",
+        style: "SUV",
+        class: "SUV",
+        category: "Regular",
+        model_year: {
+          org: "2021",
+          alt: "2021",
+        },
+      },
+      {
+        name: "Bronco U725 2-Door",
+        alias: "Rampage Bigfoot 2-Door",
         style: "SUV",
         class: "SUV",
         category: "Regular",
