@@ -1,6 +1,7 @@
-import ERLCVehiclesData, { AllVehicleModels } from "@Resources/ERLCVehicles.js";
 import { TenCodes, ElevenCodes, LiteralCodes, CodeType } from "@Resources/RadioCodes.js";
+import { AllVehicleModels, ERLCVehiclesData } from "@Resources/ERLCVehicles.js";
 import { ErrorMessages, InfoMessages } from "@Resources/AppMessages.js";
+import { FormatVehicleName } from "@Utilities/Strings/Formatters.js";
 import { Vehicles } from "@Typings/Resources.js";
 import BrickColors from "@Resources/BrickColors.js";
 import SampleTexts from "@Resources/SampleTexts.js";
@@ -87,6 +88,19 @@ describe("ER:LC Vehicles (ERLCVehicles.js)", () => {
           expect(Model).toHaveProperty("model_year");
         }
       );
+    });
+
+    test("For autocompletion purposes, each vehicle must have a label for autocomplete less than or equal to 100 characters long", () => {
+      for (const Brand of ERLCVehiclesData) {
+        for (const Model of Brand.models) {
+          expect(
+            FormatVehicleName(Model, {
+              name: Brand.brand,
+              alias: Brand.counterpart,
+            }).length
+          ).toBeLessThanOrEqual(100);
+        }
+      }
     });
   });
 });
