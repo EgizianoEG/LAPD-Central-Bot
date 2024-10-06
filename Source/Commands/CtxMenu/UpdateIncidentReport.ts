@@ -143,7 +143,7 @@ function GetChangeIncidentWitnessesOrSuspectsInputModal(
   IncidentRecord: GuildIncidents.IncidentRecord,
   Type: "Witnesses" | "Suspects"
 ) {
-  return new ModalBuilder()
+  const InputModal = new ModalBuilder()
     .setCustomId(
       `${IncidentEditOptionIds[Type]}:${RecInteract.user.id}:${RecInteract.createdTimestamp}`
     )
@@ -155,19 +155,24 @@ function GetChangeIncidentWitnessesOrSuspectsInputModal(
           .setCustomId(ModalInputIds[Type])
           .setLabel(`Incident ${Type}`)
           .setPlaceholder(`Enter the new names of ${Type.toLowerCase()} separated by commas...`)
-          .setValue(IncidentRecord[Type.toLowerCase()].join(", "))
           .setMinLength(3)
           .setMaxLength(88)
           .setRequired(false)
       )
     );
+
+  if (IncidentRecord[Type.toLowerCase()].length) {
+    InputModal.components[0].components[0].setValue(IncidentRecord[Type.toLowerCase()].join(", "));
+  }
+
+  return InputModal;
 }
 
 function GetChangeIncidentNotesInputModal(
   RecInteract: StringSelectMenuInteraction<"cached">,
   IncidentRecord: GuildIncidents.IncidentRecord
 ) {
-  return new ModalBuilder()
+  const NotesModal = new ModalBuilder()
     .setCustomId(
       `${IncidentEditOptionIds.Notes}:${RecInteract.user.id}:${RecInteract.createdTimestamp}`
     )
@@ -179,12 +184,17 @@ function GetChangeIncidentNotesInputModal(
           .setCustomId(ModalInputIds.Notes)
           .setLabel("Incident Notes")
           .setPlaceholder("Enter the new notes...")
-          .setValue(IncidentRecord.notes || "")
           .setMinLength(IncidentNotesLength.Min)
           .setMaxLength(IncidentNotesLength.Max)
           .setRequired(false)
       )
     );
+
+  if (IncidentRecord.notes?.length) {
+    NotesModal.components[0].components[0].setValue(IncidentRecord.notes);
+  }
+
+  return NotesModal;
 }
 
 function GetIncidentUpdatePromptComponentsBasedOnChanges(
@@ -228,7 +238,8 @@ function GetUpdatePromptEmbedBasedOnChanges(
     }
 
     if (DatabaseIncRecord.notes !== UpdatedIncRecord.notes) {
-      UpdatedPromptMsgDesc += `\n- **Notes:**\n  ${UpdatedIncRecord.notes || "[Removed]"}`;
+      const Notes = UpdatedIncRecord.notes?.length ? `\n  ${UpdatedIncRecord.notes}` : "[Removed]";
+      UpdatedPromptMsgDesc += `\n- **Notes:** ${Notes}`;
     }
   }
 

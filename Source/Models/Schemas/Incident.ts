@@ -49,6 +49,7 @@ const IncidentReportSchema = new Schema<IncidentPlainDoc, IncidentModelType>({
       {
         _id: false,
         type: String,
+        trim: true,
       },
     ],
   },
