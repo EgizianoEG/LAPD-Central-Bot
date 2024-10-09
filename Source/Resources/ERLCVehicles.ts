@@ -1,4 +1,5 @@
 import type { Vehicles } from "@Typings/Resources.js";
+import { FormatVehicleName } from "@Utilities/Strings/Formatters.js";
 
 export const ERLCVehiclesData: Vehicles.VehicleData[] = [
   {
@@ -1298,11 +1299,10 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
 ];
 
 export default ERLCVehiclesData;
-export const AllVehicleModels: (Vehicles.VehicleModel & { brand: string; counterpart: string })[] =
-  [];
+export const AllVehicleModelNames = ERLCVehiclesData.flatMap(({ brand, counterpart, models }) =>
+  models.map((model) => FormatVehicleName(model, { name: brand, alias: counterpart }))
+);
 
-for (const Brand of ERLCVehiclesData) {
-  for (const Model of Brand.models) {
-    AllVehicleModels.push({ brand: Brand.brand, counterpart: Brand.counterpart, ...Model });
-  }
-}
+export const AllVehicleModels = ERLCVehiclesData.flatMap((Brand) =>
+  Brand.models.map((Model) => ({ brand: Brand.brand, counterpart: Brand.counterpart, ...Model }))
+);
