@@ -581,7 +581,7 @@ export function FormatCitViolations(Input: string) {
 /**
  * Properly formats an input height if it is incomplete or mistyped.
  * @param Input - The input height string.
- * @returns If succeeded, a height in the format `x'y"`; should be a maximum of `7'11"` (not enforced).
+ * @returns If succeeded, a height in the format `x'y"`; should be a maximum of `7'11"` (automatically enforced). If failed, the original input.
  * @example
  * FormatHeight("7")  // returns the string 7'0"
  * FormatHeight("6 ft 1 in")  // returns the string 6'1"
