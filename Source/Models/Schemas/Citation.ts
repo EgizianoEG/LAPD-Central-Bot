@@ -30,6 +30,7 @@ const CitationSchema = new Schema<CitationPlainDoc, CitationModelType>({
   num: {
     min: 0,
     type: Number,
+    unique: true,
     required: true,
   },
 
@@ -215,4 +216,5 @@ const CitationSchema = new Schema<CitationPlainDoc, CitationModelType>({
   },
 });
 
+CitationSchema.set("_id", false);
 export default CitationSchema;
