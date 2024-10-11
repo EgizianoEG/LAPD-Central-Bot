@@ -115,6 +115,14 @@ declare global {
   type UnPartial<T> = T extends Partial<infer R> ? R : T;
   type RangedArray<T, Min extends number, Max extends number> = TupleMinMax<T, Min, Max>;
 
+  type PartialAllowNull<T> = {
+    [P in keyof T]?: T[P] | null;
+  };
+
+  type DeepPartialAllowNull<T> = {
+    [P in keyof T]?: T[P] extends object ? DeepPartialAllowNull<T[P]> | null : T[P] | null;
+  };
+
   /** Expands a type definition recursively. */
   type ExpandRecursively<T> = T extends (...args: infer A) => infer R
     ? (...args: ExpandRecursively<A>) => ExpandRecursively<R>
