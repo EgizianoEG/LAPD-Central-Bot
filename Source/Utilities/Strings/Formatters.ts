@@ -1,7 +1,7 @@
 /* eslint-disable sonarjs/cognitive-complexity */
 import { AddStatutesRegexes, ATVCodesRegexes } from "@Resources/RegularExpressions.js";
 import { format as FormatStr } from "node:util";
-import { Citations } from "@Typings/Utilities/Generic.js";
+import { GuildCitations } from "@Typings/Utilities/Database.js";
 import { TitleCase } from "./Converters.js";
 import { Vehicles } from "@Typings/Resources.js";
 import ERLCAgeGroups from "@Resources/ERLCAgeGroups.js";
@@ -350,8 +350,8 @@ export function AddStatutes(this: any, Charges: Array<string>): Array<string> {
 export function AddTrafficViolationCodes(
   this: any,
   Violations: string[]
-): (Citations.Violation | string)[] {
-  const ModifiedViolations: (Citations.Violation | string)[] = [];
+): (GuildCitations.Violation | string)[] {
+  const ModifiedViolations: (GuildCitations.Violation | string)[] = [];
   const AddVehCode = FormatStr.bind(this, "%s CVC - %s");
 
   for (let i = 0; i < Violations.length; i++) {

@@ -2,7 +2,7 @@ import { HydratedDocumentFromSchema } from "mongoose";
 import { Colors, EmbedBuilder, time } from "discord.js";
 import { CitationImgDimensions } from "./GetFilledCitation.js";
 import { SendGuildMessages } from "@Utilities/Other/GuildMessages.js";
-import { Citations } from "@Typings/Utilities/Generic.js";
+import { GuildCitations } from "@Typings/Utilities/Database.js";
 
 import Dedent from "dedent";
 import UploadToImgBB from "./ImgBBUpload.js";
@@ -19,24 +19,22 @@ import IncrementActiveShiftEvent from "@Utilities/Database/IncrementActiveShiftE
  * @returns - The logged citation message link (the main one) if successful.
  */
 export default async function LogTrafficCitation(
-  CitationType: Citations.CitationType,
   CachedInteract: SlashCommandInteraction<"cached">,
   GuildDocument: HydratedDocumentFromSchema<typeof import("../../Models/Guild.js").default.schema>,
-  CitationData: Omit<Citations.AnyCitationData, "img_url">,
+  CitationData: Omit<GuildCitations.AnyCitationData, "img_url">,
   CitationImg: string | Buffer
 ) {
   let CitationImgURL: string;
-  if (CitationImg instanceof Buffer) {
+  if (typeof CitationImg === "string") {
+    CitationImgURL = CitationImg;
+  } else {
     CitationImgURL =
       (await UploadToImgBB(CitationImg, `traffic_citation_#${CitationData.num}`)) ??
       GetPlaceholderImgURL(`${CitationImgDimensions.Width}x${CitationImgDimensions.Height}`, "?");
-  } else {
-    CitationImgURL = CitationImg;
   }
 
   GuildDocument.logs.citations.addToSet({
     ...CitationData,
-    issued_on: CachedInteract.createdAt,
     img_url: CitationImgURL,
   });
 
@@ -55,7 +53,7 @@ export default async function LogTrafficCitation(
   `);
 
   const CitationEmbed = new EmbedBuilder()
-    .setTitle(`Traffic Citation — ${CitationType}`)
+    .setTitle(`Traffic Citation — ${CitationData.type}`)
     .setDescription(CitationDescription)
     .setColor(Colors.DarkBlue)
     .setImage(CitationImgURL);

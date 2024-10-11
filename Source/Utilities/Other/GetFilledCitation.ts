@@ -1,6 +1,6 @@
 import { createCanvas, loadImage } from "@napi-rs/canvas/index.js";
+import { GuildCitations } from "@Typings/Utilities/Database.js";
 import { GetDirName } from "./Paths.js";
-import { Citations } from "@Typings/Utilities/Generic.js";
 
 import Path from "node:path";
 import FileSystem from "node:fs/promises";
@@ -23,15 +23,9 @@ const FineTemplate = await loadImage(TFCTemplateImgBuffer);
 const WarnTemplate = await loadImage(TWCTemplateImgBuffer);
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
-export async function GetFilledCitation<
-  Type extends "Warning" | "Fine" = "Warning" | "Fine",
-  AsURL extends boolean | undefined = undefined,
->(
-  CitType: Type,
-  CitData: Type extends "Warning"
-    ? Omit<Citations.WarningCitationData, "img_url">
-    : Omit<Citations.FineCitationData, "img_url">,
-  ReturnAsURL?: boolean
+export async function GetFilledCitation<AsURL extends boolean | undefined = undefined>(
+  CitData: Omit<GuildCitations.AnyCitationData, "img_url">,
+  ReturnAsURL?: AsURL
 ): Promise<
   AsURL extends true ? string : AsURL extends false | undefined ? Buffer : Buffer | string
 > {
@@ -41,7 +35,7 @@ export async function GetFilledCitation<
   const CitCTX = CitCanvas.getContext("2d");
 
   // Draw the citation template.
-  CitCTX.drawImage(CitType === "Fine" ? FineTemplate : WarnTemplate, 0, 0);
+  CitCTX.drawImage(CitData.type === "Fine" ? FineTemplate : WarnTemplate, 0, 0);
 
   // Citation Number
   CitCTX.font = "400 2.4em Bahnschrift";
@@ -218,12 +212,8 @@ export async function GetFilledCitation<
     CitCTX.fillText(CitData.violation_loc, Width / 42, Height / 1.27);
 
     // Fine Amount
-    if (CitType === "Fine") {
-      CitCTX.fillText(
-        `${(CitData as Citations.FineCitationData).fine_amount}$`,
-        Width / 1.24,
-        Height / 1.27
-      );
+    if (CitData.type === "Fine" && CitData.fine_amount) {
+      CitCTX.fillText(`${CitData.fine_amount}$`, Width / 1.24, Height / 1.27);
     }
 
     // Citing Officer

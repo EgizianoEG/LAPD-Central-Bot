@@ -23,8 +23,7 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
   }
 
   const PrintedCitationImg =
-    CitationRecord.img_url ??
-    (await GetFilledCitation<"Warning" | "Fine", true>(CitationRecord.type, CitationRecord, true));
+    CitationRecord.img_url ?? (await GetFilledCitation(CitationRecord, true));
 
   const RespEmbedDesc = Dedent(`
     **Citation issued by:** ${userMention(CitationRecord.citing_officer.discord_id)}
