@@ -789,4 +789,16 @@ export const InfoMessages = {
     Description:
       "Please wait while your activity report is being created. This process may take a few seconds to complete.",
   },
+
+  ProcessingCitationDetails: {
+    Thumb: null,
+    Title: `${Emojis.Loading}\u{2000}Processing Details...`,
+    Description: "Citation details are being processed and validated for submission, please wait.",
+  },
+
+  LoggingCitationRecord: {
+    Thumb: null,
+    Title: `${Emojis.Loading}\u{2000}Logging Citation...`,
+    Description: "Please wait while your submitted citation is processed and logged.",
+  },
 };
