@@ -1,12 +1,5 @@
+import type { CollectedInteraction, SlashCommandBuilder, Collection, Snowflake } from "discord.js";
 import type { TupleMinMax } from "./Global.js";
-import type {
-  ChatInputCommandInteraction,
-  CollectedInteraction,
-  Collection,
-  ContextMenuCommandBuilder,
-  SlashCommandBuilder,
-  Snowflake,
-} from "discord.js";
 
 export declare module "utility-types" {
   export { NonEmptyArray, RangedArray, UnPartial, TupleMinMax };
