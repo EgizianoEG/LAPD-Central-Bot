@@ -9,11 +9,11 @@ import AnyCitationCallback from "./Funcs/AnyCitationHandler.js";
 
 const CmdFileLabel = "Commands:Miscellaneous:Log:CitFine";
 const EyeColorChoices = EyeColors.map((Color) => {
-  return { name: `${Color.name} (${Color.abbreviation})`, value: Color.name };
+  return { name: `${Color.name} (${Color.abbreviation})`, value: Color.abbreviation };
 });
 
 const HairColorChoices = HairColors.map((Color) => {
-  return { name: `${Color.name} (${Color.abbreviation})`, value: Color.name };
+  return { name: `${Color.name} (${Color.abbreviation})`, value: Color.abbreviation };
 });
 
 // ---------------------------------------------------------------------------------------
