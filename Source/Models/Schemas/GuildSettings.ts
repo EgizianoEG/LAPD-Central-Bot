@@ -180,5 +180,4 @@ const GuildSettings = new Schema({
   },
 });
 
-GuildSettings.set("versionKey", false);
 export default GuildSettings;
