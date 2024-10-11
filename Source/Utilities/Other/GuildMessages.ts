@@ -4,6 +4,7 @@ import {
   type MessagePayload,
   type ButtonInteraction,
   type MessageCreateOptions,
+  type ModalSubmitInteraction,
 } from "discord.js";
 
 /**
@@ -50,10 +51,13 @@ function SanitizeList(StrList: string[]): string[] {
  *  - An unexpected error occurred
  */
 export async function SendGuildMessages(
-  Interact: SlashCommandInteraction<"cached"> | ButtonInteraction<"cached">,
+  Interact:
+    | SlashCommandInteraction<"cached">
+    | ButtonInteraction<"cached">
+    | ModalSubmitInteraction<"cached">,
   GuildChannelIds: string | string[],
   MessagePayload: MessagePayload | MessageCreateOptions
-) {
+): Promise<string | null> {
   let MainReportMsgLink: string | null = null;
   GuildChannelIds = SanitizeList(
     Array.isArray(GuildChannelIds) ? GuildChannelIds : [GuildChannelIds]

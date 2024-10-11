@@ -627,7 +627,7 @@ async function IncidentLogCallback(
 
   if (!GuildDocument) {
     return new ErrorEmbed()
-      .useErrTemplate("GuildConfigNotFound")
+      .useErrTemplate("DBGuildDocumentNotFound")
       .replyToInteract(IDModalSubmission, true, true, "editReply");
   }
 
