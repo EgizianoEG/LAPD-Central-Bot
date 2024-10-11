@@ -638,13 +638,13 @@ export namespace GuildCitations {
     fine_amount: number;
   }
 
-  interface AnyCitationData extends WarningCitationData, Partial<FineCitationData> {
+  interface AnyCitationData extends WarningCitationData, PartialAllowNull<FineCitationData> {
     type: GuildCitations.CitationType;
   }
 
-  interface CitPartialData {
-    violator: Pick<ViolatorInfo, "name" | "id"> & Partial<ViolatorInfo>;
-    vehicle: VehicleInfo;
+  interface InitialProvidedCmdDetails extends PartialAllowNull<AnyCitationData> {
+    violator: Omit<ViolatorInfo, "address" | "id"> & Partial<ViolatorInfo>;
+    vehicle: Omit<VehicleInfo, "body_style" | "make" | "year"> & Partial<VehicleInfo>;
   }
 
   interface CitingOfficerInfo {
