@@ -15,6 +15,7 @@ const SharedData = {
       Success: "#28a745",
       Warning: "#E67E22",
       Error: "#ED4245",
+      Gold: "#FFBC45",
 
       ShiftOn: "#1F9D4B",
       ShiftOff: "#DB2626",
@@ -59,7 +60,8 @@ const SharedData = {
     FileEdit: "<:FileEdit:1185790827809738803>",
     FileDelete: "<:FileDelete:1185785834058813480>",
     Trash: "<:Trash:1185785496757088286>",
-    Loading: "<a:LoadingBlue:1219792743383957565>",
+    LoadingBlue: "<a:DualRingBlue:1294539916759400448>",
+    LoadingGold: "<a:DualRingGold:1294539933754855425>",
 
     MediaStop: "<:MediaStop:1220887197398470780>",
     WhitePlus: "<:WhitePlus:1270733376533434471>",

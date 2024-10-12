@@ -2,6 +2,7 @@ import {
   Message,
   EmbedData,
   EmbedBuilder,
+  ColorResolvable,
   BaseInteraction,
   ButtonInteraction,
   CommandInteraction,
@@ -141,14 +142,20 @@ export class InfoEmbed extends BaseEmbed {
       ? (InfoMessages[templateName] as any).Thumb || null
       : this.data.thumbnail?.url || null;
 
+    const EmbedColor: ColorResolvable = Object.hasOwn(InfoMessages[templateName], "Color")
+      ? (InfoMessages[templateName] as any).Color
+      : this.data.color;
+
     if (InfoMessages[templateName].Description.match(/%[scdjifoO%]/)) {
       return super
         .setTitle(InfoMessages[templateName].Title)
+        .setColor(EmbedColor)
         .setDescription(FormatString(InfoMessages[templateName].Description, ...args))
         .setThumbnail(Thumbnail);
     } else {
       return super
         .setTitle(InfoMessages[templateName].Title)
+        .setColor(EmbedColor)
         .setDescription(InfoMessages[templateName].Description)
         .setThumbnail(Thumbnail);
     }

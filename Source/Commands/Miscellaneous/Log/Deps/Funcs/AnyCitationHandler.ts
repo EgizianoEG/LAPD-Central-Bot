@@ -11,7 +11,6 @@ import {
   ModalBuilder,
   ButtonStyle,
   EmbedBuilder,
-  Colors,
 } from "discord.js";
 
 import {
@@ -36,6 +35,7 @@ import { GetFilledCitation } from "@Utilities/Other/GetFilledCitation.js";
 import { ReporterInfo } from "../../Log.js";
 import { RandomString } from "@Utilities/Strings/Random.js";
 import { TitleCase } from "@Utilities/Strings/Converters.js";
+import { Embeds } from "@Config/Shared.js";
 
 import HandleActionCollectorExceptions from "@Utilities/Other/HandleCompCollectorExceptions.js";
 import LogTrafficCitation from "@Utilities/Other/LogCitation.js";
@@ -254,7 +254,7 @@ function GetModalInputsPromptEmbed(
   ViolatorVehicle: (typeof AllVehicleModels)[number]
 ) {
   const Embed = new EmbedBuilder()
-    .setColor(Colors.Gold)
+    .setColor(Embeds.Colors.Gold)
     .setTitle("Citation Details — Initial Overview")
     .setDescription(
       "**Please review the current citation details and complete the remaining information by clicking the button below.**"
@@ -544,7 +544,7 @@ async function OnModalSubmission(
   );
 
   const ConfirmationMsgEmbed = new EmbedBuilder()
-    .setColor(Colors.Gold)
+    .setColor(Embeds.Colors.Gold)
     .setTitle("Confirmation Required")
     .setImage(`attachment://${CitImageAttachment.name}`)
     .setDescription(
