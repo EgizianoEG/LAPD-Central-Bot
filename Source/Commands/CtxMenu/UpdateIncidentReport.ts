@@ -3,6 +3,7 @@
 import {
   MessageContextMenuCommandInteraction,
   StringSelectMenuInteraction,
+  ApplicationIntegrationType,
   ContextMenuCommandBuilder,
   StringSelectMenuBuilder,
   ApplicationCommandType,
@@ -21,7 +22,6 @@ import {
   ButtonStyle,
   Message,
   Colors,
-  ApplicationIntegrationType,
 } from "discord.js";
 
 import {
