@@ -1,5 +1,5 @@
 /* eslint-disable sonarjs/no-duplicate-string */
-import { Emojis } from "@Config/Shared.js";
+import { Embeds, Emojis } from "@Config/Shared.js";
 import Dedent from "dedent";
 
 /**
@@ -758,19 +758,19 @@ export const InfoMessages = {
    */
   SRDeletionInProgress: {
     Thumb: null,
-    Title: `${Emojis.Loading}\u{2000}Deleting Shifts...`,
+    Title: `${Emojis.LoadingBlue}\u{2000}Deleting Shifts...`,
     Description: "Please wait, this process might take a few seconds to complete.",
   },
 
   SRWipeAllInProgress: {
     Thumb: null,
-    Title: `${Emojis.Loading}\u{2000}Wiping Shifts...`,
+    Title: `${Emojis.LoadingBlue}\u{2000}Wiping Shifts...`,
     Description: "Hang tight! This process might take a few seconds to complete.",
   },
 
   LRWipeAllInProgress: {
     Thumb: null,
-    Title: `${Emojis.Loading}\u{2000}Wiping Leave Records...`,
+    Title: `${Emojis.LoadingBlue}\u{2000}Wiping Leave Records...`,
     Description: "Hang tight! This process might take a few seconds to complete.",
   },
 
@@ -779,26 +779,28 @@ export const InfoMessages = {
    */
   LRDeletionInProgress: {
     Thumb: null,
-    Title: `${Emojis.Loading}\u{2000}Deleting Leave Records...`,
+    Title: `${Emojis.LoadingBlue}\u{2000}Deleting Leave Records...`,
     Description: "Please wait, this process might take a few seconds to complete.",
   },
 
   CreatingActivityReport: {
     Thumb: null,
-    Title: `${Emojis.Loading}\u{2000}Creating Report...`,
+    Title: `${Emojis.LoadingBlue}\u{2000}Creating Report...`,
     Description:
       "Please wait while your activity report is being created. This process may take a few seconds to complete.",
   },
 
   ProcessingCitationDetails: {
     Thumb: null,
-    Title: `${Emojis.Loading}\u{2000}Processing Details...`,
+    Color: Embeds.Colors.Gold,
+    Title: `${Emojis.LoadingGold}\u{2000}Processing Details...`,
     Description: "Citation details are being processed and validated for submission, please wait.",
   },
 
   LoggingCitationRecord: {
     Thumb: null,
-    Title: `${Emojis.Loading}\u{2000}Logging Citation...`,
+    Color: Embeds.Colors.Gold,
+    Title: `${Emojis.LoadingGold}\u{2000}Logging Citation...`,
     Description: "Please wait while your submitted citation is processed and logged.",
   },
 };

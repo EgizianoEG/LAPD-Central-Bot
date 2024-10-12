@@ -5,6 +5,7 @@ import { FormatVehicleName } from "@Utilities/Strings/Formatters.js";
 import { Vehicles } from "@Typings/Resources.js";
 import BrickColors from "@Resources/BrickColors.js";
 import SampleTexts from "@Resources/SampleTexts.js";
+import { resolveColor } from "discord.js";
 
 describe("Sample Texts (SampleTexts.js)", () => {
   it("Should only contain lines of alpha letters, spaces, and dashes with a word range of 7 to 12 words", () => {
@@ -33,13 +34,41 @@ describe("Application Messages (AppMessages.js)", () => {
 
   describe("InfoMessages", () => {
     test.each(Object.entries(InfoMessages))(
-      "%s message object should have Title and Description properties of type string",
+      "%s message object should have 'Title' and 'Description' properties of type string",
       (_, Msg) => {
         expect(Msg).toHaveProperty("Title");
         expect(Msg).toHaveProperty("Description");
 
         expect(typeof Msg.Title).toBe("string");
         expect(typeof Msg.Description).toBe("string");
+      }
+    );
+  });
+
+  describe("It should be allowed to pass additional properties like 'Color' and 'Thumb' of the correct types to customize the embeds itself", () => {
+    test.each(Object.entries(InfoMessages))(
+      "%s message object should have, if specified, 'Color' of type ColorResolvable and 'Thumb' of type string or null",
+      (_, Msg) => {
+        if (Object.hasOwn(Msg, "Color")) {
+          expect(typeof resolveColor((Msg as any).Color)).toBe("number");
+        }
+
+        if (Object.hasOwn(Msg, "Thumb")) {
+          expect(typeof (Msg as any).Thumb === "string" || (Msg as any).Thumb === null).toBe(true);
+        }
+      }
+    );
+
+    test.each(Object.entries(ErrorMessages))(
+      "%s message object should have, if specified, 'Color' of type ColorResolvable and 'Thumb' of type string or null",
+      (_, Msg) => {
+        if (Object.hasOwn(Msg, "Color")) {
+          expect(typeof resolveColor((Msg as any).Color)).toBe("number");
+        }
+
+        if (Object.hasOwn(Msg, "Thumb")) {
+          expect(typeof (Msg as any).Thumb === "string" || (Msg as any).Thumb === null).toBe(true);
+        }
       }
     );
   });
