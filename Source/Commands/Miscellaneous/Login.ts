@@ -24,6 +24,8 @@ import AutocompleteUsername from "@Utilities/Autocompletion/Username.js";
 import GetIdByUsername from "@Utilities/Roblox/GetIdByUsername.js";
 import IsUserLoggedIn from "@Utilities/Database/IsUserLoggedIn.js";
 import GetUserInfo from "@Utilities/Roblox/GetUserInfo.js";
+import GetRobloxIdFromDiscordBloxlink from "@Utilities/Roblox/GetRbxIdBloxLink.js";
+import { FormatUsername } from "@Utilities/Strings/Formatters.js";
 
 // ---------------------------------------------------------------------------------------
 // Functions:
@@ -98,6 +100,41 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     return;
   }
 
+  if (Interaction.options.getBoolean("use-bloxlink") === true) {
+    return HandleBloxlinkVerification(Interaction);
+  } else {
+    return HandleManualVerification(Interaction, InputUsername);
+  }
+}
+
+async function HandleBloxlinkVerification(CmdInteract: SlashCommandInteraction<"cached">) {
+  await CmdInteract.deferReply({ ephemeral: true });
+  const FoundRobloxId = await GetRobloxIdFromDiscordBloxlink(CmdInteract.user.id).catch(() => null);
+
+  if (FoundRobloxId) {
+    await UpdateLinkedRobloxUser(CmdInteract, FoundRobloxId);
+    const RobloxAccountInfo = await GetUserInfo(FoundRobloxId);
+
+    return CmdInteract.editReply({
+      embeds: [
+        new SuccessEmbed()
+          .setTitle("Successfully Linked")
+          .setDescription(
+            `Your Roblox account, ${FormatUsername(RobloxAccountInfo, false, true)}, was successfully linked to your Discord account.`
+          ),
+      ],
+    });
+  } else {
+    return new ErrorEmbed()
+      .useErrTemplate("BloxlinkLinkingFailed")
+      .replyToInteract(CmdInteract, true, true, "editReply");
+  }
+}
+
+async function HandleManualVerification(
+  CmdInteract: SlashCommandInteraction<"cached">,
+  InputUsername: string
+) {
   const SampleText = DummyText();
   const [RobloxUserId, RobloxUsername] = await GetIdByUsername(InputUsername);
 
@@ -127,20 +164,21 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
       .setURL(`https://www.roblox.com/users/${RobloxUserId}`)
   ) as ActionRowBuilder<ButtonBuilder>;
 
-  const ProcessPrompt = await Interaction.reply({
+  const ProcessPromptMsg = await CmdInteract.reply({
     ephemeral: true,
+    fetchReply: true,
     embeds: [ProcessEmbed],
     components: [ButtonsActionRow],
   });
 
   const DisablePrompt = () => {
     ButtonsActionRow.components.forEach((Button) => Button.setDisabled(true));
-    return ProcessPrompt.edit({
+    return ProcessPromptMsg.edit({
       components: [ButtonsActionRow],
     });
   };
 
-  await ProcessPrompt.awaitMessageComponent({
+  await ProcessPromptMsg.awaitMessageComponent({
     componentType: ComponentType.Button,
     time: 10 * 60 * 1000,
   })
@@ -149,7 +187,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
       if (ButtonInteract.customId === "confirm-login") {
         const CurrentAbout = (await GetUserInfo(RobloxUserId)).description;
         if (CurrentAbout.includes(SampleText)) {
-          await UpdateLinkedRobloxUser(Interaction, RobloxUserId);
+          await UpdateLinkedRobloxUser(CmdInteract, RobloxUserId);
           return ButtonInteract.editReply({
             components: [],
             embeds: [
@@ -163,7 +201,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
         } else {
           return new ErrorEmbed()
             .useErrTemplate("RobloxUserVerificationFailed", InputUsername)
-            .replyToInteract(Interaction, true);
+            .replyToInteract(CmdInteract, true);
         }
       } else {
         return new InfoEmbed()
@@ -209,6 +247,13 @@ const CommandObject: SlashCommandObject<any> = {
         .setMaxLength(20)
         .setRequired(true)
         .setAutocomplete(true)
+    )
+    .addBooleanOption((Option) =>
+      Option.setName("use-bloxlink")
+        .setDescription(
+          "Attempt to use Bloxlink integration to log in quickly. Availability may be limited."
+        )
+        .setRequired(false)
     ),
 
   callback: Callback,

@@ -189,6 +189,15 @@ export const ErrorMessages = {
   },
 
   /**
+   * Something went wrong while attempting to link Roblox account with Bloxlink integration or there was no Roblox account linked with Bloxlink in the first place.
+   */
+  BloxlinkLinkingFailed: {
+    Title: "Account Linking Failed",
+    Description:
+      "There was a problem linking your Roblox account using the Bloxlink integration. Please try again later, or attempt to log in manually.",
+  },
+
+  /**
    * Roblox account not linked (for logging out)
    */
   LORobloxUserNotLinked: {
