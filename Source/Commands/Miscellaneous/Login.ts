@@ -20,12 +20,12 @@ import { IsValidRobloxUsername } from "@Utilities/Other/Validators.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import HandleActionCollectorExceptions from "@Utilities/Other/HandleCompCollectorExceptions.js";
+import GetRobloxIdFromDiscordBloxlink from "@Utilities/Roblox/GetRbxIdBloxLink.js";
 import UpdateLinkedRobloxUser from "@Utilities/Database/UpdateLinkedUser.js";
 import AutocompleteUsername from "@Utilities/Autocompletion/Username.js";
 import GetIdByUsername from "@Utilities/Roblox/GetIdByUsername.js";
 import IsUserLoggedIn from "@Utilities/Database/IsUserLoggedIn.js";
 import GetUserInfo from "@Utilities/Roblox/GetUserInfo.js";
-import GetRobloxIdFromDiscordBloxlink from "@Utilities/Roblox/GetRbxIdBloxLink.js";
 
 // ---------------------------------------------------------------------------------------
 // Functions:
