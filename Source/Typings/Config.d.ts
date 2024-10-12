@@ -92,6 +92,7 @@ export namespace Secrets {
     /** ImgBB API key to upload images */
     ImgBB_API_Key: string;
 
+    /** The Bloxlink *global* API key */
     BloxlinkAPIKey: string;
 
     /** Logtail source token to send any outputted logs; see {@link https://betterstack.com/logtail} */
