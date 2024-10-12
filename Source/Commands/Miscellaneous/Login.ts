@@ -15,6 +15,7 @@ import {
 } from "discord.js";
 
 import { DummyText } from "@Utilities/Strings/Random.js";
+import { FormatUsername } from "@Utilities/Strings/Formatters.js";
 import { IsValidRobloxUsername } from "@Utilities/Other/Validators.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
@@ -25,7 +26,6 @@ import GetIdByUsername from "@Utilities/Roblox/GetIdByUsername.js";
 import IsUserLoggedIn from "@Utilities/Database/IsUserLoggedIn.js";
 import GetUserInfo from "@Utilities/Roblox/GetUserInfo.js";
 import GetRobloxIdFromDiscordBloxlink from "@Utilities/Roblox/GetRbxIdBloxLink.js";
-import { FormatUsername } from "@Utilities/Strings/Formatters.js";
 
 // ---------------------------------------------------------------------------------------
 // Functions:
