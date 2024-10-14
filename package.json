@@ -48,7 +48,7 @@
     "dedent": "^1.5.3",
     "didyoumean2": "^7.0.4",
     "discord.js": "^14.16.1",
-    "express": "^4.21.0",
+    "express": "^5.0.1",
     "ffi-rs": "^1.0.95",
     "googleapis": "^144.0.0",
     "humanize-duration": "^3.31.0",
