@@ -1,4 +1,4 @@
-import { CallbackWithoutResultAndOptionalError, Model, Query } from "mongoose";
+import { CallbackWithoutResultAndOptionalError, Model, Query, UpdateWriteOpResult } from "mongoose";
 import { randomInt as RandomInteger } from "node:crypto";
 import { Shifts } from "@Typings/Utilities/Database.js";
 import ProfileModel from "@Models/GuildProfile.js";
@@ -357,21 +357,25 @@ export async function PreShiftDocDelete(
   this: ThisType,
   next: CallbackWithoutResultAndOptionalError = () => {}
 ) {
-  const UserProfile = await ProfileModel.findOneAndUpdate(
+  const OnDutyDecrement = -this.durations.on_duty;
+  const OnBreakDecrement = -this.durations.on_break;
+
+  await ProfileModel.updateOne(
     { user: this.user, guild: this.guild },
-    { user: this.user, guild: this.guild },
-    { upsert: true, new: true }
-  ).exec();
-
-  if (!UserProfile?.shifts.logs.includes(this._id)) {
-    return next();
-  }
-
-  UserProfile.shifts.logs = UserProfile.shifts.logs.filter((ShiftID) => ShiftID !== this._id);
-  UserProfile.shifts.total_durations.on_duty -= this.durations.on_duty;
-  UserProfile.shifts.total_durations.on_break -= this.durations.on_break;
-
-  await UserProfile.save()
+    {
+      $pull: { "shifts.logs": this._id },
+      $set: {
+        "shifts.total_durations.on_duty": {
+          $max: [{ $add: ["$shifts.total_durations.on_duty", OnDutyDecrement] }, 0],
+        },
+        "shifts.total_durations.on_break": {
+          $max: [{ $add: ["$shifts.total_durations.on_break", OnBreakDecrement] }, 0],
+        },
+      },
+    },
+    { upsert: true, setDefaultsOnInsert: true }
+  )
+    .exec()
     .then(() => next())
     .catch((Err) => next(Err));
 }
@@ -386,40 +390,63 @@ export async function PreShiftModelDelete(
   type: "many" | "one",
   next: CallbackWithoutResultAndOptionalError = () => {}
 ) {
-  const Filter = this.getFilter();
+  try {
+    const Filter = this.getFilter();
 
-  if (type === "one") {
-    const ShiftDoc = await this.model.findOne(Filter).exec();
-    if (ShiftDoc) {
+    // Single document deletion handling:
+    if (type === "one") {
+      const ShiftDoc = await this.model.findOne(Filter).exec();
+      if (!ShiftDoc) return next();
+
       return PreShiftDocDelete.call(ShiftDoc, next);
     }
+
+    // Multiple document deletion handling:
+    const Shifts = await this.model.find<Shifts.HydratedShiftDocument>(Filter).exec();
+    if (!Shifts.length) return next();
+
+    const MappedDocs = Map.groupBy(Shifts, (Doc) => [Doc.user, Doc.guild]);
+    const UpdatePromises: Promise<UpdateWriteOpResult>[] = [];
+
+    for (const [UserData, ShiftDocs] of MappedDocs.entries()) {
+      const ShiftIds = ShiftDocs.map((Doc) => Doc._id);
+      const OnDutyTimeDecrement = -ShiftDocs.reduce(
+        (Sum, CurrDoc) => Sum + CurrDoc.durations.on_duty,
+        0
+      );
+
+      const OnBreakTimeDecrement = -ShiftDocs.reduce(
+        (Sum, CurrDoc) => Sum + CurrDoc.durations.on_break,
+        0
+      );
+
+      UpdatePromises.push(
+        ProfileModel.updateOne(
+          {
+            user: UserData[0],
+            guild: UserData[1],
+          },
+          {
+            $pull: { "shifts.logs": { $in: ShiftIds } },
+            $set: {
+              "shifts.total_durations.on_duty": {
+                $max: [{ $add: ["$shifts.total_durations.on_duty", OnDutyTimeDecrement] }, 0],
+              },
+              "shifts.total_durations.on_break": {
+                $max: [{ $add: ["$shifts.total_durations.on_break", OnBreakTimeDecrement] }, 0],
+              },
+            },
+          }
+        ).exec()
+      );
+    }
+
+    // Await all profile updates in parallel
+    await Promise.allSettled(UpdatePromises);
     return next();
+  } catch (Err: any) {
+    return next(Err); // Pass the error to the callback if anything fails
   }
-
-  const Shifts = await this.model.find<Shifts.HydratedShiftDocument>(Filter).exec();
-  const MappedDocs = Map.groupBy(Shifts, (Doc) => [Doc.user, Doc.guild]);
-
-  for (const [UserData, ShiftDocs] of MappedDocs.entries()) {
-    const ShiftIds = ShiftDocs.map((Doc) => Doc._id);
-    const OnDutyTime = ShiftDocs.reduce((Sum, CurrDoc) => Sum + CurrDoc.durations.on_duty, 0);
-    const OnBreakTime = ShiftDocs.reduce((Sum, CurrDoc) => Sum + CurrDoc.durations.on_break, 0);
-
-    await ProfileModel.updateOne(
-      {
-        user: UserData[0],
-        guild: UserData[1],
-      },
-      {
-        $pull: { "shifts.logs": { $in: ShiftIds } },
-        $inc: {
-          "shifts.total_durations.on_duty": -OnDutyTime,
-          "shifts.total_durations.on_break": -OnBreakTime,
-        },
-      }
-    );
-  }
-
-  return next();
 }
 
 export default {

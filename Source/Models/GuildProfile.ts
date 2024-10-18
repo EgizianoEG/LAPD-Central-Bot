@@ -42,7 +42,6 @@ const ProfileSchema = new Schema<
     type: [
       {
         type: String,
-        match: /^\d{15,22}$/,
         ref: "LeaveOfAbsence",
       },
     ],
