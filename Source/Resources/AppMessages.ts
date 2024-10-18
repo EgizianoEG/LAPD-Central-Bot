@@ -179,10 +179,20 @@ export const ErrorMessages = {
   },
 
   /**
-   *
-   * @template RobloxUsername The username of the account.
+   * When validating if the user has inputted the sample text into their profile description.
+   * @template {string} RobloxUsername The username of the account.
+   * @template {string | number} AttemptsLeft The number of login attempts left, if reached the user must rerun the command.
    */
   RobloxUserVerificationFailed: {
+    Title: "Verification Failed",
+    Description:
+      "Login verification as `%s` failed. Ensure that you follow the appropriate instructions before trying again.\nAttempts left: %s",
+  },
+
+  /**
+   * @template {string} RobloxUsername The username of the account.
+   */
+  RobloxUserVerificationFailedLimit: {
     Title: "Verification Failed",
     Description:
       "Login verification as `%s` failed.\nPlease rerun the command and ensure you follow the appropriate instructions.",
@@ -811,5 +821,22 @@ export const InfoMessages = {
     Color: Embeds.Colors.Gold,
     Title: `${Emojis.LoadingGold}\u{2000}Logging Citation...`,
     Description: "Please wait while your submitted citation is processed and logged.",
+  },
+
+  /**
+   * @template {string} RobloxUsername
+   */
+  RobloxAccountLoginSuccess: {
+    Title: "Successfully Linked",
+    Description: "Your Roblox account, %s, has been successfully linked to the application.",
+  },
+
+  /**
+   * @template {string} RobloxUsername
+   */
+  RobloxAccountLoginManualSuccess: {
+    Title: "Successfully Linked",
+    Description:
+      "Your Roblox account, %s, has successfully been verified and linked to the application. You may now remove the sample text from your profile description.",
   },
 };

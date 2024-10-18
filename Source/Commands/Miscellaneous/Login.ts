@@ -7,7 +7,6 @@ import {
   EmbedBuilder,
   ComponentType,
   ButtonBuilder,
-  escapeMarkdown,
   ActionRowBuilder,
   SlashCommandBuilder,
   InteractionContextType,
@@ -19,7 +18,6 @@ import { FormatUsername } from "@Utilities/Strings/Formatters.js";
 import { IsValidRobloxUsername } from "@Utilities/Other/Validators.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
-import HandleActionCollectorExceptions from "@Utilities/Other/HandleCompCollectorExceptions.js";
 import GetRobloxIdFromDiscordBloxlink from "@Utilities/Roblox/GetRbxIdBloxLink.js";
 import UpdateLinkedRobloxUser from "@Utilities/Database/UpdateLinkedUser.js";
 import AutocompleteUsername from "@Utilities/Autocompletion/Username.js";
@@ -28,8 +26,8 @@ import IsUserLoggedIn from "@Utilities/Database/IsUserLoggedIn.js";
 import GetUserInfo from "@Utilities/Roblox/GetUserInfo.js";
 
 // ---------------------------------------------------------------------------------------
-// Functions:
-// ----------
+// Helper Functions:
+// -----------------
 /**
  * Validates the entered Roblox username before continuing
  * @param Interaction - The interaction object.
@@ -72,75 +70,73 @@ async function HandleUserLoginStatus(
   return false;
 }
 
+// ---------------------------------------------------------------------------------------
+// Command Handling:
+// -----------------
 /**
  * Handles command execution logic
- * @param Interaction - The interaction object.
- * @todo - Add verification by following user or by joining a game.
- * @execution
- * This function executes the following steps:
- * 1. Retrieve the provided Roblox username from the interaction options.
- * 2. Check if the user is already logged in; if so, inform the user and return.
- * 3. Validate the provided Roblox username for correctness.
- * 4. If any validation responded the interaction, return early.
- * 5. Construct an embed to guide the user through the login process.
- * 6. Create buttons for "Verify and Login" and "Cancel Login".
- * 7. Send the embed and buttons to the user as a reply.
- * 8. Await button interaction within a time limit of five minutes (converted into milliseconds).
- * 9. Based on button interaction received:
- *    - If "Verify and Login" is clicked, validate the profile description.
- *    - If "Cancel Login" is clicked, provide a cancellation message.
- * 10. Handle errors and timeouts with appropriate responses.
+ * @param CmdInteract - The interaction object.
+ * @returns
  */
-async function Callback(Interaction: SlashCommandInteraction<"cached">) {
-  const InputUsername = Interaction.options.getString("username", true);
+async function Callback(CmdInteract: SlashCommandInteraction<"cached">) {
+  const InputUsername = CmdInteract.options.getString("username", true);
   if (
-    (await HandleUserLoginStatus(Interaction)) ||
-    (await HandleInvalidUsername(Interaction, InputUsername))
+    (await HandleUserLoginStatus(CmdInteract)) ||
+    (await HandleInvalidUsername(CmdInteract, InputUsername))
   ) {
     return;
   }
 
-  if (Interaction.options.getBoolean("use-bloxlink") === true) {
-    return HandleBloxlinkVerification(Interaction);
-  } else {
-    return HandleManualVerification(Interaction, InputUsername);
-  }
-}
-
-async function HandleBloxlinkVerification(CmdInteract: SlashCommandInteraction<"cached">) {
   await CmdInteract.deferReply({ ephemeral: true });
-  const FoundRobloxId = await GetRobloxIdFromDiscordBloxlink(CmdInteract.user.id).catch(() => null);
+  const [AccountRobloxId, ExactUsername] = await GetIdByUsername(InputUsername, true);
+  const FoundBloxlinkRobloxId = await GetRobloxIdFromDiscordBloxlink(CmdInteract.user.id);
 
-  if (FoundRobloxId) {
-    await UpdateLinkedRobloxUser(CmdInteract, FoundRobloxId);
-    const RobloxAccountInfo = await GetUserInfo(FoundRobloxId);
+  if (FoundBloxlinkRobloxId === AccountRobloxId) {
+    await UpdateLinkedRobloxUser(CmdInteract, AccountRobloxId);
+    const RobloxAccountInfo = await GetUserInfo(AccountRobloxId);
 
     return CmdInteract.editReply({
       embeds: [
-        new SuccessEmbed()
-          .setTitle("Successfully Linked")
-          .setDescription(
-            `Your Roblox account, ${FormatUsername(RobloxAccountInfo, false, true)}, was successfully linked to your Discord account.`
-          ),
+        new SuccessEmbed().useTemplate(
+          "RobloxAccountLoginSuccess",
+          FormatUsername(RobloxAccountInfo, false, true)
+        ),
       ],
     });
   } else {
-    return new ErrorEmbed()
-      .useErrTemplate("BloxlinkLinkingFailed")
-      .replyToInteract(CmdInteract, true, true, "editReply");
+    return HandleManualVerification(CmdInteract, AccountRobloxId, ExactUsername);
   }
 }
 
+/**
+ * Handles the manual verification process for a Roblox account login.
+ *
+ * This function sends a prompt to the user to verify their Roblox account by modifying their profile description.
+ * The user is provided with a sample text to include in their profile description and buttons to confirm or cancel the login process.
+ *
+ * @param CmdInteract - The interaction object for the slash command.
+ * @param AccountRobloxId - The Roblox Id of the account to be verified.
+ * @param AccountExactUsername - The exact username of the Roblox account.
+ * @returns A promise that resolves when the verification process is complete or cancelled.
+ * @execution
+ * The function performs the following steps:
+ * 1. Sends a prompt to the user with instructions and buttons for verification.
+ * 2. Sets up a collector to handle button interactions for confirming or cancelling the login.
+ * 3. On confirmation, checks if the user's profile description contains the sample text.
+ * 4. If verified, updates the linked Roblox user and sends a success message.
+ * 5. If verification fails, sends an error message.
+ * 6. On cancellation, sends a cancellation message.
+ * 7. Disables the buttons and updates the message when the collector ends.
+ */
 async function HandleManualVerification(
   CmdInteract: SlashCommandInteraction<"cached">,
-  InputUsername: string
+  AccountRobloxId: number,
+  AccountExactUsername: string
 ) {
   const SampleText = DummyText();
-  const [RobloxUserId, RobloxUsername] = await GetIdByUsername(InputUsername);
-
   const ProcessEmbed = new EmbedBuilder()
     .setColor(Colors.Aqua)
-    .setTitle(`Login Process - @${escapeMarkdown(RobloxUsername)}`)
+    .setTitle(`Login Process - @${AccountExactUsername}`)
     .setDescription(
       "To verify your login, kindly modify the About/Description section of your Roblox Profile to include the provided sample text below.\n" +
         "- When finished, press the `Verify and Login` button\n" +
@@ -149,7 +145,7 @@ async function HandleManualVerification(
         `\`\`\`fix\n${SampleText}\n\`\`\``
     );
 
-  const ButtonsActionRow = new ActionRowBuilder().setComponents(
+  const ButtonsActionRow = new ActionRowBuilder<ButtonBuilder>().setComponents(
     new ButtonBuilder()
       .setLabel("Verify and Login")
       .setCustomId("confirm-login")
@@ -161,58 +157,69 @@ async function HandleManualVerification(
     new ButtonBuilder()
       .setLabel("Profile")
       .setStyle(ButtonStyle.Link)
-      .setURL(`https://www.roblox.com/users/${RobloxUserId}`)
-  ) as ActionRowBuilder<ButtonBuilder>;
+      .setURL(`https://www.roblox.com/users/${AccountRobloxId}`)
+  );
 
-  const ProcessPromptMsg = await CmdInteract.reply({
-    ephemeral: true,
-    fetchReply: true,
+  const LoginPromptMsg = await CmdInteract.editReply({
     embeds: [ProcessEmbed],
     components: [ButtonsActionRow],
   });
 
-  const DisablePrompt = () => {
-    ButtonsActionRow.components.forEach((Button) => Button.setDisabled(true));
-    return ProcessPromptMsg.edit({
-      components: [ButtonsActionRow],
-    });
-  };
-
-  await ProcessPromptMsg.awaitMessageComponent({
+  let AttemptsLeft = 2;
+  const ComponentCollector = LoginPromptMsg.createMessageComponentCollector({
     componentType: ComponentType.Button,
     time: 10 * 60 * 1000,
-  })
-    .then(async (ButtonInteract) => {
-      await ButtonInteract.deferUpdate();
-      if (ButtonInteract.customId === "confirm-login") {
-        const CurrentAbout = (await GetUserInfo(RobloxUserId)).description;
-        if (CurrentAbout.includes(SampleText)) {
-          await UpdateLinkedRobloxUser(CmdInteract, RobloxUserId);
-          return ButtonInteract.editReply({
-            components: [],
-            embeds: [
-              new SuccessEmbed()
-                .setTitle("Successfully Linked")
-                .setDescription(
-                  "Your Roblox account has successfully been verified and linked to the application. You may now remove the sample text from your profile description."
-                ),
-            ],
-          });
-        } else {
-          return new ErrorEmbed()
-            .useErrTemplate("RobloxUserVerificationFailed", InputUsername)
-            .replyToInteract(CmdInteract, true);
-        }
+  });
+
+  ComponentCollector.on("collect", async function OnPromptAction(ButtonInteract) {
+    await ButtonInteract.deferUpdate();
+    if (ButtonInteract.customId.includes("confirm-login")) {
+      const CurrentAccountInfo = await GetUserInfo(AccountRobloxId);
+      if (CurrentAccountInfo.description.includes(SampleText)) {
+        await UpdateLinkedRobloxUser(CmdInteract, AccountRobloxId);
+        ComponentCollector.stop("Confirmed");
+
+        return ButtonInteract.editReply({
+          components: [],
+          embeds: [
+            new SuccessEmbed().useTemplate(
+              "RobloxAccountLoginManualSuccess",
+              FormatUsername(CurrentAccountInfo, false, true)
+            ),
+          ],
+        });
       } else {
-        return new InfoEmbed()
-          .setTitle("Process Cancellation")
-          .setDescription("The login process has been cancelled due to your request.")
-          .replyToInteract(ButtonInteract, true);
+        if (--AttemptsLeft === 0) ComponentCollector.stop("Limit");
+        return new ErrorEmbed()
+          .useErrTemplate(
+            AttemptsLeft === 0
+              ? "RobloxUserVerificationFailedLimit"
+              : "RobloxUserVerificationFailed",
+            AccountExactUsername,
+            AttemptsLeft ? AttemptsLeft : ""
+          )
+          .replyToInteract(ButtonInteract, true, true, "followUp");
       }
-    })
-    .catch((Err) => HandleActionCollectorExceptions(Err, DisablePrompt));
+    } else if (ButtonInteract.customId.includes("cancel-login")) {
+      ComponentCollector.stop("Cancelled");
+      return new InfoEmbed()
+        .setTitle("Login Cancelled")
+        .setDescription("The login process has been cancelled due to your request.")
+        .replyToInteract(ButtonInteract, true);
+    } else {
+      return ComponentCollector.stop();
+    }
+  });
+
+  ComponentCollector.on("end", async (CIs, EndReason) => {
+    if (!(EndReason !== "Cancelled" && EndReason !== "Confirmed")) return;
+    const LastInteract = CIs.last() || CmdInteract;
+    ButtonsActionRow.components.forEach((Button) => Button.setDisabled(true));
+    LastInteract.editReply({ components: [ButtonsActionRow] });
+  });
 }
 
+// ---------------------------------------------------------------------------------------
 /**
  * Autocompletion for the Roblox username required command option
  * @param Interaction
@@ -235,7 +242,10 @@ async function Autocomplete(Interaction: AutocompleteInteraction): Promise<void>
 // Command structure:
 // ------------------
 const CommandObject: SlashCommandObject<any> = {
-  options: { cooldown: 30, user_perms: { staff: true } },
+  options: { cooldown: 20, user_perms: { staff: true } },
+  callback: Callback,
+  autocomplete: Autocomplete,
+
   data: new SlashCommandBuilder()
     .setName("log-in")
     .setDescription("Log into the application and get access to restricted actions.")
@@ -247,17 +257,7 @@ const CommandObject: SlashCommandObject<any> = {
         .setMaxLength(20)
         .setRequired(true)
         .setAutocomplete(true)
-    )
-    .addBooleanOption((Option) =>
-      Option.setName("use-bloxlink")
-        .setDescription(
-          "Attempt to use Bloxlink integration to log in quickly. Availability may be limited."
-        )
-        .setRequired(false)
     ),
-
-  callback: Callback,
-  autocomplete: Autocomplete,
 };
 
 // ---------------------------------------------------------------------------------------
