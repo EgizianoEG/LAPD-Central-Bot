@@ -17,6 +17,7 @@ import AppError from "./AppError.js";
 
 const EmbedThumbs = Embeds.Thumbs;
 const EmbedColors = Embeds.Colors;
+const TemplateCheckerRegex = /%[scdjifoO%]/;
 
 class BaseEmbed extends EmbedBuilder {
   private static readonly ComponentRemovalRegex =
@@ -30,24 +31,6 @@ class BaseEmbed extends EmbedBuilder {
   setDescription(...description: any[]): this {
     const Formatted = FormatString(...description);
     return super.setDescription(Formatted.match(/^(?:\s*|NaN|null|undefined)$/) ? null : Formatted);
-  }
-
-  /**
-   * Uses the specified error template and arguments to set the title and description of the error.
-   * @param templateName - The name of the error template to use.
-   * @param args - Additional arguments to be used in formatting the error description.
-   * @returns The modified instance of the error embed.
-   */
-  useErrTemplate(templateName: keyof typeof ErrorMessages, ...args: any[]) {
-    if (ErrorMessages[templateName].Description.match(/%[scdjifoO%]/)) {
-      return super
-        .setTitle(ErrorMessages[templateName].Title)
-        .setDescription(FormatString(ErrorMessages[templateName].Description, ...args));
-    } else {
-      return super
-        .setTitle(ErrorMessages[templateName].Title)
-        .setDescription(ErrorMessages[templateName].Description);
-    }
   }
 
   /**
@@ -138,27 +121,7 @@ export class InfoEmbed extends BaseEmbed {
    * @returns The modified instance of the info embed.
    */
   useInfoTemplate(templateName: keyof typeof InfoMessages, ...args: any[]) {
-    const Thumbnail: string | null = Object.hasOwn(InfoMessages[templateName], "Thumb")
-      ? (InfoMessages[templateName] as any).Thumb || null
-      : this.data.thumbnail?.url || null;
-
-    const EmbedColor: ColorResolvable = Object.hasOwn(InfoMessages[templateName], "Color")
-      ? (InfoMessages[templateName] as any).Color
-      : this.data.color;
-
-    if (InfoMessages[templateName].Description.match(/%[scdjifoO%]/)) {
-      return super
-        .setTitle(InfoMessages[templateName].Title)
-        .setColor(EmbedColor)
-        .setDescription(FormatString(InfoMessages[templateName].Description, ...args))
-        .setThumbnail(Thumbnail);
-    } else {
-      return super
-        .setTitle(InfoMessages[templateName].Title)
-        .setColor(EmbedColor)
-        .setDescription(InfoMessages[templateName].Description)
-        .setThumbnail(Thumbnail);
-    }
+    return ApplyTemplate.call(this, "Info", templateName, ...args);
   }
 }
 
@@ -208,6 +171,20 @@ export class ErrorEmbed extends BaseEmbed {
       return this.setTitle("Error").setDescription(Err.message);
     }
   }
+
+  /**
+   * Uses the specified error template and arguments to set the title and description of the error.
+   * @param templateName - The name of the error template to use.
+   * @param args - Additional arguments to be used in formatting the error description.
+   * @returns The modified instance of the error embed.
+   */
+  useErrTemplate(templateName: keyof typeof ErrorMessages, ...args: any[]): ErrorEmbed {
+    return ApplyTemplate.call<
+      ErrorEmbed,
+      ["Error", keyof typeof ErrorMessages, ...any[]],
+      ErrorEmbed
+    >(this, "Error", templateName, ...args);
+  }
 }
 
 export class SuccessEmbed extends BaseEmbed {
@@ -220,6 +197,20 @@ export class SuccessEmbed extends BaseEmbed {
     if (!this.data.title) {
       this.setTitle("Success");
     }
+  }
+
+  /**
+   * Uses the specified error template and arguments to set the title and description of the error.
+   * @param templateName - The name of the error template to use.
+   * @param args - Additional arguments to be used in formatting the error description.
+   * @returns The modified instance of the error embed.
+   */
+  useTemplate(templateName: keyof typeof InfoMessages, ...args: any[]): SuccessEmbed {
+    return ApplyTemplate.call<
+      SuccessEmbed,
+      ["Info", keyof typeof InfoMessages, ...any[]],
+      SuccessEmbed
+    >(this, "Info", templateName, ...args);
   }
 }
 
@@ -234,4 +225,79 @@ export class UnauthorizedEmbed extends BaseEmbed {
       this.setTitle("Unauthorized");
     }
   }
+
+  /**
+   * Uses the specified error template and arguments to set the title and description of the error.
+   * @param templateName - The name of the error template to use.
+   * @param args - Additional arguments to be used in formatting the error description.
+   * @returns The modified instance of the error embed.
+   */
+  useErrTemplate(templateName: keyof typeof ErrorMessages, ...args: any[]): UnauthorizedEmbed {
+    return ApplyTemplate.call<
+      UnauthorizedEmbed,
+      ["Error", keyof typeof ErrorMessages, ...any[]],
+      UnauthorizedEmbed
+    >(this, "Error", templateName, ...args);
+  }
+}
+
+/**
+ * Applies a template to an EmbedBuilder instance based on the specified template type and name.
+ * @template TOT - The type of template to use. Can be "Error", "Info", or "Any".
+ * @param this - The EmbedBuilder instance to apply the template to.
+ * @param TemplateOfType - The type of template to use. Determines which message group to use.
+ * @param TemplateName - The name of the template to use. The available names depend on the template type.
+ * @param args - Additional arguments to format the template description.
+ * @returns The input EmbedBuilder instance with the applied template.
+ */
+function ApplyTemplate<TOT extends "Error" | "Info" | "Any", This extends BaseEmbed = BaseEmbed>(
+  this: This,
+  TemplateOfType: TOT,
+  TemplateName: TOT extends "Error"
+    ? keyof typeof ErrorMessages
+    : TOT extends "Info"
+      ? keyof typeof InfoMessages
+      : keyof typeof InfoMessages | keyof typeof ErrorMessages,
+  ...args: any[]
+): This {
+  const MessageGroup =
+    TemplateOfType === "Error"
+      ? ErrorMessages
+      : TemplateOfType === "Info"
+        ? InfoMessages
+        : { ...InfoMessages, ...ErrorMessages };
+
+  const Thumbnail: string | null = Object.hasOwn((MessageGroup as any)[TemplateName], "Thumb")
+    ? (MessageGroup as any)[TemplateName].Thumb || null
+    : this.data.thumbnail?.url || null;
+
+  const EmbedColor: ColorResolvable = Object.hasOwn((MessageGroup as any)[TemplateName], "Color")
+    ? (MessageGroup as any)[TemplateName].Color
+    : this.data.color;
+
+  if (TemplateOfType === "Error") {
+    const ErrorMsg = ErrorMessages[TemplateName as keyof typeof ErrorMessages];
+    if (ErrorMsg.Description.match(TemplateCheckerRegex)) {
+      this.setTitle(ErrorMsg.Title).setDescription(FormatString(ErrorMsg.Description, ...args));
+    } else {
+      this.setTitle(ErrorMsg.Title).setDescription(ErrorMsg.Description);
+    }
+  } else if (TemplateOfType === "Info") {
+    const InfoMsg = InfoMessages[TemplateName as keyof typeof InfoMessages];
+    if (InfoMsg.Description.match(TemplateCheckerRegex)) {
+      this.setTitle(InfoMsg.Title).setDescription(FormatString(InfoMsg.Description, ...args));
+    } else {
+      this.setTitle(InfoMsg.Title).setDescription(InfoMsg.Description);
+    }
+  } else if ((MessageGroup as any)[TemplateName].Description.match(TemplateCheckerRegex)) {
+    this.setTitle((MessageGroup as any)[TemplateName].Title).setDescription(
+      FormatString((MessageGroup as any)[TemplateName].Description, ...args)
+    );
+  } else {
+    this.setTitle((MessageGroup as any)[TemplateName].Title).setDescription(
+      (MessageGroup as any)[TemplateName].Description
+    );
+  }
+
+  return this.setColor(EmbedColor).setThumbnail(Thumbnail);
 }
