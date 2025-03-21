@@ -86,9 +86,7 @@ ExpressApp.get("/metrics", (_, Res) => {
               round: true,
             }),
           },
-          database: {
-            status: DBStates[MongooseConnection[0].readyState],
-          },
+          database: { status: DBStates[MongooseConnection[0].readyState] },
           metrics: Metrics,
         },
         null,

@@ -389,64 +389,43 @@ export function AddTrafficViolationCodes(
 
     // Not using a turn signal.
     if (ATVCodesRegexes.NoTurningSignal.test(Violation)) {
-      ModifiedViolations[i] = {
-        violation: AddVehCode("22108", Violation),
-        type: "I",
-      };
+      ModifiedViolations[i] = { violation: AddVehCode("22108", Violation), type: "I" };
       continue;
     }
 
     // ...
     if (ATVCodesRegexes.NoHazardSignals.test(Violation)) {
-      ModifiedViolations[i] = {
-        violation: AddVehCode("22109", Violation),
-        type: "I",
-      };
+      ModifiedViolations[i] = { violation: AddVehCode("22109", Violation), type: "I" };
       continue;
     }
 
     // ...
     if (ATVCodesRegexes.NoHeadlights.test(Violation)) {
-      ModifiedViolations[i] = {
-        violation: AddVehCode("24250", Violation),
-        type: "I",
-      };
+      ModifiedViolations[i] = { violation: AddVehCode("24250", Violation), type: "I" };
       continue;
     }
 
     // ...
     if (ATVCodesRegexes.SidewalkDriving.test(Violation)) {
-      ModifiedViolations[i] = {
-        violation: AddVehCode("21663", Violation),
-        type: "I",
-      };
+      ModifiedViolations[i] = { violation: AddVehCode("21663", Violation), type: "I" };
       continue;
     }
 
     // ...
     if (ATVCodesRegexes.UnsafePassing.test(Violation)) {
-      ModifiedViolations[i] = {
-        violation: AddVehCode("21750-21759", Violation),
-        type: "I",
-      };
+      ModifiedViolations[i] = { violation: AddVehCode("21750-21759", Violation), type: "I" };
       continue;
     }
 
     // ...
     if (ATVCodesRegexes.SpeedContest.test(Violation)) {
-      ModifiedViolations[i] = {
-        violation: AddVehCode("23109", Violation),
-        type: "M",
-      };
+      ModifiedViolations[i] = { violation: AddVehCode("23109", Violation), type: "M" };
       continue;
     }
 
     // ...
     if (ATVCodesRegexes.UnsafeLaneChange.test(Violation)) {
-      ModifiedViolations[i] = {
-        violation: AddVehCode("22107", Violation),
-        type: "I",
-      };
+      ModifiedViolations[i] = { violation: AddVehCode("22107", Violation), type: "I" };
       continue;
     }
 
