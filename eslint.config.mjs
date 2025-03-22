@@ -61,14 +61,21 @@ export default [
 
   {
     rules: {
+      camelcase: "off",
+      semi: ["error", "always"],
+      quotes: ["error", "double", { avoidEscape: true }],
       "no-var": "error",
       "no-undef": "off",
-      camelcase: "off",
       "no-useless-call": "error",
-      quotes: ["error", "double", { avoidEscape: true }],
-      semi: ["error", "always"],
-      "sonarjs/cognitive-complexity": ["warn", 35],
       "no-extra-parens": ["off", "functions"],
+
+      "sonarjs/cognitive-complexity": ["warn", 35],
+      "sonarjs/pseudo-random": "off",
+      "sonarjs/todo-tag": "warn",
+      "sonarjs/slow-regex": "off",
+      "sonarjs/no-duplicate-string": "warn",
+      "sonarjs/no-nested-conditional": "off",
+      "sonarjs/regex-complexity": ["warn", { threshold: 28 }],
 
       "no-irregular-whitespace": [
         "error",
@@ -111,4 +118,3 @@ export default [
     },
   },
 ];
-

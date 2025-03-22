@@ -1,6 +1,7 @@
 import ShiftModel from "@Models/Shift.js";
 import Dedent from "dedent";
 import {
+  MessageFlags,
   SlashCommandBuilder,
   InteractionContextType,
   SlashCommandSubcommandsOnlyBuilder,
@@ -12,14 +13,14 @@ import {
  * @param Interaction
  */
 async function Callback(Interaction: SlashCommandInteraction) {
-  const Shift = await ShiftModel.countDocuments({ guild: Interaction.guildId }).then((count) => {
-    const ran_num = Math.floor(Math.random() * count);
-    return ShiftModel.findOne().skip(ran_num).exec();
+  const Shift = await ShiftModel.countDocuments({ guild: Interaction.guildId }).then((Count) => {
+    const RandomNum = Math.floor(Math.random() * Count);
+    return ShiftModel.findOne().skip(RandomNum).exec();
   });
 
   if (Shift) {
     return Interaction.reply({
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
       content: Dedent`
         \`\`\`json
         ${JSON.stringify(Shift.toJSON({ getters: true }), null, 2)}
@@ -27,7 +28,10 @@ async function Callback(Interaction: SlashCommandInteraction) {
       `,
     });
   } else {
-    return Interaction.reply({ ephemeral: true, content: "There are no recorded shifts." });
+    return Interaction.reply({
+      flags: MessageFlags.Ephemeral,
+      content: "There are no recorded shifts.",
+    });
   }
 }
 

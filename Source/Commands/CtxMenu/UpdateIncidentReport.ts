@@ -18,6 +18,7 @@ import {
   ComponentType,
   ButtonBuilder,
   EmbedBuilder,
+  MessageFlags,
   ModalBuilder,
   ButtonStyle,
   Message,
@@ -50,7 +51,7 @@ import GetIncidentReportEmbeds from "@Utilities/Other/GetIncidentReportEmbeds.js
 
 const ListFormatter = new Intl.ListFormat("en");
 const CompCollectorTimeout = 12.5 * 60 * 1000;
-const SplitRegexForInputs = /\s*,\s*|\s+/;
+const SplitRegexForInputs = /\s*,\s*(?:and\s*)?|\s+/i;
 
 type ValidationResult = {
   handled: boolean;
@@ -291,7 +292,7 @@ async function HandleCommandValidationAndPossiblyGetIncident(
     ReportNumber =
       Number(
         ReportEmbeds[0].description.match(
-          /\bIncident\s(?:Num|Number)\**:?\**\s(?:`)?(\d+)(?:`)?\b/i
+          /\bIncident\s(?:Num|Number|#)\*{0,3}:?\*{0,3}\s(?:`)?(\d+)(?:`)?\b/i
         )?.[1]
       ) || null;
   }
@@ -603,8 +604,7 @@ async function HandleIncidentStatusEdit(
   }).catch(() => null);
 
   const StatusPromptMsg = await SelectInteract.followUp({
-    ephemeral: true,
-    fetchReply: true,
+    flags: MessageFlags.Ephemeral,
     embeds: [StatusPromptMsgEmbed],
     components: [GetChangeIncidentStatusSelectMenuAR(DBIncidentRecord.status)],
   });
@@ -705,7 +705,7 @@ async function HandleIncidentNotesEdit(
 async function Callback(Interaction: MessageContextMenuCommandInteraction<"cached">) {
   const ValidationResult = await HandleCommandValidationAndPossiblyGetIncident(Interaction);
   if (ValidationResult.handled && !ValidationResult.incident) return;
-  await Interaction.deferReply({ ephemeral: true });
+  await Interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   const IncidentRecord = ValidationResult.incident as GuildIncidents.IncidentRecord;
   const IncidentRecordModified = { ...IncidentRecord };

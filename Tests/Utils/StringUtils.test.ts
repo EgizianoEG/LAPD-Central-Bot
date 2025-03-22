@@ -1,4 +1,3 @@
-/* eslint-disable prefer-regex-literals */
 /* eslint-disable sonarjs/no-duplicate-string */
 // ---------------------------------------------------------------------------------------
 import { UpperFirst, TitleCase, CamelCase, PascalToNormal } from "@Utilities/Strings/Converters.js";
@@ -671,6 +670,8 @@ describe("String Formatting Utilities", () => {
       Inputs.forEach((CAlias) => {
         const Org = [...CAlias];
         const Result = AddStatutes(Array.isArray(CAlias) ? CAlias : [CAlias]);
+
+        // eslint-disable-next-line sonarjs/no-nested-functions
         Result.forEach((Charge, i) =>
           expect(Charge).toMatch(new RegExp(`^${Org[i]}\\n\\s*- Statute:`))
         );

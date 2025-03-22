@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/duplicates-in-character-class */
 /**
  * Converts an input string into title case format with optional strict formatting.
  * @param Str - The string to convert into title case format
@@ -112,7 +113,7 @@ export function TitleCase(Str: string, Strict: boolean = true): string {
  */
 export function CamelCase(Str: string): string {
   let SDSign = "";
-  const Sanitized = Str.replace(/^[\W\s_\uFEFF\xA0]+|[\W\s_\uFEFF\xA0]+$/gu, "").replace(
+  const Sanitized = Str.replace(/^[\W\s_\uFEFF\xA0]+|^[\W\s_\uFEFF\xA0]+$/gu, "").replace(
     /[^\w]+|[\s_]+/g,
     " "
   );
@@ -338,7 +339,7 @@ export function PoliceCodeToWords(CodeStr: string): string {
 }
 
 function SplitCaps(Str: string): string {
-  return Str.replace(/([a-z])([A-Z]+)/g, (_, s1, s2) => s1 + " " + s2)
+  return Str.replace(/([a-z])([A-Z]+)/g, (_, s1, s2) => `${s1} ${s2}`)
     .replace(/([A-Z])([A-Z]+)([^a-zA-Z0-9]*)$/, (_, s1, s2, s3) => s1 + s2.toLowerCase() + s3)
-    .replace(/([A-Z]+)([A-Z][a-z])/g, (_, s1, s2) => s1.toLowerCase() + " " + s2);
+    .replace(/([A-Z]+)([A-Z][a-z])/g, (_, s1, s2) => `${s1.toLowerCase()} ${s2}`);
 }

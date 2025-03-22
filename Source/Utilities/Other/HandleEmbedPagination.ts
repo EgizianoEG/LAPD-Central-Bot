@@ -7,6 +7,7 @@ import {
   EmbedBuilder,
   Message,
   Colors,
+  MessageFlags,
   ModalBuilder,
   TextInputStyle,
   ActionRowBuilder,
@@ -19,11 +20,10 @@ import AppLogger from "@Utilities/Classes/AppLogger.js";
 import GetPredefinedNavButtons from "./GetNavButtons.js";
 import HandleCollectorFiltering from "./HandleCollectorFilter.js";
 const Clamp = (Value: number, Min: number, Max: number) => Math.min(Math.max(Value, Min), Max);
-
 // ---------------------------------------------------------------------------------------
+
 /**
  * Handles the pagination process for a given embeds array.
- * @notice Some bugs may appear if not using the `fetchReply: true` field in message options.
  * @param Pages - The embeds to paginate between; i.e. embeds representing pages. This should be an array of at least one embed.
  * @param Interact - The interaction that triggered the pagination. Should be repliable either by `followUp` or `reply`.
  * @param Context - The context of which triggered the pagination handling (used for logging errors and such). e.g. `Commands:Miscellaneous:Duty:Leaderboard`.
@@ -38,20 +38,15 @@ export default async function HandleEmbedPagination(
 ): Promise<void> {
   let CurrPageIndex = 0;
   const NavigationButtons = GetPredefinedNavButtons(Interact, Pages.length, true, true);
-  const ReplyMethod = Interact.deferred ? "editReply" : Interact.replied ? "followUp" : "reply";
-  const ResponseMessage: Message<true> = await Interact[ReplyMethod as any]({
-    components: Pages.length > 1 ? [NavigationButtons] : undefined,
-    ephemeral: Ephemeral,
-    fetchReply: true,
-    embeds: [Pages[0]],
-  });
+  const ResponseMessage = await HandleInitialInteractReply(Interact, Pages, Ephemeral);
+  console.log("1", Context);
 
   // Do not handle pagination if there is only one page received.
   if (Pages.length === 1) return;
   const ComponentCollector = ResponseMessage.createMessageComponentCollector({
     filter: (Btn) => HandleCollectorFiltering(Interact, Btn),
     componentType: ComponentType.Button,
-    time: 15 * 60 * 1000,
+    time: 0.1 * 60 * 1000,
     idle: 8 * 60 * 1000,
   });
 
@@ -130,6 +125,7 @@ export default async function HandleEmbedPagination(
   });
 
   ComponentCollector.on("end", async (Collected, EndReason: string) => {
+    console.log(EndReason);
     if (EndReason.match(/^\w+Delete/)) return;
     try {
       NavigationButtons.components.forEach((Btn) => Btn.setDisabled(true));
@@ -168,10 +164,9 @@ async function HandleSelectMenuPageSelection(
     .setDescription("Please select a page to view from the dropdown menu below.");
 
   const PromptMsg = await BtnInteract.followUp({
-    embeds: [PromptEmbed],
     components: [PageSelectMenu],
-    fetchReply: true,
-    ephemeral: true,
+    embeds: [PromptEmbed],
+    flags: MessageFlags.Ephemeral,
   });
 
   const MenuSelection = await PromptMsg.awaitMessageComponent({
@@ -222,6 +217,43 @@ async function HandleModalPageSelection(
 
   ModalSubmission.deferUpdate();
   return ParsedNumber - 1;
+}
+
+async function HandleInitialInteractReply(
+  Interact: SlashCommandInteraction | ButtonInteraction,
+  Pages: EmbedBuilder[],
+  Ephemeral: boolean = false
+): Promise<Message> {
+  let ReplyMethod: "reply" | "followUp" | "editReply";
+  const NavigationButtons = GetPredefinedNavButtons(Interact, Pages.length, true, true);
+
+  if (Interact.deferred) {
+    ReplyMethod = "editReply";
+  } else if (Interact.replied) {
+    ReplyMethod = "followUp";
+  } else {
+    ReplyMethod = "reply";
+  }
+
+  if (ReplyMethod === "reply") {
+    return Interact.reply({
+      components: Pages.length > 1 ? [NavigationButtons] : undefined,
+      flags: Ephemeral ? MessageFlags.Ephemeral : undefined,
+      embeds: [Pages[0]],
+      withResponse: true,
+    }).then((Resp) => Resp.resource!.message!);
+  } else if (ReplyMethod === "followUp") {
+    return Interact.followUp({
+      components: Pages.length > 1 ? [NavigationButtons] : undefined,
+      flags: Ephemeral ? MessageFlags.Ephemeral : undefined,
+      embeds: [Pages[0]],
+    });
+  } else {
+    return Interact.editReply({
+      components: Pages.length > 1 ? [NavigationButtons] : undefined,
+      embeds: [Pages[0]],
+    });
+  }
 }
 
 function GetPageSelectMenu(

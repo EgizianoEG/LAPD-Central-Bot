@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/no-duplicate-string */
 import { connections as MongooseConnection, STATES as DBStates } from "mongoose";
 import { Client, Collection, GatewayIntentBits } from "discord.js";
 import { Discord as DiscordSecrets } from "@Config/Secrets.js";

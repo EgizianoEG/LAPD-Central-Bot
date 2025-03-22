@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/no-duplicate-string */
 import {
   SlashCommandSubcommandBuilder,
   APIButtonComponentWithCustomId,
