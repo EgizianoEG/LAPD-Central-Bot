@@ -56,18 +56,16 @@ const AppLogger = Winston.createLogger({
         IgnoreSpecificConsoleLogs(),
         SplatFormat({ colors: true }),
         Format.timestamp({ format: "hh:mm:ss A" }),
-        Format.metadata(),
-
+        Format.metadata({ key: "metadata" }),
         Format.printf((Info) => {
-          let Description: string = Info.message;
-          const ErrorStack: string | undefined = Info.stack ?? Info.metadata?.stack;
-          const Timestamp: string = Info.timestamp ?? Info.metadata.timestamp;
-          const LogLabel: string | undefined = LogLabels
-            ? (Info.label ?? Info.metadata?.label)
-            : null;
+          let Description: string = String(Info.message);
+          const Metadata: Record<string, any> = Info.metadata ?? {};
+          const ErrorStack: string | undefined = Info.stack ?? Metadata.stack;
+          const Timestamp: string = Info.timestamp ?? Metadata.timestamp;
+          const LogLabel: string | undefined = LogLabels ? (Info.label ?? Metadata.label) : null;
 
-          if (ErrorStack) {
-            Info.metadata.stack = ErrorStack.replace(
+          if (ErrorStack && Metadata.stack) {
+            Metadata.stack = ErrorStack.replace(
               /(at .+ )\((.+:\d+:\d+)\)/g,
               (_, AtText: string, Path: string) => {
                 if (!Path.startsWith("node:")) Path = `file:///${Path}`;
@@ -80,10 +78,10 @@ const AppLogger = Winston.createLogger({
               }
             );
 
-            if (Info.metadata.title) {
-              Description = `${Info.metadata.title}; ${Info.message}\n    ${Info.metadata.stack}`;
+            if (Metadata.title) {
+              Description = `${Metadata.title}; ${Info.message}\n    ${Metadata.stack}`;
             } else {
-              Description = `${Info.message}\n    ${Info.metadata.stack}`;
+              Description = `${Info.message}\n    ${Metadata.stack}`;
             }
           }
 

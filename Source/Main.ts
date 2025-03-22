@@ -1,4 +1,3 @@
-/* eslint-disable sonarjs/no-duplicate-string */
 import { connections as MongooseConnection, STATES as DBStates } from "mongoose";
 import { Client, Collection, GatewayIntentBits } from "discord.js";
 import { Discord as DiscordSecrets } from "@Config/Secrets.js";
@@ -66,6 +65,8 @@ App.buttonListeners = new Collection();
 // --------------------
 const EAppPort = process.env.PORT ?? 10_000;
 const ExpressApp = Express();
+ExpressApp.disable("x-powered-by");
+
 const NotFoundPage = FileSystem.readFileSync(
   Path.join(GetDirName(import.meta.url), "Resources", "HTML", "404.html"),
   { encoding: "utf-8" }

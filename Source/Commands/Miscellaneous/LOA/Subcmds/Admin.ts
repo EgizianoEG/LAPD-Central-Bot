@@ -1,7 +1,7 @@
-/* eslint-disable sonarjs/no-duplicate-string */
 import {
   SlashCommandSubcommandBuilder,
   APIButtonComponentWithCustomId,
+  InteractionEditReplyOptions,
   InteractionReplyOptions,
   ModalSubmitInteraction,
   time as FormatTime,
@@ -816,7 +816,7 @@ async function Callback(Interaction: CmdOrButtonInteraction) {
   const ActiveOrPendingLOA = LOAData.active_loa ?? LOAData.pending_loa;
   const PanelEmbed = GetPanelEmbed(Interaction, TargetMember, LOAData);
   const PanelComps = GetPanelComponents(Interaction, ActiveOrPendingLOA);
-  const ReplyOpts: InteractionReplyOptions = {
+  const ReplyOpts: InteractionReplyOptions | InteractionEditReplyOptions = {
     embeds: [PanelEmbed],
     components: PanelComps,
     fetchReply: true,
@@ -824,7 +824,7 @@ async function Callback(Interaction: CmdOrButtonInteraction) {
 
   const ReplyMessage =
     Interaction.replied || Interaction.deferred
-      ? await Interaction.editReply(ReplyOpts)
+      ? await Interaction.editReply(ReplyOpts as InteractionEditReplyOptions)
       : await Interaction.reply(ReplyOpts);
 
   const CompActionCollector = ReplyMessage.createMessageComponentCollector({
@@ -862,7 +862,7 @@ async function Callback(Interaction: CmdOrButtonInteraction) {
   });
 
   CompActionCollector.on("end", async (Collected, EndReason) => {
-    if (EndReason.match(/\w+Delete/)) return;
+    if (/\w{1,10}Delete/.test(EndReason)) return;
     if (EndReason === "NoActiveLeave" || EndReason === "CmdReinstated") return;
     try {
       PanelComps[0].components.forEach((Btn) => Btn.setDisabled(true));

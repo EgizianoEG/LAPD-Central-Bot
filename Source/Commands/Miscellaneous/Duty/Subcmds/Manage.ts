@@ -1,5 +1,3 @@
-/* eslint-disable sonarjs/no-duplicate-string */
-// ---------------------------------------------------------------------------------------
 // Dependencies:
 // -------------
 
@@ -15,6 +13,7 @@ import {
   time as FormatTime,
   InteractionReplyOptions,
   SlashCommandSubcommandBuilder,
+  Message,
 } from "discord.js";
 
 import { Types } from "mongoose";
@@ -252,9 +251,9 @@ async function HandleCommandUsageVerification(
 async function CmdInteractSafeReplyOrEditReply(
   CmdInteract: SlashCommandInteraction<"cached">,
   ReplyOpts: MessagePayload | InteractionReplyOptions
-) {
+): Promise<Message<true>> {
   const ReplyMethod = CmdInteract.deferred || CmdInteract.replied ? "editReply" : "reply";
-  return CmdInteract[ReplyMethod]({ ...ReplyOpts, fetchReply: true } as any).catch(async () => {
+  return CmdInteract[ReplyMethod]({ ...ReplyOpts, withResponse: true } as any).catch(async () => {
     try {
       const CmdReplyMsg = await CmdInteract.fetchReply().catch(() => null);
       if (!CmdReplyMsg?.editable) return null;
@@ -262,7 +261,7 @@ async function CmdInteractSafeReplyOrEditReply(
     } catch {
       return null;
     }
-  });
+  }) as Promise<Message<true>>;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -333,7 +332,6 @@ async function HandleNonActiveShift(
   const PromptMessage = await CmdInteractSafeReplyOrEditReply(CmdInteract, {
     embeds: [PromptEmbed],
     components: [MgmtComps],
-    fetchReply: true,
   });
 
   if (!PromptMessage) return;
@@ -424,7 +422,6 @@ async function HandleOnBreakShift(
   const PromptMessage = await CmdInteractSafeReplyOrEditReply(CmdInteract, {
     components: [MgmtComps.updateButtons({ start: false, break: true, end: false })],
     embeds: [PromptEmbed],
-    fetchReply: true,
   });
 
   if (!PromptMessage) return;
@@ -537,7 +534,6 @@ async function HandleActiveShift(
   const PromptMessage = await CmdInteractSafeReplyOrEditReply(CmdInteract, {
     components: [MgmtButtonComponents.updateButtons({ start: false, break: true, end: true })],
     embeds: [PromptEmbed],
-    fetchReply: true,
   });
 
   if (!PromptMessage) return;

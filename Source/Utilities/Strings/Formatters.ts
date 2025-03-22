@@ -25,7 +25,7 @@ export function ListCharges<ReturnType extends boolean = true>(
       .match(/([^\n\r]+)/g) ?? [];
 
   if (!Charges.length || (Charges.length === 1 && Charges[0].trim() === "")) {
-    return ReturnAsArray ? Charges : ("" as any);
+    return (ReturnAsArray ? Charges : "") as any;
   }
 
   if (
@@ -42,12 +42,14 @@ export function ListCharges<ReturnType extends boolean = true>(
 
   const FormattedCharges = Charges.filter((Charge) => {
     return !Charge.match(/^\s*[-+=#*] Statute/i);
-  }).map((Charge, Index) => {
-    const Modified = Charge.trim().match(/^(?:\d+\W|\*|-|#\d+:?)?\s?(.+)$/)?.[1];
-    return Ordered ? `${Index + 1}. ${Modified}` : Modified;
-  });
+  })
+    .map((Charge, Index) => {
+      const Modified = Charge.trim().match(/^(?:\d+\W|\*|-|#\d+:?)?\s?(.+)$/)?.[1];
+      return Ordered ? `${Index + 1}. ${Modified}` : Modified;
+    })
+    .filter((Charge): Charge is string => Charge !== undefined);
 
-  return ReturnAsArray ? FormattedCharges : (FormattedCharges.join("\n") as any);
+  return (ReturnAsArray ? FormattedCharges : FormattedCharges.join("\n")) as any;
 }
 
 /**
