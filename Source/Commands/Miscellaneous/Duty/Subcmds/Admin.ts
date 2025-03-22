@@ -368,7 +368,7 @@ async function PromptShiftModification(
   });
 
   CompCollector.on("end", async (CollectedInteracts, EndReason) => {
-    if (EndReason.match(/\w+Delete/)) return;
+    if (EndReason.match(/^\w+Delete/)) return;
 
     try {
       const LastInteract = CollectedInteracts.last() ?? Interact;
@@ -530,7 +530,7 @@ async function HandleShiftModifications(
   });
 
   CompCollector.on("end", async (CollectedInteracts, EndReason) => {
-    if (EndReason.match(/\w+Delete/)) return;
+    if (EndReason.match(/^\w+Delete/)) return;
     ButtonsActionRow.components.forEach((Button) => Button.setDisabled(true));
     const LastInteract = CollectedInteracts.last();
     if (LastInteract) {
@@ -1152,7 +1152,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   });
 
   ActionCollector.on("end", async (Collected, EndReason) => {
-    if (EndReason.match(/\w+Delete/)) return;
+    if (EndReason.match(/^\w+Delete/)) return;
     try {
       const LastInteract = Collected.last();
       ButtonActionRows.forEach((ActionRow) =>

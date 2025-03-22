@@ -165,7 +165,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
 
   CompCollector.once("end", async (CollectedInt, EndReason) => {
     const LastInteraction = CollectedInt.last() ?? Interaction;
-    if (EndReason.match(/\w+Delete/)) return;
+    if (EndReason.match(/^\w+Delete/)) return;
 
     try {
       await DisablePrompt();

@@ -130,7 +130,7 @@ export default async function HandleEmbedPagination(
   });
 
   ComponentCollector.on("end", async (Collected, EndReason: string) => {
-    if (EndReason.match(/\w+Delete/)) return;
+    if (EndReason.match(/^\w+Delete/)) return;
     try {
       NavigationButtons.components.forEach((Btn) => Btn.setDisabled(true));
       const LastInteract = Collected.last() || Interact;

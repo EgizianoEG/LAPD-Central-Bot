@@ -672,7 +672,7 @@ async function Callback(Interaction: PromptInteractType, CmdInteractReplyMsgId?:
   });
 
   CompActionCollector.on("end", async (Collected, EndReason: string) => {
-    if (EndReason.match(/\w+Delete/)) return;
+    if (EndReason.match(/^\w+Delete/)) return;
     if (EndReason === "NoActiveLeave") return;
     try {
       ManagementComps[0].components.forEach((Btn) => Btn.setDisabled(true));

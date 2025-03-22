@@ -850,7 +850,7 @@ async function HandleShiftRecordsManagement(
   });
 
   CompActionCollector.on("end", async function OnSDMEnd(_, EndReason) {
-    if (EndReason.match(/\w+Delete/)) return;
+    if (EndReason.match(/^\w+Delete/)) return;
     if (EndReason === "BackToMain") {
       return Callback(CmdInteraction);
     } else if (EndReason.includes("time")) {
@@ -1299,7 +1299,7 @@ async function HandleLeaveRecordsManagement(
   });
 
   CompActionCollector.on("end", async function OnLDMEnd(_, EndReason) {
-    if (EndReason.match(/\w+Delete/)) return;
+    if (EndReason.match(/^\w+Delete/)) return;
     if (EndReason === "BackToMain") {
       return Callback(CmdInteraction);
     } else if (EndReason.includes("time")) {
