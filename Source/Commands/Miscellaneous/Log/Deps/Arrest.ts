@@ -177,7 +177,7 @@ async function OnReportConfirmation(
 }
 
 /**
- * TODO: Filter charges input for spam & English profanity.
+ * Handles the submission of the charges modal; of course.
  * @param ModalInteraction
  * @param CmdInteraction
  */
