@@ -284,7 +284,6 @@ async function HandleLeaveEarlyEnd(
     embeds: [ConfirmationEmbed],
     components: [ConfirmationBtns],
     flags: MessageFlags.Ephemeral,
-    fetchReply: true,
   });
 
   const ButtonInteract = await ConfirmationMsg.awaitMessageComponent({
@@ -382,7 +381,6 @@ async function HandlePendingLeaveCancellation(
     embeds: [ConfirmationEmbed],
     components: [ConfirmationBtns],
     flags: MessageFlags.Ephemeral,
-    fetchReply: true,
   });
 
   const ButtonInteract = await ConfirmationMsg.awaitMessageComponent({
@@ -462,7 +460,6 @@ async function HandlePendingExtensionCancellation(
     embeds: [ConfirmationEmbed],
     components: [ConfirmationBtns],
     flags: MessageFlags.Ephemeral,
-    fetchReply: true,
   });
 
   const ButtonInteract = await ConfirmationMsg.awaitMessageComponent({

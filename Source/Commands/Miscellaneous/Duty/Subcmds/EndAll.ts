@@ -81,17 +81,16 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     ),
   ];
 
-  const PromptMessage = await Interaction.reply({
+  const PromptSent = await Interaction.reply({
     embeds: [PromptEmbed],
     components: PromptComponents,
-    fetchReply: true,
   });
 
-  const ButtonInteract = await PromptMessage.awaitMessageComponent({
+  const ButtonInteract = await PromptSent.awaitMessageComponent({
     filter: (ButtonInteract) => HandleCollectorFiltering(Interaction, ButtonInteract),
     componentType: ComponentType.Button,
     time: 5 * 60_000,
-  }).catch((Err) => HandleActionCollectorExceptions(Err, PromptMessage));
+  }).catch((Err) => HandleActionCollectorExceptions(Err, PromptSent));
 
   if (!ButtonInteract) return;
   await ButtonInteract.deferUpdate();

@@ -17,9 +17,6 @@ import HandleActionCollectorExceptions from "@Utilities/Other/HandleCompCollecto
 // ---------------------------------------------------------------------------------------
 // Functions:
 // ----------
-/**
- * @param Interaction
- */
 async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const ActiveShift = await GetActiveShifts({ Interaction, UserOnly: true });
   if (!ActiveShift) {
@@ -52,7 +49,6 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const PromptMessage = await Interaction.reply({
     embeds: [PromptEmbed],
     components: [PromptButtons],
-    fetchReply: true,
     flags: MessageFlags.Ephemeral,
   });
 

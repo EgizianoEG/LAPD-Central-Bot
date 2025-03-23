@@ -2,8 +2,6 @@
 import {
   SlashCommandSubcommandBuilder,
   APIButtonComponentWithCustomId,
-  InteractionEditReplyOptions,
-  InteractionReplyOptions,
   ModalSubmitInteraction,
   time as FormatTime,
   ButtonInteraction,
@@ -818,18 +816,17 @@ async function Callback(Interaction: CmdOrButtonInteraction) {
   const ActiveOrPendingLOA = LOAData.active_loa ?? LOAData.pending_loa;
   const PanelEmbed = GetPanelEmbed(Interaction, TargetMember, LOAData);
   const PanelComps = GetPanelComponents(Interaction, ActiveOrPendingLOA);
-  const ReplyOpts: InteractionReplyOptions | InteractionEditReplyOptions = {
+  const ReplyOpts = {
     embeds: [PanelEmbed],
     components: PanelComps,
-    fetchReply: true,
   };
 
-  const ReplyMessage =
+  const ReturnedResponse =
     Interaction.replied || Interaction.deferred
-      ? await Interaction.editReply(ReplyOpts as InteractionEditReplyOptions)
+      ? await Interaction.editReply(ReplyOpts)
       : await Interaction.reply(ReplyOpts);
 
-  const CompActionCollector = ReplyMessage.createMessageComponentCollector({
+  const CompActionCollector = ReturnedResponse.createMessageComponentCollector({
     filter: (i) => i.user.id === Interaction.user.id,
     componentType: ComponentType.Button,
     time: 8 * 60_000,
@@ -872,7 +869,7 @@ async function Callback(Interaction: CmdOrButtonInteraction) {
       if (LastInteract) {
         await LastInteract.editReply({ components: PanelComps });
       } else {
-        await ReplyMessage.edit({ components: PanelComps });
+        await ReturnedResponse.edit({ components: PanelComps });
       }
     } catch (Err: any) {
       AppLogger.error({

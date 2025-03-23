@@ -5,6 +5,7 @@ import {
   StringSelectMenuInteraction,
   StringSelectMenuBuilder,
   ModalSubmitInteraction,
+  InteractionResponse,
   time as FormatTime,
   ButtonInteraction,
   ActionRowBuilder,
@@ -435,7 +436,6 @@ async function HandleShiftModifications(
     components: [ButtonsActionRow],
     embeds: [RespEmbed],
     flags: MessageFlags.Ephemeral,
-    fetchReply: true,
   });
 
   const CompCollector = Message.createMessageComponentCollector({
@@ -813,7 +813,6 @@ async function HandleUserShiftsWipe(
     );
 
   const ConfirmationPrompt = await BInteract.reply({
-    fetchReply: true,
     components: [ButtonAR],
     embeds: [PromptEmbed],
   });
@@ -884,7 +883,7 @@ async function HandleUserShiftsWipe(
  */
 async function HandleUserShiftEnd(
   BInteract: ButtonInteraction<"cached">,
-  RespMessage: Message<true>,
+  RespMessage: Message<true> | InteractionResponse<true>,
   TargetUser: User,
   ActiveShift: Shifts.HydratedShiftDocument,
   CmdShiftType?: Nullable<string>
@@ -1084,7 +1083,6 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const RespMessage = await Interaction.reply({
     components: ButtonActionRows,
     embeds: [RespEmbed],
-    fetchReply: true,
   });
 
   const ActionCollector = RespMessage.createMessageComponentCollector({

@@ -66,7 +66,7 @@ enum ShiftDataActions {
 enum LeaveDataActions {
   WipeAll = "ld-wa",
   DeletePast = "ld-dpast",
-  DeletePending = "ld-DPen",
+  DeletePending = "ld-dpen",
   DeleteBefore = "ld-db",
   DeleteAfter = "ld-da",
 }
@@ -318,7 +318,7 @@ async function ShowModalAndAwaitSubmission(
 
 async function AwaitDeleteConfirmation(
   RecBtnInteract: ButtonInteraction<"cached">,
-  ConfirmationMsg: Message<true>,
+  ConfirmationMsg: Message<true> | InteractionResponse<true>,
   ConfirmationFunc: (ConfirmInteract: ButtonInteraction<"cached">, ...args: any[]) => Promise<any>,
   ...AdditionalCFArgs: any[]
 ) {
@@ -340,7 +340,7 @@ async function AwaitDeleteConfirmation(
   } catch (Err: any) {
     if (Err?.message.match(/reason: time/)) {
       return RecBtnInteract.deleteReply()
-        .catch(() => ConfirmationMsg.delete())
+        .catch(() => ConfirmationMsg.fetch().then((Msg) => Msg.delete()))
         .catch(() => null);
     } else if (Err?.message.match(/reason: \w+Delete/)) {
       /* Ignore message/channel/guild deletion */
@@ -519,7 +519,6 @@ async function HandleShiftDataWipeAll(BtnInteract: ButtonInteraction<"cached">) 
   const RespMessage = await BtnInteract.reply({
     embeds: [ConfirmationEmbed],
     components: [ConfirmationComponents],
-    fetchReply: true,
   });
 
   return AwaitDeleteConfirmation(BtnInteract, RespMessage, HandleShiftDataWipeAllConfirm);
@@ -582,7 +581,6 @@ async function HandleShiftDataDeletePast(BtnInteract: ButtonInteraction<"cached"
   const RespMessage = await BtnInteract.reply({
     embeds: [ConfirmationEmbed],
     components: [ConfirmationComponents],
-    fetchReply: true,
   });
 
   return AwaitDeleteConfirmation(BtnInteract, RespMessage, HandleShiftDataDeletePastConfirm);
@@ -663,7 +661,6 @@ async function HandleShiftDataDeleteOfType(BtnInteract: ButtonInteraction<"cache
   const RespMessage = await ModalSubmission.reply({
     embeds: [ConfirmationEmbed],
     components: [ConfirmationComponents],
-    fetchReply: true,
   });
 
   return AwaitDeleteConfirmation(
@@ -782,7 +779,6 @@ async function HandleShiftDataDeleteBeforeOrAfterDate(
   const RespMessage = await ModalSubmission.reply({
     embeds: [ConfirmationEmbed],
     components: [ConfirmationComponents],
-    fetchReply: true,
   });
 
   return AwaitDeleteConfirmation(
@@ -804,7 +800,6 @@ async function HandleShiftRecordsManagement(
   const EdittedMessage = await SMenuInteract.update({
     embeds: [MsgEmbed],
     components: ManagementComps,
-    fetchReply: true,
   });
 
   const CompActionCollector = EdittedMessage.createMessageComponentCollector({
@@ -955,7 +950,6 @@ async function HandleLeaveDataWipeAll(BtnInteract: ButtonInteraction<"cached">) 
   const RespMessage = await BtnInteract.reply({
     embeds: [ConfirmationEmbed],
     components: [ConfirmationComponents],
-    fetchReply: true,
   });
 
   return AwaitDeleteConfirmation(BtnInteract, RespMessage, HandleLeaveDataWipeAllConfirm);
@@ -1024,7 +1018,6 @@ async function HandleLeaveDataDeletePast(BtnInteract: ButtonInteraction<"cached"
   const RespMessage = await BtnInteract.reply({
     embeds: [ConfirmationEmbed],
     components: [ConfirmationComponents],
-    fetchReply: true,
   });
 
   return AwaitDeleteConfirmation(BtnInteract, RespMessage, HandleLeaveDataDeletePastConfirm);
@@ -1083,7 +1076,6 @@ async function HandleLeaveDataDeletePending(BtnInteract: ButtonInteraction<"cach
   const RespMessage = await BtnInteract.reply({
     embeds: [ConfirmationEmbed],
     components: [ConfirmationComponents],
-    fetchReply: true,
   });
 
   return AwaitDeleteConfirmation(BtnInteract, RespMessage, HandleLeaveDataDeletePendingConfirm);
@@ -1231,7 +1223,6 @@ async function HandleLeaveDataDeleteBeforeOrAfterDate(
   const RespMessage = await ModalSubmission.reply({
     embeds: [ConfirmationEmbed],
     components: [ConfirmationComponents],
-    fetchReply: true,
   });
 
   return AwaitDeleteConfirmation(
@@ -1253,7 +1244,6 @@ async function HandleLeaveRecordsManagement(
   const EdittedMessage = await SMenuInteract.update({
     embeds: [MsgEmbed],
     components: ManagementComps,
-    fetchReply: true,
   });
 
   const CompActionCollector = EdittedMessage.createMessageComponentCollector({
@@ -1350,7 +1340,6 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
   const CmdRespMsg = await CmdInteraction[ReplyMethod]({
     embeds: [CmdRespEmbed],
     components: [CTopicsMenu],
-    fetchReply: true,
   });
 
   const PromptDisabler = () => {

@@ -85,7 +85,6 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     const ConfirmationPrompt = await Interaction.reply({
       embeds: [ConfirmationEmbed],
       components: GetConfirmationPromptComponents(Interaction),
-      fetchReply: true,
     });
 
     const ButtonInteract = await ConfirmationPrompt.awaitMessageComponent({

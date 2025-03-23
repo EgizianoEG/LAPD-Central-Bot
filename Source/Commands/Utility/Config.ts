@@ -713,7 +713,7 @@ async function HandleOutsideLogChannelBtnInteracts(
 
 async function HandleBasicConfigPageInteracts(
   CmdInteract: SlashCommandInteraction<"cached">,
-  BasicConfigPrompt: Message<true>,
+  BasicConfigPrompt: Message<true> | InteractionResponse<true>,
   CurrConfiguration: GuildSettings
 ) {
   let StaffRoles: string[] = CurrConfiguration.role_perms.staff.slice();
@@ -832,7 +832,7 @@ async function HandleBasicConfigPageInteracts(
 
 async function HandleAdditionalConfigPageInteracts(
   CmdInteract: SlashCommandInteraction<"cached">,
-  AddConfigPrompt: Message<true>,
+  AddConfigPrompt: Message<true> | InteractionResponse<true>,
   CurrConfiguration: GuildSettings
 ) {
   let LogDeletionInterval = CurrConfiguration.duty_activities.log_deletion_interval;
@@ -971,7 +971,7 @@ async function HandleAdditionalConfigPageInteracts(
 
 async function HandleShiftConfigPageInteracts(
   CmdInteract: SlashCommandInteraction<"cached">,
-  ConfigPrompt: Message<true>,
+  ConfigPrompt: Message<true> | InteractionResponse<true>,
   SMCurrConfiguration: GuildSettings["shift_management"]
 ) {
   let ModuleEnabled: boolean = SMCurrConfiguration.enabled;
@@ -1103,7 +1103,7 @@ async function HandleShiftConfigPageInteracts(
 
 async function HandleLeaveConfigPageInteracts(
   CmdInteract: SlashCommandInteraction<"cached">,
-  ConfigPrompt: Message<true>,
+  ConfigPrompt: Message<true> | InteractionResponse<true>,
   LNCurrConfiguration: GuildSettings["leave_notices"]
 ) {
   let ModuleEnabled = LNCurrConfiguration.enabled;
@@ -1241,7 +1241,7 @@ async function HandleLeaveConfigPageInteracts(
 
 async function HandleDutyActivitiesConfigPageInteracts(
   CmdInteract: SlashCommandInteraction<"cached">,
-  ConfigPrompt: Message<true>,
+  ConfigPrompt: Message<true> | InteractionResponse<true>,
   DACurrentConfig: GuildSettings["duty_activities"]
 ) {
   let ArrestReportsChannels = DACurrentConfig.log_channels.arrests.slice();
@@ -1436,7 +1436,7 @@ async function HandleDutyActivitiesConfigPageInteracts(
 
 async function HandleConfigShowPageInteracts(
   CmdInteract: SlashCommandInteraction<"cached">,
-  ConfigPrompt: Message<true>
+  ConfigPrompt: Message<true> | InteractionResponse<true>
 ) {
   try {
     const ReceivedInteraction = await ConfigPrompt.awaitMessageComponent({
@@ -1476,7 +1476,6 @@ async function HandleBasicConfigSelection(
     );
 
     const ConfigPrompt = await SelectInteract.update({
-      fetchReply: true,
       components: [...ModulePageComps, ConfirmBackBtns],
       embeds: [ExplanationEmbed],
     });
@@ -1503,7 +1502,6 @@ async function HandleAdditionalConfigSelection(
     );
 
     const ConfigPrompt = await SelectInteract.update({
-      fetchReply: true,
       components: [...ModulePageComps, ConfirmBackBtns],
       embeds: [ExplanationEmbed],
     });
@@ -1535,7 +1533,6 @@ async function HandleShiftModuleSelection(
     );
 
     const ConfigPrompt = await SelectInteract.update({
-      fetchReply: true,
       components: [...ModulePageComps, ConfirmBackBtns],
       embeds: [ExplanationEmbed],
     });
@@ -1567,7 +1564,6 @@ async function HandleDutyActivitiesModuleSelection(
     );
 
     const ConfigPrompt = await SelectInteract.update({
-      fetchReply: true,
       components: [...ModulePageComps, ConfirmBackBtns],
       embeds: [ExplanationEmbed],
     });
@@ -1599,7 +1595,6 @@ async function HandleLeaveModuleSelection(
     );
 
     const ConfigPrompt = await SelectInteract.update({
-      fetchReply: true,
       components: [...ModulePageComps, ConfirmBackBtns],
       embeds: [ExplanationEmbed],
     });
@@ -1717,7 +1712,6 @@ async function HandleConfigShowSelection(
   const ShowConfigPageMsg = await SelectInteract.update({
     embeds: [ResponseEmbed],
     components: PageComponents,
-    fetchReply: true,
   });
 
   return HandleConfigShowPageInteracts(CmdInteract, ShowConfigPageMsg);

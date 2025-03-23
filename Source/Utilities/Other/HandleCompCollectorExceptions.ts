@@ -1,6 +1,7 @@
 import {
   MessageComponentInteraction,
   createComponentBuilder,
+  InteractionResponse,
   ActionRowBuilder,
   ComponentType,
   Message,
@@ -8,7 +9,7 @@ import {
 
 export default async function HandleActionCollectorExceptions(
   Err: unknown,
-  Disabler?: MessageComponentInteraction | Message | (() => Promise<any>)
+  Disabler?: MessageComponentInteraction | Message | InteractionResponse | (() => Promise<any>)
 ) {
   if (Err instanceof Error) {
     if (Err.message.match(/reason: time|idle/)) {
@@ -37,6 +38,20 @@ export default async function HandleActionCollectorExceptions(
           }) as any;
 
           await Disabler.edit({ components: DisabledMsgComponents });
+        } else if (Disabler instanceof InteractionResponse) {
+          const Message = await Disabler.fetch().catch(() => null);
+          if (!Message) return null;
+
+          const DisabledMsgComponents = Message.components.map((AR) => {
+            return ActionRowBuilder.from({
+              type: ComponentType.ActionRow,
+              components: AR.components.map((Comp) =>
+                (createComponentBuilder(Comp.data) as any).setDisabled(true)
+              ),
+            });
+          }) as any;
+
+          await Message.edit({ components: DisabledMsgComponents });
         }
       } catch {
         // Ignored.
