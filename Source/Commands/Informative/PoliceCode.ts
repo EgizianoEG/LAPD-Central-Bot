@@ -1,4 +1,10 @@
-import { AutocompleteInteraction, EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import {
+  AutocompleteInteraction,
+  SlashCommandBuilder,
+  EmbedBuilder,
+  MessageFlags,
+} from "discord.js";
+
 import { TenCodes, ElevenCodes, LiteralCodes } from "@Resources/RadioCodes.js";
 import { PoliceCodeToWords, TitleCase } from "@Utilities/Strings/Converters.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
@@ -83,7 +89,10 @@ async function Callback(Interaction: SlashCommandInteraction) {
     });
   }
 
-  return Interaction.reply({ embeds: [ResponseEmbed], ephemeral: true });
+  return Interaction.reply({
+    embeds: [ResponseEmbed],
+    flags: MessageFlags.Ephemeral,
+  });
 }
 
 async function Autocomplete(Interaction: AutocompleteInteraction) {

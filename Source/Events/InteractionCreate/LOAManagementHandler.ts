@@ -9,6 +9,7 @@ import {
   TextInputStyle,
   EmbedBuilder,
   ModalBuilder,
+  MessageFlags,
 } from "discord.js";
 
 import { ErrorEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
@@ -139,7 +140,7 @@ async function HandleLeaveReviewValidation(
     }
 
     return Promise.all([
-      Interaction.reply({ embeds: [ReplyEmbed], ephemeral: true }).catch(() =>
+      Interaction.reply({ embeds: [ReplyEmbed], flags: MessageFlags.Ephemeral }).catch(() =>
         Interaction.editReply({ embeds: [ReplyEmbed] })
       ),
       InitialInteraction.message?.edit({
@@ -194,7 +195,7 @@ async function HandleLeaveAddInfo(
       }
     );
 
-  Interaction.reply({ embeds: [ReplyEmbed], ephemeral: true });
+  Interaction.reply({ embeds: [ReplyEmbed], flags: MessageFlags.Ephemeral });
 }
 
 async function HandleLeaveApproval(
@@ -210,7 +211,7 @@ async function HandleLeaveApproval(
   }).catch(() => null);
 
   if (!NotesSubmission) return;
-  await NotesSubmission.deferReply({ ephemeral: true });
+  await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
   LeaveDocument = await LeaveDocument.getUpToDate();
   if (await HandleLeaveReviewValidation(NotesSubmission, LeaveDocument, Interaction)) return;
 
@@ -248,7 +249,7 @@ async function HandleLeaveDenial(
   }).catch(() => null);
 
   if (!NotesSubmission) return;
-  await NotesSubmission.deferReply({ ephemeral: true });
+  await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
   LeaveDocument = await LeaveDocument.getUpToDate();
   if (await HandleLeaveReviewValidation(NotesSubmission, LeaveDocument, Interaction)) return;
 
@@ -285,7 +286,7 @@ async function HandleExtApproval(
   }).catch(() => null);
 
   if (!NotesSubmission) return;
-  await NotesSubmission.deferReply({ ephemeral: true });
+  await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
   LeaveDocument = await LeaveDocument.getUpToDate();
   if (await HandleLeaveReviewValidation(NotesSubmission, LeaveDocument, Interaction)) return;
 
@@ -323,7 +324,7 @@ async function HandleExtDenial(
   }).catch(() => null);
 
   if (!NotesSubmission) return;
-  await NotesSubmission.deferReply({ ephemeral: true });
+  await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
   LeaveDocument = await LeaveDocument.getUpToDate();
   if (await HandleLeaveReviewValidation(NotesSubmission, LeaveDocument, Interaction)) return;
 

@@ -6,6 +6,7 @@ import {
   roleMention,
   userMention,
   EmbedBuilder,
+  MessageFlags,
   SlashCommandSubcommandBuilder,
 } from "discord.js";
 
@@ -25,7 +26,7 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
       .useErrTemplate("MemberNotFound")
       .replyToInteract(CmdInteraction, true, false);
   } else {
-    await CmdInteraction.deferReply({ ephemeral: true });
+    await CmdInteraction.deferReply({ flags: MessageFlags.Ephemeral });
   }
 
   const IsBot = SelectedMember.user.bot;

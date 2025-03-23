@@ -5,6 +5,7 @@ import {
   Colors,
   ButtonStyle,
   EmbedBuilder,
+  MessageFlags,
   ComponentType,
   ButtonBuilder,
   ActionRowBuilder,
@@ -87,7 +88,7 @@ async function Callback(CmdInteract: SlashCommandInteraction<"cached">) {
     return;
   }
 
-  await CmdInteract.deferReply({ ephemeral: true });
+  await CmdInteract.deferReply({ flags: MessageFlags.Ephemeral });
   const [AccountRobloxId, ExactUsername] = await GetIdByUsername(InputUsername, true);
   const FoundBloxlinkRobloxId = await GetRobloxIdFromDiscordBloxlink(CmdInteract.user.id);
 

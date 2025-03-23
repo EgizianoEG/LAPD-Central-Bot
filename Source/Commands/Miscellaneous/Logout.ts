@@ -9,6 +9,7 @@ import {
   InteractionContextType,
   ActionRowBuilder,
   ButtonBuilder,
+  MessageFlags,
   ButtonStyle,
 } from "discord.js";
 
@@ -34,7 +35,7 @@ async function HandleLoggedInUser(
 ): Promise<boolean> {
   if (!IsLoggedIn) {
     return Interaction.reply({
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
       embeds: [
         new ErrorEmbed()
           .setTitle(ErrorMessages.LORobloxUserNotLinked.Title)
@@ -87,7 +88,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     );
 
   const PromptReply = await Interaction.reply({
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
     embeds: [PromptEmbed],
     components: [ButtonsActionRow],
   });

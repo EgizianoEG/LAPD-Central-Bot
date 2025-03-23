@@ -1,4 +1,4 @@
-import { SlashCommandSubcommandBuilder } from "discord.js";
+import { MessageFlags, SlashCommandSubcommandBuilder } from "discord.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import GetIncidentRecord from "@Utilities/Database/GetIncidentRecord.js";
 import GetIncidentReportEmbeds from "@Utilities/Other/GetIncidentReportEmbeds.js";
@@ -14,7 +14,7 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
       .useErrTemplate("IncidentRecordNotFound")
       .replyToInteract(CmdInteraction, true);
   } else {
-    await CmdInteraction.deferReply({ ephemeral: true });
+    await CmdInteraction.deferReply({ flags: MessageFlags.Ephemeral });
   }
 
   const ReportEmbeds = GetIncidentReportEmbeds(IncidentRecord, {

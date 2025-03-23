@@ -1,9 +1,10 @@
 import { ErrorEmbed, InfoEmbed, SuccessEmbed, WarnEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import {
-  ActionRowBuilder,
-  ButtonBuilder,
   ButtonStyle,
+  MessageFlags,
   ComponentType,
+  ButtonBuilder,
+  ActionRowBuilder,
   SlashCommandSubcommandBuilder,
 } from "discord.js";
 
@@ -52,7 +53,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     embeds: [PromptEmbed],
     components: [PromptButtons],
     fetchReply: true,
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
   });
 
   const DisablePrompt = () => {

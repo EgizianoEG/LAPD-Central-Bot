@@ -5,6 +5,7 @@ import {
   time as FormatTime,
   ActionRowBuilder,
   ButtonBuilder,
+  MessageFlags,
   ButtonStyle,
 } from "discord.js";
 
@@ -95,7 +96,7 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
 
   await CmdInteraction.reply({
     embeds: [new InfoEmbed().useInfoTemplate("CreatingActivityReport")],
-    ephemeral: false,
+    flags: MessageFlags.Ephemeral,
   });
 
   const ReportSpredsheetURL = await CreateShiftReport({

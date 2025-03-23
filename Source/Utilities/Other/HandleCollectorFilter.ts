@@ -1,5 +1,6 @@
 import { UnauthorizedEmbed } from "../Classes/ExtraEmbeds.js";
 import {
+  MessageFlags,
   ModalSubmitInteraction,
   type AnySelectMenuInteraction,
   type ButtonInteraction,
@@ -31,7 +32,7 @@ export default function HandleCollectorFiltering(
     }
 
     ReceivedInteract.reply({
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
       embeds: [
         new UnauthorizedEmbed().setDescription(
           "You are not permitted to interact with a prompt that somebody else has initiated."

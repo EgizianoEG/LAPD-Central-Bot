@@ -3,6 +3,7 @@ import { IsValidDiscordId } from "@Utilities/Other/Validators.js";
 import { differenceInMilliseconds } from "date-fns";
 import { InfoEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import {
+  MessageFlags,
   ComponentType,
   BaseInteraction,
   ActionRowBuilder,
@@ -85,7 +86,7 @@ export default async function HandleAbandonedInteractions(
                 components: DisabledMsgComponents,
               }),
               Interaction.followUp({
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
                 embeds: [new InfoEmbed().useInfoTemplate("ProcessTimedOut")],
               }),
             ]);

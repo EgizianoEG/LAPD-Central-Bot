@@ -1,6 +1,6 @@
 import { Guilds } from "@Typings/Utilities/Database.js";
 import { InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import { SlashCommandSubcommandBuilder, EmbedBuilder, Colors } from "discord.js";
+import { SlashCommandSubcommandBuilder, EmbedBuilder, Colors, MessageFlags } from "discord.js";
 
 import HandleEmbedPagination from "@Utilities/Other/HandleEmbedPagination.js";
 import GetShiftTypes from "@Utilities/Database/GetShiftTypes.js";
@@ -95,7 +95,7 @@ function CreateEmbedPages(
  * for navigation buttons to paginate through the embed pages.
  */
 async function Callback(Interaction: SlashCommandInteraction<"cached">) {
-  await Interaction.deferReply({ ephemeral: true });
+  await Interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const GuildShiftTypes = await GetShiftTypes(Interaction.guildId);
   const Pages = CreateEmbedPages(GuildShiftTypes, DisplayedShiftTypesPerPage);
 

@@ -11,6 +11,7 @@ import {
   ModalBuilder,
   ButtonStyle,
   EmbedBuilder,
+  MessageFlags,
 } from "discord.js";
 
 import {
@@ -64,7 +65,7 @@ export default async function AnyCitationCallback(
   CitingOfficer: ReporterInfo,
   CmdFileLabel: string = "Commands:Miscellaneous:Log:AnyCitationHandler"
 ) {
-  await Interaction.deferReply({ ephemeral: true });
+  await Interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const CitationDetailsPart1: GuildCitations.InitialProvidedCmdDetails = {
     fine_amount: Interaction.options.getInteger("fine-amount", false),
     violator: {

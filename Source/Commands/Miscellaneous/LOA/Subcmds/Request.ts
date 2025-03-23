@@ -2,6 +2,7 @@ import {
   SlashCommandSubcommandBuilder,
   ModalSubmitInteraction,
   time as FormatTime,
+  MessageFlags,
 } from "discord.js";
 
 import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
@@ -106,7 +107,7 @@ async function HasRecentlyDeniedCancelledLOA(Interaction: SlashCommandInteractio
 }
 
 async function Callback(Interaction: SlashCommandInteraction<"cached">) {
-  await Interaction.deferReply({ ephemeral: true });
+  await Interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const ActiveOrPendingLOA = await LeaveOfAbsenceModel.findOne(
     {
       user: Interaction.user.id,

@@ -10,6 +10,7 @@ import {
   ButtonStyle,
   ModalBuilder,
   EmbedBuilder,
+  MessageFlags,
   ButtonBuilder,
   TextInputStyle,
   ActionRowBuilder,
@@ -187,7 +188,7 @@ async function OnChargesModalSubmission(
   ReporterMainInfo: ReporterInfo,
   ModalInteraction: ModalSubmitInteraction<"cached">
 ) {
-  await ModalInteraction.deferReply({ ephemeral: true });
+  await ModalInteraction.deferReply({ flags: MessageFlags.Ephemeral });
   const [ArresteeId] = await GetIdByUsername(CmdOptions.Arrestee, true);
   const ARUserInfo = await GetUserInfo(ArresteeId);
   const ThumbUrl = await GetUserThumbnail(ArresteeId, "180x180", "png", "headshot");

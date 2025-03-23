@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
+import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from "discord.js";
 import { Embeds } from "@Config/Shared.js";
 
 async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction) {
@@ -9,7 +9,10 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction) 
       "For more information and assistance with LAPD Central, please visit our [documentation site](https://lapd-central-bot.gitbook.io/documentation)."
     );
 
-  return Interaction.reply({ embeds: [ResponseEmbed], ephemeral: true });
+  return Interaction.reply({
+    embeds: [ResponseEmbed],
+    flags: MessageFlags.Ephemeral,
+  });
 }
 
 // ---------------------------------------------------------------------------------------

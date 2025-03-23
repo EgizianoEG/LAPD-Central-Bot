@@ -1,7 +1,7 @@
 // Dependencies:
 // -------------
 
-import { SlashCommandSubcommandBuilder } from "discord.js";
+import { MessageFlags, SlashCommandSubcommandBuilder } from "discord.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import GetArrestRecord from "@Utilities/Database/GetArrestRecord.js";
 import GetFormattedArrestReportEmbed from "@Utilities/Other/FormatArrestReportEmbed.js";
@@ -20,7 +20,7 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
 
   return CmdInteraction.reply({
     embeds: [await GetFormattedArrestReportEmbed(ArrestRecord)],
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
   });
 }
 

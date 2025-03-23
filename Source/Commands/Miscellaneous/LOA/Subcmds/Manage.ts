@@ -9,6 +9,7 @@ import {
   ButtonStyle,
   userMention,
   ModalBuilder,
+  MessageFlags,
   TextInputStyle,
   TextInputBuilder,
   ModalSubmitInteraction,
@@ -204,7 +205,7 @@ async function HandleLeaveExtend(
         ]);
       }
 
-      Submission.deferReply({ ephemeral: true });
+      Submission.deferReply({ flags: MessageFlags.Ephemeral });
       ActiveLeave.extension_req = {
         status: "Pending",
         date: Submission.createdAt,
@@ -226,7 +227,7 @@ async function HandleLeaveExtend(
 
       return Promise.all([
         ActiveLeave.save(),
-        Submission.reply({ embeds: [ReplyEmbed], ephemeral: true }),
+        Submission.reply({ embeds: [ReplyEmbed], flags: MessageFlags.Ephemeral }),
         Callback(Submission, MainPromptMsgId),
       ]);
     })
@@ -282,7 +283,7 @@ async function HandleLeaveEarlyEnd(
   const ConfirmationMsg = await Interaction.reply({
     embeds: [ConfirmationEmbed],
     components: [ConfirmationBtns],
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
     fetchReply: true,
   });
 
@@ -380,7 +381,7 @@ async function HandlePendingLeaveCancellation(
   const ConfirmationMsg = await Interaction.reply({
     embeds: [ConfirmationEmbed],
     components: [ConfirmationBtns],
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
     fetchReply: true,
   });
 
@@ -460,7 +461,7 @@ async function HandlePendingExtensionCancellation(
   const ConfirmationMsg = await Interaction.reply({
     embeds: [ConfirmationEmbed],
     components: [ConfirmationBtns],
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
     fetchReply: true,
   });
 
@@ -610,7 +611,7 @@ async function HandleLeaveReviewValidation(
 async function Callback(Interaction: PromptInteractType, CmdInteractReplyMsgId?: string) {
   if (Interaction.isButton() && !(await Interaction.fetchReply().catch(() => null))) return;
   if (!Interaction.replied && !Interaction.deferred)
-    await Interaction.deferReply({ ephemeral: true }).catch(() => null);
+    await Interaction.deferReply({ flags: MessageFlags.Ephemeral }).catch(() => null);
 
   const [ReplyEmbed, ActiveOrPendingLOA] = await GetManagementEmbedAndLOA(Interaction);
   const ManagementComps = GetManagementComponents(Interaction, ActiveOrPendingLOA);

@@ -14,6 +14,7 @@ import {
   ButtonBuilder,
   EmbedBuilder,
   ModalBuilder,
+  MessageFlags,
   userMention,
   ButtonStyle,
   Colors,
@@ -391,7 +392,7 @@ async function HandleLeaveReviewValidation(
       );
 
     return Interaction.editReply({ embeds: [ReplyEmbed] })
-      .catch(() => Interaction.reply({ embeds: [ReplyEmbed], ephemeral: true }))
+      .catch(() => Interaction.reply({ embeds: [ReplyEmbed], flags: MessageFlags.Ephemeral }))
       .then(() => true);
   }
 
@@ -462,7 +463,7 @@ async function HandleLeaveStart(
   }).catch(() => null);
 
   if (!ModalSubmission) return;
-  await ModalSubmission.deferReply({ ephemeral: true });
+  await ModalSubmission.deferReply({ flags: MessageFlags.Ephemeral });
 
   const LeaveReason = ModalSubmission.fields.getTextInputValue("notes");
   const LeaveDuration = ModalSubmission.fields.getTextInputValue("duration");
@@ -574,7 +575,7 @@ async function HandleLeaveExtend(
   const ParsedDuration = Math.round(ParseDuration(Duration, "millisecond") ?? 0);
   const SubmissionHandled = ValidateExtendedDuration(Submission, ActiveLeave, ParsedDuration);
   if (SubmissionHandled) return;
-  else Submission.deferReply({ ephemeral: true });
+  else Submission.deferReply({ flags: MessageFlags.Ephemeral });
 
   ActiveLeave = await ActiveLeave.getUpToDate();
   if (ActiveLeave.extension_req) {
@@ -665,7 +666,7 @@ async function HandleLeaveEnd(
     ]);
   }
 
-  await ModalSubmission.deferReply({ ephemeral: true });
+  await ModalSubmission.deferReply({ flags: MessageFlags.Ephemeral });
   ActiveLeave.end_handled = true;
   ActiveLeave.early_end_date = ModalSubmission.createdAt;
   ActiveLeave.early_end_reason = ModalSubmission.fields.getTextInputValue("reason") || null;
@@ -701,7 +702,7 @@ async function HandleLeaveApprovalOrDenial(
   }).catch(() => null);
 
   if (!NotesSubmission) return;
-  await NotesSubmission.deferReply({ ephemeral: true });
+  await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
   const PendingLeave = await LeaveOfAbsenceModel.findOne({
     guild: ButtonInteract.guildId,
     user: TargetMemberId,
@@ -751,7 +752,7 @@ async function HandleExtensionApprovalOrDenial(
   }).catch(() => null);
 
   if (!NotesSubmission) return;
-  await NotesSubmission.deferReply({ ephemeral: true });
+  await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
   const ActiveLeave = await LeaveOfAbsenceModel.findOne({
     guild: ButtonInteract.guildId,
     user: TargetMemberId,

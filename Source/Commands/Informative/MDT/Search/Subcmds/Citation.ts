@@ -1,9 +1,13 @@
-// Dependencies:
-// -------------
-
-import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { GetFilledCitation } from "@Utilities/Other/GetFilledCitation.js";
-import { Colors, EmbedBuilder, SlashCommandSubcommandBuilder, time, userMention } from "discord.js";
+import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import {
+  SlashCommandSubcommandBuilder,
+  EmbedBuilder,
+  MessageFlags,
+  userMention,
+  Colors,
+  time,
+} from "discord.js";
 
 import GetCitationRecord from "@Utilities/Database/GetCitRecord.js";
 import Dedent from "dedent";
@@ -19,7 +23,7 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
       .useErrTemplate("CitRecordNotFound")
       .replyToInteract(CmdInteraction, true);
   } else {
-    await CmdInteraction.deferReply({ ephemeral: true });
+    await CmdInteraction.deferReply({ flags: MessageFlags.Ephemeral });
   }
 
   const PrintedCitationImg =

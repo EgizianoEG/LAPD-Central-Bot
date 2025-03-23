@@ -6,6 +6,7 @@ import {
   ButtonStyle,
   EmbedBuilder,
   ModalBuilder,
+  MessageFlags,
   ButtonBuilder,
   ComponentType,
   TextInputStyle,
@@ -613,7 +614,7 @@ async function IncidentLogCallback(
   );
 
   if (!IDModalSubmission) return;
-  await IDModalSubmission.deferReply({ ephemeral: true });
+  await IDModalSubmission.deferReply({ flags: MessageFlags.Ephemeral });
 
   const GuildDocument = await GuildModel.findById(
     CmdInteract.guildId,

@@ -5,6 +5,7 @@ import {
   time,
   Collection,
   GuildMember,
+  MessageFlags,
   PermissionsBitField,
   PermissionFlagsBits,
   PermissionResolvable,
@@ -83,7 +84,7 @@ export default async function ContextMenuCommandHandler(
 
       if (Interaction.replied || Interaction.deferred) return;
       await Interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         embeds: [
           new InfoEmbed()
             .setTitle("Hold up!")
@@ -155,7 +156,7 @@ async function HandleCommandCooldowns(
     const ExpTimestamp = (Timestamps.get(Interaction.user.id) ?? 0) + CooldownDuration;
     if (CurrentTS < ExpTimestamp) {
       return Interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         embeds: [
           new WarnEmbed()
             .setTitle("Cooldown")
@@ -281,7 +282,7 @@ async function ValidateUserPermissionsArray(
   if (MissingPerms.length) {
     const Plural = MissingPerms.length === 1 ? "" : "s";
     return Interaction.reply({
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
       embeds: [
         new UnauthorizedEmbed().setDescription(
           "Missing user permission%s.\nYou do not have the following permission%s to run this command:\n%s",
@@ -325,7 +326,7 @@ async function ValidateBotPermissionsArray(
   if (MissingPerms.length) {
     const Plural = MissingPerms.length === 1 ? "" : "s";
     return Interaction.reply({
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
       embeds: [
         new ErrorEmbed().setDescription(
           "The bot lacks the following necessary permission%s to perform this command:\n%s",

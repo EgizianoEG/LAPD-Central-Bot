@@ -15,6 +15,7 @@ import {
   ComponentType,
   ModalBuilder,
   EmbedBuilder,
+  MessageFlags,
   ButtonStyle,
   channelLink,
   Message,
@@ -433,7 +434,7 @@ async function HandleShiftModifications(
   const Message = await Interaction.reply({
     components: [ButtonsActionRow],
     embeds: [RespEmbed],
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
     fetchReply: true,
   });
 

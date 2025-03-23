@@ -9,6 +9,7 @@ import {
   TextInputStyle,
   EmbedBuilder,
   ModalBuilder,
+  MessageFlags,
   codeBlock,
   Colors,
 } from "discord.js";
@@ -39,7 +40,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   }).catch(() => null);
 
   if (!ModalSubmission) return;
-  await ModalSubmission.deferReply({ ephemeral: true });
+  await ModalSubmission.deferReply({ flags: MessageFlags.Ephemeral });
 
   const InputString = ModalSubmission.fields.getTextInputValue("input");
   const FilteredString = await FilterUserInput(InputString, {

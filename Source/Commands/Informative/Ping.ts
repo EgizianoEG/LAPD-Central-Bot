@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from "discord.js";
+import { MessageFlags, SlashCommandBuilder } from "discord.js";
 import { SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 // ---------------------------------------------------------------------------------------
 
@@ -7,7 +7,7 @@ import { SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
  * @param Interaction
  */
 async function Callback(Client: DiscordClient, Interaction: SlashCommandInteraction) {
-  await Interaction.deferReply({ ephemeral: true });
+  await Interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const Reply = await Interaction.fetchReply();
   const ClientPing = Reply.createdTimestamp - Interaction.createdTimestamp;
 
