@@ -1,12 +1,14 @@
 import {
   Message,
   EmbedData,
+  MessageFlags,
   EmbedBuilder,
   ColorResolvable,
   BaseInteraction,
   ButtonInteraction,
   CommandInteraction,
   InteractionResponse,
+  MessageFlagsResolvable,
   MessageComponentInteraction,
 } from "discord.js";
 
@@ -47,6 +49,9 @@ class BaseEmbed extends EmbedBuilder {
   ): Promise<InteractionResponse<boolean> | Message<boolean>> {
     let ReplyMethod = replyMethod ?? "reply";
     let RemoveComponents: boolean = false;
+    const MsgFlags: MessageFlagsResolvable | undefined = ephemeral
+      ? MessageFlags.Ephemeral
+      : undefined;
 
     if (
       !replyMethod &&
@@ -68,8 +73,8 @@ class BaseEmbed extends EmbedBuilder {
     }
 
     return interaction[ReplyMethod]({
-      ephemeral,
       embeds: [this],
+      flags: MsgFlags,
       content: RemoveComponents ? "" : undefined,
       components: RemoveComponents ? [] : undefined,
       files: RemoveComponents ? [] : undefined,
@@ -77,7 +82,7 @@ class BaseEmbed extends EmbedBuilder {
       .catch(() => {
         if (ReplyMethod === "followUp") {
           return interaction.reply({
-            ephemeral,
+            flags: MsgFlags,
             embeds: [this],
           });
         } else if (
@@ -87,10 +92,11 @@ class BaseEmbed extends EmbedBuilder {
         ) {
           return interaction.update({
             embeds: [this],
+            flags: MsgFlags,
           });
         } else {
           return interaction.followUp({
-            ephemeral,
+            flags: MsgFlags,
             embeds: [this],
           });
         }

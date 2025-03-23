@@ -1,6 +1,8 @@
 import { RandomString } from "@Utilities/Strings/Random.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import {
+  InteractionReplyOptions,
+  StringSelectMenuBuilder,
   ButtonInteraction,
   DiscordAPIError,
   ComponentType,
@@ -12,7 +14,7 @@ import {
   TextInputStyle,
   ActionRowBuilder,
   TextInputBuilder,
-  StringSelectMenuBuilder,
+  MessageFlagsResolvable,
   StringSelectMenuOptionBuilder,
 } from "discord.js";
 
@@ -38,12 +40,15 @@ export default async function HandleEmbedPagination(
 ): Promise<void> {
   let CurrPageIndex = 0;
   const NavigationButtons = GetPredefinedNavButtons(Interact, Pages.length, true, true);
-  const ResponseMessage = await HandleInitialInteractReply(Interact, Pages, Ephemeral);
-  console.log("1", Context);
+  const MsgFlags: MessageFlagsResolvable | undefined = Ephemeral
+    ? MessageFlags.Ephemeral
+    : undefined;
+
+  const PaginationReply = await HandleInitialInteractReply(Interact, Pages, MsgFlags);
 
   // Do not handle pagination if there is only one page received.
   if (Pages.length === 1) return;
-  const ComponentCollector = ResponseMessage.createMessageComponentCollector({
+  const ComponentCollector = PaginationReply.createMessageComponentCollector({
     filter: (Btn) => HandleCollectorFiltering(Interact, Btn),
     componentType: ComponentType.Button,
     time: 0.1 * 60 * 1000,
@@ -125,14 +130,13 @@ export default async function HandleEmbedPagination(
   });
 
   ComponentCollector.on("end", async (Collected, EndReason: string) => {
-    console.log(EndReason);
     if (EndReason.match(/^\w+Delete/)) return;
     try {
       NavigationButtons.components.forEach((Btn) => Btn.setDisabled(true));
       const LastInteract = Collected.last() || Interact;
       await LastInteract.editReply({ components: [NavigationButtons] }).catch(
         async function CatchError() {
-          const UpdatedResponseMsg = await ResponseMessage.fetch(true).catch(() => null);
+          const UpdatedResponseMsg = await PaginationReply.fetch(true).catch(() => null);
           if (!UpdatedResponseMsg?.editable) return;
           return UpdatedResponseMsg.edit({ components: [NavigationButtons] });
         }
@@ -222,7 +226,7 @@ async function HandleModalPageSelection(
 async function HandleInitialInteractReply(
   Interact: SlashCommandInteraction | ButtonInteraction,
   Pages: EmbedBuilder[],
-  Ephemeral: boolean = false
+  Flags?: InteractionReplyOptions["flags"]
 ): Promise<Message> {
   let ReplyMethod: "reply" | "followUp" | "editReply";
   const NavigationButtons = GetPredefinedNavButtons(Interact, Pages.length, true, true);
@@ -238,14 +242,14 @@ async function HandleInitialInteractReply(
   if (ReplyMethod === "reply") {
     return Interact.reply({
       components: Pages.length > 1 ? [NavigationButtons] : undefined,
-      flags: Ephemeral ? MessageFlags.Ephemeral : undefined,
+      flags: Flags,
       embeds: [Pages[0]],
       withResponse: true,
     }).then((Resp) => Resp.resource!.message!);
   } else if (ReplyMethod === "followUp") {
     return Interact.followUp({
       components: Pages.length > 1 ? [NavigationButtons] : undefined,
-      flags: Ephemeral ? MessageFlags.Ephemeral : undefined,
+      flags: Flags,
       embeds: [Pages[0]],
     });
   } else {
