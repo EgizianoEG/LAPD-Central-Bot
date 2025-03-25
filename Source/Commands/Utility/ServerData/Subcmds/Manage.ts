@@ -4,6 +4,7 @@ import {
   StringSelectMenuOptionBuilder,
   StringSelectMenuInteraction,
   StringSelectMenuBuilder,
+  InteractionReplyOptions,
   ModalSubmitInteraction,
   InteractionResponse,
   time as FormatTime,
@@ -11,6 +12,7 @@ import {
   ActionRowBuilder,
   TextInputBuilder,
   TextInputStyle,
+  MessagePayload,
   ButtonBuilder,
   ComponentType,
   EmbedBuilder,
@@ -316,6 +318,20 @@ async function ShowModalAndAwaitSubmission(
   });
 }
 
+async function SendReplyAndFetchMessage(
+  Interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">,
+  Options: MessagePayload | InteractionReplyOptions
+): Promise<Message<true>> {
+  const Response = await Interaction.reply({
+    ...Options,
+    withResponse: true,
+  } as InteractionReplyOptions & {
+    withResponse: true;
+  });
+
+  return Response.resource!.message! as Message<true>;
+}
+
 async function AwaitDeleteConfirmation(
   RecBtnInteract: ButtonInteraction<"cached">,
   ConfirmationMsg: Message<true> | InteractionResponse<true>,
@@ -516,7 +532,7 @@ async function HandleShiftDataWipeAll(BtnInteract: ButtonInteraction<"cached">) 
     `sdm-${ShiftDataActions.WipeAll}`
   );
 
-  const RespMessage = await BtnInteract.reply({
+  const RespMessage = await SendReplyAndFetchMessage(BtnInteract, {
     embeds: [ConfirmationEmbed],
     components: [ConfirmationComponents],
   });
@@ -578,7 +594,7 @@ async function HandleShiftDataDeletePast(BtnInteract: ButtonInteraction<"cached"
     `sdm-${ShiftDataActions.DeletePast}`
   );
 
-  const RespMessage = await BtnInteract.reply({
+  const RespMessage = await SendReplyAndFetchMessage(BtnInteract, {
     embeds: [ConfirmationEmbed],
     components: [ConfirmationComponents],
   });
@@ -658,7 +674,7 @@ async function HandleShiftDataDeleteOfType(BtnInteract: ButtonInteraction<"cache
     `sdm-${ShiftDataActions.DeleteOfType}`
   );
 
-  const RespMessage = await ModalSubmission.reply({
+  const RespMessage = await SendReplyAndFetchMessage(ModalSubmission, {
     embeds: [ConfirmationEmbed],
     components: [ConfirmationComponents],
   });
@@ -776,7 +792,7 @@ async function HandleShiftDataDeleteBeforeOrAfterDate(
     `sdm-${ShiftDataActions["Delete" + ComparisonType]}`
   );
 
-  const RespMessage = await ModalSubmission.reply({
+  const RespMessage = await SendReplyAndFetchMessage(ModalSubmission, {
     embeds: [ConfirmationEmbed],
     components: [ConfirmationComponents],
   });
@@ -947,7 +963,7 @@ async function HandleLeaveDataWipeAll(BtnInteract: ButtonInteraction<"cached">) 
     `sdm-${LeaveDataActions.WipeAll}`
   );
 
-  const RespMessage = await BtnInteract.reply({
+  const RespMessage = await SendReplyAndFetchMessage(BtnInteract, {
     embeds: [ConfirmationEmbed],
     components: [ConfirmationComponents],
   });
@@ -1015,7 +1031,7 @@ async function HandleLeaveDataDeletePast(BtnInteract: ButtonInteraction<"cached"
     `sdm-${LeaveDataActions.DeletePast}`
   );
 
-  const RespMessage = await BtnInteract.reply({
+  const RespMessage = await SendReplyAndFetchMessage(BtnInteract, {
     embeds: [ConfirmationEmbed],
     components: [ConfirmationComponents],
   });
@@ -1073,7 +1089,7 @@ async function HandleLeaveDataDeletePending(BtnInteract: ButtonInteraction<"cach
     `sdm-${LeaveDataActions.DeletePending}`
   );
 
-  const RespMessage = await BtnInteract.reply({
+  const RespMessage = await SendReplyAndFetchMessage(BtnInteract, {
     embeds: [ConfirmationEmbed],
     components: [ConfirmationComponents],
   });
@@ -1220,7 +1236,7 @@ async function HandleLeaveDataDeleteBeforeOrAfterDate(
     `sdm-${LeaveDataActions["Delete" + ComparisonType]}`
   );
 
-  const RespMessage = await ModalSubmission.reply({
+  const RespMessage = await SendReplyAndFetchMessage(ModalSubmission, {
     embeds: [ConfirmationEmbed],
     components: [ConfirmationComponents],
   });

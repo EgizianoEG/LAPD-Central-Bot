@@ -362,17 +362,19 @@ export async function PreShiftDocDelete(
 
   await ProfileModel.updateOne(
     { user: this.user, guild: this.guild },
-    {
-      $pull: { "shifts.logs": this._id },
-      $set: {
-        "shifts.total_durations.on_duty": {
-          $max: [{ $add: ["$shifts.total_durations.on_duty", OnDutyDecrement] }, 0],
-        },
-        "shifts.total_durations.on_break": {
-          $max: [{ $add: ["$shifts.total_durations.on_break", OnBreakDecrement] }, 0],
+    [
+      {
+        $set: {
+          "shifts.logs": { $setDifference: ["$shifts.logs", [this._id]] },
+          "shifts.total_durations.on_duty": {
+            $max: [{ $add: ["$shifts.total_durations.on_duty", OnDutyDecrement] }, 0],
+          },
+          "shifts.total_durations.on_break": {
+            $max: [{ $add: ["$shifts.total_durations.on_break", OnBreakDecrement] }, 0],
+          },
         },
       },
-    },
+    ],
     { upsert: true, setDefaultsOnInsert: true }
   )
     .exec()
@@ -426,26 +428,27 @@ export async function PreShiftModelDelete(
             user: UserData[0],
             guild: UserData[1],
           },
-          {
-            $pull: { "shifts.logs": { $in: ShiftIds } },
-            $set: {
-              "shifts.total_durations.on_duty": {
-                $max: [{ $add: ["$shifts.total_durations.on_duty", OnDutyTimeDecrement] }, 0],
-              },
-              "shifts.total_durations.on_break": {
-                $max: [{ $add: ["$shifts.total_durations.on_break", OnBreakTimeDecrement] }, 0],
+          [
+            {
+              $set: {
+                "shifts.logs": { $setDifference: ["$shifts.logs", ShiftIds] },
+                "shifts.total_durations.on_duty": {
+                  $max: [{ $add: ["$shifts.total_durations.on_duty", OnDutyTimeDecrement] }, 0],
+                },
+                "shifts.total_durations.on_break": {
+                  $max: [{ $add: ["$shifts.total_durations.on_break", OnBreakTimeDecrement] }, 0],
+                },
               },
             },
-          }
+          ]
         ).exec()
       );
     }
 
-    // Await all profile updates in parallel
     await Promise.allSettled(UpdatePromises);
     return next();
   } catch (Err: any) {
-    return next(Err); // Pass the error to the callback if anything fails
+    return next(Err);
   }
 }
 

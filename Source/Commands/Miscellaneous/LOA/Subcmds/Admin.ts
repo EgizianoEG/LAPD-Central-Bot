@@ -15,6 +15,7 @@ import {
   MessageFlags,
   userMention,
   ButtonStyle,
+  Message,
   Colors,
   User,
 } from "discord.js";
@@ -35,6 +36,7 @@ import GetLOAsData from "@Utilities/Database/GetLOAData.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import Dedent from "dedent";
 
+const PreviousLOAsLimit = 5;
 const FileLabel = "Commands:Miscellaneous:LOA:Subcmds:Admin";
 type CmdOrButtonInteraction = SlashCommandInteraction<"cached"> | ButtonInteraction<"cached">;
 enum AdminActions {
@@ -122,13 +124,15 @@ function GetPanelEmbed(
     PanelEmbed.setColor(Embeds.Colors.LOARequestApproved);
     PanelEmbed.addFields({
       inline: true,
-      name: "Active Leave",
+      name:
+        "Active Leave" +
+        (ActiveOrPendingLOA.extension_req?.status === "Approved" ? " *(Extended)*" : ""),
       value: Dedent(`
-        **Started**: ${FormatTime(ActiveOrPendingLOA.review_date, "D")}
-        **Ends On**: ${FormatTime(ActiveOrPendingLOA.end_date, "D")}
-        **Duration**: ${ActiveOrPendingLOA.duration_hr}
-        **Approved By**: ${userMention(ActiveOrPendingLOA.reviewed_by.id)}
-        **Reason**: ${ActiveOrPendingLOA.reason}
+        **Started:** ${FormatTime(ActiveOrPendingLOA.review_date, "D")}
+        **Ends On:** ${FormatTime(ActiveOrPendingLOA.end_date, "D")}
+        **Duration:** ${ActiveOrPendingLOA.duration_hr}
+        **Approved By:** ${userMention(ActiveOrPendingLOA.reviewed_by.id)}
+        **Reason:** ${ActiveOrPendingLOA.reason}
       `),
     });
   } else if (ActiveOrPendingLOA?.status === "Pending") {
@@ -138,10 +142,10 @@ function GetPanelEmbed(
       name: "Pending Leave",
       value: Dedent(`
         **Requested:** ${FormatTime(ActiveOrPendingLOA.request_date, "R")}
-        **Starts On**: *once approved.*
-        **Ends On**: around ${FormatTime(addMilliseconds(Interaction.createdAt, ActiveOrPendingLOA.duration), "d")}
-        **Duration**: ${ActiveOrPendingLOA.duration_hr}
-        **Reason**: ${ActiveOrPendingLOA.reason}
+        **Starts On:** *once approved.*
+        **Ends On:** around ${FormatTime(addMilliseconds(Interaction.createdAt, ActiveOrPendingLOA.duration), "d")}
+        **Duration:** ${ActiveOrPendingLOA.duration_hr}
+        **Reason:** ${ActiveOrPendingLOA.reason}
       `),
     });
   } else if (
@@ -153,11 +157,11 @@ function GetPanelEmbed(
       inline: true,
       name: "Pending Extension",
       value: Dedent(`
-        **Requested:** ${FormatTime(ActiveOrPendingLOA.extension_req.date, "R")}**
-        **LOA Started**: ${FormatTime(ActiveOrPendingLOA.review_date, "D")}
-        **LOA Ends**: after extension, ${FormatTime(ActiveOrPendingLOA.end_date, "d")}
-        **Duration**: ${ActiveOrPendingLOA.extended_duration_hr}
-        **Reason**: ${ActiveOrPendingLOA.extension_req.reason ?? "`N/A`"}
+        **Requested On:** ${FormatTime(ActiveOrPendingLOA.extension_req.date, "R")}
+        **LOA Started:** ${FormatTime(ActiveOrPendingLOA.review_date, "D")}
+        **LOA Ends:** after extension, ${FormatTime(addMilliseconds(ActiveOrPendingLOA.end_date, ActiveOrPendingLOA.extension_req.duration), "d")}
+        **Duration:** ${ActiveOrPendingLOA.extended_duration_hr}
+        **Reason:** ${ActiveOrPendingLOA.extension_req.reason ?? "`N/A`"}
       `),
     });
   } else {
@@ -166,17 +170,17 @@ function GetPanelEmbed(
     );
   }
 
-  if (PreviousLOAsFormatted.length > 0 && PreviousLOAsFormatted.length <= 5) {
+  if (PreviousLOAsFormatted.length > 0 && PreviousLOAsFormatted.length <= PreviousLOAsLimit) {
     PanelEmbed.addFields({
       inline: true,
       name: "Previously Taken LOAs",
       value: PreviousLOAsFormatted.join("\n"),
     });
-  } else if (PreviousLOAsFormatted.length > 5) {
+  } else if (PreviousLOAsFormatted.length > PreviousLOAsLimit) {
     PanelEmbed.addFields({
       inline: true,
       name: "Previously Taken LOAs",
-      value: `${PreviousLOAsFormatted.slice(0, 5).join("\n")}\n-# **...and ${PreviousLOAsFormatted.length - 5} more**`,
+      value: `${PreviousLOAsFormatted.slice(0, PreviousLOAsLimit).join("\n")}\n-# *...and ${PreviousLOAsFormatted.length - PreviousLOAsLimit} more*`,
     });
   } else if (!(PanelEmbed.data.fields?.length && ActiveOrPendingLOA)) {
     PanelEmbed.addFields({
@@ -307,7 +311,7 @@ function GetNotesModal(
 
   // Set the placeholder text based on the action being performed.
   if (Status.endsWith("Approval")) {
-    Modal.components[0].components[0].setPlaceholder("Any notes or comments to add.");
+    Modal.components[0].components[0].setPlaceholder("Any notes or comments to add (optional).");
   } else {
     Modal.components[0].components[0].setPlaceholder(
       "Any notes or comments to explain the disapproval."
@@ -412,7 +416,7 @@ async function HandleLeaveStart(
     return PromiseAllThenTrue([
       Callback(InitialCmdInteract),
       new ErrorEmbed()
-        .useErrTemplate("LOAAlreadyExists")
+        .useErrTemplate("LOAAlreadyExistsManagement")
         .replyToInteract(ButtonInteract, true, true),
     ]);
   }
@@ -477,7 +481,7 @@ async function HandleLeaveStart(
 
   if (ActiveOrPendingLOA) {
     return new ErrorEmbed()
-      .useErrTemplate("LOAAlreadyExists")
+      .useErrTemplate("LOAAlreadyExistsManagement")
       .replyToInteract(ModalSubmission, true, true);
   }
 
@@ -813,6 +817,7 @@ async function Callback(Interaction: CmdOrButtonInteraction) {
     user_id: TargetMember.id,
   });
 
+  let PromptMessage: Message<true>;
   const ActiveOrPendingLOA = LOAData.active_loa ?? LOAData.pending_loa;
   const PanelEmbed = GetPanelEmbed(Interaction, TargetMember, LOAData);
   const PanelComps = GetPanelComponents(Interaction, ActiveOrPendingLOA);
@@ -821,15 +826,18 @@ async function Callback(Interaction: CmdOrButtonInteraction) {
     components: PanelComps,
   };
 
-  const ReturnedResponse =
-    Interaction.replied || Interaction.deferred
-      ? await Interaction.editReply(ReplyOpts)
-      : await Interaction.reply(ReplyOpts);
+  if (Interaction.replied || Interaction.deferred) {
+    PromptMessage = await Interaction.editReply(ReplyOpts);
+  } else {
+    PromptMessage = await Interaction.reply({ ...ReplyOpts, withResponse: true }).then(
+      (Resp) => Resp.resource!.message! as Message<true>
+    );
+  }
 
-  const CompActionCollector = ReturnedResponse.createMessageComponentCollector({
+  const CompActionCollector = PromptMessage.createMessageComponentCollector({
     filter: (i) => i.user.id === Interaction.user.id,
     componentType: ComponentType.Button,
-    time: 8 * 60_000,
+    time: 10 * 60_000,
   });
 
   CompActionCollector.on("collect", async (ButtonInteract) => {
@@ -862,14 +870,14 @@ async function Callback(Interaction: CmdOrButtonInteraction) {
 
   CompActionCollector.on("end", async (Collected, EndReason) => {
     if (/\w{1,10}Delete/.test(EndReason)) return;
-    if (EndReason === "NoActiveLeave" || EndReason === "CmdReinstated") return;
+    if (["NoActiveLeave", "CmdReinstated"].includes(EndReason)) return;
     try {
       PanelComps[0].components.forEach((Btn) => Btn.setDisabled(true));
       const LastInteract = Collected.last();
       if (LastInteract) {
-        await LastInteract.editReply({ components: PanelComps });
+        await LastInteract.editReply({ components: PanelComps, message: PromptMessage.id });
       } else {
-        await ReturnedResponse.edit({ components: PanelComps });
+        await PromptMessage.edit({ components: PanelComps });
       }
     } catch (Err: any) {
       AppLogger.error({

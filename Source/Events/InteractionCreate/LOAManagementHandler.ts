@@ -128,12 +128,14 @@ async function HandleLeaveReviewValidation(
       );
 
     if (RequestDocument && IsExtensionRequest) {
-      UpdatedReqEmbed = LOAEventLogger.GetLOAExtRequestMessageEmbedWithStatus(
+      UpdatedReqEmbed = await LOAEventLogger.GetLOAExtRequestMessageEmbedWithStatus(
+        Interaction.guild,
         RequestDocument,
         RequestDocument.extension_req!.status
       );
     } else if (RequestDocument) {
-      UpdatedReqEmbed = LOAEventLogger.GetLOARequestMessageEmbedWithStatus(
+      UpdatedReqEmbed = await LOAEventLogger.GetLOARequestMessageEmbedWithStatus(
+        Interaction.guild,
         RequestDocument,
         RequestDocument.status
       );
@@ -143,9 +145,10 @@ async function HandleLeaveReviewValidation(
       Interaction.reply({ embeds: [ReplyEmbed], flags: MessageFlags.Ephemeral }).catch(() =>
         Interaction.editReply({ embeds: [ReplyEmbed] })
       ),
-      InitialInteraction.message?.edit({
+      InitialInteraction.editReply({
         embeds: [UpdatedReqEmbed!],
-        components: GetDisabledMessageComponents(InitialInteraction as any),
+        message: RequestDocument?.request_msg?.split(":")[1],
+        components: GetDisabledMessageComponents(InitialInteraction),
       }),
     ]).then(() => true);
   }

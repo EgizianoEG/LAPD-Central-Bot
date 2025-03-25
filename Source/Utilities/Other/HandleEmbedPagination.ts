@@ -51,7 +51,7 @@ export default async function HandleEmbedPagination(
   const ComponentCollector = PaginationReply.createMessageComponentCollector({
     filter: (Btn) => HandleCollectorFiltering(Interact, Btn),
     componentType: ComponentType.Button,
-    time: 0.1 * 60 * 1000,
+    time: 14.5 * 60 * 1000,
     idle: 8 * 60 * 1000,
   });
 

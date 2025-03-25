@@ -5,11 +5,17 @@ import {
   ActionRowBuilder,
   ComponentType,
   Message,
+  InteractionCallbackResponse,
 } from "discord.js";
 
 export default async function HandleActionCollectorExceptions(
   Err: unknown,
-  Disabler?: MessageComponentInteraction | Message | InteractionResponse | (() => Promise<any>)
+  Disabler?:
+    | MessageComponentInteraction
+    | Message
+    | InteractionResponse
+    | InteractionCallbackResponse
+    | (() => Promise<any>)
 ) {
   if (Err instanceof Error) {
     if (Err.message.match(/reason: time|idle/)) {
@@ -38,10 +44,16 @@ export default async function HandleActionCollectorExceptions(
           }) as any;
 
           await Disabler.edit({ components: DisabledMsgComponents });
-        } else if (Disabler instanceof InteractionResponse) {
-          const Message = await Disabler.fetch().catch(() => null);
-          if (!Message) return null;
+        } else if (
+          Disabler instanceof InteractionResponse ||
+          Disabler instanceof InteractionCallbackResponse
+        ) {
+          const Message =
+            Disabler instanceof InteractionResponse
+              ? await Disabler.fetch().catch(() => null)
+              : Disabler.resource?.message;
 
+          if (!Message) return null;
           const DisabledMsgComponents = Message.components.map((AR) => {
             return ActionRowBuilder.from({
               type: ComponentType.ActionRow,

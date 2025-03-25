@@ -512,6 +512,11 @@ export const ErrorMessages = {
     Description: "You cannot request a leave of absence while you have an active or pending one.",
   },
 
+  LOAAlreadyExistsManagement: {
+    Title: "LOA Already Exists",
+    Description: "You cannot place a new leave on person who already has an active or pending one.",
+  },
+
   LOADurationTooLong: {
     Title: "LOA Duration Too Long",
     Description:
@@ -527,13 +532,13 @@ export const ErrorMessages = {
   LOAExtDurationTooLong: {
     Title: "Extension Too Long",
     Description:
-      "The extension duration you have entered is too long. Kindly specify a duration of at most 30 days (1 months).",
+      "The extension duration you have entered is too long. Kindly specify a duration of at most 30 days (~1 month).",
   },
 
   LOATotalDurationTooLong: {
     Title: "Leave Duration Too Long",
     Description:
-      "The total duration of your leave of absence would be too long. Please specify an extension that ensures the total duration of your leave is less than or equal to 90 days (3 months).",
+      "The total duration of your leave of absence would be too long. Please specify an extension that ensures the total duration of your leave is less than or equal to 120 days (~4 months).",
   },
 
   LOAExtDurationTooShort: {

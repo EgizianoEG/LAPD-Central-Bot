@@ -5,7 +5,6 @@ import {
   StringSelectMenuInteraction,
   StringSelectMenuBuilder,
   ModalSubmitInteraction,
-  InteractionResponse,
   time as FormatTime,
   ButtonInteraction,
   ActionRowBuilder,
@@ -436,7 +435,8 @@ async function HandleShiftModifications(
     components: [ButtonsActionRow],
     embeds: [RespEmbed],
     flags: MessageFlags.Ephemeral,
-  });
+    withResponse: true,
+  }).then((Resp) => Resp.resource!.message! as Message<true>);
 
   const CompCollector = Message.createMessageComponentCollector({
     filter: (BInteract) => HandleCollectorFiltering(Interaction, BInteract),
@@ -813,9 +813,10 @@ async function HandleUserShiftsWipe(
     );
 
   const ConfirmationPrompt = await BInteract.reply({
-    components: [ButtonAR],
     embeds: [PromptEmbed],
-  });
+    components: [ButtonAR],
+    withResponse: true,
+  }).then((Resp) => Resp.resource!.message! as Message<true>);
 
   try {
     const ConfirmationInteract = await ConfirmationPrompt.awaitMessageComponent({
@@ -883,7 +884,7 @@ async function HandleUserShiftsWipe(
  */
 async function HandleUserShiftEnd(
   BInteract: ButtonInteraction<"cached">,
-  RespMessage: Message<true> | InteractionResponse<true>,
+  RespMessage: Message<true>,
   TargetUser: User,
   ActiveShift: Shifts.HydratedShiftDocument,
   CmdShiftType?: Nullable<string>
@@ -1083,7 +1084,8 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const RespMessage = await Interaction.reply({
     components: ButtonActionRows,
     embeds: [RespEmbed],
-  });
+    withResponse: true,
+  }).then((Resp) => Resp.resource!.message! as Message<true>);
 
   const ActionCollector = RespMessage.createMessageComponentCollector({
     filter: (BI) => HandleCollectorFiltering(Interaction, BI),
@@ -1147,22 +1149,19 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
       await new ErrorEmbed()
         .useErrTemplate("AppError")
         .replyToInteract(ButtonInteract, true, false);
+
+      ActionCollector.stop("ErrorOccurred");
     }
   });
 
   ActionCollector.on("end", async (Collected, EndReason) => {
-    if (EndReason.match(/^\w+Delete/)) return;
+    if (EndReason.match(/^\w+Delete/) || EndReason === "ErrorOccurred") return;
     try {
-      const LastInteract = Collected.last();
       ButtonActionRows.forEach((ActionRow) =>
         ActionRow.components.forEach((Comp) => Comp.setDisabled(true))
       );
 
-      if (LastInteract) {
-        await LastInteract.editReply({ components: ButtonActionRows });
-      } else {
-        await Interaction.editReply({ components: ButtonActionRows });
-      }
+      await Interaction.editReply({ components: ButtonActionRows });
     } catch (Err: any) {
       if (Err instanceof DiscordAPIError && Err.code === 50_001) {
         return;

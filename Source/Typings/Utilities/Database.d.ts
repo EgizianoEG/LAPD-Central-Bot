@@ -494,7 +494,8 @@ export namespace LeaveOfAbsence {
 
     /**
      * @virtual - Not stored in the database.
-     * Returns the leave's actual duration in human readable format, taking into considration if it was ended early and if it was extended.
+     * Returns the leave's actual duration in human readable format, taking into considration if it was ended
+     * early and if it was extended (approved extension consideration).
      */
     duration_hr: string;
 
@@ -507,7 +508,8 @@ export namespace LeaveOfAbsence {
 
     /**
      * @virtual - Not stored in the database.
-     * Returns a human readable duration of the leave of absence's extended duration (without adding the leave's actual/original duration).
+     * Returns a human readable duration of the leave of absence's extended duration (without adding the
+     * leave's actual/original duration) regardless if it was approved or not.
      */
     extended_duration_hr: string;
   }
@@ -540,7 +542,7 @@ export namespace LeaveOfAbsence {
     /** Whether or not the leave of absence is manageable by the requester or the one who has this leave of absence. If not, only management staff can control it. */
     is_manageable: boolean;
 
-    /** The date when the leave of absence supposed to end. This value will be updated once the LOA is approved and saved. */
+    /** The date when the leave of absence supposed to end. This value will be updated once the LOA is approved, saved, and/or extended. */
     end_date: Date;
 
     /** The date when the leave of absence was ended regardless of its set duration. This is an optional field and should be set only when the LOA was early ended. */
@@ -552,7 +554,10 @@ export namespace LeaveOfAbsence {
     /** The date when the leave of absence was requested. This is a read-only field once the LOA is requested/recorded. */
     request_date: Date;
 
-    /** The leave of absence sent request message. This value is specifically being used for editing requests when they are cancelled and haven't been reviewed. */
+    /**
+     * The leave of absence sent request message. This value is specifically being used for editing requests when they are cancelled and haven't been reviewed.
+     * - Format: `[ChannelID]:[MessageID]`; the guild ID is already included in the `guild` field of the document.
+     */
     request_msg: string | null;
 
     /** A request to extend the leave of absence if any. Has the same structure as the leave request but with emitting fields. */

@@ -10,6 +10,7 @@ import {
   Colors,
 } from "discord.js";
 
+import { Emojis } from "@Config/Shared.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed, WarnEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import HandleActionCollectorExceptions from "@Utilities/Other/HandleCompCollectorExceptions.js";
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
@@ -85,25 +86,28 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     const ConfirmationPrompt = await Interaction.reply({
       embeds: [ConfirmationEmbed],
       components: GetConfirmationPromptComponents(Interaction),
+      withResponse: true,
     });
 
-    const ButtonInteract = await ConfirmationPrompt.awaitMessageComponent({
-      filter: (BI) => HandleCollectorFiltering(Interaction, BI),
-      componentType: ComponentType.Button,
-      time: 5 * 60 * 1000,
-    }).catch((Err) => HandleActionCollectorExceptions(Err, ConfirmationPrompt));
+    const ButtonInteract = await ConfirmationPrompt.resource
+      ?.message!.awaitMessageComponent({
+        filter: (BI) => HandleCollectorFiltering(Interaction, BI),
+        componentType: ComponentType.Button,
+        time: 5 * 60 * 1000,
+      })
+      .catch((Err) => HandleActionCollectorExceptions(Err, ConfirmationPrompt));
 
     if (ButtonInteract?.customId.includes("confirm")) {
       let FinalRespEmbed: EmbedBuilder;
       let TotalReplaced = 0;
       let TotalFailed = 0;
 
-      await ConfirmationPrompt.edit({
+      await ButtonInteract.update({
         components: [],
         embeds: [
           new EmbedBuilder()
             .setColor(Colors.DarkGrey)
-            .setTitle("Replacing Nicknames")
+            .setTitle(`${Emojis.LoadingGrey}\u{2000}Replacing Nicknames`)
             .setDescription(
               "Kindly wait. Matching nicknames are currently being modified, which may take some time."
             ),
@@ -111,14 +115,16 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
       });
 
       await Promise.allSettled(
-        Replacements.map(({ member, replaced }) => {
-          return member
-            .setNickname(
+        Replacements.map(async ({ member, replaced }) => {
+          try {
+            await member.setNickname(
               replaced,
               `Automated Nickname Replacement - Executed By @${ButtonInteract.user.username}`
-            )
-            .then(() => TotalReplaced++)
-            .catch(() => TotalFailed++);
+            );
+            return TotalReplaced++;
+          } catch {
+            return TotalFailed++;
+          }
         })
       );
 
@@ -136,14 +142,14 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
           );
       }
 
-      return ConfirmationPrompt.edit({
+      return ButtonInteract.editReply({
         embeds: [FinalRespEmbed],
         components: [],
       });
     }
 
     if (ButtonInteract?.customId.includes("cancel")) {
-      return ConfirmationPrompt.edit({
+      return ButtonInteract.update({
         components: [],
         embeds: [
           new InfoEmbed()

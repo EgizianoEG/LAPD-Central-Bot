@@ -60,6 +60,7 @@ const SharedData = {
     FileEdit: "<:FileEdit:1185790827809738803>",
     FileDelete: "<:FileDelete:1185785834058813480>",
     Trash: "<:Trash:1185785496757088286>",
+    LoadingGrey: "<a:DualRingGrey:1354207612706623741>",
     LoadingBlue: "<a:DualRingBlue:1294539916759400448>",
     LoadingGold: "<a:DualRingGold:1294539933754855425>",
 

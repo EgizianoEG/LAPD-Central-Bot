@@ -276,9 +276,11 @@ LeaveOfAbsenceSchema.virtual("is_active").get(function (this: LeaveDocument) {
 });
 
 LeaveOfAbsenceSchema.virtual("duration_hr").get(function (this: LeaveDocument) {
+  const MainPlusExt =
+    this.duration + (this.extension_req?.status === "Approved" ? this.extension_req.duration : 0);
   return this.early_end_date && this.review_date
     ? DurationHumanize(differenceInMilliseconds(this.early_end_date, this.review_date))
-    : DurationHumanize(this.duration + (this.extension_req?.duration || 0));
+    : DurationHumanize(MainPlusExt);
 });
 
 LeaveOfAbsenceSchema.virtual("original_duration_hr").get(function (this: LeaveDocument) {
@@ -286,17 +288,10 @@ LeaveOfAbsenceSchema.virtual("original_duration_hr").get(function (this: LeaveDo
 });
 
 LeaveOfAbsenceSchema.virtual("extended_duration_hr").get(function (this: LeaveDocument) {
-  if (this.extension_req && this.extension_req.status === "Approved") {
+  if (this.extension_req) {
     return DurationHumanize(this.extension_req.duration);
   }
   return DurationHumanize(0);
-});
-
-LeaveOfAbsenceSchema.virtual("total_duration_hr").get(function (this: LeaveDocument) {
-  if (this.extension_req && this.extension_req.status === "Approved") {
-    return DurationHumanize(this.duration + this.extension_req.duration);
-  }
-  return DurationHumanize(this.duration);
 });
 
 LeaveOfAbsenceSchema.pre("validate", function PreLeaveValidate() {
@@ -304,7 +299,7 @@ LeaveOfAbsenceSchema.pre("validate", function PreLeaveValidate() {
 
   this.end_date = addMilliseconds(
     this.review_date || this.request_date,
-    this.duration + (this.extension_req?.duration || 0)
+    this.duration + (this.extension_req?.status === "Approved" ? this.extension_req.duration : 0)
   );
 });
 

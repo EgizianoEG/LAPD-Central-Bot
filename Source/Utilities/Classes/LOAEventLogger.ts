@@ -18,12 +18,19 @@ import {
   ModalSubmitInteraction,
 } from "discord.js";
 
-import { Embeds, Images } from "@Config/Shared.js";
 import { LeaveOfAbsence } from "@Typings/Utilities/Database.js";
-import { isAfter } from "date-fns";
+import { Embeds, Emojis, Images } from "@Config/Shared.js";
+import { addMilliseconds, isAfter } from "date-fns";
 
 import GuildModel from "@Models/Guild.js";
 import RegularDedent from "dedent";
+import DHumanize from "humanize-duration";
+
+const DurationFormatter = DHumanize.humanizer({
+  conjunction: " and ",
+  largest: 4,
+  round: true,
+});
 
 const Dedent = (Str: string) => {
   return RegularDedent(Str)
@@ -74,18 +81,23 @@ export default class LOAEventLogger {
       : null;
   }
 
+  private static async GetUserProfileImageURL(Guild: Guild, UserId: string): Promise<string> {
+    const User = await Guild.members.fetch(UserId).catch(() => null);
+    return User?.displayAvatarURL(this.AvatarIconOpts) ?? Embeds.Thumbs.UnknownImage;
+  }
+
   /**
    * Constructs a pre-defined embed for a LOA request.
-   * The cancellation is currently limited to who requested the LOA.
    * @param Opts
    * @returns
    */
   private static GetRequestEmbed(Opts: {
     Type?: "Cancelled" | "Pending" | "Extension";
+    Guild?: Guild;
     LOADocument: LOADocument;
     CancellationDate?: Date;
   }) {
-    Opts.Type = Opts.Type || "Pending";
+    Opts.Type = Opts.Type ?? "Pending";
     const RequesterId = Opts.LOADocument.user;
     const Strikethrough = Opts.Type === "Cancelled" ? "~~" : "";
     const Embed = new EmbedBuilder()
@@ -110,17 +122,21 @@ export default class LOAEventLogger {
         Embed.setTimestamp(Opts.CancellationDate);
         Embed.setFooter({
           text: `Reference ID: ${Opts.LOADocument._id}; cancelled by requester on`,
+          iconURL:
+            Opts.Guild?.members.cache
+              .get(RequesterId)
+              ?.user.displayAvatarURL(this.AvatarIconOpts) ?? Embeds.Thumbs.UnknownImage,
         });
       }
     } else {
       Embed.setDescription(
         Dedent(`
           **Requester:** ${userMention(RequesterId)}
-          **Extended Duration:** ${Opts.LOADocument.extended_duration_hr}
-          **Total Duration:** ${Opts.LOADocument.duration_hr}
-          **Started On:** ${FormatTime(Opts.LOADocument.review_date as Date, "F")}
-          **Ends On:** after extension, around ${FormatTime(Opts.LOADocument.end_date, "D")}
-          **Extension Reason:** ${Opts.LOADocument.extension_req!.reason}
+          **Requested Extension:** ${Opts.LOADocument.extended_duration_hr}
+          **Total Duration:** ${DurationFormatter(Opts.LOADocument.duration + Opts.LOADocument.extension_req!.duration)}
+          **LOA Started On:** ${FormatTime(Opts.LOADocument.review_date!, "F")}
+          **LOA Ends On:** after extension, around ${FormatTime(addMilliseconds(Opts.LOADocument.end_date, Opts.LOADocument.extension_req!.duration), "D")}
+          **Extension Reason:** ${Opts.LOADocument.extension_req?.reason || "[Unspecified]"}
         `)
       );
     }
@@ -130,11 +146,13 @@ export default class LOAEventLogger {
 
   /**
    * Retrieves the message embed for a Leave of Absence (LOA) extension request with the specified status.
-   * @param LeaveDocument
+   * @param Guild - The guild where the request was made.
+   * @param LeaveDocument - The LOA document containing the extension request.
    * @param RequestStatus - The status of the extension request. Can be "Approved", "Denied", or "Cancelled".
    * @returns
    */
-  public static GetLOAExtRequestMessageEmbedWithStatus(
+  public static async GetLOAExtRequestMessageEmbedWithStatus(
+    Guild: Guild,
     LeaveDocument: LOADocument,
     RequestStatus: "Pending" | "Approved" | "Denied" | "Cancelled"
   ) {
@@ -144,20 +162,28 @@ export default class LOAEventLogger {
     }).setTimestamp(LeaveDocument.extension_req?.review_date);
 
     if (RequestStatus === "Approved") {
+      const AvatarURL = await this.GetUserProfileImageURL(Guild, LeaveDocument.reviewed_by!.id);
       RequestEmbed.setColor(Embeds.Colors.LOARequestApproved)
         .setTitle("Approved Extension  |  Leave of Absence Request")
         .setFooter({
-          text: `Reference ID: ${LeaveDocument._id}; approved by @${LeaveDocument.reviewed_by!.username}} on`,
+          iconURL: AvatarURL,
+          text: `Reference ID: ${LeaveDocument._id}; approved by @${LeaveDocument.reviewed_by!.username} on`,
         });
     } else if (RequestStatus === "Denied") {
+      const AvatarURL = await this.GetUserProfileImageURL(Guild, LeaveDocument.reviewed_by!.id);
       RequestEmbed.setColor(Embeds.Colors.LOARequestDenied)
         .setTitle("Denied Extension  |  Leave of Absence Request")
         .setFooter({
-          text: `Reference ID: ${LeaveDocument._id}; denied by @${LeaveDocument.reviewed_by!.username}} on`,
+          iconURL: AvatarURL,
+          text: `Reference ID: ${LeaveDocument._id}; denied by @${LeaveDocument.reviewed_by!.username} on`,
         });
     } else if (RequestStatus === "Cancelled") {
+      const AvatarURL = await this.GetUserProfileImageURL(Guild, LeaveDocument.user);
       RequestEmbed.setColor(Embeds.Colors.LOARequestDenied)
-        .setFooter({ text: `Reference ID: ${LeaveDocument._id}; cancelled by requester on` })
+        .setFooter({
+          iconURL: AvatarURL,
+          text: `Reference ID: ${LeaveDocument._id}; cancelled by requester on`,
+        })
         .setTitle("Cancelled Extension  |  Leave of Absence Request");
     }
 
@@ -166,15 +192,18 @@ export default class LOAEventLogger {
 
   /**
    * Generates a message embed for a Leave of Absence (LOA) request with the specified status.
-   * @param LeaveDocument
-   * @param RequestStatus
+   * @param Guild - The guild where the request was made.
+   * @param LeaveDocument - The updated LOA document.
+   * @param RequestStatus - The status of the request.
    * @returns
    */
-  public static GetLOARequestMessageEmbedWithStatus(
+  public static async GetLOARequestMessageEmbedWithStatus(
+    Guild: Guild,
     LeaveDocument: LOADocument,
     RequestStatus: "Approved" | "Denied" | "Cancelled" | "Pending"
   ) {
     const RequestEmbed = this.GetRequestEmbed({
+      Guild,
       Type: RequestStatus === "Cancelled" ? RequestStatus : "Pending",
       LOADocument: LeaveDocument,
       CancellationDate:
@@ -182,23 +211,27 @@ export default class LOAEventLogger {
     }).setTimestamp(LeaveDocument.review_date);
 
     if (RequestStatus === "Approved" && LeaveDocument.review_date) {
+      const AvatarURL = await this.GetUserProfileImageURL(Guild, LeaveDocument.reviewed_by!.id);
       RequestEmbed.setColor(Embeds.Colors.LOARequestApproved)
         .setTitle("Approved  |  Leave of Absence Request")
         .setFooter({
           text: `Reference ID: ${LeaveDocument._id}; approved by @${LeaveDocument.reviewed_by!.username} on`,
-          iconURL: Embeds.Thumbs.Transparent,
+          iconURL: AvatarURL,
         });
     } else if (RequestStatus === "Denied" && LeaveDocument.review_date) {
+      const AvatarURL = await this.GetUserProfileImageURL(Guild, LeaveDocument.reviewed_by!.id);
       RequestEmbed.setColor(Embeds.Colors.LOARequestDenied)
         .setTitle("Denied  |  Leave of Absence Request")
         .setFooter({
           text: `Reference ID: ${LeaveDocument._id}; denied by @${LeaveDocument.reviewed_by!.username} on`,
-          iconURL: Embeds.Thumbs.Transparent,
+          iconURL: AvatarURL,
         });
     } else if (RequestStatus.includes("Cancelled")) {
+      const AvatarURL = await this.GetUserProfileImageURL(Guild, LeaveDocument.user);
       RequestEmbed.setColor(Embeds.Colors.LOARequestDenied)
         .setTitle("Cancelled  |  Leave of Absence Request")
         .setFooter({
+          iconURL: AvatarURL,
           text: `Reference ID: ${LeaveDocument._id}; cancelled by requester on`,
         });
     }
@@ -229,10 +262,9 @@ export default class LOAEventLogger {
         .setTitle("Leave of Absence — Request Under Review")
         .setDescription(
           Dedent(`
-            Your leave of absence request, submitted on ${FormatTime(PendingLOA.request_date, "D")}, has been received and is waiting for a review by the management team.
-
-            The requested leave duration is ${PendingLOA.duration_hr}, and will start on the time of approval. To cancel your pending request, please use the \
-            \`/loa manage\` command on the server.
+            Your leave of absence request, submitted on ${FormatTime(PendingLOA.request_date, "D")}, has been received and is \
+            waiting for a review by the management team. The requested leave duration is ${PendingLOA.duration_hr}, and will \
+            start on the time of approval. To cancel your pending request, please use the \`/loa manage\` command on the server.
           `)
         )
         .setAuthor({
@@ -250,14 +282,17 @@ export default class LOAEventLogger {
       new ButtonBuilder()
         .setCustomId(`loa-approve:${Interaction.user.id}:${PendingLOA._id}`)
         .setLabel("Approve")
+        .setEmoji(Emojis.WhiteCheck)
         .setStyle(ButtonStyle.Success),
       new ButtonBuilder()
         .setCustomId(`loa-deny:${Interaction.user.id}:${PendingLOA._id}`)
         .setLabel("Deny")
+        .setEmoji(Emojis.WhiteCross)
         .setStyle(ButtonStyle.Danger),
       new ButtonBuilder()
         .setCustomId(`loa-info:${Interaction.user.id}:${PendingLOA._id}`)
         .setLabel("Additional Information")
+        .setEmoji(Emojis.WhitePlus)
         .setStyle(ButtonStyle.Secondary)
     );
 
@@ -285,9 +320,9 @@ export default class LOAEventLogger {
         .setTitle("Leave of Absence — Extension Request Under Review")
         .setDescription(
           Dedent(`
-            Your leave of absence extension request, submitted on ${FormatTime(ActiveLOA.extension_req.date, "D")}, has been received and is waiting for a review by the management team.
-            The requested additional duration is ${ActiveLOA.extended_duration_hr}, and will be added to the leave once the request is approved. To cancel your pending request, please \
-            use the \`/loa manage\` command on the server.
+            Your leave of absence extension request, submitted on ${FormatTime(ActiveLOA.extension_req.date, "D")}, has been received and is waiting for a \
+            review by the management team. The requested additional duration is ${ActiveLOA.extended_duration_hr}, and will be added to the leave once the \
+            request is approved. To cancel your pending request, please use the \`/loa manage\` command on the server.
           `)
         )
         .setAuthor({
@@ -588,6 +623,7 @@ export default class LOAEventLogger {
       if (!RequestMessage) return;
       const RequestEmbed = this.GetRequestEmbed({
         Type: "Cancelled",
+        Guild: Interaction.guild,
         LOADocument: CancelledLOA,
         CancellationDate: Interaction.createdAt,
       });
@@ -637,7 +673,7 @@ export default class LOAEventLogger {
       } else {
         DMNotice.setDescription(
           DMNotice.data.description +
-            " Please be aware that this leave of absence can only be managed by management staff. You cannot request an extension or early termination using `/loa manage` command."
+            " This leave is under management staff control, and therefore, extensions or early terminations are not possible at this time."
         );
       }
 
@@ -704,9 +740,10 @@ export default class LOAEventLogger {
         .setTitle("Leave of Absence — Extension Notice")
         .setDescription(
           Dedent(`
-            Your leave of absence, started on ${FormatTime(LOADocument.request_date, "D")}, has been extended by a management staff.
-            The approved leave is now set to expire on ${FormatTime(LOADocument.end_date, "F")} (${FormatTime(LOADocument.end_date, "R")}). \
-            As of now, you cannot request an additional extension for this LOA, but you can request an early termination by using the \`/loa manage\` command on the server.
+            Your leave of absence, started on ${FormatTime(LOADocument.request_date, "D")}, has been extended by a management staff. \
+            The new leave end date is ${FormatTime(LOADocument.end_date, "F")} (${FormatTime(LOADocument.end_date, "R")}). \
+            As of now, this LOA cannot be extended further, but you can request an early termination(if permitted) by \
+            using the \`/loa manage\` command on the server.
           `)
         )
         .setFooter({
@@ -731,33 +768,21 @@ export default class LOAEventLogger {
           name: "Leave Info",
           value: Dedent(`
             **Leave For:** ${userMention(LOADocument.user)}
-            **Extension:** ${LOADocument.extended_duration_hr}
-            **LOA Started:** ${FormatTime(LOADocument.review_date, "F")}
-            **LOA Ends On:** after extension, ${FormatTime(LOADocument.end_date, "D")}
-            **Reason:** ${LOADocument.extension_req.reason || "`N/A`"}
+            **Leave Started:** ${FormatTime(LOADocument.review_date, "F")}
+            **Leave Ends On:** after extension, ${FormatTime(LOADocument.end_date, "D")}
+            **Extension Duration:** ${LOADocument.extended_duration_hr}
+            **Extension Reason:** ${LOADocument.extension_req.reason || "`N/A`"}
           `),
         })
-        .addFields(
-          {
-            inline: true,
-            name: "Extension Info",
-            value: Dedent(`
-              **Extension For:** ${userMention(LOADocument.user)}
-              **Extension:** ${LOADocument.extended_duration_hr}
-              **Leave Started:** ${FormatTime(LOADocument.review_date, "F")}
-              **Leave Ends On:** after extension, ${FormatTime(LOADocument.end_date, "D")}
-            `),
-          },
-          {
-            inline: true,
-            name: "Management Staff",
-            value: Dedent(`
+        .addFields({
+          inline: true,
+          name: "Management Staff",
+          value: Dedent(`
               **Extended By**: ${userMention(LOADocument.extension_req.reviewed_by!.id)}
               **Notes:**
               ${LOADocument.extension_req.reviewer_notes || "`N/A`"}
             `),
-          }
-        );
+        });
 
       LogChannel.send({ embeds: [LogEmbed] }).catch(() => null);
     }
@@ -896,7 +921,7 @@ export default class LOAEventLogger {
 
       DMDenialNotice.setDescription(
         Dedent(`
-          Your LOA extension request, submitted on ${FormatTime(LOADocument.extension_req.date, "D")}, has been denied.          
+          Your leave of absence extension request, submitted on ${FormatTime(LOADocument.extension_req.date, "D")}, has been denied.          
           **The following note(s) were provided by the reviewer:**
           ${codeBlock("", LOADocument.extension_req.reviewer_notes || "N/A")}
         `)
@@ -925,6 +950,7 @@ export default class LOAEventLogger {
             inline: true,
             name: "Active LOA",
             value: Dedent(`
+              **Duration:** ${LOADocument.duration_hr}
               **Started On:** ${FormatTime(LOADocument.review_date, "F")}
               **Ends On:** ${FormatTime(LOADocument.end_date, "D")} (not modified)
             `),
@@ -958,13 +984,15 @@ export default class LOAEventLogger {
       const RequestEmbed = this.GetRequestEmbed({
         LOADocument,
         Type: "Extension",
+        Guild: Interaction.guild,
         CancellationDate: Interaction.createdAt,
       })
         .setTimestamp(Interaction.createdAt)
         .setColor(Embeds.Colors.LOARequestDenied)
         .setTitle("Denied Extension  |  Leave of Absence Request")
         .setFooter({
-          text: `Reference ID: ${LOADocument._id}; denied by @${Interaction.user.username}} on`,
+          iconURL: Interaction.user.displayAvatarURL(this.AvatarIconOpts),
+          text: `Reference ID: ${LOADocument._id}; denied by @${Interaction.user.username} on`,
         });
 
       const RequestButtons = ActionRowBuilder.from<ButtonBuilder>(
@@ -1006,7 +1034,7 @@ export default class LOAEventLogger {
       DMCancellationNotice.setDescription(
         Dedent(`
           Your previously submitted LOA extension request, with a duration of ${LOADocument.extended_duration_hr}, has been cancelled at your request. \
-          Your currently active leave of absence will expire on ${FormatTime(LOADocument.end_date, "D")}.
+          Your currently active leave of absence will expire on ${FormatTime(LOADocument.end_date, "D")} as it was scheduled.
         `)
       );
 
@@ -1033,6 +1061,7 @@ export default class LOAEventLogger {
             inline: true,
             name: "Active LOA",
             value: Dedent(`
+              **Duration:** ${LOADocument.duration_hr}
               **Started On:** ${FormatTime(LOADocument.review_date, "F")}
               **Ends On:** ${FormatTime(LOADocument.end_date, "D")} (not modified)
             `),
@@ -1055,9 +1084,10 @@ export default class LOAEventLogger {
 
       if (!RequestMessage) return;
       const RequestEmbed = this.GetRequestEmbed({
-        Type: "Extension",
-        CancellationDate: Interaction.createdAt,
         LOADocument,
+        Type: "Extension",
+        Guild: Interaction.guild,
+        CancellationDate: Interaction.createdAt,
       })
         .setTimestamp(Interaction.createdAt)
         .setColor(Embeds.Colors.LOARequestDenied)
@@ -1109,8 +1139,8 @@ export default class LOAEventLogger {
         .setTitle("Leave of Absence — End Notice")
         .setDescription(
           Dedent(`
-            Your leave of absence, which began on ${FormatTime(LOADocument.review_date, "D")} (${FormatTime(LOADocument.review_date, "R")}), \
-            has ended and you are no longer on leave. If you need to request a new leave, please use the \`/loa request\` command on the server.
+            Your leave of absence, which began on ${FormatTime(LOADocument.review_date, "D")} (${FormatTime(LOADocument.review_date, "R")}), has \
+            ended and you are no longer on leave. If you need to request a new leave, please use the \`/loa request\` command on the server.
           `)
         )
         .setAuthor({
@@ -1178,15 +1208,15 @@ export default class LOAEventLogger {
         .setColor(Embeds.Colors.LOARequestEnded)
         .setTitle("Leave of Absence — End Notice")
         .setAuthor({
-          name: Guild.name,
+          name: Interaction.guild.name,
           iconURL: Interaction.guild.iconURL({ size: 128 }) ?? Embeds.Thumbs.Transparent,
         });
 
       if (EndRequestBy === "Requester") {
         DMNotice.setDescription(
           Dedent(`
-            Your leave of absence, originally scheduled to end on ${FormatTime(LOADocument.end_date, "D")} (${FormatTime(LOADocument.end_date, "R")}), \
-            has been terminated (ended) early upon your request. If you need to request a new leave, please use the \`/loa request\` command on the server.
+            Your leave of absence, originally scheduled to end on ${FormatTime(LOADocument.end_date, "D")} (${FormatTime(LOADocument.end_date, "R")}), has \
+            been terminated (ended) early upon your request. If you need to request a new leave, please use the \`/loa request\` command on the server.
           `)
         ).setFooter({
           text: `Reference ID: ${LOADocument._id}`,
@@ -1194,8 +1224,8 @@ export default class LOAEventLogger {
       } else {
         DMNotice.setDescription(
           Dedent(`
-            Your leave of absence, originally scheduled to end on ${FormatTime(LOADocument.end_date, "D")} (${FormatTime(LOADocument.end_date, "R")}), \
-            has been terminated (ended) early by management. If you need to request a new leave, please use the \`/loa request\` command on the server.
+            Your leave of absence, originally scheduled to end on ${FormatTime(LOADocument.end_date, "D")} (${FormatTime(LOADocument.end_date, "R")}), has \
+            been terminated (ended) early by management. If you need to request a new leave, please use the \`/loa request\` command on the server.
           `)
         ).setFooter({
           text: `Reference ID: ${LOADocument._id}; ended by: @${Interaction.user.username}`,
