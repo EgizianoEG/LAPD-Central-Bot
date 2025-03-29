@@ -11,6 +11,20 @@ import { randomInt as RandomInteger } from "node:crypto";
 import ShiftDurations from "./Schemas/ShiftDurations.js";
 import DHumanize from "humanize-duration";
 
+enum ShiftFlags {
+  /** Auto-generated/created by the system (e.g., scheduled shifts). Future usage 🤔? */
+  System = "System",
+
+  /** Default for shifts created/initiated manually by common users. */
+  Standard = "Standard",
+
+  /** Imported from external databases/applications. */
+  Imported = "Imported",
+
+  /** Manually created/initiated by admins or management staff. */
+  Administrative = "Administrative",
+}
+
 const HumanizeDuration = DHumanize.humanizer({
   conjunction: " and ",
   largest: 3,
@@ -63,6 +77,13 @@ const ShiftSchema = new Schema<
     trim: true,
     required: true,
     default: "Default",
+  },
+
+  flag: {
+    type: String,
+    required: true,
+    default: ShiftFlags.Standard,
+    enum: Object.values(ShiftFlags),
   },
 
   durations: {
@@ -152,3 +173,4 @@ for (const [MethodName, MethodFunc] of Object.entries(ShiftInstFuncs)) {
 }
 
 export default model<Shifts.ShiftDocument, Shifts.ShiftModel>("Shift", ShiftSchema);
+export { ShiftFlags };
