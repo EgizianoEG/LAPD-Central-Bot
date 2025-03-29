@@ -649,6 +649,7 @@ export default class ShiftActionLogger {
   ) {
     const LoggingChannel = await this.GetLoggingChannel(UserInteract.guild);
     const LogEmbed = new EmbedBuilder()
+      .setTimestamp(UserInteract.createdAt)
       .setColor(Embeds.Colors.ShiftOff)
       .setTitle("Shifts Ended")
       .setFooter({ text: `Ended by: @${UserInteract.user.username}` })
@@ -659,7 +660,6 @@ export default class ShiftActionLogger {
         `)
       );
 
-    LogEmbed.setTimestamp(UserInteract.createdAt);
     return LoggingChannel?.send({ embeds: [LogEmbed] });
   }
 
@@ -689,7 +689,6 @@ export default class ShiftActionLogger {
         `)
       );
 
-    LogEmbed.setTimestamp(UserInteract.createdAt);
     return LoggingChannel?.send({ embeds: [LogEmbed] });
   }
 
@@ -722,7 +721,6 @@ export default class ShiftActionLogger {
         `)
       );
 
-    LogEmbed.setTimestamp(UserInteract.createdAt);
     return LoggingChannel?.send({ embeds: [LogEmbed] });
   }
 
@@ -755,7 +753,6 @@ export default class ShiftActionLogger {
         `)
       );
 
-    LogEmbed.setTimestamp(UserInteract.createdAt);
     return LoggingChannel?.send({ embeds: [LogEmbed] });
   }
 
@@ -796,7 +793,6 @@ export default class ShiftActionLogger {
       LogEmbed.setColor(Embeds.Colors.ShiftOff);
     }
 
-    LogEmbed.setTimestamp(UserInteract.createdAt);
     return LoggingChannel?.send({ embeds: [LogEmbed] });
   }
 }

@@ -1,3 +1,4 @@
+import { IsValidShiftTypeName } from "@Utilities/Other/Validators.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import {
   SlashCommandBuilder,
@@ -11,6 +12,7 @@ import AutocompleteShiftType from "@Utilities/Autocompletion/ShiftType.js";
 import HasRobloxLinked from "@Utilities/Database/IsUserLoggedIn.js";
 import IsModuleEnabled from "@Utilities/Database/IsModuleEnabled.js";
 import UserHasPerms from "@Utilities/Database/UserHasPermissions.js";
+import ShiftTypeExists from "@Utilities/Database/ShiftTypeExists.js";
 
 const Subcommands = [
   (await import("./Subcmds/Void.js")).default,
@@ -24,6 +26,33 @@ const Subcommands = [
 // ---------------------------------------------------------------------------------------
 // Functions:
 // ----------
+/**
+ * Handles validation of the `name` interaction option (Shift Type Name).
+ * @param ShiftTypeName - The provided shift type name from the user.
+ * @param Interaction - The user command interaction.
+ * @param DBCheck - If `true`, checks the database for the existence of the shift type. Defaults to `false`.
+ * @returns If the interaction has been handled and a response has been sent, returns `true`; otherwise returns `false`.
+ */
+export async function HandleShiftTypeValidation(
+  CmdInteraction: SlashCommandInteraction<"cached">,
+  ShiftTypeName: string,
+  DBCheck: boolean = false
+): Promise<boolean> {
+  if (!IsValidShiftTypeName(ShiftTypeName)) {
+    return new ErrorEmbed()
+      .useErrTemplate("MalformedShiftTypeName")
+      .replyToInteract(CmdInteraction, true)
+      .then(() => true);
+  } else if (DBCheck && !(await ShiftTypeExists(ShiftTypeName, CmdInteraction.guildId))) {
+    return new ErrorEmbed()
+      .useErrTemplate("NonexistentShiftTypeUsage")
+      .replyToInteract(CmdInteraction, true)
+      .then(() => true);
+  }
+
+  return false;
+}
+
 /**
  * Authorize a management slash command usage; returns `true` is it is authorized or `false` otherwise.
  * Users may not utilize the `duty manage` subcommand if they have no linked Roblox account.
@@ -82,7 +111,7 @@ async function Autocomplete(Interaction: AutocompleteInteraction<"cached">) {
   const SubcommandGroup = Interaction.options.getSubcommandGroup();
   const SubcommandName = Interaction.options.getSubcommand();
   const Suggestions =
-    name === "type" ||
+    ["type", "shift-type"].includes(name) ||
     (name === "name" &&
       SubcommandGroup === "types" &&
       SubcommandName === "delete" &&
