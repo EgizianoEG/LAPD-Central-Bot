@@ -2,7 +2,7 @@
 // -------------
 
 import { InfoEmbed, WarnEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import { HandleShiftTypeValidation } from "../Main.js";
+import { HandleShiftTypeValidation } from "@Utilities/Database/ShiftTypeValidators.js";
 import {
   ButtonStyle,
   ButtonBuilder,

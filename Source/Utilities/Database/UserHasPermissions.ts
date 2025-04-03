@@ -183,29 +183,31 @@ function CheckPerms(
         GuildMember.roles.cache.hasAny(...DBRolePerms.management)
       ) {
         HasManagement = true;
-      }
-      MissingPerms.push("Manage Server or Application Management");
-    } else if (Perms.management.guild && Perms.management.app) {
-      const logicalOperation = GetLogicalOperation(Perms.management);
-
-      if (
-        logicalOperation === "and" &&
-        GuildMember.roles.cache.hasAny(...DBRolePerms.management) &&
-        GuildMember.permissions.has(PermissionFlagsBits.ManageGuild)
-      ) {
-        HasManagement = true;
-      } else {
-        MissingPerms.push("Manage Server and Application Management");
-      }
-
-      if (
-        logicalOperation === "or" &&
-        (GuildMember.roles.cache.hasAny(...DBRolePerms.management) ||
-          GuildMember.permissions.has(PermissionFlagsBits.ManageGuild))
-      ) {
-        HasManagement = true;
       } else {
         MissingPerms.push("Manage Server or Application Management");
+      }
+    } else if (Perms.management.guild && Perms.management.app) {
+      const LogicalOperation = GetLogicalOperation(Perms.management);
+      if (LogicalOperation === "and") {
+        if (
+          GuildMember.roles.cache.hasAny(...DBRolePerms.management) &&
+          GuildMember.permissions.has(PermissionFlagsBits.ManageGuild)
+        ) {
+          HasManagement = true;
+        } else {
+          MissingPerms.push("Manage Server and Application Management");
+        }
+      }
+
+      if (LogicalOperation === "or") {
+        if (
+          GuildMember.roles.cache.hasAny(...DBRolePerms.management) ||
+          GuildMember.permissions.has(PermissionFlagsBits.ManageGuild)
+        ) {
+          HasManagement = true;
+        } else {
+          MissingPerms.push("Manage Server or Application Management");
+        }
       }
     } else {
       throw new Error(`Invalid 'management' object structure; ${String(Perms.management)}`);
