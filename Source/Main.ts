@@ -103,7 +103,7 @@ ExpressApp.get("/", (_, Res) => {
   Res.end(JSON.stringify({ message: "OK" }, null, 2));
 });
 
-ExpressApp.get("/*", (_, Res) => {
+ExpressApp.use((_, Res) => {
   Res.setHeader("Content-Type", "text/html");
   Res.end(NotFoundPage);
 });
