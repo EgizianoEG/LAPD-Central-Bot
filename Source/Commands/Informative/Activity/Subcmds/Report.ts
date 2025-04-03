@@ -12,13 +12,13 @@ import {
 import { differenceInMilliseconds, isAfter, milliseconds } from "date-fns";
 import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { IsValidShiftTypeName } from "@Utilities/Other/Validators.js";
+import { ShiftTypeExists } from "@Utilities/Database/ShiftTypeValidators.js";
 
 import * as Chrono from "chrono-node";
 import Dedent from "dedent";
 import DHumanize from "humanize-duration";
 import ShiftModel from "@Models/Shift.js";
 import ParseDuration from "parse-duration";
-import ShiftTypeExists from "@Utilities/Database/ShiftTypeExists.js";
 import CreateShiftReport from "@Utilities/Other/CreateShiftReport.js";
 
 const HumanizeDuration = DHumanize.humanizer({

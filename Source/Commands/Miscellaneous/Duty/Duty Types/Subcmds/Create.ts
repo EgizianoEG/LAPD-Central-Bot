@@ -16,10 +16,10 @@ import {
 
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { IsValidShiftTypeName } from "@Utilities/Other/Validators.js";
+import { ShiftTypeExists } from "@Utilities/Database/ShiftTypeValidators.js";
 
 import Dedent from "dedent";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
-import ShiftTypeExists from "@Utilities/Database/ShiftTypeExists.js";
 import CreateShiftType from "@Utilities/Database/CreateShiftType.js";
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
 const ListFormatter = new Intl.ListFormat("en");

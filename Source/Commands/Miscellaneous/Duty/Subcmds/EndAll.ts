@@ -1,6 +1,8 @@
 // Dependencies:
 // -------------
 
+import { InfoEmbed, WarnEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { HandleShiftTypeValidation } from "@Utilities/Database/ShiftTypeValidators.js";
 import {
   ButtonStyle,
   ButtonBuilder,
@@ -8,9 +10,6 @@ import {
   ActionRowBuilder,
   SlashCommandSubcommandBuilder,
 } from "discord.js";
-
-import { IsValidShiftTypeName } from "@Utilities/Other/Validators.js";
-import { InfoEmbed, WarnEmbed, SuccessEmbed, ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import HandleActionCollectorExceptions from "@Utilities/Other/HandleCompCollectorExceptions.js";
 import HandleShiftRoleAssignment from "@Utilities/Other/HandleShiftRoleAssignment.js";
@@ -22,28 +21,9 @@ import ShiftModel from "@Models/Shift.js";
 // ---------------------------------------------------------------------------------------
 // Functions:
 // ----------
-/**
- * Handles validation of the `name` interaction option (Shift Type Name).
- * @param ShiftTypeName - The provided shift type name from the user
- * @param Interaction - The user command interaction
- * @returns If the interaction has been handled, returns `true`, otherwise returns `false`
- */
-async function HandleSTNameValidation(
-  CmdInteraction: SlashCommandInteraction<"cached">,
-  ShiftTypeName: string
-): Promise<boolean> {
-  if (!IsValidShiftTypeName(ShiftTypeName)) {
-    return new ErrorEmbed()
-      .useErrTemplate("MalformedShiftTypeName")
-      .replyToInteract(CmdInteraction, true)
-      .then(() => true);
-  }
-  return false;
-}
-
 async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const ShiftType = Interaction.options.getString("type");
-  if (ShiftType && (await HandleSTNameValidation(Interaction, ShiftType))) return;
+  if (ShiftType && (await HandleShiftTypeValidation(Interaction, ShiftType))) return;
 
   const QueryMatch = {
     guild: Interaction.guildId,
