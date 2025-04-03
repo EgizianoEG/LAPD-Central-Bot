@@ -1,5 +1,6 @@
 import type { IncidentTypes, IncidentStatusesFlattened } from "@Resources/IncidentConstants.ts";
 import type { Types, HydratedDocument, Model } from "mongoose";
+import type { ShiftFlags } from "@Models/Shift.ts";
 import type { Overwrite } from "utility-types";
 import type ERLCAgeGroups from "@Resources/ERLCAgeGroups.ts";
 import type AppError from "@Utilities/Classes/AppError.ts";
@@ -374,6 +375,12 @@ export namespace Shifts {
 
     /** The shift type; defaults to `"Default"`. */
     type: string;
+
+    /**
+     * Shift origin/source: `System` (auto), `Standard` (user),
+     * `Imported` (external), or `Administrative` (manual override).
+     */
+    flag: keyof typeof ShiftFlags;
 
     /** The shift logged durations. */
     durations: ShiftDurations;

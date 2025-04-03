@@ -707,6 +707,11 @@ export const ErrorMessages = {
     Description:
       "You do not have permission to update or take action on this incident report. Only the report submitter or staff with management permissions can perform this action.",
   },
+
+  AttachmentMustBeTextFile: {
+    Title: "Invalid Attachment",
+    Description: "The uploaded file must be a `.txt` file. Please try again.",
+  },
 };
 
 export const InfoMessages = {
@@ -715,6 +720,25 @@ export const InfoMessages = {
     Title: "Timed Out",
     Description:
       "It looks like this process/prompt has timed out. Kindly reinstate if you'd like to continue.",
+  },
+
+  DutyImportCancelled: {
+    Thumb: null,
+    Title: "Import Cancelled",
+    Description: "The duty import process has been cancelled. No changes were made.",
+  },
+
+  DutyImportTimedOut: {
+    Thumb: null,
+    Title: "Timed Out",
+    Description:
+      "The duty import process has been cancelled as it has timed out. No changes were made.",
+  },
+
+  DutyImportInProgress: {
+    Thumb: null,
+    Title: `${Emojis.LoadingBlue}\u{2000}Import In Progress...`,
+    Description: "Kindly wait while the duty import process is in progress.",
   },
 
   /**

@@ -18,6 +18,7 @@ const Subcommands = [
   (await import("./Subcmds/Manage.js")).default,
   (await import("./Subcmds/Active.js")).default,
   (await import("./Subcmds/EndAll.js")).default,
+  (await import("./Subcmds/Import.js")).default,
   (await import("./Subcmds/Leaderboard.js")).default,
 ];
 
@@ -82,7 +83,7 @@ async function Autocomplete(Interaction: AutocompleteInteraction<"cached">) {
   const SubcommandGroup = Interaction.options.getSubcommandGroup();
   const SubcommandName = Interaction.options.getSubcommand();
   const Suggestions =
-    name === "type" ||
+    ["type", "shift-type"].includes(name) ||
     (name === "name" &&
       SubcommandGroup === "types" &&
       SubcommandName === "delete" &&
@@ -104,6 +105,7 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
     user_perms: {
       types: { management: true },
       admin: { management: true },
+      import: { management: true },
       $all_other: { staff: true },
       "end-all": { management: true },
     },

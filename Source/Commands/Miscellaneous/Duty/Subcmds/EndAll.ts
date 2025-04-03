@@ -23,7 +23,7 @@ import ShiftModel from "@Models/Shift.js";
 // ----------
 async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const ShiftType = Interaction.options.getString("type");
-  if (ShiftType && (await HandleShiftTypeValidation(Interaction, ShiftType))) return;
+  if (ShiftType && (await HandleShiftTypeValidation(Interaction, ShiftType, true))) return;
 
   const QueryMatch = {
     guild: Interaction.guildId,
