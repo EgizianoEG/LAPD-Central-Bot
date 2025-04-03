@@ -12,6 +12,7 @@ import {
   BaseInteraction,
   ImageURLOptions,
   TextBasedChannel,
+  AttachmentBuilder,
   GuildBasedChannel,
   time as FormatTime,
 } from "discord.js";
@@ -794,5 +795,57 @@ export default class ShiftActionLogger {
     }
 
     return LoggingChannel?.send({ embeds: [LogEmbed] });
+  }
+
+  /**
+   * Logs a shift time import action done by an administrative or management user to the appropriate and specified channel of a guild.
+   * @param UserInteract - The received interaction (button/cmd) from the admin/management user.
+   * @param ImportDetails - ...
+   * @param ImportDetails.ShiftsTotal - The total number of shifts imported.
+   * @param ImportDetails.UsersTotal - The total number of individuals included in the imported shifts.
+   * @param ImportDetails.UnresolvedUsers - The total number of individuals that were not found in the server and thus could not add time to.
+   * @param ImportDetails.TotalShiftTime - The total time (on-duty time in milliseconds) of the shifts imported.
+   * @param ImportDetails.SourceFileURL - The URL of the source file used for the import (the one which was uploaded).
+   * @param ImportDetails.ShiftsOfType - The type of which shifts were imported under.
+   * @returns A promise that resolves to the logging message sent or `undefined` if it wasn't.
+   */
+  public static async LogShiftTimeImport(
+    UserInteract: Exclude<DiscordUserInteract, GuildMember>,
+    ImportDetails: {
+      ShiftsTotal: number;
+      UsersTotal: number;
+      UnresolvedUsers: number;
+      TotalShiftTime: number;
+      SourceFileURL: string;
+      ShiftsOfType: string;
+    }
+  ): Promise<DiscordJS.Message<true> | undefined> {
+    const LoggingChannel = await this.GetLoggingChannel(UserInteract.guild);
+    if (!LoggingChannel) return undefined;
+
+    const LogEmbed = new EmbedBuilder()
+      .setColor(Embeds.Colors.ShiftOn)
+      .setTimestamp(UserInteract.createdAt)
+      .setFooter({ text: `Imported by: @${UserInteract.user.username}` })
+      .setTitle("Shift Time Imported")
+      .setDescription(
+        Dedent(`
+          **Staff Count:** ${BluewishText(ImportDetails.UsersTotal, LoggingChannel.id)}
+          **Unresolved Staff:** ${BluewishText(ImportDetails.UnresolvedUsers, LoggingChannel.id)}
+          **Imported Shifts:** ${ImportDetails.ShiftsTotal >= ImportDetails.UsersTotal - ImportDetails.UnresolvedUsers ? BluewishText(ImportDetails.ShiftsTotal, LoggingChannel.id) : "*Unknown*"}
+          **Imported Under Type:** ${inlineCode(ImportDetails.ShiftsOfType)}
+          **Total Time Imported:** ${ReadableDuration(ImportDetails.TotalShiftTime)}
+        `)
+      );
+
+    return LoggingChannel.send({
+      embeds: [LogEmbed],
+      files: [
+        new AttachmentBuilder(ImportDetails.SourceFileURL, {
+          name: "import_data.txt",
+          description: "Shift import source.",
+        }),
+      ],
+    });
   }
 }

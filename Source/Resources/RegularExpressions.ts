@@ -11,6 +11,29 @@ const DLRegexStr = /Driv(?:ing|er|er[’']s) License|License|DL/i.source;
 const UnsafeSynonyms = /Unsafe|Not? Safe|Dangerous|Reckless|Risky/i.source;
 const FActionRegex = /(?:Not Using|Fail(?:ing|ure|ed) (?:to )Use|Did(?: not|n['’]?t Use))/i.source;
 
+/**
+ * A regular expression used to parse and extract information from duty leaderboard entries.
+ *
+ * This regex supports two formats:
+ * 1. A detailed format that includes username, user ID, shift count, duty time in milliseconds,
+ *    and human-readable time.
+ * 2. A simpler format that includes only username and human-readable time.
+ *
+ * Capturing groups:
+ * - `username`: The username of the individual (alphanumeric, underscores, dots, and spaces allowed).
+ * - `user_id`: The unique identifier of the user (15 to 22 digits).
+ * - `shift_count`: The number of shifts completed by the user (numeric).
+ * - `duty_ms`: The total duty time in milliseconds (numeric).
+ * - `hr_time`: The human-readable representation of the duty time (e.g., "2 hours, 30 minutes").
+ *
+ * Notes:
+ * - The regex is case-insensitive.
+ * - The first format includes all details, while the second format is more concise.
+ */
+export const DutyLeaderboardEntryRegex =
+  // eslint-disable-next-line sonarjs/regex-complexity
+  /^(?:\d+)?\.?\s*-?\s*@?(?<username>[\w.\s]+?)\s*-\s*(?<user_id>\d{15,22})\s*-\s*(?<shift_count>\d+)\s+shifts\s*-\s*(?<duty_ms>\d+)ms\s*-\s*(?<hr_time>[\w,\s]+?)$|^@?(?<username>[\w.\s]+?)\s*[-•]\s*(?<hr_time>[\w,\s]+?)$/i;
+
 export const LEORegex = /(?:Officer|Peace Officer|\bPolice\b|\bLEO\b|\bPO\b)s?/;
 export const AddStatutesRegexes = {
   Battery: /Batt[ea]ry/i,
