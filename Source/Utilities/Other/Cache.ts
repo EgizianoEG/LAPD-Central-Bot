@@ -7,13 +7,13 @@ export const RobloxAPICache = {
 };
 
 export const DBRolePermsCache = new NodeCache({
-  stdTTL: 5 * 60,
+  stdTTL: 0.5 * 60,
   useClones: false,
   deleteOnExpire: true,
 });
 
 export const UserPermsCache = new NodeCache({
-  stdTTL: 5 * 60,
+  stdTTL: 0.5 * 60,
   useClones: false,
   deleteOnExpire: true,
 });
