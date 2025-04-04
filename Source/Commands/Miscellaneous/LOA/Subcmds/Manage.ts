@@ -344,7 +344,7 @@ async function HandleLeaveExtend(
       ]);
     })
     .catch((Err: any) => {
-      if (!(Err instanceof Error && Err.message.match(/reason: time|idle/))) {
+      if (!(Err instanceof Error && Err.message.match(/reason: (?:time|idle)/))) {
         throw Err;
       }
     });

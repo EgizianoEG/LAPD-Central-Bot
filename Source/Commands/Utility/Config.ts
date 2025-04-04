@@ -1451,7 +1451,7 @@ async function HandleConfigShowPageInteracts(
     }
   } catch (Err: any) {
     if (Err.message.match(/reason: \w+Delete/)) return;
-    if (Err.message?.match(/reason: time|idle/i)) {
+    if (Err.message?.match(/reason: (?:time|idle)/i)) {
       const MessageComponents = GetShowConfigurationsPageComponents(CmdInteract);
       MessageComponents.forEach((ActionRow) =>
         ActionRow.components.forEach((Comp) => Comp.setDisabled(true))

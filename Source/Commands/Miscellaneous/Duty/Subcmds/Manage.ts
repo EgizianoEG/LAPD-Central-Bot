@@ -3,6 +3,7 @@
 // -------------
 
 import {
+  Message,
   inlineCode,
   ButtonStyle,
   EmbedBuilder,
@@ -14,7 +15,6 @@ import {
   time as FormatTime,
   InteractionReplyOptions,
   SlashCommandSubcommandBuilder,
-  Message,
 } from "discord.js";
 
 import { Types } from "mongoose";
@@ -351,7 +351,7 @@ async function HandleNonActiveShift(
     }
   } catch (Err: any) {
     if (Err.message.match(/reason: \w+Delete/)) return;
-    if (Err.message.match(/reason: time|idle/)) {
+    if (Err.message.match(/reason: (?:time|idle)/)) {
       return PromptMessage.edit({
         components: [MgmtComps.updateButtons({ start: false, break: false, end: false })],
       }).catch(() => null);
@@ -446,7 +446,7 @@ async function HandleOnBreakShift(
     }
   } catch (Err: any) {
     if (Err.message.match(/reason: \w+Delete/)) return;
-    if (Err.message.match(/reason: time|idle/)) {
+    if (Err.message.match(/reason: (?:time|idle)/)) {
       return PromptMessage.edit({
         components: [MgmtComps.updateButtons({ start: false, break: false, end: false })],
       }).catch(() => null);
@@ -555,7 +555,7 @@ async function HandleActiveShift(
     }
   } catch (Err: any) {
     if (Err.message.match(/reason: \w+Delete/)) return;
-    if (Err.message.match(/reason: time|idle/)) {
+    if (Err.message.match(/reason: (?:time|idle)/)) {
       return PromptMessage.edit({
         components: [
           MgmtButtonComponents.updateButtons({ start: false, break: false, end: false }),
