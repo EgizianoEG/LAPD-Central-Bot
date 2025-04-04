@@ -41,9 +41,16 @@ const FunctionMap = {
 // ----------
 export default async function LOAManagementHandlerWrapper(
   _: DiscordClient,
-  Interaction: BaseInteraction<"cached">
+  Interaction: BaseInteraction
 ) {
-  if (!Interaction.isButton() || !Interaction.customId.match(/^loa-(app|den|inf)[\w-]*:/)) return;
+  if (
+    !Interaction.isButton() ||
+    !Interaction.inCachedGuild() ||
+    !Interaction.customId.match(/^loa-(app|den|inf)[\w-]*:/)
+  ) {
+    return;
+  }
+
   try {
     if (await HandleUnauthorizedLeaveManagement(Interaction)) return;
     await LOAManagementHandler(Interaction);
