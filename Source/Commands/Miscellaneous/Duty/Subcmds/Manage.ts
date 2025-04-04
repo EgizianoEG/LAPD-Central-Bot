@@ -18,11 +18,11 @@ import {
 } from "discord.js";
 
 import { Types } from "mongoose";
+import { GetErrorId } from "@Utilities/Strings/Random.js";
 import { ErrorMessages } from "@Resources/AppMessages.js";
 import { Guilds, Shifts } from "@Typings/Utilities/Database.js";
 import { Embeds, Emojis } from "@Config/Shared.js";
 import { NavButtonsActionRow } from "@Utilities/Other/GetNavButtons.js";
-import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
 import { ErrorEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import HandleRoleAssignment from "@Utilities/Other/HandleShiftRoleAssignment.js";
@@ -63,13 +63,22 @@ enum ShiftMgmtActions {
 // --------
 /**
  * Constructs a set of management buttons (start, break, end).
- * @param Interaction - A cached interaction to get guild and user ids from.
- * @param ShiftActive - The current active shift of the user.
- * @notice Each button has a custom_id that is composed of the button name (start, break, end) and the user id separated by a colon.
- * @returns
+ * @param Interaction - A cached slash command interaction to get guild and user Ids from.
+ * @param [ShiftType="default"] - The type of shift to be managed. Defaults to "default", the application's default shift type.
+ * @param [ShiftActive] - The current active shift of the user. Optional.
+ * @notice
+ * The pattern for management button IDs is as follows:
+ *   `<ShiftAction>:<UserId>:<TargettedShiftType>[:ShiftId]`.
+ *   - `<ShiftAction>`: The action to be performed (e.g., `shift-on`, `shift-off`, etc.)
+ *   - `<UserId>`: The ID of the user who triggered the action.
+ *   - `<TargettedShiftType>`: The type of shift being targeted (e.g., `default`, `break`, etc.)
+ *   - `[TargettedShiftId]`: The ID of the shift being targeted, if applicable. Optional as sometimes there is no shift to take action on in the first place.
+ *
+ * @returns A row of buttons for managing shifts.
  */
-function GetManagementButtons(
-  Interaction: SlashCommandInteraction<"cached">,
+export function GetShiftManagementButtons(
+  Interaction: SlashCommandInteraction<"cached"> | ButtonInteraction<"cached">,
+  ShiftType: string | null = "default",
   ShiftActive?: Shifts.HydratedShiftDocument | null
 ) {
   const ActionRow = new ActionRowBuilder().addComponents(
@@ -90,9 +99,9 @@ function GetManagementButtons(
       .setStyle(ButtonStyle.Danger)
   ) as NavButtonsActionRow;
 
-  ActionRow.updateButtons = function UpdateNavigationButtons(ButtonsToEnable: {
-    [key: string]: boolean | undefined;
-  }) {
+  ActionRow.updateButtons = function UpdateNavigationButtons(
+    ButtonsToEnable: Record<"start" | "break" | "end", boolean | undefined>
+  ) {
     const ButtonMap = { start: 0, break: 1, end: 2 };
     for (const [Name, Enabled] of Object.entries(ButtonsToEnable)) {
       this.components[ButtonMap[Name]].setDisabled(!Enabled);
@@ -108,9 +117,11 @@ function GetManagementButtons(
   });
 
   // Set custom Ids for each component based on the user and guild Ids.
-  const UniqueStr = RandomString(4);
+  const ShiftIdInclusionText = ShiftActive?.id ? `:${ShiftActive.id}` : "";
   ActionRow.components.forEach((Comp) =>
-    Comp.setCustomId(`${Comp.data.custom_id}:${Interaction.user.id}:${UniqueStr}`)
+    Comp.setCustomId(
+      `${Comp.data.custom_id}:${Interaction.user.id}:${ShiftType}${ShiftIdInclusionText}`
+    )
   );
 
   return ActionRow;
@@ -324,7 +335,7 @@ async function HandleNonActiveShift(
     MgmtPromptEmbed.data.color || Embeds.Colors.ShiftNatural
   );
 
-  const MgmtComps = GetManagementButtons(CmdInteract).updateButtons({
+  const MgmtComps = GetShiftManagementButtons(CmdInteract, MgmtShiftType).updateButtons({
     start: true,
     break: false,
     end: false,
@@ -407,7 +418,7 @@ async function HandleOnBreakShift(
   BaseEmbedTitle: string
 ) {
   const BreakEpochs = ShiftActive.events.breaks.findLast(([, end]) => end === null);
-  const MgmtComps = GetManagementButtons(CmdInteract);
+  const MgmtComps = GetShiftManagementButtons(CmdInteract, ShiftActive.type, ShiftActive);
   const FieldDescription = Dedent(`
     >>> **Status:** (${Emojis.Idle}) On Break
     **Shift Started:** ${FormatTime(ShiftActive.start_timestamp, "R")}
@@ -507,8 +518,12 @@ async function HandleActiveShift(
   ShiftActive: ShiftDocument,
   MgmtPromptEmbed: EmbedBuilder
 ) {
-  const MgmtButtonComponents = GetManagementButtons(CmdInteract, ShiftActive);
   const PromptEmbed = MgmtPromptEmbed.setColor(Embeds.Colors.ShiftOn);
+  const MgmtButtonComponents = GetShiftManagementButtons(
+    CmdInteract,
+    ShiftActive.type,
+    ShiftActive
+  );
 
   if (!PromptEmbed.data.fields?.find((Field) => Field.name === "Current Shift")) {
     if (ShiftActive.durations.on_break > 500) {
