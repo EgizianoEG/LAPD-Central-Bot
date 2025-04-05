@@ -42,12 +42,12 @@ export default function GetPredefinedNavButtons(
     new ButtonBuilder()
       .setCustomId("first")
       .setEmoji(Emojis.NavFirst)
-      .setStyle(ButtonStyle.Primary)
+      .setStyle(ButtonStyle.Secondary)
       .setDisabled(true),
     new ButtonBuilder()
       .setCustomId("prev")
       .setEmoji(Emojis.NavPrev)
-      .setStyle(ButtonStyle.Primary)
+      .setStyle(ButtonStyle.Secondary)
       .setDisabled(true),
     new ButtonBuilder()
       .setCustomId("current")
@@ -57,12 +57,12 @@ export default function GetPredefinedNavButtons(
     new ButtonBuilder()
       .setCustomId("next")
       .setEmoji(Emojis.NavNext)
-      .setStyle(ButtonStyle.Primary)
+      .setStyle(ButtonStyle.Secondary)
       .setDisabled(false),
     new ButtonBuilder()
       .setCustomId("last")
       .setEmoji(Emojis.NavLast)
-      .setStyle(ButtonStyle.Primary)
+      .setStyle(ButtonStyle.Secondary)
       .setDisabled(false)
   ) as NavButtonsActionRow;
 
