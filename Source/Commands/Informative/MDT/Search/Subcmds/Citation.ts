@@ -57,7 +57,7 @@ const CommandObject = {
     .addIntegerOption((Option) =>
       Option.setName("citation-num")
         .setDescription("The citation number.")
-        .setMaxValue(99999)
+        .setMaxValue(999999)
         .setMinValue(1000)
         .setRequired(true)
         .setAutocomplete(true)
