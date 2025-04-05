@@ -101,6 +101,6 @@ export default async function HandleAbandonedInteractions(
 
       await Interaction.deferUpdate().catch(() => null);
     } as () => void,
-    2.35 * 1000
+    2.65 * 1000
   );
 }

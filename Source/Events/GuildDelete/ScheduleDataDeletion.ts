@@ -4,9 +4,9 @@ import AppLogger from "@Utilities/Classes/AppLogger.js";
 import GuildModel from "@Models/Guild.js";
 
 /**
- * Schedules the guild data deletion from the database after **3 days** of the client not being in it.
- * @param _
- * @param CreatedGuild
+ * Schedules the guild data deletion from the database after **7 days** of the client not being in it.
+ * @param _ - The client instance, unused in this function.
+ * @param GuildInst - The guild instance to be scheduled for deletion.
  */
 export default async function ScheduleGuildDataDeletion(_: Client<true>, GuildInst: Guild) {
   const UpdatedGuildDocument = await GuildModel.findOneAndUpdate(
@@ -25,6 +25,12 @@ export default async function ScheduleGuildDataDeletion(_: Client<true>, GuildIn
   if (UpdatedGuildDocument) {
     AppLogger.debug({
       message: "Scheduled data deletion for the guild with the id: %s",
+      label: "Events:GuildDelete:ScheduleDataDeletion",
+      splat: [GuildInst.id],
+    });
+  } else {
+    AppLogger.debug({
+      message: "Guild with id '%s' not found in the database. Data deletion scheduling skipped.",
       label: "Events:GuildDelete:ScheduleDataDeletion",
       splat: [GuildInst.id],
     });

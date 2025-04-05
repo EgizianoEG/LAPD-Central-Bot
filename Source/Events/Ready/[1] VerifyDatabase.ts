@@ -2,19 +2,22 @@ import { addDays } from "date-fns";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import GuildModel from "@Models/Guild.js";
 const FileLabel = "Events:Ready:VerifyDatabase";
+const GuildDataDeletionScheduleDays = 7;
 
 /**
  * Verifies the bot database for any joined guild that is not recorded on it.
- * @param Client
+ * @param Client - The Discord client instance used to interact with the Discord API.
  */
-export default async function VerifyDatabase(Client: DiscordClient) {
+export default async function VerifyDatabase(Client: DiscordClient): Promise<void> {
   try {
     const Guilds = await Client.guilds.fetch();
-    const GuildsInDB = await GuildModel.find().select({ _id: 1 }).lean().exec();
     const NewGuilds: (typeof GuildModel.schema.obj)[] = [];
+    const GuildsInDB = new Set(
+      (await GuildModel.find().select({ _id: 1 }).lean().exec()).map((GuildDoc) => GuildDoc._id)
+    );
 
     for (const JoinedGuild of Guilds.values()) {
-      const GuildFound = GuildsInDB.some((GuildDoc) => GuildDoc._id === JoinedGuild.id);
+      const GuildFound = GuildsInDB.has(JoinedGuild.id);
       if (!GuildFound) {
         NewGuilds.push({ _id: JoinedGuild.id });
       }
@@ -30,16 +33,17 @@ export default async function VerifyDatabase(Client: DiscordClient) {
     }
 
     // Schedule guild data deletion for guilds that are no longer registered on the application (the application is not in them).
-    const LeftGuilds = GuildsInDB.filter((GuildDoc) => !Guilds.has(GuildDoc._id));
-    if (LeftGuilds.length > 0) {
+    const ActiveGuildIds = new Set(Guilds.keys());
+    const LeftGuilds = GuildsInDB.difference(ActiveGuildIds);
+    if (LeftGuilds.size > 0) {
       const UpdateManyResult = await GuildModel.updateMany(
         {
-          _id: { $in: LeftGuilds.map((GuildDoc) => GuildDoc._id) },
+          _id: { $in: Array.from(LeftGuilds) },
           deletion_scheduled_on: null,
         },
         {
           $set: {
-            deletion_scheduled_on: addDays(new Date(), 7),
+            deletion_scheduled_on: addDays(new Date(), GuildDataDeletionScheduleDays),
           },
         }
       ).exec();

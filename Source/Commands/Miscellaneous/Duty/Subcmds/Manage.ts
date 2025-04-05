@@ -22,7 +22,6 @@ import { GetErrorId } from "@Utilities/Strings/Random.js";
 import { ErrorMessages } from "@Resources/AppMessages.js";
 import { Guilds, Shifts } from "@Typings/Utilities/Database.js";
 import { Embeds, Emojis } from "@Config/Shared.js";
-import { NavButtonsActionRow } from "@Utilities/Other/GetNavButtons.js";
 import { ErrorEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import HandleRoleAssignment from "@Utilities/Other/HandleShiftRoleAssignment.js";
@@ -44,7 +43,6 @@ const HumanizeDuration = DHumanize.humanizer({
   round: true,
 });
 
-type ShiftDocument = Shifts.HydratedShiftDocument;
 enum RecentShiftAction {
   End = "Shift Ended",
   Start = "Shift Started",
@@ -58,6 +56,26 @@ enum ShiftMgmtActions {
   ShiftBreakToggle = "dm-break",
 }
 
+type ShiftDocument = Shifts.HydratedShiftDocument;
+export type ShiftMgmtButtonsActionRow = ActionRowBuilder<
+  ButtonBuilder & { data: { custom_id: string } }
+> & {
+  /**
+   * Updates the disabled state of the buttons within the shift management action row.
+   * @param enabledStates - An object where:
+   * - The keys represent the identifiers of the buttons to update (e.g., "start", "break", "end").
+   * - The values are booleans indicating the desired disabled state for each button:
+   *   - `true` to enable the button.
+   *   - `false` to disable the button.
+   *   - `undefined` to leave the button's state unchanged.
+   *
+   * @returns The updated ActionRow instance.
+   */
+  updateButtons(
+    enabledStates: Record<"start" | "break" | "end", boolean | undefined>
+  ): ShiftMgmtButtonsActionRow;
+};
+
 // ---------------------------------------------------------------------------------------
 // Helpers:
 // --------
@@ -65,7 +83,7 @@ enum ShiftMgmtActions {
  * Constructs a set of management buttons (start, break, end).
  * @param Interaction - A cached slash command interaction to get guild and user Ids from.
  * @param [ShiftType="default"] - The type of shift to be managed. Defaults to "default", the application's default shift type.
- * @param [ShiftActive] - The current active shift of the user. Optional.
+ * @param [ShiftActive] - The current active shift of the user, if any.
  * @notice
  * The pattern for management button IDs is as follows:
  *   `<ShiftAction>:<UserId>:<TargettedShiftType>[:ShiftId]`.
@@ -85,19 +103,16 @@ export function GetShiftManagementButtons(
     new ButtonBuilder()
       .setCustomId(ShiftMgmtActions.ShiftOn)
       .setLabel("On Duty")
-      .setDisabled(false)
       .setStyle(ButtonStyle.Success),
     new ButtonBuilder()
       .setCustomId(ShiftMgmtActions.ShiftBreakToggle)
       .setLabel("Toggle Break")
-      .setDisabled(true)
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId(ShiftMgmtActions.ShiftOff)
       .setLabel("Off Duty")
-      .setDisabled(true)
       .setStyle(ButtonStyle.Danger)
-  ) as NavButtonsActionRow;
+  ) as ShiftMgmtButtonsActionRow;
 
   ActionRow.updateButtons = function UpdateNavigationButtons(
     ButtonsToEnable: Record<"start" | "break" | "end", boolean | undefined>
@@ -109,18 +124,16 @@ export function GetShiftManagementButtons(
     return this;
   };
 
-  // Update the button states.
   ActionRow.updateButtons({
-    start: !ShiftActive?.end_timestamp,
-    break: !ShiftActive?.end_timestamp && ShiftActive?.events.breaks.some(([, end]) => !end),
-    end: !ShiftActive?.end_timestamp && ShiftActive?.events.breaks.some(([, end]) => !!end),
+    start: !ShiftActive || !!ShiftActive.end_timestamp,
+    break: !!ShiftActive && !ShiftActive.end_timestamp,
+    end: !!ShiftActive && !ShiftActive.end_timestamp && !ShiftActive.hasBreakActive(),
   });
 
-  // Set custom Ids for each component based on the user and guild Ids.
-  const ShiftIdInclusionText = ShiftActive?.id ? `:${ShiftActive.id}` : "";
+  const ActiveShiftIdSuffix = ShiftActive?.id ? `:${ShiftActive.id}` : "";
   ActionRow.components.forEach((Comp) =>
     Comp.setCustomId(
-      `${Comp.data.custom_id}:${Interaction.user.id}:${ShiftType}${ShiftIdInclusionText}`
+      `${Comp.data.custom_id}:${Interaction.user.id}:${ShiftType}${ActiveShiftIdSuffix}`
     )
   );
 
@@ -142,7 +155,7 @@ async function CheckShiftTypeRestrictions(
   const GuildDefaultType = GuildShiftTypes.find((ShiftType) => ShiftType.is_default);
   const DesiredShiftType = GuildShiftTypes.find((ShiftType) => ShiftType.name === CmdShiftType);
 
-  if (CmdShiftType === "Default") return true;
+  if (CmdShiftType?.toLowerCase() === "default") return true;
   if (!CmdShiftType && !GuildDefaultType) return true;
 
   // Users with management permissions can use any shift type.
@@ -264,16 +277,22 @@ async function CmdInteractSafeReplyOrEditReply(
   CmdInteract: SlashCommandInteraction<"cached">,
   ReplyOpts: MessagePayload | InteractionReplyOptions
 ): Promise<Message<true>> {
-  const ReplyMethod = CmdInteract.deferred || CmdInteract.replied ? "editReply" : "reply";
-  return CmdInteract[ReplyMethod]({ ...ReplyOpts, withResponse: true } as any).catch(async () => {
-    try {
-      const CmdReplyMsg = await CmdInteract.fetchReply().catch(() => null);
-      if (!CmdReplyMsg?.editable) return null;
-      return CmdReplyMsg?.edit(ReplyOpts as any);
-    } catch {
-      return null;
+  try {
+    let CmdMessage: Message<true>;
+    if (CmdInteract.deferred || CmdInteract.replied) {
+      CmdMessage = await CmdInteract.editReply(ReplyOpts as MessagePayload);
+    } else {
+      CmdMessage = await CmdInteract.reply({
+        ...(ReplyOpts as InteractionReplyOptions),
+        withResponse: true,
+      }).then((Resp) => Resp.resource!.message! as Message<true>);
     }
-  }) as Promise<Message<true>>;
+    return CmdMessage;
+  } catch (Err) {
+    const CmdReplyMsg = await CmdInteract.fetchReply().catch(() => null);
+    if (!CmdReplyMsg?.editable) throw Err;
+    return CmdReplyMsg.edit(ReplyOpts as MessagePayload);
+  }
 }
 
 // ---------------------------------------------------------------------------------------
@@ -331,15 +350,10 @@ async function HandleNonActiveShift(
   MgmtPromptEmbed: EmbedBuilder,
   MgmtShiftType: string
 ) {
+  const MgmtComps = GetShiftManagementButtons(CmdInteract, MgmtShiftType);
   const PromptEmbed = MgmtPromptEmbed.setColor(
     MgmtPromptEmbed.data.color || Embeds.Colors.ShiftNatural
   );
-
-  const MgmtComps = GetShiftManagementButtons(CmdInteract, MgmtShiftType).updateButtons({
-    start: true,
-    break: false,
-    end: false,
-  });
 
   const PromptMessage = await CmdInteractSafeReplyOrEditReply(CmdInteract, {
     embeds: [PromptEmbed],
@@ -432,7 +446,7 @@ async function HandleOnBreakShift(
     .setFields({ name: "Current Shift", value: FieldDescription });
 
   const PromptMessage = await CmdInteractSafeReplyOrEditReply(CmdInteract, {
-    components: [MgmtComps.updateButtons({ start: false, break: true, end: false })],
+    components: [MgmtComps],
     embeds: [PromptEmbed],
   });
 
@@ -635,16 +649,16 @@ async function Callback(
       BasePromptEmbed.setTitle(RecentAction);
       BasePromptEmbed.setFooter({ text: `Shift Type: ${TargetShiftType}` });
 
-      const LatestEndedShift = await ShiftModel.findOne({
+      const MostRecentFinishedShift = await ShiftModel.findOne({
         user: CmdInteract.user.id,
         guild: CmdInteract.guildId,
         end_timestamp: { $ne: null },
       }).sort({ end_timestamp: -1 });
 
-      if (LatestEndedShift) {
+      if (MostRecentFinishedShift) {
         const BreakTimeText =
-          LatestEndedShift.durations.on_break > 500
-            ? `**Break Time:** ${LatestEndedShift.on_break_time}`
+          MostRecentFinishedShift.durations.on_break > 500
+            ? `**Break Time:** ${MostRecentFinishedShift.on_break_time}`
             : "";
 
         BasePromptEmbed.addFields(
@@ -653,7 +667,7 @@ async function Callback(
             name: "Shift Overview",
             value: Dedent(`
               >>> **Status:** (${Emojis.Offline}) Off-Duty
-              **Shift Time:** ${LatestEndedShift.on_duty_time}
+              **Shift Time:** ${MostRecentFinishedShift.on_duty_time}
               ${BreakTimeText}
             `),
           },
@@ -661,9 +675,9 @@ async function Callback(
             inline: true,
             name: "Shift Activity",
             value: Dedent(`
-              >>> **Arrests Made:** \`${LatestEndedShift.events.arrests}\`
-              **Citations Issued:** \`${LatestEndedShift.events.citations}\`
-              **Incidents Reported:** \`${LatestEndedShift.events.incidents}\`
+              >>> **Arrests Made:** \`${MostRecentFinishedShift.events.arrests}\`
+              **Citations Issued:** \`${MostRecentFinishedShift.events.citations}\`
+              **Incidents Reported:** \`${MostRecentFinishedShift.events.incidents}\`
             `),
           }
         );
@@ -692,7 +706,7 @@ async function Callback(
           **Status:** (${Emojis.Idle}) On Break
           **Shift Started:** ${FormatTime(ShiftActive.start_timestamp, "R")}
           **Break Started:** ${FormatTime(Math.round(StartedBreak[0] / 1000), "R")}
-          **On-Duty Time:** ${ShiftActive.on_duty_time}**
+          **On-Duty Time:** ${ShiftActive.on_duty_time}
           ${ShiftActive.events.breaks.length > 1 ? `**Total Break Time:** ${ShiftActive.on_break_time}` : ""}
         `),
       });
@@ -712,6 +726,7 @@ async function Callback(
 // Command structure:
 // ------------------
 const CommandObject = {
+  callback: Callback,
   data: new SlashCommandSubcommandBuilder()
     .setName("manage")
     .setDescription("Manage and control your own duty shift.")
@@ -725,8 +740,6 @@ const CommandObject = {
           "The type of duty shift to be managed; defaults to this server's default shift type."
         )
     ),
-
-  callback: Callback,
 };
 
 // ---------------------------------------------------------------------------------------

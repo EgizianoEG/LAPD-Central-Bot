@@ -18,10 +18,11 @@ const LogLabel = "Events:Ready:RegisterCommands";
 const OneTab = " ".repeat(4);
 
 /**
- * Handles command registration, deployment, and updates
- * @param Client
+ * Handles command registration, deployment, and updates.
+ * @param Client - The Discord.js client instance used to interact with the Discord API.
+ * @returns A promise that resolves when all commands are registered and deployed successfully.
  */
-export default async function RegisterCommands(Client: DiscordClient) {
+export default async function RegisterCommands(Client: DiscordClient): Promise<void> {
   AppLogger.debug({
     message: "Started registering and deploying slash commands...",
     label: LogLabel,
@@ -214,8 +215,8 @@ async function HandleCommandScopeSwitching(
   const SwitchTo = ExistingCmd.guildId ? "global" : "guild";
 
   if (
-    (SwitchTo === "global" && OrgCmdManager.constructor === ApplicationCommandManager) ||
-    (SwitchTo === "guild" && OrgCmdManager.constructor === GuildApplicationCommandManager)
+    (SwitchTo === "global" && OrgCmdManager instanceof ApplicationCommandManager) ||
+    (SwitchTo === "guild" && OrgCmdManager instanceof GuildApplicationCommandManager)
   ) {
     return;
   }

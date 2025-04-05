@@ -5,8 +5,8 @@ import AppLogger from "@Utilities/Classes/AppLogger.js";
 
 /**
  * Initialize the database by adding/updating/verifying guild data.
- * @param _
- * @param Member
+ * @param _ - Unused parameter, included for compatibility.
+ * @param Member - The guild member who left the server.
  */
 export default async function UpdateDatabase(_: DiscordClient, Member: GuildMember) {
   const ShiftActive = await GetShiftActive({
@@ -19,13 +19,14 @@ export default async function UpdateDatabase(_: DiscordClient, Member: GuildMemb
       await ShiftActionLogger.LogShiftAutomatedEnd(
         await ShiftActive.end(),
         Member,
-        "User has left the server."
+        "User has left the server. Automatically ended active shift."
       );
     } catch (Err: any) {
       AppLogger.error({
+        message: "Failed to end shift upon user leaving a server. Member ID: %s, Guild ID: %s",
         label: "Events:GuildMemberRemove",
-        message: "Failed to end shift upon user leaving a server.",
         stack: Err.stack,
+        splat: [Member.id, Member.guild.id],
       });
     }
   }

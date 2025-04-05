@@ -41,6 +41,12 @@ export const ErrorMessages = {
       "An error occurred while accessing the database. Please try again later or contact support.",
   },
 
+  UnauthorizedAccessDev: {
+    Title: "Unauthorized Access",
+    Description:
+      "Execution of this command is restricted to authorized developers of this application.",
+  },
+
   UnauthorizedInteraction: {
     Title: "Unauthorized",
     Description:
@@ -221,7 +227,7 @@ export const ErrorMessages = {
    */
   SMRobloxUserNotLinked: {
     Title: "Hold On!",
-    Description: "To mange shifts using the application, you must first link your Roblox account.",
+    Description: "To manage shifts using the application, you must first link your Roblox account.",
   },
 
   /**

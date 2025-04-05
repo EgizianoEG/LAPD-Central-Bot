@@ -5,8 +5,8 @@ import AppLogger from "@Utilities/Classes/AppLogger.js";
 
 /**
  * Updates the database by adding/updating/verifying guild data.
- * @param _
- * @param CreatedGuild
+ * @param _ - The client instance, unused in this function.
+ * @param GuildInst - The guild instance to be added/updated in the database.
  */
 export default async function UpdateDatabase(_: DiscordClient, GuildInst: Guild) {
   if (
