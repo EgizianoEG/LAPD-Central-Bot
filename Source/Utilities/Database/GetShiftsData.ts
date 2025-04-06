@@ -38,8 +38,8 @@ const HumanizeDuration = DHumanize.humanizer({
  * - `total_onbreak`: Total time spent on break across all shifts.
  * - `total_arrests`: Total number of arrests across all shifts.
  * - `total_citations`: Total number of citations issued across all shifts.
- * - `avg_onduty`: Average time spent on duty per shift.
- * - `avg_onbreak`: Average time spent on break per shift.
+ * - `avg_onduty`: Average time spent on duty per shift. Imported shifts are excluded from this calculation.
+ * - `avg_onbreak`: Average time spent on break per shift. Imported shifts are excluded from this calculation.
  * - `frequent_shift_type`: The shift type with the highest total on-duty time.
  */
 export default async function GetMainShiftsData(
@@ -55,6 +55,10 @@ export default async function GetMainShiftsData(
       $group: {
         _id: "$type",
         shift_count: { $sum: 1 },
+        total_onbreak: { $sum: "$durations.on_break" },
+        total_arrests: { $sum: "$events.arrests" },
+        total_citations: { $sum: "$events.citations" },
+
         total_onduty: {
           $sum: {
             $add: [
@@ -65,12 +69,36 @@ export default async function GetMainShiftsData(
             ],
           },
         },
-        total_onbreak: { $sum: "$durations.on_break" },
-        total_arrests: { $sum: "$events.arrests" },
-        total_citations: { $sum: "$events.citations" },
+
+        total_onduty_imported: {
+          $sum: {
+            $cond: {
+              if: { $eq: ["$flag", "Imported"] },
+              then: {
+                $add: [
+                  "$durations.on_duty",
+                  {
+                    $ifNull: ["$durations.on_duty_mod", 0],
+                  },
+                ],
+              },
+              else: 0,
+            },
+          },
+        },
+
+        imported_shift_count: {
+          $sum: {
+            $cond: {
+              if: { $eq: ["$flag", "Imported"] },
+              then: 1,
+              else: 0,
+            },
+          },
+        },
       },
     },
-    { $sort: { total_onduty: -1 } },
+    { $sort: { shift_count: -1 } },
     {
       $group: {
         _id: null,
@@ -80,6 +108,9 @@ export default async function GetMainShiftsData(
         total_onbreak: { $sum: "$total_onbreak" },
         total_arrests: { $sum: "$total_arrests" },
         total_citations: { $sum: "$total_citations" },
+
+        imported_shift_count: { $sum: "$imported_shift_count" },
+        total_onduty_imported: { $sum: "$total_onduty_imported" },
       },
     },
     {
@@ -92,13 +123,37 @@ export default async function GetMainShiftsData(
         total_citations: 1,
         frequent_shift_type: 1,
         avg_onduty: {
-          $round: {
-            $divide: ["$total_onduty", "$shift_count"],
+          $cond: {
+            if: { $eq: [{ $subtract: ["$shift_count", "$imported_shift_count"] }, 0] },
+            then: 0,
+            else: {
+              $round: {
+                $divide: [
+                  {
+                    $subtract: ["$total_onduty", "$total_onduty_imported"],
+                  },
+                  {
+                    $subtract: ["$shift_count", "$imported_shift_count"],
+                  },
+                ],
+              },
+            },
           },
         },
         avg_onbreak: {
-          $round: {
-            $divide: ["$total_onbreak", "$shift_count"],
+          $cond: {
+            if: { $eq: [{ $subtract: ["$shift_count", "$imported_shift_count"] }, 0] },
+            then: 0,
+            else: {
+              $round: {
+                $divide: [
+                  "$total_onbreak",
+                  {
+                    $subtract: ["$shift_count", "$imported_shift_count"],
+                  },
+                ],
+              },
+            },
           },
         },
       },
