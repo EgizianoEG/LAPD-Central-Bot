@@ -6,6 +6,7 @@ import {
   roleMention,
   EmbedBuilder,
   ModalBuilder,
+  MessageFlags,
   ButtonBuilder,
   ComponentType,
   TextInputStyle,
@@ -118,6 +119,7 @@ function GetConfigTopicConfirmAndBackBtns(
   return new ActionRowBuilder<ButtonBuilder>().setComponents(
     new ButtonBuilder()
       .setLabel("Confirm and Save")
+      .setEmoji(Emojis.WhiteCheck)
       .setStyle(ButtonStyle.Success)
       .setCustomId(`${ConfigTopicId}-cfm:${CmdInteract.user.id}`),
     new ButtonBuilder()
@@ -738,7 +740,9 @@ async function HandleBasicConfigPageInteracts(
         .replyToInteract(ButtonInteract, true);
     }
 
-    if (!ButtonInteract.deferred) await ButtonInteract.deferReply();
+    if (!ButtonInteract.deferred)
+      await ButtonInteract.deferReply({ flags: MessageFlags.Ephemeral });
+
     CurrConfiguration = await GuildModel.findByIdAndUpdate(
       ButtonInteract.guildId,
       {
@@ -857,7 +861,9 @@ async function HandleAdditionalConfigPageInteracts(
         .replyToInteract(ButtonInteract, true);
     }
 
-    if (!ButtonInteract.deferred) await ButtonInteract.deferReply();
+    if (!ButtonInteract.deferred)
+      await ButtonInteract.deferReply({ flags: MessageFlags.Ephemeral });
+
     CurrConfiguration = await GuildModel.findByIdAndUpdate(
       CmdInteract.guildId,
       {
@@ -998,7 +1004,9 @@ async function HandleShiftConfigPageInteracts(
         .replyToInteract(ButtonInteract, true);
     }
 
-    if (!ButtonInteract.deferred) await ButtonInteract.deferReply();
+    if (!ButtonInteract.deferred)
+      await ButtonInteract.deferReply({ flags: MessageFlags.Ephemeral });
+
     SMCurrConfiguration = await GuildModel.findByIdAndUpdate(
       CmdInteract.guildId,
       {
@@ -1133,7 +1141,9 @@ async function HandleLeaveConfigPageInteracts(
         .replyToInteract(ButtonInteract, true);
     }
 
-    if (!ButtonInteract.deferred) await ButtonInteract.deferReply();
+    if (!ButtonInteract.deferred)
+      await ButtonInteract.deferReply({ flags: MessageFlags.Ephemeral });
+
     LNCurrConfiguration = await GuildModel.findByIdAndUpdate(
       CmdInteract.guildId,
       {
@@ -1266,7 +1276,9 @@ async function HandleDutyActivitiesConfigPageInteracts(
         .replyToInteract(ButtonInteract, true);
     }
 
-    if (!ButtonInteract.deferred) await ButtonInteract.deferReply();
+    if (!ButtonInteract.deferred)
+      await ButtonInteract.deferReply({ flags: MessageFlags.Ephemeral });
+
     DACurrentConfig = await GuildModel.findByIdAndUpdate(
       CmdInteract.guildId,
       {

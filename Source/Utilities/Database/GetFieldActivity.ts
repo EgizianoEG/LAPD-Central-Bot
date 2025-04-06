@@ -36,7 +36,8 @@ export default async function GetStaffFieldActivity(
         "logs.arrests.assisting_officers": 1,
         "logs.arrests.arresting_officer.discord_id": 1,
 
-        "logs.citations.issued_at": 1,
+        "logs.citations.type": 1,
+        "logs.citations.issued_on": 1,
         "logs.citations.citing_officer.discord_id": 1,
 
         "logs.incidents.reported_on": 1,

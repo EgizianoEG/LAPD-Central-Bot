@@ -5,11 +5,13 @@ import {
   SlashCommandSubcommandBuilder,
   RoleSelectMenuBuilder,
   InteractionResponse,
+  ButtonInteraction,
   ActionRowBuilder,
   escapeMarkdown,
   ButtonBuilder,
   EmbedBuilder,
   ButtonStyle,
+  roleMention,
   Message,
   Colors,
 } from "discord.js";
@@ -86,7 +88,7 @@ async function HandleNameValidation(
  */
 async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const ShiftTypeName = Interaction.options.getString("name", true);
-  const IsDefaultType = !!Interaction.options.getBoolean("default");
+  const IsDefaultType = !!Interaction.options.getBoolean("default", false);
   let ShiftTypePermittedRoles: string[] = [];
 
   await HandleNameValidation(Interaction, ShiftTypeName);
@@ -100,9 +102,8 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
         - **Name:** \`${escapeMarkdown(ShiftTypeName)}\`
         - **Is Default:** \`${IsDefaultType ? "True" : "False"}\`
         - **Access Roles:**
-          - Roles that owners may utilize and use this shift type.
-          - To limit who may use this shift type, choose the appropriate roles from the drop-down menu below.
-          - To make this shift type available and usable for all members, keep the drop-down menu empty.
+          - Select roles below to limit who can use this shift type.
+          - Leave the selection empty to make it available to all members.
           - Press the \`Confirm and Create\` button when finished to proceed with the creation.
   
         *This prompt will automatically cancel after five minutes of inactivity.*
@@ -112,18 +113,18 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const PromptComponents = [
     new ActionRowBuilder().addComponents(
       new RoleSelectMenuBuilder()
-        .setCustomId(`access-roles:${Interaction.user.id}`)
+        .setCustomId(`dt-create-ar:${Interaction.user.id}`)
         .setPlaceholder("Specify which roles may utilize this shift type")
         .setMinValues(0)
         .setMaxValues(15)
     ) as ActionRowBuilder<RoleSelectMenuBuilder>,
     new ActionRowBuilder().addComponents(
       new ButtonBuilder()
-        .setCustomId(`confirm-creation:${Interaction.user.id}`)
+        .setCustomId(`dt-create-confirm:${Interaction.user.id}`)
         .setLabel("Confirm and Create")
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
-        .setCustomId(`cancel-creation:${Interaction.user.id}`)
+        .setCustomId(`dt-create-cancel:${Interaction.user.id}`)
         .setLabel("Cancel Creation")
         .setStyle(ButtonStyle.Secondary)
     ) as ActionRowBuilder<ButtonBuilder>,
@@ -137,29 +138,19 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const CompCollector = PromptMessage.createMessageComponentCollector({
     filter: (Collected) => HandleCollectorFiltering(Interaction, Collected),
     idle: 5 * 60_000,
-    time: 15 * 60_000,
+    time: 14.5 * 60_000,
   });
-
-  // Disables the prompt and prevents any further interaction with its components
-  const DisablePrompt = () => {
-    PromptComponents[1].components.forEach((Button) => Button.setDisabled(true));
-    PromptComponents[0].components[0].setDisabled(true);
-    return PromptMessage.edit({
-      components: PromptComponents,
-    });
-  };
 
   CompCollector.on("collect", async (CollectInteraction) => {
     if (CollectInteraction.isButton()) {
-      if (CollectInteraction.customId.includes("confirm-creation")) {
+      if (CollectInteraction.customId.includes("confirm")) {
         CompCollector.stop("confirmation");
-      } else if (CollectInteraction.customId.includes("cancel-creation")) {
+      } else if (CollectInteraction.customId.includes("cancel")) {
         CompCollector.stop("cancellation");
       }
     } else if (CollectInteraction.isRoleSelectMenu()) {
-      CollectInteraction.deferUpdate().then(() => {
-        ShiftTypePermittedRoles = CollectInteraction.values;
-      });
+      ShiftTypePermittedRoles = CollectInteraction.values;
+      CollectInteraction.deferUpdate().catch(() => null);
     }
   });
 
@@ -168,11 +159,10 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     if (EndReason.match(/^\w+Delete/)) return;
 
     try {
-      await DisablePrompt();
-      if (EndReason === "confirmation") {
+      if (LastInteraction instanceof ButtonInteraction && EndReason === "confirmation") {
         const Response = await CreateShiftType({
-          guild_id: Interaction.guildId,
           name: ShiftTypeName,
+          guild_id: Interaction.guildId,
           is_default: IsDefaultType,
           access_roles: ShiftTypePermittedRoles,
         });
@@ -182,54 +172,45 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
             .useErrClass(Response)
             .replyToInteract(LastInteraction, false, false);
         } else {
-          LastInteraction.reply({
-            embeds: [
-              new SuccessEmbed()
-                .setTitle("Shift Type Created")
-                .setDescription(
-                  `**Name:** \`${Response.name}\`\n`,
-                  `**Is Default:** \`${Response.is_default ? "Yes" : "No"}\`\n`,
-                  "**Access Roles:**\n",
-                  ShiftTypePermittedRoles.length
-                    ? ListFormatter.format(ShiftTypePermittedRoles.map((RoleId) => `<@&${RoleId}>`))
-                    : "*Usable by all staff identified members*"
-                ),
-            ],
+          const SuccessCreationEmbed = new SuccessEmbed()
+            .setTitle("Shift Type Created")
+            .setDescription(
+              `**Name:** \`${Response.name}\`\n`,
+              `**Is Default:** \`${Response.is_default ? "Yes" : "No"}\`\n`,
+              "**Access Roles:**\n",
+              ShiftTypePermittedRoles.length
+                ? ListFormatter.format(ShiftTypePermittedRoles.map((RoleId) => roleMention(RoleId)))
+                : "*Usable by all staff identified members*"
+            );
+
+          await LastInteraction.update({
+            embeds: [SuccessCreationEmbed],
+            components: [],
           });
         }
-      } else if (EndReason === "cancellation") {
-        LastInteraction.reply({
-          embeds: [
-            new InfoEmbed()
-              .setTitle("Process Cancellation")
-              .setDescription("Shift type creation has been cancelled due to user request."),
-          ],
+      } else if (LastInteraction instanceof ButtonInteraction && EndReason === "cancellation") {
+        const CancellationRespEmbed = new InfoEmbed()
+          .setTitle("Process Cancellation")
+          .setDescription("Shift type creation has been cancelled at your request.");
+
+        LastInteraction.update({
+          embeds: [CancellationRespEmbed],
+          components: [],
         });
-      } else if (EndReason === "idle") {
-        Interaction.followUp({
-          embeds: [
-            new InfoEmbed()
-              .setTitle("Process Timed Out")
-              .setDescription("Shift type creation has been cancelled due to inactivity."),
-          ],
-        });
-      } else if (EndReason === "time") {
-        Interaction.followUp({
-          embeds: [
-            new InfoEmbed()
-              .setTitle("Process Timed Out")
-              .setDescription(
-                "Shift type creation has been cancelled after exceeding fifteen minutes."
-              ),
-          ],
-        });
+      } else if (EndReason === "idle" || EndReason === "time") {
+        PromptComponents[1].components.forEach((Button) => Button.setDisabled(true));
+        PromptComponents[0].components[0].setDisabled(true);
+        await LastInteraction.editReply({
+          message: PromptMessage.id,
+          components: PromptComponents,
+        }).catch(() => null);
       }
     } catch (Err: any) {
       AppLogger.error({
-        message: "Could not query '%s' username;",
+        message: "An error occurred while creating a new duty shift type;",
         label: "Commands:Miscellaneous:DutyTypes:Create",
         stack: Err.stack,
-        details: { ...Err },
+        guild: Interaction.guildId,
       });
 
       await new ErrorEmbed()
@@ -245,10 +226,10 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
 const CommandObject = {
   data: new SlashCommandSubcommandBuilder()
     .setName("create")
-    .setDescription("Create a new duty shift type.")
+    .setDescription("Create a new duty shift type for managing and organizing shifts.")
     .addStringOption((Option) =>
       Option.setName("name")
-        .setDescription("The duty shift type name to create.")
+        .setDescription("Name of the duty shift type (3-20 characters).")
         .setMinLength(3)
         .setMaxLength(20)
         .setRequired(true)
@@ -256,9 +237,7 @@ const CommandObject = {
     .addBooleanOption((Option) =>
       Option.setName("default")
         .setRequired(false)
-        .setDescription(
-          "Whether or not to make this type the default one. (overwrites any existing default type if true)"
-        )
+        .setDescription("Set this type as default (overwrites existing default if true).")
     ),
 
   callback: Callback,

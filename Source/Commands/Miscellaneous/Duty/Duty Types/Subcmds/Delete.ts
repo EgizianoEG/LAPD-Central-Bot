@@ -90,11 +90,11 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const PromptComponents = [
     new ActionRowBuilder().addComponents(
       new ButtonBuilder()
-        .setCustomId(`std-confirm:${Interaction.user.id}:${Interaction.guildId}`)
+        .setCustomId(`dt-delete-confirm:${Interaction.user.id}:${Interaction.guildId}`)
         .setLabel("Confirm and Delete")
         .setStyle(ButtonStyle.Danger),
       new ButtonBuilder()
-        .setCustomId(`std-cancel:${Interaction.user.id}:${Interaction.guildId}`)
+        .setCustomId(`dt-delete-cancel:${Interaction.user.id}:${Interaction.guildId}`)
         .setLabel("Cancel Deletion")
         .setStyle(ButtonStyle.Secondary)
     ) as ActionRowBuilder<ButtonBuilder>,
@@ -103,14 +103,8 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const PromptMessage = await Interaction.reply({
     embeds: [PromptEmbed],
     components: PromptComponents,
-  });
-
-  const DisablePrompt = () => {
-    PromptComponents[0].components.forEach((Button) => Button.setDisabled(true));
-    return PromptMessage.edit({
-      components: PromptComponents,
-    });
-  };
+    withResponse: true,
+  }).then((Res) => Res.resource!.message!);
 
   await PromptMessage.awaitMessageComponent({
     filter: (ButtonInteract) => HandleCollectorFiltering(Interaction, ButtonInteract),
@@ -118,10 +112,10 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     time: 5 * 60_000,
   })
     .then(async (ButtonInteract) => {
-      await DisablePrompt();
-      if (ButtonInteract.customId.includes("confirm-deletion")) {
+      if (ButtonInteract.customId.includes("confirm")) {
         await DeleteShiftType(ShiftTypeName, Interaction.guildId);
-        return ButtonInteract.reply({
+        return ButtonInteract.update({
+          components: [],
           embeds: [
             new SuccessEmbed().setDescription(
               "Successfully deleted `%s` shift type.",
@@ -130,19 +124,20 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
           ],
         });
       } else {
-        return ButtonInteract.reply({
+        return ButtonInteract.update({
+          components: [],
           embeds: [
             new InfoEmbed()
               .setTitle("Deletion Cancelled")
               .setDescription(
-                "Deletion cancelled for the `%s` shift type due to user request.",
+                "Deletion cancelled for the `%s` shift type at your request.",
                 ShiftTypeName
               ),
           ],
         });
       }
     })
-    .catch((Err) => HandleActionCollectorExceptions(Err, DisablePrompt));
+    .catch((Err) => HandleActionCollectorExceptions(Err, PromptMessage));
 }
 
 // ---------------------------------------------------------------------------------------

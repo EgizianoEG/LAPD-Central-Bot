@@ -613,8 +613,9 @@ async function Callback(
   if (VerificationDetails.handled === true) return;
 
   const TargetShiftType = VerificationDetails.target_shift_type;
+  const CmdShiftType = CmdInteract.options.getString("type", false);
   const ShiftActive = await GetShiftActive({
-    ShiftType: TargetShiftType,
+    ShiftType: CmdShiftType ? TargetShiftType : undefined,
     Interaction: CmdInteract,
     UserOnly: true,
   });
@@ -623,7 +624,7 @@ async function Callback(
     {
       user: CmdInteract.user.id,
       guild: CmdInteract.guildId,
-      type: TargetShiftType,
+      type: ShiftActive ? ShiftActive.type : TargetShiftType,
     },
     !!ShiftActive
   );
@@ -637,11 +638,7 @@ async function Callback(
 
   const BasePromptEmbed = new EmbedBuilder()
     .setColor(Embeds.Colors.ShiftNatural)
-    .setTitle(ShiftActive ? `Shift Management: \`${ShiftActive.type}\` Type` : MgmtEmbedTitle)
-    .setFields({
-      name: "All Statistics",
-      value: MgmtPromptMainDesc,
-    });
+    .setTitle(ShiftActive ? `Shift Management: \`${ShiftActive.type}\` Type` : MgmtEmbedTitle);
 
   if (RecentAction) {
     if (RecentAction === RecentShiftAction.End) {
@@ -679,6 +676,11 @@ async function Callback(
               **Citations Issued:** \`${MostRecentFinishedShift.events.citations}\`
               **Incidents Reported:** \`${MostRecentFinishedShift.events.incidents}\`
             `),
+          },
+          {
+            inline: false,
+            name: "All Statistics",
+            value: MgmtPromptMainDesc,
           }
         );
       }
@@ -687,6 +689,7 @@ async function Callback(
       BasePromptEmbed.setFooter({ text: `Shift Type: ${TargetShiftType}` });
       BasePromptEmbed.setTitle(RecentAction);
       BasePromptEmbed.setFields({
+        inline: true,
         name: "Current Shift",
         value: Dedent(`
           >>> **Status:** (${Emojis.Online}) On Duty
@@ -701,6 +704,7 @@ async function Callback(
       BasePromptEmbed.setFooter({ text: `Shift Type: ${TargetShiftType}` });
       BasePromptEmbed.setTitle(RecentAction);
       BasePromptEmbed.setFields({
+        inline: true,
         name: "Current Shift",
         value: Dedent(`
           >>> **Status:** (${Emojis.Idle}) On Break
@@ -711,6 +715,12 @@ async function Callback(
         `),
       });
     }
+  } else {
+    BasePromptEmbed.setFields({
+      inline: true,
+      name: "All Statistics",
+      value: MgmtPromptMainDesc,
+    });
   }
 
   if (!ShiftActive) {
