@@ -1,5 +1,6 @@
 import FFI from "ffi-rs";
 import Path from "node:path";
+import FileSys from "node:fs";
 import Process from "node:process";
 import Linkify from "linkifyjs";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
@@ -17,6 +18,15 @@ import {
 // ------------
 const CLibExtension = Process.platform === "win32" ? "dll" : "so";
 const FileLabel = "Utilities:Strings:Redactor";
+const CLibPath = Path.join(
+  GetDirName(import.meta.url),
+  "..",
+  "..",
+  "Resources",
+  "Libs",
+  `cl_rust_rr.${CLibExtension}`
+);
+
 let FFIFuncs: null | Record<string, any> = null;
 type ReplacementType = "Word" | "Character";
 type RustRegexReplaceFun = (params: RustRegexReplaceParams) => string;
@@ -54,8 +64,7 @@ export interface FilterUserInputOptions {
 
   /**
    * Indicates whether user text input filtering is enabled for the guild. When set to `true`, the input string will be filtered; otherwise, it will not.
-   * @default
-   * true
+   * @default true
    */
   utif_setting_enabled?: boolean;
 
@@ -130,16 +139,7 @@ type RustRegexReplaceParams = [
 try {
   FFI.open({
     library: "rs_reg_replace",
-    path:
-      `file:${Path.sep.repeat(2)}` +
-      Path.join(
-        GetDirName(import.meta.url),
-        "..",
-        "..",
-        "Resources",
-        "Libs",
-        `cl_rust_rr.${CLibExtension}`
-      ),
+    path: CLibPath,
   });
 
   FFIFuncs = FFI.define({
@@ -168,6 +168,8 @@ try {
 } catch (Err: any) {
   AppLogger.error({
     message: "Failed to load Rust library functions.",
+    path: CLibPath,
+    path_exists: FileSys.existsSync(CLibPath),
     label: FileLabel,
     stack: Err.stack,
   });
@@ -219,7 +221,7 @@ export function RedactTextByOptions(Input: string, Options: RedactTextFromOption
   } = Options;
 
   const redact_fraction_c = Math.max(0, Math.min(1, redact_fraction));
-  if (redact_by_length && redact_fraction_c > 0 && redact_fraction_c <= 1) {
+  if (redact_by_length && redact_fraction_c > 0) {
     const RedactLength = Math.floor(Input.length * redact_fraction_c);
     if (redact_from_end) {
       return Input.slice(0, Input.length - RedactLength) + replacement.repeat(RedactLength);
