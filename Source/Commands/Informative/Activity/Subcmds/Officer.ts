@@ -89,11 +89,11 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
         value: Dedent(`
           - **Total Shifts:** \`${ShiftsData.shift_count}\`
           - **On-Duty Time**
-           - Total: ${ShiftsData.total_onduty}   
-           - Average: ${ShiftsData.avg_onduty}         
+            - Total: ${ShiftsData.total_onduty}   
+            - Average: ${ShiftsData.avg_onduty}         
           - **On-Break Time**
-           - Total: ${ShiftsData.total_onbreak}
-           - Average: ${ShiftsData.avg_onbreak}
+            - Total: ${ShiftsData.total_onbreak}
+            - Average: ${ShiftsData.avg_onbreak}
         `),
       },
       {
@@ -104,8 +104,8 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
           - Arrests Assisted: \`${FieldActivityData.arrests_assisted}\`
           - Incidents Reported: \`${FieldActivityData.incidents_reported}\`
           - Citations Issued:
-           - Warnings: \`${FieldActivityData.citations_issued.warnings}\`
-           - Fines: \`${FieldActivityData.citations_issued.fines}\`
+            - Warnings: \`${FieldActivityData.citations_issued.warnings}\`
+            - Fines: \`${FieldActivityData.citations_issued.fines}\`
         `),
       }
     );

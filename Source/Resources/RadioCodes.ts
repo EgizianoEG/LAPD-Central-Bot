@@ -260,12 +260,12 @@ export const LiteralCodes: CodeType[] = [
     code: "Code 1",
     title: "Acknowledge Call/Respond over Radio",
     description: `
-      **As defined in Volume-4[${SuperNums[1]}](${Volume4}):**
+      **As defined in Volume-4[${SuperNums[1]}](${Volume4}#page=17):**
       When the control operator (Dispatch) fails to receive an acknowledgment of a communication, \
       a 'Code One' shall be given. The unit or officer to which a 'Code One' is directed shall \
       acknowledge immediately upon hearing a 'Code One'.
 
-      **As defined in CDM[${SuperNums[2]}](${CDManual}):**
+      **As defined in CDM[${SuperNums[2]}](${CDManual}#page=385):**
       A Code One is used when a field unit fails to respond to a radio transmission in one minute \
       (including voice broadcast radio call) or fails to acknowledge a digitally dispatched or assigned \
       incident after a two minute alert is received (when the unit appears gray on the AWW).

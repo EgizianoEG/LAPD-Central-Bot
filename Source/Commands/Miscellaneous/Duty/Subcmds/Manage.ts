@@ -689,7 +689,7 @@ async function Callback(
       BasePromptEmbed.setFields({
         name: "Current Shift",
         value: Dedent(`
-          **Status:** (${Emojis.Online}) On Duty
+          >>> **Status:** (${Emojis.Online}) On Duty
           **Shift Started:** ${FormatTime(ShiftActive.start_timestamp, "R")}
           **Ended Break Time:** ${EndedBreak[1] ? HumanizeDuration(EndedBreak[1] - EndedBreak[0]) : "N/A"}
           **Total Break Time:** ${ShiftActive.on_break_time}
@@ -703,7 +703,7 @@ async function Callback(
       BasePromptEmbed.setFields({
         name: "Current Shift",
         value: Dedent(`
-          **Status:** (${Emojis.Idle}) On Break
+          >>> **Status:** (${Emojis.Idle}) On Break
           **Shift Started:** ${FormatTime(ShiftActive.start_timestamp, "R")}
           **Break Started:** ${FormatTime(Math.round(StartedBreak[0] / 1000), "R")}
           **On-Duty Time:** ${ShiftActive.on_duty_time}

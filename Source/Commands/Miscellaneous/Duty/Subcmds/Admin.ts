@@ -729,10 +729,10 @@ async function GetPaginatedShifts(TargetUser: User, GuildId: string, ShiftType?:
       } else {
         return Dedent(`
           - **Shift ID:** \`${Data._id}\`
-           - **Type:** \`${Data.type}\`
-           - **Duration:** ${HumanizeDuration(Data.duration)}
-           - **Started:** ${Started}
-           - **Ended:** ${Ended}
+            - **Type:** \`${Data.type}\`
+            - **Duration:** ${HumanizeDuration(Data.duration)}
+            - **Started:** ${Started}
+            - **Ended:** ${Ended}
         `);
       }
     }).join("\n\n");
@@ -902,7 +902,8 @@ async function HandleUserShiftEnd(
   });
 
   const ShiftsInfo = Dedent(`
-    **Shift Count:** \`${UserShiftsData.shift_count}\`
+    >>> **Shift Count:** \`${UserShiftsData.shift_count}\`
+    **Frequent Shift Type:** \`${UserShiftsData.frequent_shift_type}\`
     **Total On-Duty Time:** ${UserShiftsData.total_onduty}
     **Average On-Duty Time:** ${UserShiftsData.avg_onduty}
   `);
@@ -933,7 +934,7 @@ async function HandleUserShiftEnd(
         inline: true,
         name: "Duty Activities:",
         value: Dedent(`
-          **Arrests Made:** \`${EndedShift.events.arrests}\`
+          >>> **Arrests Made:** \`${EndedShift.events.arrests}\`
           **Citations Issued:** \`${EndedShift.events.citations}\`
           **Incidents Reported:** \`${EndedShift.events.incidents}\`
         `),
@@ -1037,7 +1038,8 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   );
 
   const ShiftsInfo = Dedent(`
-    **Shift Count:** \`${UserShiftsData.shift_count}\`
+    >>> **Shift Count:** \`${UserShiftsData.shift_count}\`
+    **Frequent Shift Type:** \`${UserShiftsData.frequent_shift_type}\`
     **Total On-Duty Time:** ${UserShiftsData.total_onduty}
     **Average On-Duty Time:** ${UserShiftsData.avg_onduty}
   `);
@@ -1070,7 +1072,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     RespEmbed.addFields({
       name: "Active Shift:",
       value: Dedent(`
-        **ID:** \`${ActiveShift._id}\`\
+        >>> **ID:** \`${ActiveShift._id}\`\
         ${CmdShiftType ? "" : `\n**Type:** \`${ActiveShift.type}\``}
         **Status:** ${StatusText}
         **Shift Started:** ${FormatTime(ActiveShift.start_timestamp, "R")}
@@ -1143,12 +1145,12 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
         await new ErrorEmbed()
           .setTitle(Err.title)
           .setDescription(Err.message)
-          .replyToInteract(ButtonInteract);
+          .replyToInteract(ButtonInteract, true, false);
+      } else {
+        await new ErrorEmbed()
+          .useErrTemplate("AppError")
+          .replyToInteract(ButtonInteract, true, false);
       }
-
-      await new ErrorEmbed()
-        .useErrTemplate("AppError")
-        .replyToInteract(ButtonInteract, true, false);
 
       ActionCollector.stop("ErrorOccurred");
     }
