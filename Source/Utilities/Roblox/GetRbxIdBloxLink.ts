@@ -1,7 +1,9 @@
 import { BloxlinkDiscordToRobloxUsageChache } from "@Utilities/Other/Cache.js";
+import { RedactTextByOptions } from "@Utilities/Strings/Redactor.js";
 import { differenceInDays } from "date-fns";
 import { Bloxlink } from "@Typings/Utilities/APIResponses.js";
 import { Other } from "@Config/Secrets.js";
+import AppLogger from "@Utilities/Classes/AppLogger.js";
 import Axios from "axios";
 
 const MaxUserRequestsPerDay = 3;
@@ -49,5 +51,23 @@ export default async function GetRobloxIdFromDiscordBloxlink(
     }
   )
     .then((Resp) => Number(Resp.data.robloxID) || null)
-    .catch(() => null);
+    .catch((Err: unknown) => {
+      if (
+        Axios.isAxiosError(Err) &&
+        Err.response?.status === 400 &&
+        typeof Err.response.data?.error === "string" &&
+        !!Err.response.data.error.match(/\bInvalid API Key\b/i)
+      ) {
+        AppLogger.warn({
+          label: "Utilities:Roblox:GetRbxIdBloxLink",
+          message:
+            "Provided Bloxlink API key is invalid. Make sure it is correct and has global access.",
+          stack: Err.stack,
+          data: Err.response.data,
+          status: Err.response.status,
+          api_key: RedactTextByOptions(Other.BloxlinkAPIKey, { from_pattern: /\b\w+$/ }),
+        });
+      }
+      return null;
+    });
 }
