@@ -74,6 +74,48 @@ export interface FilterUserInputOptions {
   input_from_roles?: string[];
 }
 
+/**
+ * Options for redacting text, allowing for pattern-based or length-based redaction with customizable replacements.
+ */
+interface RedactTextFromOptions {
+  /**
+   * A pattern used to identify the portion of the text to redact. This can be a string or a regular expression.
+   * If not provided, the function will not perform redaction based on a pattern.
+   */
+  from_pattern?: string | RegExp;
+
+  /**
+   * The character or string to replace the matched text with, for each character redacted.
+   * @default "*"
+   */
+  replacement?: string;
+
+  /**
+   * Indicates whether to redact by length or by pattern.
+   * If true, the function will redact a portion of the text based on the specified length/scale provided.
+   * @default false
+   */
+  redact_by_length?: boolean;
+
+  /**
+   * Specifies the fraction of the text to redact. The value must be between `0` and `1` (inclusive) and will be
+   * clamped to this range if it exceeds the bounds. This option is only applicable when `redact_by_length` is set to `true`.
+   * For example:
+   * - A value of `0.5` will redact half of the text.
+   * - A value of `1` will redact the entire text.
+   * @default 0
+   */
+  redact_fraction?: number;
+
+  /**
+   * Indicates whether to redact from the end of the text. This field will have no effect if `from_pattern` is provided,
+   * as the regex pattern can be adjusted to ensure it matches from the end of the input.
+   * If true, the function will redact from the end of the text instead of the beginning.
+   * @default false
+   */
+  redact_from_end?: boolean;
+}
+
 type RustRegexReplaceParams = [
   input: string,
   pattern: string,
@@ -156,6 +198,45 @@ export function RedactLinksAndEmails(
 
   Parts.push(Input.slice(LastIndex));
   return Parts.join("");
+}
+
+/**
+ * Redacts a portion of the input string based on the provided options.
+ * @param Input - The input string to be redacted.
+ * @param Options - Configuration options for redaction.
+ * @returns The redacted string based on the provided options.
+ *          The same string is returned if no or less necessary options are provided.
+ */
+export function RedactTextByOptions(Input: string, Options: RedactTextFromOptions = {}): string {
+  const {
+    from_pattern,
+    replacement = "*",
+    redact_fraction = 0,
+    redact_from_end = false,
+    redact_by_length = false,
+  } = Options;
+
+  const redact_fraction_c = Math.max(0, Math.min(1, redact_fraction));
+  if (redact_by_length && redact_fraction_c > 0 && redact_fraction_c <= 1) {
+    const RedactLength = Math.floor(Input.length * redact_fraction_c);
+    if (redact_from_end) {
+      return Input.slice(0, Input.length - RedactLength) + replacement.repeat(RedactLength);
+    } else {
+      return replacement.repeat(RedactLength) + Input.slice(RedactLength);
+    }
+  }
+
+  if (from_pattern) {
+    const Pattern = typeof from_pattern === "string" ? new RegExp(from_pattern) : from_pattern;
+    const Match = Input.match(Pattern);
+
+    if (Match?.index !== undefined) {
+      const StartIndex = Match.index;
+      return Input.slice(0, StartIndex) + replacement.repeat(Input.length - StartIndex);
+    }
+  }
+
+  return Input;
 }
 
 /**
