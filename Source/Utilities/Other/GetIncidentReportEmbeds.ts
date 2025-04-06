@@ -92,7 +92,7 @@ export default function GetIncidentReportEmbeds(
   }
 
   const IncidentAttachments = IncidentRecord.attachments.filter((AttachmentLink) =>
-    IsValidDiscordAttachmentLink(AttachmentLink, true, "image")
+    IsValidDiscordAttachmentLink(AttachmentLink, false, "image")
   );
 
   if (IncidentAttachments.length) {

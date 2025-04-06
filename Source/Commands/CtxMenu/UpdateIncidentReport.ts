@@ -280,7 +280,7 @@ async function EditIncidentReportLogMessageBasedOnRecordAndInteraction(
 // ---------------------------------------------------------------------------------------
 // Handlers and Validation:
 // ------------------------
-async function HandleCommandValidationAndPossiblyGetIncident(
+export async function HandleCommandValidationAndPossiblyGetIncident(
   RecInteract: MessageContextMenuCommandInteraction<"cached">
 ): Promise<ValidationResult> {
   const ReportEmbeds = RecInteract.targetMessage.embeds;
