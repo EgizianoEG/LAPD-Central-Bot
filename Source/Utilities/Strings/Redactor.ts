@@ -130,14 +130,16 @@ type RustRegexReplaceParams = [
 try {
   FFI.open({
     library: "rs_reg_replace",
-    path: Path.join(
-      GetDirName(import.meta.url),
-      "..",
-      "..",
-      "Resources",
-      "Libs",
-      `cl_rust_rr.${CLibExtension}`
-    ),
+    path:
+      `file:${Path.sep.repeat(2)}` +
+      Path.join(
+        GetDirName(import.meta.url),
+        "..",
+        "..",
+        "Resources",
+        "Libs",
+        `cl_rust_rr.${CLibExtension}`
+      ),
   });
 
   FFIFuncs = FFI.define({

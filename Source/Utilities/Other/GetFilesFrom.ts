@@ -21,7 +21,7 @@ export default function GetFilesFrom(Directory: string, FoldersOnly: boolean = f
         Paths.push(FilePath);
       }
     } else if (File.isFile() && (ExtName === ".js" || ExtName === ".ts")) {
-      Paths.push("file://" + FilePath);
+      Paths.push(`file:${Path.sep.repeat(2)}${FilePath}`);
     }
   }
 
