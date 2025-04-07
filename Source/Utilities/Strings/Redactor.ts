@@ -1,4 +1,4 @@
-import FFI from "ffi-rs";
+import FFI from "node-ffi-rs";
 import Path from "node:path";
 import FileSys from "node:fs";
 import Process from "node:process";
