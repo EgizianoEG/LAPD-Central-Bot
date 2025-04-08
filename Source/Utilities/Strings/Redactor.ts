@@ -157,13 +157,6 @@ try {
         FFI.DataType.I32,
       ],
     },
-
-    rust_regex_replace_free: {
-      library: "rs_reg_replace",
-      funcName: "rust_regex_replace_free",
-      retType: FFI.DataType.Void,
-      paramsType: [FFI.DataType.String],
-    },
   });
 } catch (Err: any) {
   AppLogger.error({
