@@ -160,7 +160,7 @@ try {
   });
 } catch (Err: any) {
   AppLogger.error({
-    message: "Failed to load Rust library functions.",
+    message: "Failed to initialize Rust library functions.",
     path: CLibPath,
     path_exists: FileSys.existsSync(CLibPath),
     label: FileLabel,
