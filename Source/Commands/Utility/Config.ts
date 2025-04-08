@@ -199,7 +199,7 @@ function GetBasicConfigComponents(
       .setDefaultRoles(GuildConfig.role_perms.staff)
       .setPlaceholder("Staff Roles")
       .setMinValues(0)
-      .setMaxValues(8)
+      .setMaxValues(10)
   );
 
   const ManagementRolesAR = new ActionRowBuilder<RoleSelectMenuBuilder>().setComponents(
@@ -208,7 +208,7 @@ function GetBasicConfigComponents(
       .setDefaultRoles(GuildConfig.role_perms.management)
       .setPlaceholder("Management Roles")
       .setMinValues(0)
-      .setMaxValues(8)
+      .setMaxValues(10)
   );
 
   return [RobloxAuthorizationAR, StaffRolesAR, ManagementRolesAR] as const;

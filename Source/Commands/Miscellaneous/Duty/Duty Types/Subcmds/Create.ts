@@ -116,7 +116,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
         .setCustomId(`dt-create-ar:${Interaction.user.id}`)
         .setPlaceholder("Specify which roles may utilize this shift type")
         .setMinValues(0)
-        .setMaxValues(15)
+        .setMaxValues(12)
     ) as ActionRowBuilder<RoleSelectMenuBuilder>,
     new ActionRowBuilder().addComponents(
       new ButtonBuilder()
