@@ -63,7 +63,7 @@ export function ListCharges<ReturnType extends boolean = true>(
  * 1. Eluding a Peace Officer: Disregarding Safety
  *     - Statute: § 2800.2(A) VC
  *
- * @todo Instead of relying solely on regex patterns to assign a law code to a charge, use a score-based approach.
+ * @todo Instead of relying solely on regex patterns to assign a law code to a charge, use AI classification approach 😐.
  * @param Charges - The input array of charges (strings).
  * @returns An array of charges after adding statutes to them.
  * @example
