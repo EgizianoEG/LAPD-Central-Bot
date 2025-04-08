@@ -986,7 +986,10 @@ async function HandleShiftConfigPageInteracts(
   let LogChannel = SMCurrConfiguration.log_channel;
 
   const SCCompActionCollector = ConfigPrompt.createMessageComponentCollector<
-    ComponentType.Button | ComponentType.RoleSelect | ComponentType.StringSelect
+    | ComponentType.Button
+    | ComponentType.RoleSelect
+    | ComponentType.ChannelSelect
+    | ComponentType.StringSelect
   >({
     filter: (Interact) => Interact.user.id === CmdInteract.user.id,
     time: 10 * 60 * 1000,
@@ -1072,13 +1075,16 @@ async function HandleShiftConfigPageInteracts(
         ActionId.startsWith(CTAIds[ConfigTopics.ShiftConfiguration].ModuleEnabled)
       ) {
         ModuleEnabled = RecInteract.values[0] === "true";
+      } else if (
+        RecInteract.isChannelSelectMenu() &&
+        ActionId.startsWith(CTAIds[ConfigTopics.ShiftConfiguration].LogChannel)
+      ) {
+        LogChannel = RecInteract.values[0] || null;
       } else if (RecInteract.isRoleSelectMenu()) {
         if (ActionId.startsWith(CTAIds[ConfigTopics.ShiftConfiguration].OnDutyRoles)) {
           OnDutyRoles = RecInteract.values;
         } else if (ActionId.startsWith(CTAIds[ConfigTopics.ShiftConfiguration].OnBreakRoles)) {
           OnBreakRoles = RecInteract.values;
-        } else if (ActionId.startsWith(CTAIds[ConfigTopics.ShiftConfiguration].LogChannel)) {
-          LogChannel = RecInteract.values[0] || null;
         }
       }
     } catch (Err: any) {
