@@ -7,8 +7,8 @@ const ORRegExp = (...Args: string[]): RegExp => {
   return new RegExp(Args.join("|"), "i");
 };
 
-const DLRegexStr = /Driv(?:ing|er|er[’']s) License|License|DL/i.source;
-const UnsafeSynonyms = /Unsafe|Not? Safe|Dangerous|Reckless|Risky/i.source;
+const DLRegexStr = /(?:Driv(?:ing|er|er[’']s) License|License|DL)/i.source;
+const UnsafeSynonyms = /(?:Unsafe|Not? Safe|Dangerous|Reckless|Risky)/i.source;
 const FActionRegex = /(?:Not Using|Fail(?:ing|ure|ed) (?:to )Use|Did(?: not|n['’]?t Use))/i.source;
 
 /**
