@@ -204,7 +204,7 @@ function GetAdditionalInputsModal(CmdInteract: SlashCommandInteraction<"cached">
     new ButtonBuilder()
       .setCustomId(`show-modal:${CmdInteract.user.id}`)
       .setLabel("Complete Citation")
-      .setStyle(ButtonStyle.Primary)
+      .setStyle(ButtonStyle.Secondary)
   );
 
   const Modal = new ModalBuilder()
