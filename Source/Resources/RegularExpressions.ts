@@ -1,10 +1,10 @@
 /**
  * Creates a regular expression pattern that matches any of the given strings.
- * @param {string[]} Args - A rest parameter of type string[]. It allows the function to accept any number of string arguments.
+ * @param {(string | RegExp)[]} Args - A rest parameter of type string[]. It allows the function to accept any number of string arguments.
  * @returns A combined regular expression object.
  */
-const ORRegExp = (...Args: string[]): RegExp => {
-  return new RegExp(Args.join("|"), "i");
+const ORRegExp = (...Args: (string | RegExp)[]): RegExp => {
+  return new RegExp(Args.map((Arg) => (Arg instanceof RegExp ? Arg.source : Arg)).join("|"), "i");
 };
 
 const DLRegexStr = /(?:Driv(?:ing|er|er[’']s) License|License|DL)/i.source;
@@ -183,10 +183,17 @@ export const ATVCodesRegexes = {
     /(?:Not Using|Fail(?:ing|ure|ed) (?:to )Use|Did(?: not|n['’]?t Use)) Turn(?:ing)? (?:Signal|Amber|Light)s?\b|Not Signaling\b/i,
   Speeding:
     /Spee*ding|(?:Unsafe|Dangerous|Reckless|Excessive) Spee*d|Going Over (?:the )?(?:Speed|Limit)/i,
-  IllegalParking:
-    /(?:Unlawful|Illegal|Improper)(?:ly)? Parking|Parking (?:in|at) (?:a |an )(?:Prohibited|Red) \w+/i,
   NoRegistration:
     /Driving (?:Without|W\/o) (?:\w+ )?Registration|(?:Not Valid|Invalid|No|Not Having) Registration|Unregistered (?:Car|Vehicle|Truck|Sedan)/i,
+
+  IllegalParking: ORRegExp(
+    /\bpark(?:ing|ed)?\s*(?:illegally|unlawfully|improperly|wrongly|unauthorizedly|prohibitedly|restrictedly|illegal|unlawful|improper|wrong|unauthorized|restricted)\b/,
+    /\bpark(?:ing|ed)?\s*(?:in\s+(?:the\s+)?)?(?:middle\s+of(?:\s+(?:the|a))?\s*)?(?:unlawful|illegal|improper)?(?:ly)?\s*road(?:way)?\b/,
+    /\b(?:unlawful|illegal|improper|prohibited|wrong|unauthorized|restricted)(?:ly)?\s*park(?:ing|ed)?\b/,
+    /\b(?:road|roadway)\s+(?:obstruction|blockage|blockage|congestion|misuse)\b/,
+    /\b(?:blocking|obstructing)\s+(?:the\s+)?road(?:way)?\b/,
+    /\bobstruction\s+(?:of\s+)?(?:the\s+)?road(?:way)?\b/
+  ),
 
   UnsafeLaneChange: ORRegExp(`${UnsafeSynonyms} Lane Change`),
   UnsafePassing: ORRegExp(`${UnsafeSynonyms} (?:\\w+ )?(?:Pass|Overtak)(?:ed?|ing)?`),
