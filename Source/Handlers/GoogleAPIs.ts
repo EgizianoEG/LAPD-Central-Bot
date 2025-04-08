@@ -41,7 +41,7 @@ export default async function InitializeGoogleAPI(): Promise<void> {
   } catch (Err: any) {
     AppLogger.error({
       label: "Handlers:GoogleAPI",
-      message: "Google API Client Initialization Failed.Some features may be unavailable.",
+      message: "Google API Client Initialization Failed. Some features may be unavailable.",
       stack: Err.stack,
     });
   }

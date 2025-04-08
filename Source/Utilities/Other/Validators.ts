@@ -91,7 +91,9 @@ export function ValidatePrivateKey(Key: string): void {
     !Key.startsWith("-----BEGIN PRIVATE KEY-----") ||
     !Key.endsWith("-----END PRIVATE KEY-----\n")
   ) {
-    throw new Error("Malformed service account private key: Missing BEGIN/END markers.");
+    throw new Error(
+      "Malformed service account private key: Missing BEGIN/END markers at the start/end."
+    );
   }
 
   try {
