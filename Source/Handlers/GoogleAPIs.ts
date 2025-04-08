@@ -42,8 +42,9 @@ export default async function InitializeGoogleAPI(): Promise<void> {
     AppLogger.error({
       label: "Handlers:GoogleAPI",
       message: "Google API Client Initialization Failed. Some features may be unavailable.",
-      service_account: Client.email,
-      private_key: `[Length: ${Client.key?.length || 0}]: ${Client.key?.slice(0, 800) || "[No Key Found]"}...`,
+      scopes: Secrets.GoogleAPI.APIScopes,
+      service_account: Secrets.GoogleAPI.ServiceAccountEmail,
+      private_key: `[Length: ${Secrets.GoogleAPI.PrivateKey?.length || 0}]: ${Secrets.GoogleAPI.PrivateKey?.slice(0, 800) || "[No Key Found]"}...`,
       stack: Err.stack,
     });
   }
