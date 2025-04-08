@@ -4,6 +4,7 @@ import { Logtail } from "@logtail/node";
 import { Other } from "@Config/Secrets.js";
 
 import SplatFormat from "./Splatter.js";
+import NodePath from "node:path";
 import Winston from "winston";
 import Chalk from "chalk";
 import Util from "node:util";
@@ -67,14 +68,15 @@ const AppLogger = Winston.createLogger({
           if (ErrorStack && Metadata.stack) {
             Metadata.stack = ErrorStack.replace(
               /(at .+ )\((.+:\d+:\d+)\)/g,
-              (_, AtText: string, Path: string) => {
-                if (!Path.startsWith("node:")) Path = `file:///${Path}`;
-                Path = Path.replaceAll("\\", "/").replaceAll(" ", "%20");
-                Path = Path.replace(/:(\d+):(\d+)/g, (_, N1, N2) => {
+              (_, AtText: string, FilePath: string) => {
+                if (!FilePath.startsWith("node:")) FilePath = `file:///${FilePath}`;
+                FilePath = FilePath.replace(/[\\/]/g, NodePath.sep).replaceAll(" ", "%20");
+                FilePath = FilePath.replace(/:(\d+):(\d+)/g, (_, N1, N2) => {
                   const Colon = Chalk.white(":");
                   return `${Colon}${Chalk.yellow(N1)}${Colon}${Chalk.yellow(N2)}`;
                 });
-                return `${AtText}(${Chalk.cyan.dim(Path)})`;
+
+                return `${AtText}(${Chalk.cyan.dim(FilePath)})`;
               }
             );
 

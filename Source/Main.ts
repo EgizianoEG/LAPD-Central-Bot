@@ -54,7 +54,8 @@ App.buttonListeners = new Collection();
       });
     })
     .catch((Err) => {
-      AppLogger.fatal("Failed to run the application. Details:", {
+      AppLogger.fatal({
+        message: "Failed to initialize and login to the Discord application.",
         label: "Main.ts",
         stack: Err.stack,
       });
