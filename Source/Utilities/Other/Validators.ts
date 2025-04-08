@@ -1,6 +1,7 @@
 import { ContextMenuCommandBuilder, SlashCommandBuilder, SnowflakeUtil } from "discord.js";
 import { isAfter, isBefore } from "date-fns";
 import { FormatHeight } from "@Utilities/Strings/Formatters.js";
+import { createSign } from "node:crypto";
 const MinDiscordTimestamp = 1420070400000;
 
 /**
@@ -76,6 +77,32 @@ export function IsValidPersonHeight(Str: string): boolean {
  */
 export function IsValidUserPermsObj(Obj: any): boolean {
   return !!(Obj.management || Obj.staff);
+}
+
+/**
+ * Validates the format and integrity of a service account private key.
+ * It attempts to use the key to sign a test string to ensure the key is valid and not corrupted.
+ * @param Key - The private key string to validate.
+ * @throws {Error} If the private key is missing the required BEGIN/END markers.
+ * @throws {Error} If the private key is malformed, corrupted, or invalid.
+ */
+export function ValidatePrivateKey(Key: string): void {
+  if (
+    !Key.startsWith("-----BEGIN PRIVATE KEY-----") ||
+    !Key.endsWith("-----END PRIVATE KEY-----\n")
+  ) {
+    throw new Error("Malformed service account private key: Missing BEGIN/END markers.");
+  }
+
+  try {
+    const Sign = createSign("RSA-SHA256");
+    Sign.update("key-check");
+    Sign.sign(Key);
+  } catch (Err: any) {
+    throw new Error(
+      `Invalid private key (malformed/corrupted). Verify that the key is valid, intact, and not corrupted. Details: ${Err.message}`
+    );
+  }
 }
 
 /**

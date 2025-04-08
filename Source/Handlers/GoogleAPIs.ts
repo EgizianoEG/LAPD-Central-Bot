@@ -1,20 +1,22 @@
-import { drive_v3, google, sheets_v4 } from "googleapis";
-import { GoogleAuth, Compute } from "google-auth-library";
+import { google, drive_v3, sheets_v4 } from "googleapis";
+import { ValidatePrivateKey } from "@Utilities/Other/Validators.js";
+import { GoogleAuth, JWT } from "google-auth-library";
 import { JSONClient } from "google-auth-library/build/src/auth/googleauth.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import Secrets from "@Config/Secrets.js";
 
-export let Client: JSONClient | Compute;
+export let Client: JWT;
 export let GAuth: GoogleAuth<JSONClient>;
-export let SheetsAPI: sheets_v4.Sheets;
 export let DriveAPI: drive_v3.Drive;
+export let SheetsAPI: sheets_v4.Sheets;
 
 /**
  * Initializes the Google API client.
- * @returns A promise that resolves once the client is initialized.
+ * @returns {void} A promise that resolves once the client is initialized.
  */
 export default async function InitializeGoogleAPI(): Promise<void> {
   try {
+    ValidatePrivateKey(Secrets.GoogleAPI.PrivateKey.replace(/\\n/g, "\n"));
     GAuth = new google.auth.GoogleAuth({
       scopes: Secrets.GoogleAPI.APIScopes,
       credentials: {
@@ -25,15 +27,22 @@ export default async function InitializeGoogleAPI(): Promise<void> {
       },
     });
 
-    Client = (await GAuth.getClient()) as JSONClient;
-    SheetsAPI = google.sheets({ version: "v4", auth: Client as unknown as GoogleAuth<JSONClient> });
-    DriveAPI = google.drive({ version: "v3", auth: Client as unknown as GoogleAuth<JSONClient> });
+    Client = (await GAuth.getClient()) as JWT;
+    DriveAPI = google.drive({ version: "v3", auth: Client });
+    SheetsAPI = google.sheets({ version: "v4", auth: Client });
+
+    AppLogger.info({
+      label: "Handlers:GoogleAPI",
+      message: "Google auth client initialized successfully.",
+      scopes: Client.scopes,
+      service_account: Client.email,
+      private_key: `[Length: ${Client.key?.length || 0}]: ${Client.key?.slice(0, 800) || "[No Key Found]"}...`,
+    });
   } catch (Err: any) {
     AppLogger.error({
       label: "Handlers:GoogleAPI",
-      message: "Failed to initialize Google API client and some features may not work.",
+      message: "Google API Client Initialization Failed.Some features may be unavailable.",
       stack: Err.stack,
-      error: Err,
     });
   }
 }
@@ -41,9 +50,9 @@ export default async function InitializeGoogleAPI(): Promise<void> {
 /**
  * Retrieves the Google API client.
  * If the client is not initialized, it will be initialized before returning.
- * @returns A promise that resolves to the Google API client.
+ * @returns {Promise<JWT>} A promise that resolves to the Google JWT client.
  */
-export async function GetClient(): Promise<JSONClient> {
+export async function GetClient(): Promise<JWT> {
   if (!Client) await InitializeGoogleAPI();
-  return Client as any;
+  return Client;
 }
