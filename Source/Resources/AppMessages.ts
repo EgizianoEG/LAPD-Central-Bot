@@ -718,6 +718,17 @@ export const ErrorMessages = {
     Title: "Invalid Attachment",
     Description: "The uploaded file must be a `.txt` file. Please try again.",
   },
+
+  ActivityReportNoRecordsFound: {
+    Title: "No Records Found",
+    Message: "There were no enough records on the database to generate the requested report.",
+  },
+
+  ActivityReportNoIdentifiedStaff: {
+    Title: "Staff Identification Required",
+    Description:
+      "The current configuration lacks defined staff roles or management roles necessary to identify staff members. Please ensure that at least one staff or management role is configured for the application to generate activity reports.",
+  },
 };
 
 export const InfoMessages = {

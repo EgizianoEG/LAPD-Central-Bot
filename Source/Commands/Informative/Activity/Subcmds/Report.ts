@@ -81,9 +81,10 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
     }
   }
 
+  const CheckedShiftType = InputShiftType?.toLowerCase() === "default" ? "Default" : InputShiftType;
   const QuickShiftCount = await ShiftModel.countDocuments({
     guild: CmdInteraction.guild.id,
-    type: InputShiftType || { $exists: true },
+    type: CheckedShiftType || { $exists: true },
     start_timestamp: SinceDate ? { $gte: SinceDate } : { $exists: true },
     end_timestamp: { $ne: null },
   });
@@ -101,11 +102,13 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
 
   const ReportSpredsheetURL = await CreateShiftReport({
     guild: CmdInteraction.guild,
-    members: await CmdInteraction.guild.members.fetch(),
-    shift_type: InputShiftType,
+    shift_type: CheckedShiftType,
     after: SinceDate,
     quota_duration: QuotaDur,
     include_member_nicknames: !!IMNicknames,
+    members: await CmdInteraction.guild.members
+      .fetch()
+      .catch(() => CmdInteraction.guild.members.cache),
   });
 
   const ShowReportButton = new ActionRowBuilder<ButtonBuilder>().setComponents(

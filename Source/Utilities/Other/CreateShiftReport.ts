@@ -197,7 +197,7 @@ export default async function CreateShiftReport(
     },
   });
 
-  // Set the permissions for public access and editing
+  // Set the permission for public access.
   await DriveAPI.permissions.create({
     fileId: Copy.data.id!,
     requestBody: {

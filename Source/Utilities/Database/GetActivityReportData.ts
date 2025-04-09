@@ -1,15 +1,14 @@
-import { differenceInHours, isAfter } from "date-fns";
 import { Collection, Guild, GuildMember } from "discord.js";
+import { differenceInHours, isAfter } from "date-fns";
 import { AggregateResults } from "@Typings/Utilities/Database.js";
 import GetGuildSettings from "./GetGuildSettings.js";
-import GetShiftTypes from "./GetShiftTypes.js";
 import ProfileModel from "@Models/GuildProfile.js";
 import DHumanize from "humanize-duration";
 import AppError from "@Utilities/Classes/AppError.js";
 
 const HumanizeDuration = DHumanize.humanizer({
   conjunction: " and ",
-  largest: 5,
+  largest: 4,
   round: true,
 });
 
@@ -59,60 +58,88 @@ interface ActivityReportDataReturn {
 }
 
 /**
- * Retrieves activity report data based on the provided options.
- * @param Opts - The options for retrieving activity report data.
- * @returns An object containing the guild, records, statistics, and shift type of the activity report.
+ * Retrieves activity report data for a guild based on the provided options.
+ *
+ * @param Opts - The options for generating the activity report.
+ * @param Opts.guild - The guild object containing the guild ID.
+ * @param Opts.members - The list of guild members to include in the report.
+ * @param Opts.shift_type - (Optional) The type of shift to filter members by.
+ * @param Opts.quota_duration - (Optional) The duration of the quota for the report.
+ * @param Opts.include_member_nicknames - (Optional) Whether to include member nicknames in the report.
+ *
+ * @returns A promise that resolves to the activity report data, including statistics, records, and quota information.
+ *
+ * @throws {AppError} If the guild configuration is not found.
+ * @throws {AppError} If no staff or management roles are identified for the guild.
+ * @throws {AppError} If a non-existent shift type is specified.
+ * @throws {AppError} If no activity records are found for the specified options.
+ *
+ * The returned object contains:
+ * - `statistics`: An object with total time and total shifts statistics.
+ * - `records`: An array of activity records for each member, including details such as time spent, arrests, citations, incidents, and leave status.
+ * - `quota`: A string representing the quota duration or "None" if not specified.
  */
 export default async function GetActivityReportData(
   Opts: GetActivityReportDataOpts
 ): Promise<ActivityReportDataReturn> {
-  if (Opts.shift_type && !Opts.shift_type.match(/^Default$/i)) {
-    const GuildShiftTypes = await GetShiftTypes(Opts.guild.id);
-    const ShiftType = GuildShiftTypes.find((ST) => ST.name === Opts.shift_type)!;
-    const FilteredMembers = Opts.members.filter((Member) =>
-      Member.roles.cache.hasAny(...ShiftType.access_roles)
-    );
+  const GuildConfig = await GetGuildSettings(Opts.guild.id);
+  const GuildStaffMgmtRoles = [
+    ...(GuildConfig?.role_perms.staff ?? []),
+    ...(GuildConfig?.role_perms.management ?? []),
+  ];
 
-    Opts.members = FilteredMembers;
+  const ShiftStatusRoles = [
+    ...(GuildConfig?.shift_management.role_assignment.on_duty ?? []),
+    ...(GuildConfig?.shift_management.role_assignment.on_break ?? []),
+  ];
+
+  if (!GuildConfig) throw new AppError({ template: "GuildConfigNotFound", showable: true });
+  if (!GuildStaffMgmtRoles.length)
+    throw new AppError({ template: "ActivityReportNoIdentifiedStaff", showable: true });
+
+  if (Opts.shift_type && Opts.shift_type.toLowerCase() !== "default") {
+    const GuildShiftTypes = GuildConfig.shift_management.shift_types;
+    const ShiftType = GuildShiftTypes.find((ST) => ST.name === Opts.shift_type);
+    if (!ShiftType) throw new AppError({ template: "NonexistentShiftTypeUsage", showable: true });
+
+    Opts.members = Opts.members.filter(
+      (Member) =>
+        Member.roles.cache.hasAny(...ShiftType.access_roles) &&
+        Member.roles.cache.hasAny(...GuildStaffMgmtRoles)
+    );
   } else {
-    const GuildConfig = await GetGuildSettings(Opts.guild.id);
-    if (!GuildConfig) throw new AppError({ template: "GuildConfigNotFound", showable: true });
-
-    const FilteredMembers = Opts.members.filter((Member) =>
-      Member.roles.cache.hasAny(
-        ...GuildConfig.role_perms.staff,
-        ...GuildConfig.role_perms.management
-      )
+    Opts.members = Opts.members.filter((Member) =>
+      Member.roles.cache.hasAny(...GuildStaffMgmtRoles)
     );
-
-    Opts.members = FilteredMembers;
   }
 
   const RetrieveDate = new Date();
   const RecordsBaseData = await ProfileModel.aggregate<
     AggregateResults.BaseActivityReportData["records"][number]
-  >(GetAggregationPipelineNoShiftType(Opts));
+  >(CreateActivityReportAggregationPipeline(Opts));
+
+  if (!RecordsBaseData.length) {
+    throw new AppError({
+      template: "ActivityReportNoRecordsFound",
+      showable: true,
+    });
+  }
 
   const ReportStatistics: AggregateResults.ActivityReportStatistics<string> = {
     total_time: HumanizeDuration(RecordsBaseData.reduce((Acc, Curr) => Acc + Curr.total_time, 0)),
     total_shifts: RecordsBaseData.reduce((Acc, Curr) => Acc + Curr.total_shifts, 0),
   };
 
-  if (RecordsBaseData.length === 0) {
-    throw new AppError({
-      title: "No Records Found",
-      message: "There were no enough records on the database to generate the requested report.",
-      showable: true,
-    });
-  }
-
+  const ProcessedMemberIds = new Set<string>();
   const Records = RecordsBaseData.map((Record, Index) => {
     const Member = Opts.members.find((U) => U.id === Record.id);
     let LeaveActive = false;
     let LeaveNote: string | null = null;
-    Opts.members.delete(Member?.user.id ?? "");
 
-    // Add leave of absence comments if it has ended or started recently.
+    if (Member) ProcessedMemberIds.add(Member.user.id);
+    else return null;
+
+    // Consider adding leave of absence comments/notes if it has ended, started, or requested recently.
     if (Record.recent_loa?.status === "Approved" && Record.recent_loa.reviewed_by) {
       if (
         Record.recent_loa.review_date !== null &&
@@ -149,6 +176,22 @@ export default async function GetActivityReportData(
           LeaveNote = `Leave of absence ended around ${RelativeDuration} ago.`;
         }
       }
+    } else if (Record.recent_loa?.status === "Pending" && Record.recent_loa.review_date === null) {
+      const RequestCurrentDatesDifferenceInDays =
+        differenceInHours(RetrieveDate, Record.recent_loa.request_date) / 24;
+
+      if (RequestCurrentDatesDifferenceInDays <= 3) {
+        const RelativeDuration = DHumanize(
+          RetrieveDate.getTime() - Record.recent_loa.request_date.getTime(),
+          {
+            conjunction: " and ",
+            largest: 2,
+            round: true,
+          }
+        );
+
+        LeaveNote = `An unapproved leave request was submitted around ${RelativeDuration} ago.`;
+      }
     }
 
     return {
@@ -156,10 +199,10 @@ export default async function GetActivityReportData(
         { userEnteredValue: { numberValue: Index + 1 } },
         {
           userEnteredValue: {
-            stringValue: FormatName(Member ?? Record.id, Opts.include_member_nicknames),
+            stringValue: FormatName(Member, Opts.include_member_nicknames),
           },
         },
-        { userEnteredValue: { stringValue: Member?.roles.highest.name ?? "N/A" } },
+        { userEnteredValue: { stringValue: HighestHoistedRoleName(Member, ShiftStatusRoles) } },
         { userEnteredValue: { stringValue: HumanizeDuration(Record.total_time) } },
         { userEnteredValue: { numberValue: Record.arrests } },
         { userEnteredValue: { numberValue: Record.arrests_assisted } },
@@ -169,24 +212,27 @@ export default async function GetActivityReportData(
         { userEnteredValue: { stringValue: LeaveActive ? "Yes" : "No" }, note: LeaveNote },
       ],
     };
-  });
+  }).filter((R) => R !== null);
 
-  // Add remaining members whose data was not available on the database to the report.
-  Opts.members.forEach((Member) => {
-    Records.push({
-      values: [
-        { userEnteredValue: { numberValue: Records.length + 1 } },
-        { userEnteredValue: { stringValue: Member.user.username } },
-        { userEnteredValue: { stringValue: Member.roles.highest.name } },
-        { userEnteredValue: { stringValue: HumanizeDuration(0) } },
-        { userEnteredValue: { numberValue: 0 } },
-        { userEnteredValue: { numberValue: 0 } },
-        { userEnteredValue: { numberValue: 0 } },
-        { userEnteredValue: { stringValue: Opts.quota_duration ? "No" : "Yes" } },
-        { userEnteredValue: { stringValue: "No" } },
-      ],
+  // Add remaining members whose data was not available on the database.
+  Opts.members
+    .filter((Member) => !ProcessedMemberIds.has(Member.id))
+    .forEach((Member) => {
+      Records.push({
+        values: [
+          { userEnteredValue: { numberValue: Records.length + 1 } },
+          { userEnteredValue: { stringValue: Member.user.username } },
+          { userEnteredValue: { stringValue: HighestHoistedRoleName(Member, ShiftStatusRoles) } },
+          { userEnteredValue: { stringValue: HumanizeDuration(0) } },
+          { userEnteredValue: { numberValue: 0 } },
+          { userEnteredValue: { numberValue: 0 } },
+          { userEnteredValue: { numberValue: 0 } },
+          { userEnteredValue: { numberValue: 0 } },
+          { userEnteredValue: { stringValue: Opts.quota_duration ? "No" : "Yes" } },
+          { userEnteredValue: { stringValue: "No" } },
+        ],
+      });
     });
-  });
 
   return {
     statistics: ReportStatistics,
@@ -198,6 +244,13 @@ export default async function GetActivityReportData(
 // ---------------------------------------------------------------------------------------
 // Helpers:
 // --------
+/**
+ * Formats the name of a guild member or a string representation of a name.
+ * @param Member - The guild member or string to format. If a string is provided, it is returned as-is.
+ * @param IncludeNickname - Optional. If `true`, includes the member's nickname or display name
+ *                          along with their username in the format: "[Nickname] (@[Username])". Defaults to `false`.
+ * @returns
+ */
 function FormatName(Member: GuildMember | string, IncludeNickname?: boolean) {
   if (typeof Member === "string") return Member;
   return IncludeNickname && (Member.nickname || Member.displayName)
@@ -205,7 +258,37 @@ function FormatName(Member: GuildMember | string, IncludeNickname?: boolean) {
     : `${Member.user.username}`;
 }
 
-function GetAggregationPipelineNoShiftType(
+/**
+ * Determines the name of the highest hoisted role for a given guild member, optionally disregarding specific role IDs.
+ * @param Member - The guild member whose roles are being evaluated.
+ * @param DisregardedRoleIds - An optional array of role IDs to exclude from consideration.
+ * @returns The name of the highest hoisted role, or "N/A" if no valid hoisted role is found.
+ */
+function HighestHoistedRoleName(Member: GuildMember, DisregardedRoleIds: string[] = []): string {
+  if (Member.roles.highest.hoist && !DisregardedRoleIds.includes(Member.roles.highest.id)) {
+    return Member.roles.highest.name;
+  }
+
+  const TopHoistedRole = [...Member.roles.cache.values()]
+    .filter((R) => R.hoist && !DisregardedRoleIds.includes(R.id))
+    .sort((A, B) => B.position - A.position)[0];
+
+  return (
+    TopHoistedRole?.name ??
+    (Member.roles.highest.id === Member.guild.roles.everyone.id ? "N/A" : Member.roles.highest.name)
+  );
+}
+
+/**
+ * Generates an aggregation pipeline for MongoDB to retrieve activity report data
+ * for a specific guild and its members. The pipeline includes filtering, projecting,
+ * and calculating various metrics such as total shifts, arrests, citations, incidents,
+ * and total time on duty.
+ *
+ * @param Opts - Options for generating the activity report aggregation pipeline.
+ * @returns An aggregation pipeline array to be used with the `aggregate` method of the `ProfileModel`.
+ */
+function CreateActivityReportAggregationPipeline(
   Opts: GetActivityReportDataOpts
 ): Parameters<typeof ProfileModel.aggregate>[0] {
   return [
@@ -294,7 +377,7 @@ function GetAggregationPipelineNoShiftType(
                 $and: [
                   { $eq: ["$user", "$$user"] },
                   { $eq: ["$guild", "$$guild"] },
-                  { $eq: ["$status", "Approved"] },
+                  { $in: ["$status", ["Approved", "Pending"]] },
                 ],
               },
             },
