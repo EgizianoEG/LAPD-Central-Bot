@@ -16,12 +16,14 @@ export let SheetsAPI: sheets_v4.Sheets;
  */
 export default async function InitializeGoogleAPI(): Promise<void> {
   try {
-    ValidatePrivateKey(Secrets.GoogleAPI.PrivateKey.replace(/\\+?n/g, "\n"));
+    const NormalizedPrivateKey = Secrets.GoogleAPI.PrivateKey.replace(/\\+?n/g, "\n");
+    ValidatePrivateKey(NormalizedPrivateKey);
+
     GAuth = new google.auth.GoogleAuth({
       scopes: Secrets.GoogleAPI.APIScopes,
       credentials: {
         client_email: Secrets.GoogleAPI.ServiceAccountEmail,
-        private_key: Secrets.GoogleAPI.PrivateKey,
+        private_key: NormalizedPrivateKey,
         scopes: Secrets.GoogleAPI.APIScopes,
         forceRefreshOnFailure: true,
       },
