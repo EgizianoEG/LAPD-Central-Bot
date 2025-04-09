@@ -3,6 +3,7 @@
 
 import { Colors, channelLink, EmbedBuilder, SlashCommandSubcommandBuilder } from "discord.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { Emojis } from "@Config/Shared.js";
 import MSRolesModel from "@Models/MemberRoles.js";
 import Dedent from "dedent";
 
@@ -31,7 +32,9 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
   await CmdInteraction.reply({
     embeds: [
       new EmbedBuilder()
-        .setTitle(`Member Roles Load     @${SelectedMember.user.username}`)
+        .setTitle(
+          `${Emojis.LoadingGrey}\u{2000}Member Roles Load     @${SelectedMember.user.username}`
+        )
         .setDescription("Assigning saved roles...")
         .setColor(Colors.Greyple),
     ],
@@ -50,7 +53,7 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
   const RolesAfter = (
     await SelectedMember.roles.add(
       FilteredRoles.map((Role) => Role.role_id),
-      `Roles save load; initiated by @${CmdInteraction.user.username}`
+      `Loading role backup: ${Save.id}; initiated by @${CmdInteraction.user.username}`
     )
   ).roles.cache;
 

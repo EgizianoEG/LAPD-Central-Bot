@@ -1,7 +1,7 @@
-import Dedent from "dedent";
 import HandleEmbedPagination from "@Utilities/Other/HandleEmbedPagination.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import {
+  codeBlock,
   EmbedBuilder,
   SlashCommandBuilder,
   InteractionContextType,
@@ -29,28 +29,12 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
 
   while (JsonString.length > MaxLength) {
     const PageContent = JsonString.substring(0, MaxLength);
-    Pages.push(
-      new EmbedBuilder().setDescription(
-        Dedent(`
-          \`\`\`json
-          ${PageContent}
-          \`\`\`
-        `)
-      )
-    );
+    Pages.push(new EmbedBuilder().setDescription(codeBlock("json", PageContent)));
     JsonString = JsonString.substring(MaxLength);
   }
 
   if (JsonString.length > 0) {
-    Pages.push(
-      new EmbedBuilder().setDescription(
-        Dedent(`
-          \`\`\`json
-          ${JsonString}
-          \`\`\`
-        `)
-      )
-    );
+    Pages.push(new EmbedBuilder().setDescription(codeBlock("json", JsonString)));
   }
 
   return HandleEmbedPagination(Pages, Interaction, undefined, true);

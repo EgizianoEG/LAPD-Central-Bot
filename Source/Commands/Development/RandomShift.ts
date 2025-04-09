@@ -1,6 +1,6 @@
 import ShiftModel from "@Models/Shift.js";
-import Dedent from "dedent";
 import {
+  codeBlock,
   MessageFlags,
   SlashCommandBuilder,
   InteractionContextType,
@@ -8,11 +8,8 @@ import {
 } from "discord.js";
 
 // ---------------------------------------------------------------------------------------
-/**
- * @param Client
- * @param Interaction
- */
-async function Callback(Interaction: SlashCommandInteraction) {
+
+async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const Shift = await ShiftModel.countDocuments({ guild: Interaction.guildId }).then((Count) => {
     const RandomNum = Math.floor(Math.random() * Count);
     return ShiftModel.findOne().skip(RandomNum).exec();
@@ -21,11 +18,7 @@ async function Callback(Interaction: SlashCommandInteraction) {
   if (Shift) {
     return Interaction.reply({
       flags: MessageFlags.Ephemeral,
-      content: Dedent`
-        \`\`\`json
-        ${JSON.stringify(Shift.toJSON({ getters: true }), null, 2)}
-        \`\`\`
-      `,
+      content: codeBlock("json", JSON.stringify(Shift.toJSON({ getters: true }), null, 2)),
     });
   } else {
     return Interaction.reply({
