@@ -36,6 +36,7 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
   let SinceDate: Date | null = null;
   let QuotaDur: number | null = null;
 
+  await CmdInteraction.deferReply({ flags: MessageFlags.Ephemeral });
   if (InputQuotaDuration) {
     QuotaDur = Math.round(ParseDuration(InputQuotaDuration, "millisecond") ?? 0);
     if (!QuotaDur) {
@@ -95,9 +96,8 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
       .replyToInteract(CmdInteraction, true, false);
   }
 
-  await CmdInteraction.reply({
+  await CmdInteraction.editReply({
     embeds: [new InfoEmbed().useInfoTemplate("CreatingActivityReport")],
-    flags: MessageFlags.Ephemeral,
   });
 
   const ReportSpredsheetURL = await CreateShiftReport({
