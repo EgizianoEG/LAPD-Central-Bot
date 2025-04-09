@@ -221,7 +221,7 @@ export default async function GetActivityReportData(
       Records.push({
         values: [
           { userEnteredValue: { numberValue: Records.length + 1 } },
-          { userEnteredValue: { stringValue: Member.user.username } },
+          { userEnteredValue: { stringValue: FormatName(Member, Opts.include_member_nicknames) } },
           { userEnteredValue: { stringValue: HighestHoistedRoleName(Member, ShiftStatusRoles) } },
           { userEnteredValue: { stringValue: HumanizeDuration(0) } },
           { userEnteredValue: { numberValue: 0 } },
