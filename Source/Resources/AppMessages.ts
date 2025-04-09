@@ -721,7 +721,7 @@ export const ErrorMessages = {
 
   ActivityReportNoRecordsFound: {
     Title: "No Records Found",
-    Message: "There were no enough records on the database to generate the requested report.",
+    Description: "There were no enough records on the database to generate the requested report.",
   },
 
   ActivityReportNoIdentifiedStaff: {
