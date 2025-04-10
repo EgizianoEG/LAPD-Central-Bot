@@ -893,7 +893,7 @@ async function HandleUserShiftEnd(
   const EndedShift = await ActiveShift.end(BInteract.createdTimestamp);
   const TotalBreakTime = EndedShift.hasBreaks()
     ? `**Total Break Time:** ${HumanizeDuration(EndedShift.durations.on_break)}`
-    : null;
+    : "";
 
   const UserShiftsData = await GetMainShiftsData({
     user: TargetUser.id,
@@ -901,12 +901,15 @@ async function HandleUserShiftEnd(
     type: CmdShiftType,
   });
 
-  const ShiftsInfo = Dedent(`
-    >>> **Shift Count:** \`${UserShiftsData.shift_count}\`
-    **Frequent Shift Type:** \`${UserShiftsData.frequent_shift_type}\`
-    **Total On-Duty Time:** ${UserShiftsData.total_onduty}
-    **Average On-Duty Time:** ${UserShiftsData.avg_onduty}
-  `);
+  const FreqShiftTypeLine = CmdShiftType
+    ? ""
+    : `**Frequent Shift:** \`${UserShiftsData.frequent_shift_type}\`\n`;
+
+  const ShiftsInfo =
+    `>>> **Shift Count:** \`${UserShiftsData.shift_count}\`\n` +
+    FreqShiftTypeLine +
+    `**Total Time:** ${UserShiftsData.total_onduty}\n` +
+    `**Average Time:** ${UserShiftsData.avg_onduty}`;
 
   const RespEmbed = new EmbedBuilder()
     .setColor(Embeds.Colors.ShiftOff)
@@ -919,15 +922,15 @@ async function HandleUserShiftEnd(
     })
     .setFields(
       {
-        name: "All Time Statistics:",
+        name: "Statistics Summary:",
         value: ShiftsInfo,
       },
       {
         inline: true,
         name: "Previous Shift:",
         value: Dedent(`
-          **Total Shift Time:** ${HumanizeDuration(EndedShift.durations.on_duty)}
-          ${TotalBreakTime || ""}
+          **Total Time:** ${HumanizeDuration(EndedShift.durations.on_duty)}
+          ${TotalBreakTime}
         `),
       },
       {
@@ -1037,16 +1040,19 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     !!ActiveShift
   );
 
-  const ShiftsInfo = Dedent(`
-    >>> **Shift Count:** \`${UserShiftsData.shift_count}\`
-    **Frequent Shift Type:** \`${UserShiftsData.frequent_shift_type}\`
-    **Total On-Duty Time:** ${UserShiftsData.total_onduty}
-    **Average On-Duty Time:** ${UserShiftsData.avg_onduty}
-  `);
+  const FreqShiftTypeLine = CmdShiftType
+    ? ""
+    : `**Frequent Shift:** \`${UserShiftsData.frequent_shift_type}\`\n`;
+
+  const ShiftsInfo =
+    `>>> **Shift Count:** \`${UserShiftsData.shift_count}\`\n` +
+    FreqShiftTypeLine +
+    `**Total Time:** ${UserShiftsData.total_onduty}\n` +
+    `**Average Time:** ${UserShiftsData.avg_onduty}`;
 
   const RespEmbed = new EmbedBuilder()
     .setTimestamp()
-    .setFields({ name: "All Time Statistics:", value: ShiftsInfo })
+    .setFields({ name: "Statistics Summary:", value: ShiftsInfo })
     .setFooter({ text: `Shift Type: ${CmdShiftType ?? "All shift types"}` })
     .setAuthor({
       name: `Shift Administration for @${TargetUser.username}`,

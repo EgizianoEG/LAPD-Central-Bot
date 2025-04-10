@@ -679,7 +679,7 @@ async function Callback(
           },
           {
             inline: false,
-            name: "All Statistics",
+            name: "Statistics Summary",
             value: MgmtPromptMainDesc,
           }
         );
@@ -718,7 +718,7 @@ async function Callback(
   } else {
     BasePromptEmbed.setFields({
       inline: true,
-      name: "All Statistics",
+      name: "Statistics Summary",
       value: MgmtPromptMainDesc,
     });
   }
