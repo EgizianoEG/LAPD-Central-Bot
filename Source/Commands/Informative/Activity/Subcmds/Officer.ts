@@ -81,19 +81,20 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
           - Officer: ${userMention(OfficerSelected.id)}
           - Linked Account: ${FormattedRobloxName}
           - Current Nickname: \`${CurrServerNickname}\`
+          - Frequent Shift: \`${ShiftsData.frequent_shift_type}\`
         `),
       },
       {
         inline: true,
         name: "**Shift Statistics**",
         value: Dedent(`
-          - **Total Shifts:** \`${ShiftsData.shift_count}\`
-          - **On-Duty Time**
+          - **Shifts Completed:** \`${ShiftsData.shift_count}\`
+          - **On-Duty Duration**
             - Total: ${ShiftsData.total_onduty}   
-            - Average: ${ShiftsData.avg_onduty}         
-          - **On-Break Time**
+            - Avg: ${ShiftsData.avg_onduty}         
+          - **On-Break Duration**
             - Total: ${ShiftsData.total_onbreak}
-            - Average: ${ShiftsData.avg_onbreak}
+            - Avg: ${ShiftsData.avg_onbreak}
         `),
       },
       {
