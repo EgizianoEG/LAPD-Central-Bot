@@ -9,7 +9,6 @@ const ArrestSchema = new Schema<ArrestPlainDoc, ArrestModelType>({
   booking_num: {
     type: Number,
     required: true,
-    unique: true,
   },
 
   guild: {

@@ -1,5 +1,5 @@
+import { FormatSortRDInputNames, FormatUsername } from "@Utilities/Strings/Formatters.js";
 import { Colors, EmbedBuilder, userMention } from "discord.js";
-import { FormatUsername } from "@Utilities/Strings/Formatters.js";
 import { GuildArrests } from "@Typings/Utilities/Database.js";
 import { Icons } from "@Config/Shared.js";
 
@@ -22,13 +22,13 @@ export default async function GetFormattedArrestReportEmbed(
   }
 
   const FAsstOfficers = ArrestInfo.assisting_officers.length
-    ? ListFormatter.format(Array.from(ArrestInfo.assisting_officers, (Id) => userMention(Id)))
+    ? ListFormatter.format(FormatSortRDInputNames(ArrestInfo.assisting_officers, true))
     : "N/A";
 
   const ReportDescription = Dedent(`
     Arrest report submitted by: ${userMention(ArrestInfo.arresting_officer.discord_id)}
     Arrest assisting officers: ${FAsstOfficers}
-    Booking number: \`${ArrestInfo._id}\`
+    Booking number: \`${ArrestInfo.booking_num}\`
   `);
 
   return new EmbedBuilder()

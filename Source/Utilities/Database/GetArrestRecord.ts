@@ -1,29 +1,14 @@
-import { AggregateResults } from "@Typings/Utilities/Database.js";
-import GuildModel from "@Models/Guild.js";
+import { GuildArrests } from "@Typings/Utilities/Database.js";
+import ArrestModel from "@Models/Arrest.js";
 
-export default async function GetArrestRecord(Guild: string, ArrestId: number) {
-  return GuildModel.aggregate<AggregateResults.GetArrestRecord>([
-    {
-      $match: {
-        _id: Guild,
-      },
-    },
-    {
-      $unwind: "$logs.arrests",
-    },
-    {
-      $match: {
-        "logs.arrests._id": ArrestId,
-      },
-    },
-    {
-      $project: {
-        _id: false,
-        arrest: "$logs.arrests",
-      },
-    },
-  ]).then((Result) => {
-    if (Result[0]) return Result[0].arrest;
-    else return null;
-  });
+export default async function GetArrestRecord(
+  Guild: string,
+  BookingNum: number
+): Promise<GuildArrests.ArrestRecord | null> {
+  return ArrestModel.findOne({
+    guild: Guild,
+    booking_num: BookingNum,
+  })
+    .lean()
+    .exec();
 }

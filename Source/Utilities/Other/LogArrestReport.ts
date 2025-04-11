@@ -1,11 +1,13 @@
-import { GuildArrests, Shifts } from "@Typings/Utilities/Database.js";
 import { ButtonInteraction } from "discord.js";
 import { SendGuildMessages } from "@Utilities/Other/GuildMessages.js";
 import { CmdOptionsType } from "@Cmds/Miscellaneous/Log/Deps/Arrest.js";
 import { FormatUsername } from "@Utilities/Strings/Formatters.js";
+import { Shifts } from "@Typings/Utilities/Database.js";
 import { Images } from "@Config/Shared.js";
 
-import GuildModel from "@Models/Guild.js";
+import AppError from "@Utilities/Classes/AppError.js";
+import ArrestModel from "@Models/Arrest.js";
+import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
 import IncrementActiveShiftEvent from "@Utilities/Database/IncrementActiveShiftEvent.js";
 import GetFormattedArrestReportEmbed from "./FormatArrestReportEmbed.js";
 
@@ -50,19 +52,20 @@ export default async function LogArrestReport(
   ReporterInfo.report_date = ReporterInfo.report_date ?? CachedInteract.createdAt;
   ReporterInfo.asst_officers = ReporterInfo.asst_officers ?? [];
 
-  const QueryFilter = { _id: CachedInteract.guildId };
-  const GuildDocument = await GuildModel.findOneAndUpdate(QueryFilter, QueryFilter, {
-    upsert: true,
-    new: true,
-  });
-
   const FArresteeName = FormatUsername(ArresteeInfo.roblox_user);
   const FReporterName = FormatUsername(ReporterInfo.roblox_user);
-  const ArrestLogData: GuildArrests.ArrestRecord = {
-    _id: ArresteeInfo.booking_num,
+  const GuildSettings = await GetGuildSettings(CachedInteract.guildId);
+
+  if (!GuildSettings) {
+    throw new AppError({ template: "GuildConfigNotFound", showable: true });
+  }
+
+  const ArrestRecord = await ArrestModel.create({
+    guild: CachedInteract.guildId,
     made_on: ReporterInfo.report_date,
     assisting_officers: ReporterInfo.asst_officers,
     notes: ArresteeInfo.notes ?? null,
+    booking_num: ArresteeInfo.booking_num,
 
     arrestee: {
       roblox_id: Number(ArresteeInfo.roblox_user.id),
@@ -80,23 +83,23 @@ export default async function LogArrestReport(
       discord_id: ReporterInfo.discord_user_id,
       roblox_id: Number(ReporterInfo.roblox_user.id),
     },
-  };
+  });
 
-  GuildDocument.logs.arrests.addToSet(ArrestLogData);
-  await Promise.all([
-    GuildDocument.save(),
-    IncrementActiveShiftEvent("arrests", CachedInteract.user.id, GuildDocument._id).catch(
-      () => null
-    ),
-  ]);
+  if (!ArrestRecord) {
+    throw new AppError({ template: "DatabaseError", showable: true });
+  }
 
-  const FormattedReport = (await GetFormattedArrestReportEmbed(ArrestLogData, false)).setImage(
+  IncrementActiveShiftEvent("arrests", CachedInteract.user.id, CachedInteract.guildId).catch(
+    () => null
+  );
+
+  const FormattedReport = (await GetFormattedArrestReportEmbed(ArrestRecord, false)).setImage(
     Images.LAPD_Header
   );
 
   const MainMsgLink = await SendGuildMessages(
     CachedInteract,
-    GuildDocument.settings.duty_activities.log_channels.arrests,
+    GuildSettings.duty_activities.log_channels.arrests,
     { embeds: [FormattedReport] }
   );
 

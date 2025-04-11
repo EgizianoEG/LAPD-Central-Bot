@@ -1,27 +1,25 @@
 import { AggregateResults } from "@Typings/Utilities/Database.js";
-import GuildModel from "@Models/Guild.js";
+import ArrestModel from "@Models/Arrest.js";
 
 export default async function GetAllBookingNums(GuildId: string) {
-  return GuildModel.aggregate<AggregateResults.GetBookingNumbers>([
+  return ArrestModel.aggregate<AggregateResults.GetBookingNumbers>([
     {
       $match: {
-        _id: GuildId,
+        guild: GuildId,
       },
     },
     {
-      $unwind: "$logs.arrests",
-    },
-    {
       $project: {
+        arrestee: 1,
         doa: {
           $dateToString: {
-            date: "$logs.arrests.made_on",
-            format: "%Y-%m-%d",
+            date: "$made_on",
+            format: "%B %d, %G at %H:%M [PDT]",
             timezone: "America/Los_Angeles",
           },
         },
         num: {
-          $toString: "$logs.arrests._id",
+          $toString: "$booking_num",
         },
       },
     },
@@ -32,7 +30,7 @@ export default async function GetAllBookingNums(GuildId: string) {
           $push: {
             num: "$num",
             autocomplete_label: {
-              $concat: ["#", "$num", " – ", "$doa"],
+              $concat: ["#", "$num", " – ", "$arrestee.formatted_name", " – ", "$doa"],
             },
           },
         },
