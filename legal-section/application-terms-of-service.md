@@ -21,9 +21,9 @@ By inviting or using [the application,](#user-content-fn-1)[^1] you agree to the
 
 ### 1.1. Definitions
 
-* **"We," "us," "our"**: Refers to the LAPD Central application developers.
+* **"We," "us," "our"**: Refers to the LAPD Central application developers/maintainers.
 * **"You," "User"**: Refers to the individuals or entities accessing or using the application.
-* **"The/this application"**: Refers to LAPD Central, including all associated services and features.
+* **"The/this application"**: Refers to LAPD Central, including all features, services, and hosted instances.
 
 ***
 
@@ -35,23 +35,47 @@ To use the application, you must be at least 13 years old and legally capable of
 
 ## 3. License and Open Source
 
-The code for the LAPD Central application is publicly available on GitHub and is licensed under the [MIT License](https://opensource.org/licenses/MIT). You are free to use the code under the terms of the MIT License. However, your use of the live application (hosted version) is governed by these Terms.
+The code for the LAPD Central application is publicly available on GitHub and is licensed under the [MIT License](https://opensource.org/licenses/MIT). You are free to use the code under the terms of the MIT License. However, your use of the live application (hosted version/instance) is governed by these Terms, not the MIT License..
 
 ***
 
 ## 4. User Conduct
 
-By using this application, you agree to the following terms:
+### **a. Permitted Use**
 
-* Follow all applicable laws and Discord's policies.
-* Use the application responsibly and respectfully.
-* Not engage in any harmful, illegal, or offensive activities, including:
-  * Harassment, bullying, or threats
-  * Hate speech or discrimination
-  * Spamming or unsolicited messages
-  * Impersonating others
-  * Sharing copyrighted or unauthorized content
-  * Violating the privacy of others
+You agree to use the Application only for its intended purposes and in compliance with:
+
+* Discord's [Terms of Service](https://discord.com/terms) and [Community Guidelines](https://discord.com/guidelines)
+* All applicable local, state, and federal laws
+
+### **b. Prohibited Content**
+
+While we implement multiple safeguards (including input validation, Discord's AutoMod integration, restricting attachments, and other ones), you must NOT use the Application to transmit:
+
+* Harmful or dangerous content
+* False or misleading information
+* Content that violates others' privacy
+* Violent or graphically disturbing material
+* Harassing, threatening, or bullying material
+* Any content that violates Discord's guidelines
+
+### **c. Content Disclaimer**
+
+We do not:
+
+* Prescreen or monitor all user-generated content.
+* Assume responsibility for damages caused by other users' content.
+* Guarantee the accuracy, safety, or legality of content sent via the Application.
+
+### **d. Reporting Abuse**
+
+Please immediately report any violations to:
+
+* Discord's Trust & Safety team:
+  1. **Identify the original sender/author** of the problematic content (not the bot's message)
+  2. **Right-click their username** → _Report_ → Follow Discord's reporting process
+  3. **Additionally notify our team** at: \[Your Contact Method] with:
+* Our moderation or development team on the support server or by DMs.
 
 ***
 
@@ -63,26 +87,47 @@ Your data is collected and used according to our [Privacy Policy](application-pr
 
 ## 6. Liability Limitation
 
-We will take reasonable steps to prevent any such damages from occurring. However, we are not liable for any damages, including but not limited to:
+### **a. User-Generated Content**
 
-* Direct, indirect, incidental, special, or consequential damages,
-* Loss of profits, revenue, or goodwill,&#x20;
-* Data loss or corruption,&#x20;
-* Failure of performance,&#x20;
-* Errors in the application, or
-* Any other losses arising from your use of the application.
+While we implement technical safeguards (as described in [Section 4](application-terms-of-service.md#id-4.-user-conduct)), you acknowledge that:
+
+* We cannot prevent all potentially harmful or unwanted content,&#x20;
+* Other users may find ways to bypass our filters, and
+* You use the Application at your own risk.
+
+### **b. Limitation of Liability**
+
+We will take reasonable steps to prevent any such damages from occurring. However, to the fullest extent permitted by law, we are not responsible for:
+
+* Loss of profits, revenue, or goodwill,
+* Damages caused by user-generated content,
+* Any losses from content moderation decisions,
+* Third-party content (including Discord or Roblox API data), or
+* Any indirect, incidental, or consequential damages.
+
+### **c. Safeguard Measures**
+
+We currently employ these protective measures:
+
+* Automatic filtering of web links,
+* Input validation for potentially harmful content,
+* Integration with Discord's AutoMod system (guild settings based), and
+* Restricting attachments to those uploaded directly to Discord.
 
 ***
 
 ## 7. Third-Party Services
 
-The application may interact with third-party services (such as Discord's API or Roblox's API). We are not responsible for the content, policies, or practices of these third-party services. Your use of such services is subject to their terms and policies, not ours.
+The application may interact with third-party services (such as Roblox's API). We are not responsible for the content, policies, or practices of these third-party services. Your use of such services is subject to their terms and policies, not ours.
 
 ***
 
 ## 8. Modifications and Termination
 
-We reserve the right to modify, suspend, or terminate the application or your access to it at any time, without prior notice or liability, for any reason, including violation of these Terms.
+* You may terminate use by removing the Application from your server.
+* We reserve the right to **modify, suspend, or terminate** the Application or your access:
+  * **Without notice**, for violations, legal compliance, violation of these Terms, or operational needs.
+  * With notice for non-critical changes (where feasible).
 
 ***
 
