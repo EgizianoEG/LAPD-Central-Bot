@@ -1,7 +1,6 @@
-import GuildModel from "@Models/Guild.js";
+import IncidentModel from "@Models/Incident.js";
 import { HandleCommandValidationAndPossiblyGetIncident } from "./UpdateIncidentReport.js";
-import { InfoEmbed, WarnEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import { GuildIncidents } from "@Typings/Utilities/Database.js";
+import { ErrorEmbed, InfoEmbed, WarnEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import {
   MessageContextMenuCommandInteraction,
   ApplicationIntegrationType,
@@ -37,13 +36,13 @@ async function Callback(Interaction: MessageContextMenuCommandInteraction<"cache
   if (ValidationResult.handled && !ValidationResult.incident) return;
   await Interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-  const IncidentRecord = ValidationResult.incident as GuildIncidents.IncidentRecord;
+  const IncidentRecord = ValidationResult.incident!;
   const ConfirmationComponents = GetDeleteConfirmationButtons();
   const DeletionPromptEmbed = new WarnEmbed()
     .setThumbnail(null)
     .setTitle("Incident Report Deletion")
     .setDescription(
-      `Please confirm the deletion of incident report with ID \`${IncidentRecord._id}\` from the database.\n` +
+      `Please confirm the deletion of incident report with number \`${IncidentRecord.num}\` from the database.\n` +
         "The deletion will be cancelled automatically after five minutes."
     );
 
@@ -64,15 +63,17 @@ async function Callback(Interaction: MessageContextMenuCommandInteraction<"cache
     await ButtonInteract.deferUpdate();
     return Interaction.deleteReply().catch(() => null);
   } else if (ButtonInteract.customId.includes("confirm")) {
-    await GuildModel.findOneAndUpdate(
-      {
-        _id: Interaction.guildId,
-        "logs.incidents._id": IncidentRecord._id,
-      },
-      {
-        $pull: { "logs.incidents": { _id: IncidentRecord._id } },
-      }
-    );
+    const DeletedReport = await IncidentModel.findOneAndDelete(
+      { _id: IncidentRecord._id, guild: Interaction.guildId },
+      { projection: { _id: 1, num: 1 }, lean: true }
+    ).exec();
+
+    if (!DeletedReport) {
+      return ButtonInteract.update({
+        embeds: [new ErrorEmbed().useErrTemplate("UpdateIncidentReportDBFailed")],
+        components: [],
+      });
+    }
 
     await ButtonInteract.update({
       components: [],
@@ -80,7 +81,7 @@ async function Callback(Interaction: MessageContextMenuCommandInteraction<"cache
         new InfoEmbed()
           .setTitle("Incident Report Deleted")
           .setDescription(
-            `Incident report with ID \`${IncidentRecord._id}\` has been deleted successfully from the database.`
+            `Incident report with ID \`${DeletedReport?.num}\` has been deleted successfully from the database.`
           ),
       ],
     });

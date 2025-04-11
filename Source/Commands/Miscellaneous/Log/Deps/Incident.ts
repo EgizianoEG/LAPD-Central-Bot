@@ -27,13 +27,14 @@ import {
 
 import { ReporterInfo } from "../Log.js";
 import { milliseconds } from "date-fns";
-import { RandomString } from "@Utilities/Strings/Random.js";
 import { SendGuildMessages } from "@Utilities/Other/GuildMessages.js";
+import { FormatSortRDInputNames } from "@Utilities/Strings/Formatters.js";
 import { GuildIncidents, Guilds } from "@Typings/Utilities/Database.js";
 import { SanitizeDiscordAttachmentLink } from "@Utilities/Strings/OtherUtils.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { FilterUserInput, FilterUserInputOptions } from "@Utilities/Strings/Redactor.js";
 import { IsValidDiscordId, IsValidDiscordAttachmentLink } from "@Utilities/Other/Validators.js";
+import IncidentModel, { GenerateNextIncidentNumber } from "@Models/Incident.js";
 
 import IncrementActiveShiftEvent from "@Utilities/Database/IncrementActiveShiftEvent.js";
 import GetIncidentReportEmbeds from "@Utilities/Other/GetIncidentReportEmbeds.js";
@@ -120,7 +121,8 @@ function GetIncidentInformationModal(
 
 function GetWitnessesInvolvedOfficersInputModal(
   Interact: SlashCommandInteraction<"cached"> | ButtonInteraction<"cached">,
-  InputType: "Officers" | "Witnesses"
+  InputType: "Officers" | "Witnesses",
+  IncidentReport: GuildIncidents.IncidentRecord
 ): ModalBuilder {
   return new ModalBuilder()
     .setTitle(`Add ${InputType} to Incident Report`)
@@ -132,6 +134,7 @@ function GetWitnessesInvolvedOfficersInputModal(
         new TextInputBuilder()
           .setCustomId(InputType.toLowerCase())
           .setLabel(InputType === "Officers" ? "Involved Officers" : "Witnesses")
+          .setValue(FormatSortRDInputNames(IncidentReport.officers).join(", "))
           .setPlaceholder(
             `The names or Discord IDs of the ${InputType.toLowerCase()} involved, separated by commas.`
           )
@@ -174,18 +177,9 @@ function GetConfirmationButtons(
 }
 
 /**
- * Generates a random incident number based on the provided incident records array.
- * @param IncidentRecords - An array of incident records. The only field matters is the `_id` field.
- * @returns A random incident number.
- */
-function GetIncidentNumber(IncidentRecords: GuildIncidents.IncidentRecord[]): number {
-  const RecordedBookingNums = IncidentRecords.map((Record) => Record._id);
-  return Number(RandomString(6, /\d/, RecordedBookingNums));
-}
-
-/**
  * Sanitizes the input string of involved officers or witnesses by splitting it into individual names,
- * trimming whitespace, filtering out empty names, formatting each name based on its type, and finally sorts them.
+ * filtering out empty names, formatting each name based on its type, and finally sorts them.
+ * Used for displaying involved officers or witnesses in an embed.
  * @param Input - The input string containing names of involved officers or witnesses, separated by commas.
  * @returns An array of sanitized and sorted names.
  */
@@ -287,14 +281,23 @@ async function PrepareIncidentData(
   };
 
   const InputNotes = ModalSubmission.fields.getTextInputValue("notes").replace(/\s+/g, " ") || null;
-  const Data = {
-    ...CmdProvidedDetails,
-    _id: GetIncidentNumber(GuildDocument.logs.incidents),
+  const ReporterRobloxInfo = await GetUserInfo(ReportingOfficer.RobloxUserId);
+  const IncidentNumber = await GenerateNextIncidentNumber(CmdInteract.guild.id);
+  const IncidentNotes = InputNotes ? await FilterUserInput(InputNotes, UTIFOpts) : null;
+  const IncidentDesc = await FilterUserInput(
+    ModalSubmission.fields.getTextInputValue("incident-desc").replace(/\s+/g, " "),
+    UTIFOpts
+  );
 
-    description: await FilterUserInput(
-      ModalSubmission.fields.getTextInputValue("incident-desc").replace(/\s+/g, " "),
-      UTIFOpts
-    ),
+  const IncidentRecordInst = new IncidentModel({
+    ...CmdProvidedDetails,
+
+    num: IncidentNumber,
+    notes: IncidentNotes,
+    description: IncidentDesc,
+    last_updated: new Date(),
+    last_updated_by: null,
+    guild: CmdInteract.guildId,
 
     officers: [],
     witnesses: [],
@@ -313,28 +316,28 @@ async function PrepareIncidentData(
       .split(SplitRegexForInputs)
       .filter(Boolean),
 
-    notes: InputNotes ? await FilterUserInput(InputNotes, UTIFOpts) : null,
-    last_updated: new Date(),
-    last_updated_by: null,
-
     reported_on: ModalSubmission.createdAt,
-    reported_by: {
+    reporter: {
       discord_id: CmdInteract.user.id,
       discord_username: CmdInteract.user.username,
-      display_name: CmdInteract.member.nickname || CmdInteract.user.displayName,
       roblox_id: ReportingOfficer.RobloxUserId,
-      roblox_username: await GetUserInfo(ReportingOfficer.RobloxUserId)
-        .then((Res) => Res.name)
-        .catch(() => "[@Unknown]"),
+      roblox_display_name: ReporterRobloxInfo?.displayName || "[Unknown]",
+      roblox_username: ReporterRobloxInfo?.name || "[Unknown]",
     },
-  };
+  });
 
-  if ((await HandleProvidedAttachmentsValidation(ModalSubmission, Data.attachments)) === true) {
+  if (
+    (await HandleProvidedAttachmentsValidation(ModalSubmission, IncidentRecordInst.attachments)) ===
+    true
+  ) {
     return null;
   }
 
-  Data.attachments = Data.attachments.map(SanitizeDiscordAttachmentLink);
-  return Data;
+  IncidentRecordInst.attachments = IncidentRecordInst.attachments.map(
+    SanitizeDiscordAttachmentLink
+  );
+
+  return IncidentRecordInst;
 }
 
 async function HandleProvidedAttachmentsValidation(
@@ -359,10 +362,8 @@ async function InsertIncidentRecord(
   Interact: ButtonInteraction<"cached"> | SlashCommandInteraction<"cached">,
   IncidentRecord: GuildIncidents.IncidentRecord
 ) {
-  return GuildModel.updateOne(
-    { _id: Interact.guildId },
-    { $push: { "logs.incidents": IncidentRecord } }
-  );
+  IncidentRecord = { ...IncidentRecord, num: await GenerateNextIncidentNumber(Interact.guild.id) };
+  return IncidentModel.create(IncidentRecord);
 }
 
 // ---------------------------------------------------------------------------------------
@@ -374,14 +375,21 @@ async function OnReportConfirmation(
   IRChannelIds?: null | string | string[]
 ) {
   await BtnInteract.deferUpdate();
-  const InsertResult = await InsertIncidentRecord(BtnInteract, IncidentReport).then((Res) => {
-    IncrementActiveShiftEvent("incidents", BtnInteract.user.id, BtnInteract.guildId).catch(
-      () => null
-    );
-    return Res;
-  });
+  let InsertedRecord: GuildIncidents.IncidentRecord | null = null;
+  try {
+    InsertedRecord = await InsertIncidentRecord(BtnInteract, IncidentReport).then((Res) => {
+      IncrementActiveShiftEvent("incidents", BtnInteract.user.id, BtnInteract.guildId).catch(
+        () => null
+      );
+      return Res;
+    });
+  } catch (Err: any) {
+    AppLogger.error({
+      message: Err.message,
+      label: CmdFileLabel,
+      stack: Err.stack,
+    });
 
-  if (InsertResult.modifiedCount === 0 || !InsertResult.acknowledged) {
     return new ErrorEmbed()
       .useErrTemplate("LogIncidentDatabaseInsertFailed")
       .replyToInteract(BtnInteract, true, true, "followUp");
@@ -398,25 +406,21 @@ async function OnReportConfirmation(
 
   const REDescription = Dedent(`
     The incident report has been successfully submitted and logged.
-    - Incident Number: \`${IncidentReport._id}\`
-    - Logged Report Link: ${ReportSentMessageURL ?? "N/A"} 
+    - Incident Number: \`${IncidentReport.num}\`
+    - Logged Report: ${ReportSentMessageURL ?? "N/A"} 
   `);
 
   if (ReportSentMessageURL) {
     const SplatURL = ReportSentMessageURL.split("/");
-    GuildModel.updateOne(
+    IncidentModel.updateOne(
       {
-        _id: BtnInteract.guildId,
-        "logs.incidents._id": IncidentReport._id,
+        guild: BtnInteract.guildId,
+        _id: InsertedRecord!._id,
       },
       {
         $set: {
-          "logs.incidents.$[record].log_message": `${SplatURL[SplatURL.length - 2]}:${SplatURL[SplatURL.length - 1]}`,
+          log_message: `${SplatURL[SplatURL.length - 2]}:${SplatURL[SplatURL.length - 1]}`,
         },
-      },
-      {
-        new: true,
-        arrayFilters: [{ "record._id": IncidentReport._id }],
       }
     )
       .exec()
@@ -425,7 +429,7 @@ async function OnReportConfirmation(
 
   return BtnInteract.editReply({
     embeds: [new SuccessEmbed().setTitle("Report Logged").setDescription(REDescription)],
-    content: "",
+    content: null,
     components: [],
   });
 }
@@ -449,7 +453,7 @@ async function OnReportInvolvedOfficersOrWitnessesAddition(
   AdditionFor: "Officers" | "Witnesses"
 ) {
   const CopiedReport = { ...ReportData };
-  const InputModal = GetWitnessesInvolvedOfficersInputModal(BtnInteract, AdditionFor);
+  const InputModal = GetWitnessesInvolvedOfficersInputModal(BtnInteract, AdditionFor, ReportData);
   const ModalSubmission = await BtnInteract.showModal(InputModal).then(() =>
     BtnInteract.awaitModalSubmit({
       time: milliseconds({ minutes: 10 }),
@@ -478,7 +482,11 @@ async function OnReportInvolvedOfficersOrWitnessesAddition(
         `)
       );
     } else {
-      UpdateEmbedFieldDescription(IREmbeds[0], "Witnesses", CopiedReport.witnesses.join(", "));
+      UpdateEmbedFieldDescription(
+        IREmbeds[0],
+        "Witnesses",
+        ListFormatter.format(CopiedReport.witnesses)
+      );
     }
   }
 
@@ -487,7 +495,7 @@ async function OnReportInvolvedOfficersOrWitnessesAddition(
 
 async function HandleIRAdditionalDetailsAndConfirmation(
   CmdInteract: SlashCommandInteraction<"cached">,
-  ModalSubmission: ModalSubmitInteraction,
+  ModalSubmission: ModalSubmitInteraction<"cached">,
   CmdModalProvidedData: GuildIncidents.IncidentRecord,
   DAGuildSettings: Guilds.GuildSettings["duty_activities"]
 ) {
@@ -501,11 +509,11 @@ async function HandleIRAdditionalDetailsAndConfirmation(
   ];
 
   IncidentReportEmbeds[0].setColor(Colors.Gold).setTitle("Incident Report Confirmation");
-  const ConfirmationMessage = (await ModalSubmission.editReply({
+  const ConfirmationMessage = await ModalSubmission.editReply({
     content: `${userMention(CmdInteract.user.id)} - Are you sure you want to submit this incident? Revise the incident details and add involved officers or witnesses if necessary.`,
     embeds: IncidentReportEmbeds,
     components: ConfirmationMsgComponents,
-  })) as Message<true>;
+  });
 
   ProcessReceivedIRBtnInteractions(
     CmdInteract,
@@ -619,7 +627,6 @@ async function IncidentLogCallback(
   const GuildDocument = await GuildModel.findById(
     CmdInteract.guildId,
     {
-      "logs.incidents._id": 1,
       "settings.utif_enabled": 1,
       "settings.duty_activities.log_channels.incidents": 1,
     },

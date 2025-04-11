@@ -792,17 +792,27 @@ export namespace GuildIncidents {
     roblox_username: string;
 
     /** The Roblox display name. */
-    display_name: string;
+    roblox_display_name: string;
 
     /** The Discord user id. */
     discord_id: string;
 
-    /** The Discord user id. */
+    /** The Discord username. */
     discord_username: string;
   }
 
   interface IncidentRecord {
-    _id: number;
+    _id: Types.ObjectId;
+
+    /**
+     * The incident number.
+     * Format: `YY-NNNNN`
+     * Where `YY` is the last two digits of the year and `NNNNN` is a (five/six)-digit sequential number assigned to each report.
+     * Example: `25-00001`
+     */
+    num: string;
+
+    guild: string;
     type: GuildIncidents.IncidentType;
     log_message?: string | null;
     reported_on: Date;
@@ -811,7 +821,7 @@ export namespace GuildIncidents {
     location: string;
     description: string;
     status: IncidentStatus;
-    reported_by: OfficerInvolved;
+    reporter: OfficerInvolved;
 
     /** A list of involved suspects (could be Roblox usernames). */
     suspects: string[];
@@ -822,7 +832,7 @@ export namespace GuildIncidents {
     /** A list of incident witnesses (could be Roblox usernames). */
     witnesses: string[];
 
-    /** A list of involved officers. */
+    /** A list of involved officers. Can contain Roblox usernames (leading with @) or Discord IDs. */
     officers: string[];
 
     /**
@@ -845,11 +855,11 @@ export namespace AggregateResults {
   }
 
   interface GetIncidentNumbers {
-    incidents: {
-      num: string;
-      autocomplete_label: string;
-    }[];
+    _id: string;
+    num: string;
+    autocomplete_label: string;
   }
+  [];
 
   interface GetBookingNumbers {
     bookings: {

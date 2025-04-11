@@ -18,7 +18,7 @@ export default async function AutocompleteIncidentNum(
     Suggestions = Incidents;
   } else {
     Suggestions = Incidents.filter((Incident) => {
-      return Incident.num.includes(Typed);
+      return Incident.autocomplete_label.includes(Typed);
     });
   }
 
