@@ -612,6 +612,9 @@ export namespace GuildCitations {
     /** Citation number. */
     num: number;
 
+    /** The Discord snowflake Id of the guild where this citation was issued. */
+    guild: string;
+
     /** The date of violation or citation. */
     issued_on: Date;
 
@@ -733,6 +736,12 @@ export namespace GuildArrests {
   interface ArrestRecord {
     /** The arrest id. Also used as the booking number. */
     _id: number;
+
+    /** The guild where the arrest was made. */
+    guild: string;
+
+    /** The booking number. */
+    booking_num: number;
 
     /** The date when the arrest report was made. */
     made_on: Date;
@@ -866,18 +875,6 @@ export namespace AggregateResults {
       num: string;
       autocomplete_label: string;
     }[];
-  }
-
-  interface GetCitationRecord {
-    citation: GuildCitations.AnyCitationData;
-  }
-
-  interface GetIncidentRecord {
-    incident: GuildIncidents.IncidentRecord;
-  }
-
-  interface GetArrestRecord {
-    arrest: GuildArrests.ArrestRecord;
   }
 
   interface GetUserRecords {
