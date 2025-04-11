@@ -47,7 +47,7 @@ import Dedent from "dedent";
 
 const CmdFileLabel = "Commands:Miscellaneous:Log:Incident";
 const ListFormatter = new Intl.ListFormat("en");
-const SplitRegexForInputs = /\s*,\s*|\s+/;
+export const SplitRegexForInputs = /\s*,\s*|\s+/;
 
 // ---------------------------------------------------------------------------------------
 // Helpers:
