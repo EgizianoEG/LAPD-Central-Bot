@@ -871,11 +871,11 @@ export namespace AggregateResults {
   [];
 
   interface GetBookingNumbers {
-    bookings: {
-      num: string;
-      autocomplete_label: string;
-    }[];
+    _id: string;
+    num: number;
+    autocomplete_label: string;
   }
+  [];
 
   interface GetUserRecords {
     arrests: GuildArrests.ArrestRecord[];
@@ -885,6 +885,7 @@ export namespace AggregateResults {
     total_citations: number;
     recent_arrest: GuildArrests.ArrestRecord | null;
     recent_citation: GuildCitations.AnyCitationData | null;
+    total_incidents_as_suspect: number;
   }
 
   /** Without the highest role or name of the user. */

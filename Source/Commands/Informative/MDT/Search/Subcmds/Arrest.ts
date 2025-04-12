@@ -1,10 +1,10 @@
 // Dependencies:
 // -------------
 
-import { MessageFlags, SlashCommandSubcommandBuilder } from "discord.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import GetArrestRecord from "@Utilities/Database/GetArrestRecord.js";
+import { MessageFlags, SlashCommandSubcommandBuilder } from "discord.js";
 import GetFormattedArrestReportEmbed from "@Utilities/Other/FormatArrestReportEmbed.js";
+import GetArrestRecord from "@Utilities/Database/GetArrestRecord.js";
 
 // ---------------------------------------------------------------------------------------
 // Functions:

@@ -39,7 +39,7 @@ const CommandObject = {
       Option.setName("incident-num")
         .setDescription("The incident number to get information about.")
         .setMinLength(7)
-        .setMaxLength(8)
+        .setMaxLength(9)
         .setRequired(true)
         .setAutocomplete(true)
     ),

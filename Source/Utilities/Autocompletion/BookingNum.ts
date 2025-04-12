@@ -18,7 +18,7 @@ export default async function AutocompleteBookingNum(
     Suggestions = Bookings;
   } else {
     Suggestions = Bookings.filter((Bk) => {
-      return Bk.autocomplete_label.includes(Typed);
+      return Bk.autocomplete_label.toLowerCase().includes(Typed.toLowerCase());
     });
   }
 

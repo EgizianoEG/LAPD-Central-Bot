@@ -1,7 +1,9 @@
 import { AggregateResults } from "@Typings/Utilities/Database.js";
 import ArrestModel from "@Models/Arrest.js";
 
-export default async function GetAllBookingNums(GuildId: string) {
+export default async function GetAllBookingNums(
+  GuildId: string
+): Promise<AggregateResults.GetBookingNumbers[]> {
   return ArrestModel.aggregate<AggregateResults.GetBookingNumbers>([
     {
       $match: {
@@ -10,43 +12,33 @@ export default async function GetAllBookingNums(GuildId: string) {
     },
     {
       $project: {
+        booking_num: 1,
         arrestee: 1,
         doa: {
           $dateToString: {
             date: "$made_on",
-            format: "%B %d, %G at %H:%M [PDT]",
+            format: "%B %d, %G at %H:%M",
             timezone: "America/Los_Angeles",
-          },
-        },
-        num: {
-          $toString: "$booking_num",
-        },
-      },
-    },
-    {
-      $group: {
-        _id: 0,
-        bookings: {
-          $push: {
-            num: "$num",
-            autocomplete_label: {
-              $concat: ["#", "$num", " – ", "$arrestee.formatted_name", " – ", "$doa"],
-            },
           },
         },
       },
     },
     {
       $project: {
-        _id: 0,
-        bookings: 1,
+        num: "$booking_num",
+        autocomplete_label: {
+          $concat: [
+            "#",
+            {
+              $toString: "$booking_num",
+            },
+            " – ",
+            "$arrestee.formatted_name",
+            " – ",
+            "$doa",
+          ],
+        },
       },
     },
-  ])
-    .then((Results) =>
-      Results[0]?.bookings.length && Results[0].bookings[0]
-        ? Results[0].bookings
-        : ([] as AggregateResults.GetBookingNumbers["bookings"])
-    )
-    .catch(() => [] as AggregateResults.GetBookingNumbers["bookings"]);
+  ]).exec();
 }

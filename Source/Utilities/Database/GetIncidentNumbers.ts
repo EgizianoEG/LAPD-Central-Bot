@@ -16,7 +16,7 @@ export default async function GetAllIncidentNums(
           $dateToString: {
             date: "$reported_on",
             timezone: "America/Los_Angeles",
-            format: "%B %d, %G at %H:%M [PDT]",
+            format: "%B %d, %G at %H:%M",
           },
         },
       },
