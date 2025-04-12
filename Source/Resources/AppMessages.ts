@@ -729,6 +729,11 @@ export const ErrorMessages = {
     Description:
       "The current configuration lacks defined staff roles or management roles necessary to identify staff members. Please ensure that at least one staff or management role is configured for the application to generate activity reports.",
   },
+
+  AOTargetMemberMustBeStaff: {
+    Title: "Staff Restriction",
+    Description: "This action can only be performed on members identified as staff.",
+  },
 };
 
 export const InfoMessages = {

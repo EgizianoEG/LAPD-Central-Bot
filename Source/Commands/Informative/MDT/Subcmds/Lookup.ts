@@ -4,6 +4,7 @@ import {
   userMention,
   channelLink,
   EmbedBuilder,
+  AttachmentBuilder,
   SlashCommandSubcommandBuilder,
 } from "discord.js";
 
@@ -26,7 +27,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
       .replyToInteract(Interaction, true);
   }
 
-  const [RobloxUserId, , RAFound] = await GetIdByUsername(InputUsername, true);
+  const [RobloxUserId, ExactUsername, RAFound] = await GetIdByUsername(InputUsername, true);
   if (!RAFound) {
     return new ErrorEmbed()
       .useErrTemplate("NonexistentRobloxUsername", InputUsername)
@@ -34,9 +35,12 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   }
 
   await Interaction.deferReply();
-  const RobloxUserInfo = await GetUserInfo(RobloxUserId);
-  const UserRecords = await GetUserRecords(Interaction.guildId, RobloxUserId, RobloxUserInfo.name);
-  const RobloxThumbnail = await GetUserThumbnail(RobloxUserId, "352x352", "png", "headshot");
+  const [RobloxUserInfo, UserRecords, RobloxThumbnail] = await Promise.all([
+    GetUserInfo(RobloxUserId),
+    GetUserRecords(Interaction.guildId, RobloxUserId, ExactUsername),
+    GetUserThumbnail(RobloxUserId, "352x352", "png", "headshot"),
+  ]);
+
   const FormattedUsername = FormatUsername(RobloxUserInfo, false, true);
   const ResponseEmbed = new EmbedBuilder()
     .setColor(Colors.DarkBlue)
@@ -137,7 +141,19 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     ResponseEmbed.setFields(ResponseEmbed.data.fields![0]);
   }
 
-  return Interaction.editReply({ embeds: [ResponseEmbed] });
+  if (RobloxThumbnail.includes("placehold")) {
+    return Interaction.editReply({ embeds: [ResponseEmbed] });
+  } else {
+    const RThumbAttachment = new AttachmentBuilder(RobloxThumbnail, {
+      name: `th-${RobloxUserInfo.name.toLowerCase()}.png`,
+    });
+
+    ResponseEmbed.setThumbnail(`attachment://${RThumbAttachment.name}`);
+    return Interaction.editReply({
+      embeds: [ResponseEmbed],
+      files: [RThumbAttachment],
+    });
+  }
 }
 
 // ---------------------------------------------------------------------------------------
