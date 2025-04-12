@@ -97,7 +97,7 @@ function GetIncidentEditOptionsMenu() {
         {
           label: "Set Involved Officers",
           value: IncidentEditOptionIds.Officers,
-          description: "Add or remove incident officers.",
+          description: "Add or remove involved officers in the incident.",
         },
         {
           label: "Set Suspects",
@@ -525,16 +525,6 @@ async function HandleIncidentRecordUpdateConfirm(
 ) {
   const RecordSetMap: { [key: string]: any } = {};
   await BtnInteract.deferUpdate().catch(() => null);
-  if (IsEqual(DatabaseIncRecord, UpdatedIncRecord)) {
-    return BtnInteract.editReply({
-      components: [],
-      embeds: [
-        new InfoEmbed()
-          .setTitle("Unnecessary Update")
-          .setDescription("There were no changes made to the incident report to update."),
-      ],
-    });
-  }
 
   if (DatabaseIncRecord.status !== UpdatedIncRecord.status) {
     RecordSetMap.status = UpdatedIncRecord.status;
@@ -554,6 +544,17 @@ async function HandleIncidentRecordUpdateConfirm(
 
   if (!ArraysAreEqual(DatabaseIncRecord.witnesses, UpdatedIncRecord.witnesses)) {
     RecordSetMap.witnesses = UpdatedIncRecord.witnesses;
+  }
+
+  if (Object.keys(RecordSetMap).length === 0) {
+    return BtnInteract.editReply({
+      components: [],
+      embeds: [
+        new InfoEmbed()
+          .setTitle("Unnecessary Update")
+          .setDescription("There were no changes made to the incident report to update."),
+      ],
+    });
   }
 
   const UpdatedDatabaseIncRecord = await IncidentModel.findOneAndUpdate(
@@ -624,7 +625,7 @@ async function HandleIncidentStatusEdit(
   const RecInteract = await StatusPromptMsg.awaitMessageComponent({
     filter: (Interact) => Interact.user.id === SelectInteract.user.id,
     componentType: ComponentType.StringSelect,
-    time: 10 * 60 * 1000,
+    time: CompCollectorIdleTime,
   }).catch(() => null);
 
   if (RecInteract) {
@@ -658,7 +659,7 @@ async function HandleIncidentSuspectsOrWitnessesEdit(
 
   const InputSubmission = await SelectInteract.awaitModalSubmit({
     filter: (Submision) => Submision.customId === TextInputModal.data.custom_id,
-    time: 10 * 60 * 1000,
+    time: CompCollectorIdleTime,
   }).catch(() => null);
 
   if (!InputSubmission) return null;
@@ -670,7 +671,8 @@ async function HandleIncidentSuspectsOrWitnessesEdit(
     .filter((Name) => Name.length >= 2);
 
   if (InputType === "Suspects") IRUpdatesCopy.suspects = NewlySetNames;
-  else IRUpdatesCopy.witnesses = NewlySetNames;
+  else if (InputType === "Witnesses") IRUpdatesCopy.witnesses = NewlySetNames;
+  else if (InputType === "Officers") IRUpdatesCopy.officers = NewlySetNames;
   return InputSubmission;
 }
 
@@ -688,7 +690,7 @@ async function HandleIncidentNotesEdit(
 
   const InputSubmission = await SelectInteract.awaitModalSubmit({
     filter: (Submision) => Submision.customId === NotesInputModal.data.custom_id,
-    time: 10 * 60 * 1000,
+    time: CompCollectorIdleTime,
   }).catch(() => null);
 
   if (!InputSubmission) return null;
