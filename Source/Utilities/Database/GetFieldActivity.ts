@@ -1,6 +1,7 @@
-/* eslint-disable sonarjs/no-duplicate-string */
 import { GuildMember } from "discord.js";
-import GuildModel from "@Models/Guild.js";
+import IncidentModel from "@Models/Incident.js";
+import CitationModel from "@Models/Citation.js";
+import ArrestModel from "@Models/Arrest.js";
 
 export interface StaffFieldActivityReturn {
   arrests_made: number;
@@ -18,153 +19,48 @@ export interface StaffFieldActivityReturn {
  * @param StaffMember - The staff member whose field activity data should be returned.
  * @param [After] - The date after which the field activity data should be returned/considered.
  * @returns The field activity data for the specified staff member.
- * @throws {AppError} - Throws a showable error if the guild document is not found, which is irregular to actually happen.
  */
 export default async function GetStaffFieldActivity(
   StaffMember: GuildMember,
   After?: Date | null
 ): Promise<StaffFieldActivityReturn> {
-  return GuildModel.aggregate([
-    {
-      $match: {
-        _id: StaffMember.guild.id,
-      },
-    },
-    {
-      $project: {
-        "logs.arrests.made_on": 1,
-        "logs.arrests.assisting_officers": 1,
-        "logs.arrests.arresting_officer.discord_id": 1,
+  const GuildId = StaffMember.guild.id;
+  const StaffDiscordId = StaffMember.id;
 
-        "logs.citations.type": 1,
-        "logs.citations.issued_on": 1,
-        "logs.citations.citing_officer.discord_id": 1,
+  const [ArrestsMade, ArrestsAssisted, Citations, Incidents] = await Promise.all([
+    ArrestModel.countDocuments({
+      guild: GuildId,
+      "arresting_officer.discord_id": StaffDiscordId,
+      ...(After ? { made_on: { $gt: After } } : {}),
+    }),
+    ArrestModel.countDocuments({
+      guild: GuildId,
+      assisting_officers: StaffDiscordId,
+      ...(After ? { made_on: { $gt: After } } : {}),
+    }),
+    CitationModel.find({
+      guild: GuildId,
+      "citing_officer.discord_id": StaffDiscordId,
+      ...(After ? { issued_on: { $gt: After } } : {}),
+    }).lean(),
+    IncidentModel.countDocuments({
+      guild: GuildId,
+      "reporter.discord_id": StaffDiscordId,
+      ...(After ? { reported_on: { $gt: After } } : {}),
+    }),
+  ]);
 
-        "logs.incidents.reported_on": 1,
-        "logs.incidents.reported_by.discord_id": 1,
-      },
-    },
-    {
-      $addFields: {
-        arrests: {
-          $filter: {
-            input: "$logs.arrests",
-            as: "arrest",
-            cond: {
-              $and: [
-                { $eq: [StaffMember.id, "$$arrest.arresting_officer.discord_id"] },
-                {
-                  $cond: {
-                    if: After,
-                    then: { $gt: ["$$arrest.made_on", After] },
-                    else: true,
-                  },
-                },
-              ],
-            },
-          },
-        },
-        arrests_assisted: {
-          $filter: {
-            input: "$logs.arrests",
-            as: "arrest",
-            cond: {
-              $and: [
-                { $in: [StaffMember.id, "$$arrest.assisting_officers"] },
-                {
-                  $cond: {
-                    if: After,
-                    then: { $gt: ["$$arrest.made_on", After] },
-                    else: true,
-                  },
-                },
-              ],
-            },
-          },
-        },
-        citations: {
-          $filter: {
-            input: "$logs.citations",
-            as: "citation",
-            cond: {
-              $and: [
-                { $eq: [StaffMember.id, "$$citation.citing_officer.discord_id"] },
-                {
-                  $cond: {
-                    if: After,
-                    then: { $gt: ["$$citation.issued_on", After] },
-                    else: true,
-                  },
-                },
-              ],
-            },
-          },
-        },
-        incidents: {
-          $filter: {
-            input: "$logs.incidents",
-            as: "incident",
-            cond: {
-              $and: [
-                { $eq: [StaffMember.id, "$$incident.reported_by.discord_id"] },
-                {
-                  $cond: {
-                    if: After,
-                    then: { $gt: ["$$incident.reported_on", After] },
-                    else: true,
-                  },
-                },
-              ],
-            },
-          },
-        },
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        arrests_made: { $size: "$arrests" },
-        arrests_assisted: { $size: "$arrests_assisted" },
-        incidents_reported: { $size: "$incidents" },
-        citations_issued: {
-          total: { $size: "$citations" },
-          warnings: {
-            $size: {
-              $filter: {
-                input: "$citations",
-                as: "citation",
-                cond: { $eq: ["$$citation.type", "Warning"] },
-              },
-            },
-          },
-          fines: {
-            $size: {
-              $filter: {
-                input: "$citations",
-                as: "citation",
-                cond: { $eq: ["$$citation.type", "Fine"] },
-              },
-            },
-          },
-        },
-      },
-    },
-  ]).then((FieldData: undefined | StaffFieldActivityReturn[]) => {
-    if (!FieldData || FieldData.length === 0) {
-      FieldData = [
-        {
-          arrests_made: 0,
-          arrests_assisted: 0,
-          incidents_reported: 0,
-          citations_issued: {
-            warnings: 0,
-            fines: 0,
-            total: 0,
-          },
-        },
-      ];
-    }
+  const Warnings = Citations.filter((Citation) => Citation.type === "Warning").length;
+  const Fines = Citations.filter((Citation) => Citation.type === "Fine").length;
 
-    return FieldData[0];
-  });
+  return {
+    arrests_made: ArrestsMade,
+    arrests_assisted: ArrestsAssisted,
+    incidents_reported: Incidents,
+    citations_issued: {
+      warnings: Warnings,
+      fines: Fines,
+      total: Citations.length,
+    },
+  };
 }
