@@ -21,10 +21,11 @@ const IncidentReportSchema = new Schema<IncidentPlainDoc, IncidentModelType>({
 
   num: {
     type: String,
+    index: true,
     required: true,
     validate: {
-      validator: (num: string) => /^INC-\d{2}-\d{5,6}$/.test(num),
-      message: "The incident number must be in the format 'INC-YY-XXXXX'.",
+      validator: (num: string) => /^\d{2}-\d{5,6}$/.test(num),
+      message: "The incident number must be in the format 'YY-XXXXX[X]'.",
     },
   },
 
@@ -46,6 +47,7 @@ const IncidentReportSchema = new Schema<IncidentPlainDoc, IncidentModelType>({
 
   reported_on: {
     type: Date,
+    index: true,
     required: true,
     default: Date.now,
   },
@@ -112,8 +114,13 @@ const IncidentReportSchema = new Schema<IncidentPlainDoc, IncidentModelType>({
       roblox_id: Number,
       roblox_username: String,
       roblox_display_name: String,
-      discord_id: String,
       discord_username: String,
+      discord_id: {
+        type: String,
+        index: true,
+        required: true,
+        match: /^\d{15,22}$/,
+      },
     },
   },
 

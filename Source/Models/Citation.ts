@@ -10,6 +10,7 @@ const CitationSchema = new Schema<CitationPlainDoc, CitationModelType>({
   num: {
     min: 0,
     type: Number,
+    index: true,
     required: true,
   },
 
@@ -32,6 +33,7 @@ const CitationSchema = new Schema<CitationPlainDoc, CitationModelType>({
 
   issued_on: {
     type: Date,
+    index: true,
     required: true,
     default: Date.now,
   },
@@ -92,6 +94,7 @@ const CitationSchema = new Schema<CitationPlainDoc, CitationModelType>({
     type: {
       discord_id: {
         type: String,
+        index: true,
         required: true,
       },
       roblox_id: {
@@ -224,4 +227,5 @@ const CitationSchema = new Schema<CitationPlainDoc, CitationModelType>({
 });
 
 CitationSchema.set("optimisticConcurrency", true);
-export default model<CitationPlainDoc, CitationModelType>("Citation", CitationSchema);
+const CitationModel = model<CitationPlainDoc, CitationModelType>("Citation", CitationSchema);
+export default CitationModel;

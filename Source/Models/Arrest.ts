@@ -8,12 +8,14 @@ type ArrestModelType = Model<ArrestPlainDoc, unknown>;
 const ArrestSchema = new Schema<ArrestPlainDoc, ArrestModelType>({
   booking_num: {
     type: Number,
+    index: true,
     required: true,
   },
 
   guild: {
     type: String,
     required: true,
+    index: true,
     match: /^\d{15,22}$/,
     ref: "Guild",
   },
@@ -22,10 +24,12 @@ const ArrestSchema = new Schema<ArrestPlainDoc, ArrestModelType>({
     type: [String],
     default: [],
     required: true,
+    index: true,
   },
 
   made_on: {
     type: Date,
+    index: true,
     required: true,
     default: Date.now,
   },
@@ -115,6 +119,7 @@ const ArrestSchema = new Schema<ArrestPlainDoc, ArrestModelType>({
 
       discord_id: {
         type: String,
+        index: true,
         required: true,
       },
     },
@@ -122,4 +127,5 @@ const ArrestSchema = new Schema<ArrestPlainDoc, ArrestModelType>({
 });
 
 ArrestSchema.set("optimisticConcurrency", true);
-export default model<ArrestPlainDoc, ArrestModelType>("Arrest", ArrestSchema);
+const ArrestModel = model<ArrestPlainDoc, ArrestModelType>("Arrest", ArrestSchema);
+export default ArrestModel;
