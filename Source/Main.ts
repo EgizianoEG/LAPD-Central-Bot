@@ -44,7 +44,7 @@ App.buttonListeners = new Collection();
     });
   }
 
-  await App.login(DiscordSecrets.BotToken)
+  await App.login(DiscordSecrets.AppToken)
     .then(() => {
       if (!App.user) throw new Error("`App.user` is not accessible.");
       AppLogger.info({

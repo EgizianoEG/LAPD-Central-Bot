@@ -126,7 +126,7 @@ export async function HandleDevOnlyCommands(
   if (Interaction.replied) return;
   if (
     CommandObject.options?.dev_only &&
-    !Discord.BotDevs.includes(Interaction.user.id) &&
+    !Discord.DeveloperIds.includes(Interaction.user.id) &&
     Interaction.client.application.owner?.id !== Interaction.user.id
   ) {
     return new UnauthorizedEmbed()

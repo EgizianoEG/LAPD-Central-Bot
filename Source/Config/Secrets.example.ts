@@ -6,9 +6,9 @@ const WLGuilds = Env.WL_GUILDS ? (JSON.parse(Env.WL_GUILDS.replace(/'+/g, '"')) 
 export const Discord: Secrets.Discord = {
   TestGuildId: Env.TEST_GUILD_ID ?? "299142369297356",
   SupportGuildId: Env.SUPPORT_GUILD_ID ?? null,
-  BotToken:
+  AppToken:
     Env.BOT_TOKEN ?? "MTA5Nzg3OTYxMTc0NjAyOTcxMA.G3NsSn.cqsdmmAmnqeUe_PT7ROQAzWzWZA3nzFfN_xHWI",
-  BotDevs: EnvBotDevs ?? ["0000000000000"],
+  DeveloperIds: EnvBotDevs ?? ["0000000000000"],
   WLGuilds,
 };
 

@@ -24,7 +24,7 @@ async function Callback(Client: DiscordClient, Interaction: SlashCommandInteract
       .catch(() => null));
 
   const AppDevsJoined = ListFormatter.format(
-    Discord.BotDevs.filter((Id) => IsValidDiscordId(Id) && Id !== AppAuthorId).map(
+    Discord.DeveloperIds.filter((Id) => IsValidDiscordId(Id) && Id !== AppAuthorId).map(
       (Id) => `<@${Id}>`
     )
   );

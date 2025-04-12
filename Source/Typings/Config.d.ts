@@ -34,7 +34,7 @@ export namespace Secrets {
      * An array containing all developers’ IDs of the bot. This will be used to provide some
      * functionalities and special commands.
      */
-    BotDevs: string[];
+    DeveloperIds: string[];
 
     /**
      * Whitelisted guilds that the bot will be able to join.
@@ -56,7 +56,7 @@ export namespace Secrets {
     TestGuildId: string;
 
     /** The bot token for the Discord application (Bot). */
-    BotToken: string;
+    AppToken: string;
   }
 
   interface GoogleAPI {
