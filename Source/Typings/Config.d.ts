@@ -27,6 +27,9 @@ export namespace Secrets {
   interface Roblox {
     /** The Cookie of the account of which will be used to access certain Roblox APIs. Recommended not to be your main account. */
     Cookie: string;
+
+    /** The CloudKey of the account of which will be used to access certain Roblox APIs (Open Cloud). */
+    CloudKey: string;
   }
 
   interface Discord {
