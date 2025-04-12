@@ -237,8 +237,10 @@ export async function GetFilledCitation<AsURL extends boolean | undefined = unde
 
   const ImgBuffer = CitCanvas.toBuffer("image/jpeg", 100);
   if (ReturnAsURL) {
-    return ((await UploadToImgBB(ImgBuffer, `traffic_citation_#${CitData.num}`)) ??
-      GetPlaceholderImgURL(`${Width}x${Height}`, "?")) as any;
+    return ((await UploadToImgBB(
+      ImgBuffer,
+      `traffic_citation_${CitData.type.toLowerCase()}_#${CitData.num}`
+    )) ?? GetPlaceholderImgURL(`${Width}x${Height}`, "?")) as any;
   } else {
     return ImgBuffer as any;
   }

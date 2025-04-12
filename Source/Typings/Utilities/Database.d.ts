@@ -857,11 +857,11 @@ export namespace GuildIncidents {
 
 export namespace AggregateResults {
   interface GetCitationNumbers {
-    citations: {
-      num: string;
-      autocomplete_label: string;
-    }[];
+    _id: string;
+    num: number;
+    autocomplete_label: string;
   }
+  [];
 
   interface GetIncidentNumbers {
     _id: string;

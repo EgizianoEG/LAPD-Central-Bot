@@ -18,7 +18,7 @@ export default async function AutocompleteCitationNum(
     Suggestions = Cits;
   } else {
     Suggestions = Cits.filter((Cit) => {
-      return Cit.num.includes(Typed);
+      return Cit.autocomplete_label.toLowerCase().includes(Typed.toLowerCase());
     });
   }
 
