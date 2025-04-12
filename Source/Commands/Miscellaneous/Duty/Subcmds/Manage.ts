@@ -686,18 +686,22 @@ async function Callback(
       }
     } else if (RecentAction === RecentShiftAction.BreakEnd && ShiftActive?.hasBreaks()) {
       const EndedBreak = ShiftActive.events.breaks.findLast((v) => v[0] && v[1])!;
+      const BreaksTakenLine =
+        ShiftActive.events.breaks.length > 1
+          ? `**Breaks Taken:** ${ShiftActive.events.breaks.length}\n`
+          : "";
+
       BasePromptEmbed.setFooter({ text: `Shift Type: ${TargetShiftType}` });
       BasePromptEmbed.setTitle(RecentAction);
       BasePromptEmbed.setFields({
         inline: true,
         name: "Current Shift",
-        value: Dedent(`
-          >>> **Status:** (${Emojis.Online}) On Duty
-          **Shift Started:** ${FormatTime(ShiftActive.start_timestamp, "R")}
-          **Ended Break Time:** ${EndedBreak[1] ? HumanizeDuration(EndedBreak[1] - EndedBreak[0]) : "N/A"}
-          **Total Break Time:** ${ShiftActive.on_break_time}
-          ${ShiftActive.events.breaks.length > 1 ? `**Breaks Taken:** ${ShiftActive.events.breaks.length}` : ""}
-        `),
+        value:
+          `>>> **Status:** (${Emojis.Online}) On Duty\n` +
+          `**Shift Started:** ${FormatTime(ShiftActive.start_timestamp, "R")}\n` +
+          BreaksTakenLine +
+          `**Ended Break Time:** ${EndedBreak[1] ? HumanizeDuration(EndedBreak[1] - EndedBreak[0]) : "N/A"}\n` +
+          `**Total Break Time:** ${ShiftActive.on_break_time}`,
       });
     } else if (RecentAction === RecentShiftAction.BreakStart && ShiftActive?.hasBreakActive()) {
       const StartedBreak = ShiftActive.events.breaks.findLast((v) => !v[1])!;
