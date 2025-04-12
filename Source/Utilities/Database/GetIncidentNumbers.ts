@@ -1,9 +1,16 @@
 import { AggregateResults } from "@Typings/Utilities/Database.js";
 import IncidentModel from "@Models/Incident.js";
+import { IncidentAutocompletionCache } from "@Utilities/Other/Cache.js";
 
 export default async function GetAllIncidentNums(
-  GuildId: string
+  GuildId: string,
+  UseCache: boolean = false
 ): Promise<AggregateResults.GetIncidentNumbers[]> {
+  if (UseCache) {
+    const Cached = IncidentAutocompletionCache.get<AggregateResults.GetIncidentNumbers[]>(GuildId);
+    if (Cached) return Cached;
+  }
+
   return IncidentModel.aggregate<AggregateResults.GetIncidentNumbers>([
     {
       $match: {
@@ -29,5 +36,10 @@ export default async function GetAllIncidentNums(
         },
       },
     },
-  ]).exec();
+  ])
+    .exec()
+    .then((Incidents) => {
+      IncidentAutocompletionCache.set(GuildId, Incidents);
+      return Incidents;
+    });
 }

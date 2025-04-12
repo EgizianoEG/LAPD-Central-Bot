@@ -1,9 +1,16 @@
+import { BookingAutocompletionCache } from "@Utilities/Other/Cache.js";
 import { AggregateResults } from "@Typings/Utilities/Database.js";
 import ArrestModel from "@Models/Arrest.js";
 
 export default async function GetAllBookingNums(
-  GuildId: string
+  GuildId: string,
+  UseCache: boolean = false
 ): Promise<AggregateResults.GetBookingNumbers[]> {
+  if (UseCache) {
+    const Cached = BookingAutocompletionCache.get<AggregateResults.GetBookingNumbers[]>(GuildId);
+    if (Cached) return Cached;
+  }
+
   return ArrestModel.aggregate<AggregateResults.GetBookingNumbers>([
     {
       $match: {
@@ -40,5 +47,10 @@ export default async function GetAllBookingNums(
         },
       },
     },
-  ]).exec();
+  ])
+    .exec()
+    .then((Bookings) => {
+      BookingAutocompletionCache.set(GuildId, Bookings);
+      return Bookings;
+    });
 }

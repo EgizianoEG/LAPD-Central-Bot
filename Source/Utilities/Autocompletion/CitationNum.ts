@@ -11,7 +11,7 @@ export default async function AutocompleteCitationNum(
   Typed: string,
   GuildId: string
 ): Promise<Array<ApplicationCommandOptionChoiceData>> {
-  const Cits = await GetAllCitationNums(GuildId);
+  const Cits = await GetAllCitationNums(GuildId, true);
   let Suggestions: typeof Cits;
 
   if (Typed.match(/^\s*$/)) {

@@ -11,7 +11,7 @@ export default async function AutocompleteBookingNum(
   Typed: string,
   GuildId: string
 ): Promise<Array<ApplicationCommandOptionChoiceData>> {
-  const Bookings = await GetAllBookingNums(GuildId);
+  const Bookings = await GetAllBookingNums(GuildId, true);
   let Suggestions: typeof Bookings;
 
   if (Typed.match(/^\s*$/)) {
