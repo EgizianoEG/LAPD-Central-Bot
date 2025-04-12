@@ -11,14 +11,14 @@ export default async function AutocompleteCitationNum(
   Typed: string,
   GuildId: string
 ): Promise<Array<ApplicationCommandOptionChoiceData>> {
-  const Cits = await GetAllCitationNums(GuildId);
+  const Cits = await GetAllCitationNums(GuildId, true);
   let Suggestions: typeof Cits;
 
   if (Typed.match(/^\s*$/)) {
     Suggestions = Cits;
   } else {
     Suggestions = Cits.filter((Cit) => {
-      return Cit.num.includes(Typed);
+      return Cit.autocomplete_label.toLowerCase().includes(Typed.toLowerCase());
     });
   }
 

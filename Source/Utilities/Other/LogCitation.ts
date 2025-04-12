@@ -1,19 +1,30 @@
-import { ButtonInteraction, Colors, EmbedBuilder, ModalSubmitInteraction, time } from "discord.js";
-import { GuildCitations, Guilds } from "@Typings/Utilities/Database.js";
+import {
+  ModalSubmitInteraction,
+  ButtonInteraction,
+  EmbedBuilder,
+  userMention,
+  Colors,
+  time,
+} from "discord.js";
+
 import { CitationImgDimensions } from "./GetFilledCitation.js";
 import { SendGuildMessages } from "@Utilities/Other/GuildMessages.js";
+import { GuildCitations } from "@Typings/Utilities/Database.js";
+import { APIResponses } from "@Typings/Utilities/Roblox.js";
 
 import Dedent from "dedent";
-import GuildModel from "@Models/Guild.js";
+import AppError from "@Utilities/Classes/AppError.js";
+import CitationModel from "@Models/Citation.js";
 import UploadToImgBB from "./ImgBBUpload.js";
+import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
 import GetPlaceholderImgURL from "./GetPlaceholderImg.js";
 import IncrementActiveShiftEvent from "@Utilities/Database/IncrementActiveShiftEvent.js";
+import { FormatUsername } from "@Utilities/Strings/Formatters.js";
 
 /**
  * Creates a traffic citation record on a specific guild.
  * @param CachedInteract - The interaction invoked the logging process.
- * @param GuildDocument - The guild document object. ``
- * @param CitationData
+ * @param CitationData - The citation data to be logged.
  * @param CitationImg - The filled citation as an image. A buffer to be uploaded or the image URL itself (if already uploaded.)
  * @returns - The logged citation message link (the main one) if successful.
  */
@@ -22,42 +33,45 @@ export default async function LogTrafficCitation(
     | SlashCommandInteraction<"cached">
     | ButtonInteraction<"cached">
     | ModalSubmitInteraction<"cached">,
-  GuildDocument: Guilds.GuildDocument,
   CitationData: Omit<GuildCitations.AnyCitationData, "img_url">,
-  CitationImg: string | Buffer
+  CitationImg: string | Buffer,
+  AdditionalViolatorInfo: APIResponses.Users.GetUserResponse
 ): Promise<string | null> {
   let CitationImgURL: string;
   if (typeof CitationImg === "string") {
     CitationImgURL = CitationImg;
   } else {
+    const CurrentYearSuffix = CachedInteract.createdAt.getFullYear().toString().slice(-2);
+    const CitType = CitationData.type.toLowerCase();
+
     CitationImgURL =
-      (await UploadToImgBB(CitationImg, `traffic_citation_#${CitationData.num}`)) ??
+      (await UploadToImgBB(
+        CitationImg,
+        `traffic_citation_${CurrentYearSuffix}_${CitType}_#${CitationData.num}`
+      )) ??
       GetPlaceholderImgURL(`${CitationImgDimensions.Width}x${CitationImgDimensions.Height}`, "?");
   }
 
-  await GuildModel.updateOne(
-    {
-      _id: CachedInteract.guildId,
-    },
-    {
-      $addToSet: {
-        "logs.citations": { ...CitationData, img_url: CitationImgURL },
-      },
-    }
-  )
-    .exec()
-    .then((UpdateRes) => {
-      if (UpdateRes.matchedCount > 0 && UpdateRes.acknowledged) {
-        IncrementActiveShiftEvent("citations", CachedInteract.user.id, GuildDocument._id).catch(
-          () => null
-        );
-      }
-    });
+  const GuildSettings = await GetGuildSettings(CachedInteract.guildId);
+  const RecordedCitation = await CitationModel.create({
+    ...CitationData,
+    img_url: CitationImgURL,
+  }).then((RecCit) => {
+    IncrementActiveShiftEvent("citations", CachedInteract.user.id, CachedInteract.guildId).catch(
+      () => null
+    );
+
+    return RecCit;
+  });
+
+  if (!RecordedCitation) {
+    throw new AppError({ template: "DatabaseError", showable: true });
+  }
 
   const CitationDescription = Dedent(`
-    **Citation issued by:** <@${CitationData.citing_officer.discord_id}>
+    **Citation issued by:** ${userMention(RecordedCitation.citing_officer.discord_id)}
     **Issued on:** ${time(CitationData.issued_on, "f")}
-    **Violator:** ${CitationData.violator.name}
+    **Violator:** ${FormatUsername(AdditionalViolatorInfo, false, true)}
     **Number:** \`${CitationData.num}\`
   `);
 
@@ -67,14 +81,10 @@ export default async function LogTrafficCitation(
     .setColor(Colors.DarkBlue)
     .setImage(CitationImgURL);
 
-  if (GuildDocument.settings?.duty_activities?.log_channels?.citations) {
-    return SendGuildMessages(
-      CachedInteract,
-      GuildDocument.settings.duty_activities.log_channels.citations,
-      {
-        embeds: [CitationEmbed],
-      }
-    );
+  if (GuildSettings?.duty_activities.log_channels.citations) {
+    return SendGuildMessages(CachedInteract, GuildSettings.duty_activities.log_channels.citations, {
+      embeds: [CitationEmbed],
+    });
   }
 
   return null;

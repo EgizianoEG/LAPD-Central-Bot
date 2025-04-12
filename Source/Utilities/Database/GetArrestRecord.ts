@@ -1,29 +1,26 @@
-import { AggregateResults } from "@Typings/Utilities/Database.js";
-import GuildModel from "@Models/Guild.js";
+import { Types } from "mongoose";
+import ArrestModel from "@Models/Arrest.js";
 
-export default async function GetArrestRecord(Guild: string, ArrestId: number) {
-  return GuildModel.aggregate<AggregateResults.GetArrestRecord>([
-    {
-      $match: {
-        _id: Guild,
-      },
-    },
-    {
-      $unwind: "$logs.arrests",
-    },
-    {
-      $match: {
-        "logs.arrests._id": ArrestId,
-      },
-    },
-    {
-      $project: {
-        _id: false,
-        arrest: "$logs.arrests",
-      },
-    },
-  ]).then((Result) => {
-    if (Result[0]) return Result[0].arrest;
-    else return null;
-  });
+/**
+ * Retrieves an arrest record from the database based on the provided parameters.
+ * @param Guild - The identifier of the guild to which the arrest record belongs.
+ * @param BookingNumOrId - The booking number, ID, or ObjectId of the arrest record to retrieve.
+ *                          If a number is provided, it is treated as a booking number.
+ *                          If a string or ObjectId is provided, it is treated as the record's ID.
+ * @param Lean - Optional. If `true`, the result will be a plain JavaScript object instead of a Mongoose document.
+ *               Defaults to `true`.
+ * @returns A promise that resolves to the arrest record if found, or `null` if no record matches the criteria.
+ */
+export default async function GetArrestRecord(
+  Guild: string,
+  BookingNumOrId: number | string | Types.ObjectId,
+  Lean: boolean = true
+) {
+  const SearchLabel = typeof BookingNumOrId === "number" ? "booking_num" : "_id";
+  return ArrestModel.findOne({
+    guild: Guild,
+    [SearchLabel]: BookingNumOrId,
+  })
+    .lean(Lean)
+    .exec();
 }

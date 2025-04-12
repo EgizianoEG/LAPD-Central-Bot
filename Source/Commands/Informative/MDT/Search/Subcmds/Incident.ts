@@ -7,14 +7,15 @@ import GetIncidentReportEmbeds from "@Utilities/Other/GetIncidentReportEmbeds.js
 // Functions:
 // ----------
 async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
-  const IncidentNum = CmdInteraction.options.getInteger("incident-num", true);
+  const IncidentNum = CmdInteraction.options.getString("incident-num", true);
   const IncidentRecord = await GetIncidentRecord(CmdInteraction.guildId, IncidentNum);
-  if (!IncidentRecord) {
+
+  if (IncidentRecord) {
+    await CmdInteraction.deferReply({ flags: MessageFlags.Ephemeral });
+  } else {
     return new ErrorEmbed()
       .useErrTemplate("IncidentRecordNotFound")
       .replyToInteract(CmdInteraction, true);
-  } else {
-    await CmdInteraction.deferReply({ flags: MessageFlags.Ephemeral });
   }
 
   const ReportEmbeds = GetIncidentReportEmbeds(IncidentRecord, {
@@ -34,11 +35,11 @@ const CommandObject = {
   data: new SlashCommandSubcommandBuilder()
     .setName("incident")
     .setDescription("Get information about a logged incident.")
-    .addIntegerOption((Option) =>
+    .addStringOption((Option) =>
       Option.setName("incident-num")
-        .setDescription("The incident number.")
-        .setMaxValue(999999)
-        .setMinValue(100000)
+        .setDescription("The incident number to get information about.")
+        .setMinLength(7)
+        .setMaxLength(9)
         .setRequired(true)
         .setAutocomplete(true)
     ),

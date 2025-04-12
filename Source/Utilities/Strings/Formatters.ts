@@ -1,7 +1,9 @@
 /* eslint-disable sonarjs/cognitive-complexity */
+import { IsValidDiscordId, IsValidRobloxUsername } from "@Utilities/Other/Validators.js";
 import { AddStatutesRegexes, ATVCodesRegexes } from "@Resources/RegularExpressions.js";
 import { format as FormatStr } from "node:util";
 import { GuildCitations } from "@Typings/Utilities/Database.js";
+import { userMention } from "discord.js";
 import { TitleCase } from "./Converters.js";
 import { Vehicles } from "@Typings/Resources.js";
 import ERLCAgeGroups from "@Resources/ERLCAgeGroups.js";
@@ -701,6 +703,37 @@ export function FormatVehicleName(
   );
 
   return /^[\s()]+$/.test(Formatted) ? "" : Formatted;
+}
+
+/**
+ * Formats and sorts an array of names based on their type and optionally mentions Discord users.
+ *
+ * The function first sorts the input names such that valid Discord IDs appear before other names.
+ * It then maps each name to its formatted representation:
+ * - If the name is a valid Discord ID, it is either mentioned (if `MentionDisUsers` is true) or returned as is.
+ * - If the name is a valid Roblox username, it is prefixed with "@".
+ * - Otherwise, the name is returned as is.
+ *
+ * @param Names - An array of names to be formatted and sorted.
+ * @param MentionDisUsers - A boolean indicating whether to mention Discord users. Defaults to `false`.
+ * @returns A new array of formatted and sorted names.
+ */
+export function FormatSortRDInputNames(
+  Names: string[],
+  MentionDisUsers: boolean = false
+): string[] {
+  const GetNameType = (Name: string | undefined) => {
+    if (Name && IsValidDiscordId(Name)) return 0;
+    else return 1;
+  };
+
+  return Names.toSorted((a, b) => {
+    return GetNameType(a) - GetNameType(b);
+  }).map((Name) => {
+    if (IsValidDiscordId(Name)) return MentionDisUsers ? userMention(Name) : Name;
+    else if (IsValidRobloxUsername(Name)) return `@${Name}`;
+    else return Name;
+  });
 }
 
 /**

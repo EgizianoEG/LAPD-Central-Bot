@@ -306,30 +306,6 @@ function CreateActivityReportAggregationPipeline(
     },
     {
       $lookup: {
-        as: "guild_doc",
-        from: "guilds",
-        localField: "guild",
-        foreignField: "_id",
-        pipeline: [
-          {
-            $project: {
-              _id: 0,
-              "logs.arrests.made_on": 1,
-              "logs.arrests.arresting_officer": 1,
-              "logs.arrests.assisting_officers": 1,
-
-              "logs.citations.issued_on": 1,
-              "logs.citations.citing_officer": 1,
-
-              "logs.incidents.reported_on": 1,
-              "logs.incidents.reported_by": 1,
-            },
-          },
-        ],
-      },
-    },
-    {
-      $lookup: {
         as: "shifts",
         from: "shifts",
         let: { guild: "$guild", user: "$user" },
@@ -366,10 +342,7 @@ function CreateActivityReportAggregationPipeline(
       $lookup: {
         as: "loas",
         from: "leaves",
-        let: {
-          guild: "$guild",
-          user: "$user",
-        },
+        let: { guild: "$guild", user: "$user" },
         pipeline: [
           {
             $match: {
@@ -405,23 +378,112 @@ function CreateActivityReportAggregationPipeline(
       },
     },
     {
+      $lookup: {
+        as: "arrests",
+        from: "arrests",
+        let: { guild: "$guild", user: "$user" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$guild", "$$guild"] },
+                  { $eq: ["$arresting_officer.discord_id", "$$user"] },
+                  {
+                    $cond: { if: Opts.after, then: { $gte: ["$made_on", Opts.after] }, else: true },
+                  },
+                ],
+              },
+            },
+          },
+        ],
+      },
+    },
+    {
+      $lookup: {
+        as: "arrests_assisted",
+        from: "arrests",
+        let: { guild: "$guild", user: "$user" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$guild", "$$guild"] },
+                  { $in: ["$$user", "$assisting_officers"] },
+                  {
+                    $cond: { if: Opts.after, then: { $gte: ["$made_on", Opts.after] }, else: true },
+                  },
+                ],
+              },
+            },
+          },
+        ],
+      },
+    },
+    {
+      $lookup: {
+        as: "citations",
+        from: "citations",
+        let: { guild: "$guild", user: "$user" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$guild", "$$guild"] },
+                  { $eq: ["$citing_officer.discord_id", "$$user"] },
+                  {
+                    $cond: {
+                      if: Opts.after,
+                      then: { $gte: ["$issued_on", Opts.after] },
+                      else: true,
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        ],
+      },
+    },
+    {
+      $lookup: {
+        as: "incidents",
+        from: "incidents",
+        let: { guild: "$guild", user: "$user" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$guild", "$$guild"] },
+                  { $eq: ["$reporter.discord_id", "$$user"] },
+                  {
+                    $cond: {
+                      if: Opts.after,
+                      then: { $gte: ["$reported_on", Opts.after] },
+                      else: true,
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        ],
+      },
+    },
+    {
       $set: {
-        guild: { $arrayElemAt: ["$guild_doc", 0] },
         recent_loa: { $first: "$loas" },
-        total_shifts: {
-          $size: "$shifts",
-        },
-        total_on_duty_mod: {
-          $sum: "$shifts.durations.on_duty_mod",
-        },
+        total_shifts: { $size: "$shifts" },
+        total_on_duty_mod: { $sum: "$shifts.durations.on_duty_mod" },
         total_duration: {
           $sum: {
             $map: {
               input: "$shifts",
               as: "shift",
-              in: {
-                $subtract: ["$$shift.end_timestamp", "$$shift.start_timestamp"],
-              },
+              in: { $subtract: ["$$shift.end_timestamp", "$$shift.start_timestamp"] },
             },
           },
         },
@@ -451,112 +513,13 @@ function CreateActivityReportAggregationPipeline(
     },
     {
       $set: {
-        arrests: {
-          $size: {
-            $filter: {
-              input: "$guild.logs.arrests",
-              as: "arrest",
-              cond: {
-                $and: [
-                  {
-                    $eq: ["$user", "$$arrest.arresting_officer.discord_id"],
-                  },
-                  {
-                    $cond: {
-                      if: Opts.after,
-                      then: {
-                        $gte: ["$$arrest.made_on", Opts.after],
-                      },
-                      else: true,
-                    },
-                  },
-                ],
-              },
-            },
-          },
-        },
-        arrests_assisted: {
-          $size: {
-            $filter: {
-              input: "$guild.logs.arrests",
-              as: "arrest",
-              cond: {
-                $and: [
-                  {
-                    $in: ["$user", "$$arrest.assisting_officers"],
-                  },
-                  {
-                    $cond: {
-                      if: Opts.after,
-                      then: {
-                        $gte: ["$$arrest.made_on", Opts.after],
-                      },
-                      else: true,
-                    },
-                  },
-                ],
-              },
-            },
-          },
-        },
-        citations: {
-          $size: {
-            $filter: {
-              input: "$guild.logs.citations",
-              as: "citation",
-              cond: {
-                $and: [
-                  {
-                    $eq: ["$user", "$$citation.citing_officer.discord_id"],
-                  },
-                  {
-                    $cond: {
-                      if: Opts.after,
-                      then: {
-                        $gte: ["$$citation.issued_on", Opts.after],
-                      },
-                      else: true,
-                    },
-                  },
-                ],
-              },
-            },
-          },
-        },
-        incidents: {
-          $size: {
-            $filter: {
-              input: "$guild.logs.incidents",
-              as: "incident",
-              cond: {
-                $and: [
-                  {
-                    $eq: ["$user", "$$incident.reported_by.discord_id"],
-                  },
-                  {
-                    $cond: {
-                      if: Opts.after,
-                      then: {
-                        $gte: ["$$incident.reported_on", Opts.after],
-                      },
-                      else: true,
-                    },
-                  },
-                ],
-              },
-            },
-          },
-        },
+        arrests: { $size: "$arrests" },
+        arrests_assisted: { $size: "$arrests_assisted" },
+        citations: { $size: "$citations" },
+        incidents: { $size: "$incidents" },
         total_time: {
           $max: [
-            {
-              $add: [
-                {
-                  $subtract: ["$total_duration", "$break_duration"],
-                },
-                "$total_on_duty_mod",
-              ],
-            },
+            { $add: [{ $subtract: ["$total_duration", "$break_duration"] }, "$total_on_duty_mod"] },
             0,
           ],
         },
@@ -573,15 +536,11 @@ function CreateActivityReportAggregationPipeline(
         citations: 1,
         incidents: 1,
         arrests: 1,
-        quota_met: {
-          $gte: ["$total_time", Opts.quota_duration ?? 0],
-        },
+        quota_met: { $gte: ["$total_time", Opts.quota_duration ?? 0] },
       },
     },
     {
-      $sort: {
-        total_time: -1,
-      },
+      $sort: { total_time: -1 },
     },
   ];
 }

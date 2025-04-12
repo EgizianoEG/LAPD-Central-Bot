@@ -1,8 +1,5 @@
 import { Schema, model } from "mongoose";
 import { isAfter } from "date-fns";
-import ArrestSchema from "./Schemas/Arrest.js";
-import CitationSchema from "./Schemas/Citation.js";
-import IncidentSchema from "./Schemas/Incident.js";
 import GSettingsSchema from "./Schemas/GuildSettings.js";
 
 const GuildSchema = new Schema({
@@ -16,9 +13,24 @@ const GuildSchema = new Schema({
     _id: false,
     default: {},
     type: {
-      arrests: [ArrestSchema],
-      citations: [CitationSchema],
-      incidents: [IncidentSchema],
+      arrests: [
+        {
+          type: String,
+          ref: "Arrest",
+        },
+      ],
+      citations: [
+        {
+          type: String,
+          ref: "Citation",
+        },
+      ],
+      incidents: [
+        {
+          type: String,
+          ref: "Incident",
+        },
+      ],
     },
   },
 

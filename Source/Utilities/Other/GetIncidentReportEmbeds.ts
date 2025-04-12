@@ -8,6 +8,7 @@ import {
 } from "discord.js";
 
 import { IsValidDiscordAttachmentLink } from "./Validators.js";
+import { FormatSortRDInputNames } from "@Utilities/Strings/Formatters.js";
 import { GuildIncidents } from "@Typings/Utilities/Database.js";
 import Dedent from "dedent";
 const ListFormatter = new Intl.ListFormat("en");
@@ -33,10 +34,10 @@ export default function GetIncidentReportEmbeds(
     .setColor(Colors.DarkBlue)
     .setDescription(
       Dedent(`
-        **Incident Number:** ${inlineCode(IncidentRecord._id ? IncidentRecord._id.toString() : "[unknown]")}
-        **Incident Reported By:** ${userMention(IncidentRecord.reported_by.discord_id)}
+        **Incident Number:** ${inlineCode(IncidentRecord.num)}
+        **Incident Reported By:** ${userMention(IncidentRecord.reporter.discord_id)}
         **Incident Reported On:** ${FormatTime(IncidentRecord.reported_on, "f")}
-        **Involved Officers:** ${IncidentRecord.officers.length ? ListFormatter.format(IncidentRecord.officers) : "None"}
+        **Involved Officers:** ${IncidentRecord.officers.length ? ListFormatter.format(FormatSortRDInputNames(IncidentRecord.officers)) : "None"}
       `)
     )
     .setFields([
@@ -100,9 +101,7 @@ export default function GetIncidentReportEmbeds(
     if (IncidentAttachments.length > 1) {
       const SampleURL = ReportTargetChannel?.channel_id
         ? channelLink(ReportTargetChannel.channel_id)
-        : ReportTargetChannel?.guild_id
-          ? `https://discord.com/channels/${ReportTargetChannel.guild_id}/`
-          : "https://discord.com";
+        : `https://discord.com/channels/${ReportTargetChannel?.guild_id || IncidentRecord.guild}/`;
 
       IncidentReportEmbed.setURL(SampleURL);
       for (const AttachmentLink of IncidentAttachments.slice(1)) {

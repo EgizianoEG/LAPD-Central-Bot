@@ -1,54 +1,45 @@
 import { AggregateResults } from "@Typings/Utilities/Database.js";
-import GuildModel from "@Models/Guild.js";
+import IncidentModel from "@Models/Incident.js";
+import { IncidentAutocompletionCache } from "@Utilities/Other/Cache.js";
 
-export default async function GetAllIncidentNums(GuildId: string) {
-  return GuildModel.aggregate<AggregateResults.GetIncidentNumbers>([
+export default async function GetAllIncidentNums(
+  GuildId: string,
+  UseCache: boolean = false
+): Promise<AggregateResults.GetIncidentNumbers[]> {
+  if (UseCache) {
+    const Cached = IncidentAutocompletionCache.get<AggregateResults.GetIncidentNumbers[]>(GuildId);
+    if (Cached) return Cached;
+  }
+
+  return IncidentModel.aggregate<AggregateResults.GetIncidentNumbers>([
     {
       $match: {
-        _id: GuildId,
+        guild: GuildId,
       },
     },
     {
-      $unwind: "$logs.incidents",
-    },
-    {
-      $project: {
+      $set: {
         reported_on: {
           $dateToString: {
-            date: "$logs.incidents.reported_on",
+            date: "$reported_on",
             timezone: "America/Los_Angeles",
-            format: "%B %d, %G at %H:%M [PDT]",
-          },
-        },
-        num: {
-          $toString: "$logs.incidents._id",
-        },
-      },
-    },
-    {
-      $group: {
-        _id: 0,
-        incidents: {
-          $push: {
-            num: "$num",
-            autocomplete_label: {
-              $concat: ["#", "$num", " – Reported on ", "$reported_on"],
-            },
+            format: "%B %d, %G at %H:%M",
           },
         },
       },
     },
     {
       $project: {
-        _id: 0,
-        incidents: 1,
+        num: "$num",
+        autocomplete_label: {
+          $concat: ["INC-", "$num", " - ", "$type", " – Reported on ", "$reported_on"],
+        },
       },
     },
   ])
-    .then((Results) =>
-      Results[0]?.incidents.length && Results[0].incidents[0]
-        ? Results[0].incidents
-        : ([] as AggregateResults.GetIncidentNumbers["incidents"])
-    )
-    .catch(() => [] as AggregateResults.GetIncidentNumbers["incidents"]);
+    .exec()
+    .then((Incidents) => {
+      IncidentAutocompletionCache.set(GuildId, Incidents);
+      return Incidents;
+    });
 }

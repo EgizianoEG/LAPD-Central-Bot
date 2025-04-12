@@ -34,8 +34,8 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   }
 
   await Interaction.deferReply();
-  const UserRecords = await GetUserRecords(Interaction.guildId, RobloxUserId);
   const RobloxUserInfo = await GetUserInfo(RobloxUserId);
+  const UserRecords = await GetUserRecords(Interaction.guildId, RobloxUserId, RobloxUserInfo.name);
   const RobloxThumbnail = await GetUserThumbnail(RobloxUserId, "352x352", "png", "headshot");
   const FormattedUsername = FormatUsername(RobloxUserInfo, false, true);
   const ResponseEmbed = new EmbedBuilder()
@@ -51,6 +51,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
           - **Records:** 
             - Arrests: [${UserRecords.total_arrests}](${channelLink(Interaction.channelId)})
             - Citations: [${UserRecords.total_citations}](${channelLink(Interaction.channelId)})
+            - Incidents as Suspect: [${UserRecords.total_incidents_as_suspect}](${channelLink(Interaction.channelId)})
         `),
       },
     ]);

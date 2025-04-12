@@ -612,6 +612,9 @@ export namespace GuildCitations {
     /** Citation number. */
     num: number;
 
+    /** The Discord snowflake Id of the guild where this citation was issued. */
+    guild: string;
+
     /** The date of violation or citation. */
     issued_on: Date;
 
@@ -734,6 +737,12 @@ export namespace GuildArrests {
     /** The arrest id. Also used as the booking number. */
     _id: number;
 
+    /** The guild where the arrest was made. */
+    guild: string;
+
+    /** The booking number. */
+    booking_num: number;
+
     /** The date when the arrest report was made. */
     made_on: Date;
 
@@ -792,17 +801,27 @@ export namespace GuildIncidents {
     roblox_username: string;
 
     /** The Roblox display name. */
-    display_name: string;
+    roblox_display_name: string;
 
     /** The Discord user id. */
     discord_id: string;
 
-    /** The Discord user id. */
+    /** The Discord username. */
     discord_username: string;
   }
 
   interface IncidentRecord {
-    _id: number;
+    _id: Types.ObjectId;
+
+    /**
+     * The incident number.
+     * Format: `YY-NNNNN`
+     * Where `YY` is the last two digits of the year and `NNNNN` is a (five/six)-digit sequential number assigned to each report.
+     * Example: `25-00001`
+     */
+    num: string;
+
+    guild: string;
     type: GuildIncidents.IncidentType;
     log_message?: string | null;
     reported_on: Date;
@@ -811,7 +830,7 @@ export namespace GuildIncidents {
     location: string;
     description: string;
     status: IncidentStatus;
-    reported_by: OfficerInvolved;
+    reporter: OfficerInvolved;
 
     /** A list of involved suspects (could be Roblox usernames). */
     suspects: string[];
@@ -822,7 +841,7 @@ export namespace GuildIncidents {
     /** A list of incident witnesses (could be Roblox usernames). */
     witnesses: string[];
 
-    /** A list of involved officers. */
+    /** A list of involved officers. Can contain Roblox usernames (leading with @) or Discord IDs. */
     officers: string[];
 
     /**
@@ -838,37 +857,25 @@ export namespace GuildIncidents {
 
 export namespace AggregateResults {
   interface GetCitationNumbers {
-    citations: {
-      num: string;
-      autocomplete_label: string;
-    }[];
+    _id: string;
+    num: number;
+    autocomplete_label: string;
   }
+  [];
 
   interface GetIncidentNumbers {
-    incidents: {
-      num: string;
-      autocomplete_label: string;
-    }[];
+    _id: string;
+    num: string;
+    autocomplete_label: string;
   }
+  [];
 
   interface GetBookingNumbers {
-    bookings: {
-      num: string;
-      autocomplete_label: string;
-    }[];
+    _id: string;
+    num: number;
+    autocomplete_label: string;
   }
-
-  interface GetCitationRecord {
-    citation: GuildCitations.AnyCitationData;
-  }
-
-  interface GetIncidentRecord {
-    incident: GuildIncidents.IncidentRecord;
-  }
-
-  interface GetArrestRecord {
-    arrest: GuildArrests.ArrestRecord;
-  }
+  [];
 
   interface GetUserRecords {
     arrests: GuildArrests.ArrestRecord[];
@@ -878,6 +885,7 @@ export namespace AggregateResults {
     total_citations: number;
     recent_arrest: GuildArrests.ArrestRecord | null;
     recent_citation: GuildCitations.AnyCitationData | null;
+    total_incidents_as_suspect: number;
   }
 
   /** Without the highest role or name of the user. */

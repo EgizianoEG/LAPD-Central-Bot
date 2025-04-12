@@ -1,5 +1,5 @@
+import { model, Model, Schema } from "mongoose";
 import { GuildIncidents } from "@Typings/Utilities/Database.js";
-import { Model, Schema } from "mongoose";
 import {
   IncidentTypes,
   IncidentNotesLength,
@@ -11,9 +11,22 @@ type IncidentPlainDoc = GuildIncidents.IncidentRecord;
 type IncidentModelType = Model<IncidentPlainDoc, unknown>;
 
 const IncidentReportSchema = new Schema<IncidentPlainDoc, IncidentModelType>({
-  _id: {
-    type: Number,
+  guild: {
+    type: String,
+    index: true,
     required: true,
+    match: /^\d{15,22}$/,
+    ref: "Guild",
+  },
+
+  num: {
+    type: String,
+    index: true,
+    required: true,
+    validate: {
+      validator: (num: string) => /^\d{2}-\d{5,6}$/.test(num),
+      message: "The incident number must be in the format 'YY-XXXXX[X]'.",
+    },
   },
 
   type: {
@@ -26,11 +39,15 @@ const IncidentReportSchema = new Schema<IncidentPlainDoc, IncidentModelType>({
     type: String,
     default: null,
     required: false,
-    match: /^\d{15,22}$/,
+    validate: [
+      (s: string | null) => s === null || /^\d{15,22}:\d{15,22}$/.test(s),
+      "Invalid format for log message id; received: '{VALUE}'. Format: <log_channel>:<log_msg_id>.",
+    ],
   },
 
   reported_on: {
     type: Date,
+    index: true,
     required: true,
     default: Date.now,
   },
@@ -48,8 +65,8 @@ const IncidentReportSchema = new Schema<IncidentPlainDoc, IncidentModelType>({
     type: [
       {
         _id: false,
-        type: String,
         trim: true,
+        type: String,
       },
     ],
   },
@@ -60,8 +77,8 @@ const IncidentReportSchema = new Schema<IncidentPlainDoc, IncidentModelType>({
     type: [
       {
         _id: false,
-        type: String,
         trim: true,
+        type: String,
       },
     ],
   },
@@ -84,20 +101,26 @@ const IncidentReportSchema = new Schema<IncidentPlainDoc, IncidentModelType>({
     type: [
       {
         _id: false,
-        type: String,
         trim: true,
+        type: String,
       },
     ],
   },
 
-  reported_by: {
+  reporter: {
     required: true,
     _id: false,
     type: {
       roblox_id: Number,
       roblox_username: String,
-      discord_id: String,
-      display_name: String,
+      roblox_display_name: String,
+      discord_username: String,
+      discord_id: {
+        type: String,
+        index: true,
+        required: true,
+        match: /^\d{15,22}$/,
+      },
     },
   },
 
@@ -164,4 +187,29 @@ const IncidentReportSchema = new Schema<IncidentPlainDoc, IncidentModelType>({
   },
 });
 
-export default IncidentReportSchema;
+IncidentReportSchema.set("optimisticConcurrency", true);
+const IncidentModel = model<IncidentPlainDoc, IncidentModelType>("Incident", IncidentReportSchema);
+export default IncidentModel;
+
+/**
+ * Generates a new sequential incident number for a guild in the format `YY-NNNNNN`.
+ * @param GuildId - The ID of the guild to generate the number for.
+ * @returns A formatted incident number string (e.g., "25-00007").
+ */
+export async function GenerateNextIncidentNumber(GuildId: string): Promise<string> {
+  const CurrentYearSuffix = new Date().getFullYear().toString().slice(-2);
+  const LatestIncident = await IncidentModel.findOne(
+    { guild: GuildId },
+    { num: 1 },
+    { sort: { num: -1 }, lean: true }
+  ).exec();
+
+  let NextSequence = 1;
+  if (LatestIncident?.num) {
+    const LastNum = parseInt(LatestIncident.num.split("-")[1], 10);
+    NextSequence = LastNum + 1;
+  }
+
+  const PaddedSequence = NextSequence.toString().padStart(5, "0");
+  return `${CurrentYearSuffix}-${PaddedSequence}`;
+}

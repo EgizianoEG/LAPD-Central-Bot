@@ -20,7 +20,15 @@ import {
   UserSelectMenuBuilder,
   ModalSubmitInteraction,
   SlashCommandSubcommandBuilder,
+  codeBlock,
 } from "discord.js";
+
+import {
+  FormatSortRDInputNames,
+  FormatCharges,
+  FormatHeight,
+  FormatAge,
+} from "@Utilities/Strings/Formatters.js";
 
 import LogArrestReport, {
   type ArresteeInfoType,
@@ -28,21 +36,23 @@ import LogArrestReport, {
 } from "@Utilities/Other/LogArrestReport.js";
 
 import { RandomString } from "@Utilities/Strings/Random.js";
-import { GuildArrests } from "@Typings/Utilities/Database.js";
 import { ReporterInfo } from "../Log.js";
 import { UserHasPermsV2 } from "@Utilities/Database/UserHasPermissions.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import { FormatCharges, FormatHeight, FormatAge } from "@Utilities/Strings/Formatters.js";
+
+import { ArraysAreEqual } from "@Utilities/Other/ArraysAreEqual.js";
+import { SplitRegexForInputs } from "./Incident.js";
 import { FilterUserInput, FilterUserInputOptions } from "@Utilities/Strings/Redactor.js";
 import { IsValidPersonHeight, IsValidRobloxUsername } from "@Utilities/Other/Validators.js";
 
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
 import GetBookingMugshot from "@Utilities/Other/ThumbToMugshot.js";
+import GetAllBookingNums from "@Utilities/Database/GetBookingNums.js";
+import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
 import GetUserThumbnail from "@Utilities/Roblox/GetUserThumb.js";
 import GetIdByUsername from "@Utilities/Roblox/GetIdByUsername.js";
 import ERLCAgeGroups from "@Resources/ERLCAgeGroups.js";
 import GetUserInfo from "@Utilities/Roblox/GetUserInfo.js";
-import GuildModel from "@Models/Guild.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import AppError from "@Utilities/Classes/AppError.js";
 import Dedent from "dedent";
@@ -59,14 +69,58 @@ export type CmdOptionsType = {
 // ---------------------------------------------------------------------------------------
 // Functions:
 // ----------
-/**
- * Generates a random booking number based on the provided ArrestRecords.
- * @param ArrestRecords - An array of ArrestRecord objects.
- * @returns A random booking number.
- */
-function GetBookingNumber(ArrestRecords: GuildArrests.ArrestRecord[]) {
-  const RecordedBookingNums = ArrestRecords.map((Record) => Record._id);
-  return Number(RandomString(4, /\d/, RecordedBookingNums));
+function GetAdditionalInformationModal(CmdInteract: SlashCommandInteraction<"cached">) {
+  return new ModalBuilder()
+    .setTitle("Arrest Report - Additional Information")
+    .setCustomId(`arrest-report:${CmdInteract.user.id}:${RandomString(4)}`)
+    .setComponents(
+      new ActionRowBuilder<TextInputBuilder>().setComponents(
+        new TextInputBuilder()
+          .setLabel("Convicted Charges")
+          .setStyle(TextInputStyle.Paragraph)
+          .setCustomId("charges-text")
+          .setPlaceholder("1. [Charge #1]\n2. [Charge #2]\n3. ...")
+          .setMinLength(6)
+          .setMaxLength(650)
+      ),
+      new ActionRowBuilder<TextInputBuilder>().setComponents(
+        new TextInputBuilder()
+          .setLabel("Arrest Notes")
+          .setStyle(TextInputStyle.Short)
+          .setCustomId("arrest-notes")
+          .setPlaceholder("e.g., known to be in a gang.")
+          .setMinLength(6)
+          .setMaxLength(128)
+          .setRequired(false)
+      )
+    );
+}
+
+function GetArrestPendingSubmissionComponents() {
+  const AddUsernamesConfirmationComponents = new ActionRowBuilder<ButtonBuilder>().setComponents(
+    new ButtonBuilder()
+      .setCustomId("confirm-report")
+      .setLabel("Confirm and Submit")
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId("ao-add-usernames")
+      .setLabel("Add Assisting Officers (Usernames)")
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId("cancel-report")
+      .setLabel("Cancel Report")
+      .setStyle(ButtonStyle.Danger)
+  );
+
+  const AsstOfficersMenu = new ActionRowBuilder<UserSelectMenuBuilder>().setComponents(
+    new UserSelectMenuBuilder()
+      .setPlaceholder("Select the arrest's assisting officers.")
+      .setCustomId("assisting-officers")
+      .setMinValues(0)
+      .setMaxValues(8)
+  );
+
+  return [AsstOfficersMenu, AddUsernamesConfirmationComponents] as const;
 }
 
 /**
@@ -134,11 +188,6 @@ async function FilterAsstOfficers(
   return UsersCollection;
 }
 
-/**
- * Self-explanatory.
- * @param ButtonInteract
- * @returns
- */
 async function OnReportCancellation(ButtonInteract: ButtonInteraction<"cached">) {
   return ButtonInteract.editReply({
     components: [],
@@ -151,13 +200,46 @@ async function OnReportCancellation(ButtonInteract: ButtonInteraction<"cached">)
   });
 }
 
-/**
- * Self-explanatory.
- * @param ButtonInteract
- * @param ReporterInfo
- * @param ArresteeInfo
- * @returns
- */
+async function HandleAddAssistingOfficersUsernames(
+  BtnInteract: ButtonInteraction<"cached">,
+  CurrentAsstUsernames: string[]
+) {
+  const InputModal = new ModalBuilder()
+    .setTitle("Add Assisting Officers - Usernames")
+    .setCustomId(`arrest-add-ao-usernames:${BtnInteract.user.id}:${BtnInteract.createdTimestamp}`)
+    .setComponents(
+      new ActionRowBuilder<TextInputBuilder>().setComponents(
+        new TextInputBuilder()
+          .setCustomId("input-usernames")
+          .setLabel("Usernames")
+          .setValue((CurrentAsstUsernames || []).join(", "))
+          .setPlaceholder("The usernames of assisting officers, separated by commas.")
+          .setStyle(TextInputStyle.Short)
+          .setMinLength(3)
+          .setMaxLength(88)
+          .setRequired(false)
+      )
+    );
+
+  await BtnInteract.showModal(InputModal);
+  const ModalSubmitInteract = await BtnInteract.awaitModalSubmit({
+    time: 8 * 60_000,
+    filter: (MS) => {
+      return MS.user.id === BtnInteract.user.id && MS.customId === InputModal.data.custom_id;
+    },
+  }).catch(() => null);
+
+  if (!ModalSubmitInteract) return {};
+  await ModalSubmitInteract.deferUpdate();
+  const UsernamesInput = ModalSubmitInteract.fields
+    .getTextInputValue("input-usernames")
+    .trim()
+    .split(SplitRegexForInputs)
+    .filter(IsValidRobloxUsername);
+
+  return { ModalSubmitInteract, UsernamesInput };
+}
+
 async function OnReportConfirmation(
   ButtonInteract: ButtonInteraction<"cached">,
   ReporterInfo: ReporterInfoType,
@@ -167,7 +249,7 @@ async function OnReportConfirmation(
   const RSDescription = Dedent(`
       The arrest report has been successfully submitted and logged.
       - Booking Number: \`${LoggedReport.booking_number}\`
-      - Logged Report Link: ${LoggedReport.main_msg_link ?? "N/A"} 
+      - Logged Report: ${LoggedReport.main_msg_link ?? "N/A"} 
     `);
 
   return ButtonInteract.editReply({
@@ -191,16 +273,20 @@ async function OnChargesModalSubmission(
   await ModalInteraction.deferReply({ flags: MessageFlags.Ephemeral });
   const [ArresteeId] = await GetIdByUsername(CmdOptions.Arrestee, true);
   const ARUserInfo = await GetUserInfo(ArresteeId);
-  const ThumbUrl = await GetUserThumbnail(ArresteeId, "180x180", "png", "headshot");
-  const GuildDoc = await GuildModel.findOne({ _id: CmdInteract.guildId }, { logs: 1, settings: 1 });
+  const ThumbUrl = await GetUserThumbnail(ArresteeId, "420x420", "png", "headshot");
+  const ExistingBookingNums = (await GetAllBookingNums(CmdInteract.guildId)).map((Num) => Num.num);
+  const UTIFEnabled = await GetGuildSettings(CmdInteract.guildId).then(
+    (Doc) => Doc?.utif_enabled ?? false
+  );
 
-  let AsstOfficers: string[] = [];
+  let AsstOfficersDisIds: string[] = [];
+  let AsstOfficersUsernames: string[] = [];
   const UTIFOpts: FilterUserInputOptions = {
     replacement: "#",
     guild_instance: CmdInteract.guild,
     replacement_type: "Character",
     filter_links_emails: true,
-    utif_setting_enabled: GuildDoc?.settings.utif_enabled,
+    utif_setting_enabled: UTIFEnabled,
   };
 
   const RInputCharges = await FilterUserInput(
@@ -212,8 +298,9 @@ async function OnChargesModalSubmission(
     ModalInteraction.fields.getTextInputValue("arrest-notes"),
     UTIFOpts
   );
+
   const FCharges = FormatCharges(RInputCharges);
-  const BookingNumber = GetBookingNumber(GuildDoc!.logs.arrests as any);
+  const BookingNumber = parseInt(RandomString(4, /\d/, ExistingBookingNums));
   const BookingMugshotURL = await GetBookingMugshot<true>({
     return_url: true,
     user_thumb_url: ThumbUrl,
@@ -262,39 +349,23 @@ async function OnChargesModalSubmission(
   if (ArrestNotes?.length) {
     ConfirmationEmbed.addFields({
       name: "Arrest Notes",
-      value: "```fix\n" + ArrestNotes + "```",
+      value: codeBlock("fix", ArrestNotes),
       inline: false,
     });
   }
 
-  const ButtonsActionRow = new ActionRowBuilder<ButtonBuilder>().setComponents(
-    new ButtonBuilder()
-      .setCustomId("confirm-report")
-      .setLabel("Confirm and Submit")
-      .setStyle(ButtonStyle.Success),
-    new ButtonBuilder()
-      .setCustomId("cancel-report")
-      .setLabel("Cancel Report")
-      .setStyle(ButtonStyle.Danger)
-  );
-
-  const AsstOfficersMenu = new ActionRowBuilder<UserSelectMenuBuilder>().setComponents(
-    new UserSelectMenuBuilder()
-      .setPlaceholder("Select the arrest's assisting officers.")
-      .setCustomId("assisting-officers")
-      .setMinValues(0)
-      .setMaxValues(6)
-  );
+  const [AsstOfficersMenu, AddUsernamesConfirmationComponents] =
+    GetArrestPendingSubmissionComponents();
 
   const ConfirmationMsg = await ModalInteraction.editReply({
-    content: `<@${CmdInteract.user.id}>, please review the following report information before submitting.`,
-    components: [AsstOfficersMenu, ButtonsActionRow],
+    content: `<@${CmdInteract.user.id}>, please review the following arrest information before submitting.`,
+    components: [AsstOfficersMenu, AddUsernamesConfirmationComponents],
     embeds: [ConfirmationEmbed],
   });
 
   const ComponentCollector = ConfirmationMsg.createMessageComponentCollector({
     filter: (Interact) => HandleCollectorFiltering(CmdInteract, Interact),
-    time: 8 * 60_000,
+    time: 10 * 60_000,
   });
 
   ComponentCollector.on("collect", async (ReceivedInteract) => {
@@ -306,14 +377,14 @@ async function OnChargesModalSubmission(
         ReceivedInteract.users
       );
 
-      AsstOfficers = [...Filtered.keys()];
-      AsstOfficersMenu.components[0].setDefaultUsers(AsstOfficers);
+      AsstOfficersDisIds = [...Filtered.keys()];
+      AsstOfficersMenu.components[0].setDefaultUsers(AsstOfficersDisIds);
       const FormattedMentions =
-        ListFormatter.format(AsstOfficers.map((Id) => userMention(Id))) || "N/A";
+        ListFormatter.format(AsstOfficersDisIds.map((Id) => userMention(Id))) || "N/A";
 
       await ReceivedInteract.editReply({
         embeds: [ConfirmationEmbed.setDescription(`Assisting Officers: ${FormattedMentions}`)],
-        components: [AsstOfficersMenu, ButtonsActionRow],
+        components: [AsstOfficersMenu, AddUsernamesConfirmationComponents],
       }).catch(() => null);
     } else if (ReceivedInteract.isButton()) {
       if (ReceivedInteract.customId === "confirm-report") {
@@ -322,6 +393,26 @@ async function OnChargesModalSubmission(
       } else if (ReceivedInteract.customId === "cancel-report") {
         await ReceivedInteract.deferUpdate();
         ComponentCollector.stop("Report Cancellation");
+      } else if (ReceivedInteract.customId === "ao-add-usernames") {
+        const { ModalSubmitInteract, UsernamesInput } = await HandleAddAssistingOfficersUsernames(
+          ReceivedInteract,
+          AsstOfficersUsernames
+        );
+
+        if (!ModalSubmitInteract || !UsernamesInput) return;
+        if (!ArraysAreEqual(AsstOfficersUsernames, UsernamesInput)) {
+          AsstOfficersUsernames = UsernamesInput;
+
+          const FormattedMentions =
+            ListFormatter.format(
+              FormatSortRDInputNames([...AsstOfficersDisIds, ...AsstOfficersUsernames], true)
+            ) || "N/A";
+
+          await ModalSubmitInteract.editReply({
+            embeds: [ConfirmationEmbed.setDescription(`Assisting Officers: ${FormattedMentions}`)],
+            components: [AsstOfficersMenu, AddUsernamesConfirmationComponents],
+          }).catch(() => null);
+        }
       }
     }
   });
@@ -331,8 +422,10 @@ async function OnChargesModalSubmission(
 
     if (EndReason.match(/reason: (?:\w+Delete|time)/)) {
       AsstOfficersMenu.components[0].setDisabled(true);
-      ButtonsActionRow.components.forEach((Btn) => Btn.setDisabled(true));
-      await ConfirmationMsg.edit({ components: [ButtonsActionRow] }).catch(() => null);
+      AddUsernamesConfirmationComponents.components.forEach((Btn) => Btn.setDisabled(true));
+      await ConfirmationMsg.edit({ components: [AddUsernamesConfirmationComponents] }).catch(
+        () => null
+      );
     }
 
     try {
@@ -343,7 +436,7 @@ async function OnChargesModalSubmission(
           shift_active: ReporterMainInfo.ActiveShift,
           discord_user_id: CmdInteract.user.id,
           report_date: CmdInteract.createdAt,
-          asst_officers: AsstOfficers,
+          asst_officers: [...AsstOfficersDisIds, ...AsstOfficersUsernames],
           roblox_user: {
             display_name: ReporterRobloxUserInfo.displayName,
             name: ReporterRobloxUserInfo.name,
@@ -390,10 +483,6 @@ async function OnChargesModalSubmission(
   });
 }
 
-/**
- * @param Interaction
- * @param UserData
- */
 async function CmdCallback(Interaction: SlashCommandInteraction<"cached">, Reporter: ReporterInfo) {
   const CmdOptions = {
     Arrestee: Interaction.options.getString("name", true),
@@ -406,31 +495,7 @@ async function CmdCallback(Interaction: SlashCommandInteraction<"cached">, Repor
   const Response = await HandleCmdOptsValidation(Interaction, CmdOptions, Reporter);
   if (Response instanceof Message || Response instanceof InteractionResponse) return;
 
-  const AdditionalDataModal = new ModalBuilder()
-    .setTitle("Arrest Report - Additional Information")
-    .setCustomId(`arrest-report:${Interaction.user.id}:${Interaction.guildId}:${RandomString(4)}`)
-    .setComponents(
-      new ActionRowBuilder<TextInputBuilder>().setComponents(
-        new TextInputBuilder()
-          .setLabel("Convicted Charges")
-          .setStyle(TextInputStyle.Paragraph)
-          .setCustomId("charges-text")
-          .setPlaceholder("1.\n2.\n3.")
-          .setMinLength(6)
-          .setMaxLength(650)
-      ),
-      new ActionRowBuilder<TextInputBuilder>().setComponents(
-        new TextInputBuilder()
-          .setLabel("Arrest Notes")
-          .setStyle(TextInputStyle.Short)
-          .setCustomId("arrest-notes")
-          .setPlaceholder("e.g., known to be in a gang.")
-          .setMinLength(6)
-          .setMaxLength(128)
-          .setRequired(false)
-      )
-    );
-
+  const AdditionalDataModal = GetAdditionalInformationModal(Interaction);
   const ModalFilter = (MS) => {
     return MS.user.id === Interaction.user.id && MS.customId === AdditionalDataModal.data.custom_id;
   };
@@ -442,7 +507,7 @@ async function CmdCallback(Interaction: SlashCommandInteraction<"cached">, Repor
         await OnChargesModalSubmission(Interaction, CmdOptions, Reporter, Submission);
       }
     );
-  } catch (Err: any) {
+  } catch (Err: unknown) {
     if (Err instanceof Error && !Err.message.match(/reason: (?:\w+Delete|time)/)) {
       throw new AppError({ message: Err.message, stack: Err.stack });
     }

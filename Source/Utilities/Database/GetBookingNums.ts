@@ -1,54 +1,56 @@
+import { BookingAutocompletionCache } from "@Utilities/Other/Cache.js";
 import { AggregateResults } from "@Typings/Utilities/Database.js";
-import GuildModel from "@Models/Guild.js";
+import ArrestModel from "@Models/Arrest.js";
 
-export default async function GetAllBookingNums(GuildId: string) {
-  return GuildModel.aggregate<AggregateResults.GetBookingNumbers>([
+export default async function GetAllBookingNums(
+  GuildId: string,
+  UseCache: boolean = false
+): Promise<AggregateResults.GetBookingNumbers[]> {
+  if (UseCache) {
+    const Cached = BookingAutocompletionCache.get<AggregateResults.GetBookingNumbers[]>(GuildId);
+    if (Cached) return Cached;
+  }
+
+  return ArrestModel.aggregate<AggregateResults.GetBookingNumbers>([
     {
       $match: {
-        _id: GuildId,
+        guild: GuildId,
       },
     },
     {
-      $unwind: "$logs.arrests",
-    },
-    {
       $project: {
+        booking_num: 1,
+        arrestee: 1,
         doa: {
           $dateToString: {
-            date: "$logs.arrests.made_on",
-            format: "%Y-%m-%d",
+            date: "$made_on",
+            format: "%B %d, %G at %H:%M",
             timezone: "America/Los_Angeles",
           },
         },
-        num: {
-          $toString: "$logs.arrests._id",
-        },
-      },
-    },
-    {
-      $group: {
-        _id: 0,
-        bookings: {
-          $push: {
-            num: "$num",
-            autocomplete_label: {
-              $concat: ["#", "$num", " – ", "$doa"],
-            },
-          },
-        },
       },
     },
     {
       $project: {
-        _id: 0,
-        bookings: 1,
+        num: "$booking_num",
+        autocomplete_label: {
+          $concat: [
+            "#",
+            {
+              $toString: "$booking_num",
+            },
+            " – ",
+            "$arrestee.formatted_name",
+            " – ",
+            "$doa",
+          ],
+        },
       },
     },
   ])
-    .then((Results) =>
-      Results[0]?.bookings.length && Results[0].bookings[0]
-        ? Results[0].bookings
-        : ([] as AggregateResults.GetBookingNumbers["bookings"])
-    )
-    .catch(() => [] as AggregateResults.GetBookingNumbers["bookings"]);
+    .exec()
+    .then((Bookings) => {
+      BookingAutocompletionCache.set(GuildId, Bookings);
+      return Bookings;
+    });
 }

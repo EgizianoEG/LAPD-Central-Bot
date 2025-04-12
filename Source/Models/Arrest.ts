@@ -1,24 +1,35 @@
 import ERLCAgeGroups from "@Resources/ERLCAgeGroups.js";
 import { GuildArrests } from "@Typings/Utilities/Database.js";
-import { Model, Schema } from "mongoose";
+import { model, Model, Schema } from "mongoose";
 
 type ArrestPlainDoc = GuildArrests.ArrestRecord;
 type ArrestModelType = Model<ArrestPlainDoc, unknown>;
 
 const ArrestSchema = new Schema<ArrestPlainDoc, ArrestModelType>({
-  _id: {
+  booking_num: {
     type: Number,
+    index: true,
     required: true,
+  },
+
+  guild: {
+    type: String,
+    required: true,
+    index: true,
+    match: /^\d{15,22}$/,
+    ref: "Guild",
   },
 
   assisting_officers: {
     type: [String],
     default: [],
     required: true,
+    index: true,
   },
 
   made_on: {
     type: Date,
+    index: true,
     required: true,
     default: Date.now,
   },
@@ -108,10 +119,13 @@ const ArrestSchema = new Schema<ArrestPlainDoc, ArrestModelType>({
 
       discord_id: {
         type: String,
+        index: true,
         required: true,
       },
     },
   },
 });
 
-export default ArrestSchema;
+ArrestSchema.set("optimisticConcurrency", true);
+const ArrestModel = model<ArrestPlainDoc, ArrestModelType>("Arrest", ArrestSchema);
+export default ArrestModel;

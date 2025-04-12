@@ -41,16 +41,20 @@ import { GuildIncidents } from "@Typings/Utilities/Database.js";
 import { ArraysAreEqual } from "@Utilities/Other/ArraysAreEqual.js";
 import { FilterUserInput } from "@Utilities/Strings/Redactor.js";
 import { SanitizeDiscordAttachmentLink } from "@Utilities/Strings/OtherUtils.js";
+import { IncidentReportNumberLineRegex } from "@Resources/RegularExpressions.js";
 
 import Dedent from "dedent";
 import IsEqual from "lodash/isEqual.js";
-import GuildModel from "@Models/Guild.js";
 import UserHasPerms from "@Utilities/Database/UserHasPermissions.js";
+import IncidentModel from "@Models/Incident.js";
 import GetIncidentRecord from "@Utilities/Database/GetIncidentRecord.js";
 import GetIncidentReportEmbeds from "@Utilities/Other/GetIncidentReportEmbeds.js";
+import { FormatSortRDInputNames } from "@Utilities/Strings/Formatters.js";
 
 const ListFormatter = new Intl.ListFormat("en");
+const NoneProvidedPlaceholder = "`[None Provided]`";
 const CompCollectorTimeout = 12.5 * 60 * 1000;
+const CompCollectorIdleTime = 10 * 60 * 1000;
 const SplitRegexForInputs = /\s*,\s*(?:and\s*)?|\s+/i;
 
 type ValidationResult = {
@@ -61,6 +65,7 @@ type ValidationResult = {
 enum IncidentEditOptionIds {
   Notes = "incident-edit-notes",
   Status = "incident-edit-status",
+  Officers = "incident-edit-officers",
   Suspects = "incident-edit-suspects",
   Witnesses = "incident-edit-witnesses",
   SaveCancel = "incident-save-cancel",
@@ -88,6 +93,11 @@ function GetIncidentEditOptionsMenu() {
           label: "Update Status",
           value: IncidentEditOptionIds.Status,
           description: "Change the incident status.",
+        },
+        {
+          label: "Set Involved Officers",
+          value: IncidentEditOptionIds.Officers,
+          description: "Add or remove involved officers in the incident.",
         },
         {
           label: "Set Suspects",
@@ -142,7 +152,7 @@ function GetChangeIncidentStatusSelectMenuAR(CurrentStatus: string) {
 function GetChangeIncidentWitnessesOrSuspectsInputModal(
   RecInteract: StringSelectMenuInteraction<"cached">,
   IncidentRecord: GuildIncidents.IncidentRecord,
-  Type: "Witnesses" | "Suspects"
+  Type: "Witnesses" | "Suspects" | "Officers"
 ) {
   const InputModal = new ModalBuilder()
     .setCustomId(
@@ -154,7 +164,8 @@ function GetChangeIncidentWitnessesOrSuspectsInputModal(
         new TextInputBuilder()
           .setStyle(TextInputStyle.Paragraph)
           .setCustomId(ModalInputIds[Type])
-          .setLabel(`Incident ${Type}`)
+          .setLabel(`Incident ${Type === "Officers" ? "Involved Officers" : Type}`)
+          .setValue(FormatSortRDInputNames(IncidentRecord[Type.toLowerCase()]).join(", "))
           .setPlaceholder(`Enter the new names of ${Type.toLowerCase()} separated by commas...`)
           .setMinLength(3)
           .setMaxLength(88)
@@ -230,12 +241,16 @@ function GetUpdatePromptEmbedBasedOnChanges(
       UpdatedPromptMsgDesc += `\n- **Status:** \`${UpdatedIncRecord.status}\``;
     }
 
+    if (!ArraysAreEqual(DatabaseIncRecord.officers, UpdatedIncRecord.officers)) {
+      UpdatedPromptMsgDesc += `\n- **Involved Officers:** ${UpdatedIncRecord.officers.length ? ListFormatter.format(FormatSortRDInputNames(UpdatedIncRecord.officers, true)) : NoneProvidedPlaceholder}`;
+    }
+
     if (!ArraysAreEqual(DatabaseIncRecord.suspects, UpdatedIncRecord.suspects)) {
-      UpdatedPromptMsgDesc += `\n- **Suspects:** ${UpdatedIncRecord.suspects.length ? ListFormatter.format(UpdatedIncRecord.suspects) : "`[None Provided]`"}`;
+      UpdatedPromptMsgDesc += `\n- **Suspects:** ${UpdatedIncRecord.suspects.length ? ListFormatter.format(UpdatedIncRecord.suspects) : NoneProvidedPlaceholder}`;
     }
 
     if (!ArraysAreEqual(DatabaseIncRecord.witnesses, UpdatedIncRecord.witnesses)) {
-      UpdatedPromptMsgDesc += `\n- **Witnesses:** ${UpdatedIncRecord.witnesses.length ? ListFormatter.format(UpdatedIncRecord.witnesses) : "`[None Provided]`"}`;
+      UpdatedPromptMsgDesc += `\n- **Witnesses:** ${UpdatedIncRecord.witnesses.length ? ListFormatter.format(UpdatedIncRecord.witnesses) : NoneProvidedPlaceholder}`;
     }
 
     if (DatabaseIncRecord.notes !== UpdatedIncRecord.notes) {
@@ -285,16 +300,11 @@ export async function HandleCommandValidationAndPossiblyGetIncident(
 ): Promise<ValidationResult> {
   const ReportEmbeds = RecInteract.targetMessage.embeds;
   const HandledValResult: ValidationResult = { handled: true, incident: null };
-  let ReportNumber: number | null = null;
+  let ReportNumber: Nullable<string> = null;
   let IncidentReport: GuildIncidents.IncidentRecord | null = null;
 
   if (ReportEmbeds[0]?.description?.length) {
-    ReportNumber =
-      Number(
-        ReportEmbeds[0].description.match(
-          /\bIncident\s(?:Num|Number|#)\*{0,3}:?\*{0,3}\s(?:`)?(\d+)(?:`)?\b/i
-        )?.[1]
-      ) || null;
+    ReportNumber = ReportEmbeds[0].description.match(IncidentReportNumberLineRegex)?.[1];
   }
 
   if (ReportNumber) {
@@ -316,7 +326,7 @@ export async function HandleCommandValidationAndPossiblyGetIncident(
       .useErrTemplate("UpdateIncidentReportIncNotFound")
       .replyToInteract(RecInteract, true)
       .then(() => HandledValResult);
-  } else if (IncidentReport.reported_by.discord_id !== RecInteract.user.id) {
+  } else if (IncidentReport.reporter.discord_id !== RecInteract.user.id) {
     const CanUpdateWithManagement = await UserHasPerms(RecInteract, { management: true });
     if (CanUpdateWithManagement === false) {
       return new UnauthorizedEmbed()
@@ -359,7 +369,7 @@ async function HandlePromptUpdateBasedOnModifiedRecord(
   const NewComponentCollector = UpdatedPromptMessage.createMessageComponentCollector({
     filter: (Interact) => Interact.user.id === ChangeInteract.user.id,
     time: CompCollectorTimeout,
-    idle: 10 * 60 * 1000,
+    idle: CompCollectorIdleTime,
   });
 
   return HandleComponentCollectorInteracts(
@@ -430,7 +440,8 @@ async function HandleComponentCollectorInteracts(
         );
       } else if (
         ChosenOption === IncidentEditOptionIds.Suspects ||
-        ChosenOption === IncidentEditOptionIds.Witnesses
+        ChosenOption === IncidentEditOptionIds.Witnesses ||
+        ChosenOption === IncidentEditOptionIds.Officers
       ) {
         await HandleIncidentRecordEditWithHandler(
           RecInteract,
@@ -447,7 +458,11 @@ async function HandleComponentCollectorInteracts(
               _RecInteract,
               _DBRecord,
               _UpdatedRecord,
-              ChosenOption === IncidentEditOptionIds.Suspects ? "Suspects" : "Witnesses"
+              ChosenOption === IncidentEditOptionIds.Suspects
+                ? "Suspects"
+                : ChosenOption === IncidentEditOptionIds.Officers
+                  ? "Officers"
+                  : "Witnesses"
             )
         );
       } else if (ChosenOption === IncidentEditOptionIds.Notes) {
@@ -508,8 +523,30 @@ async function HandleIncidentRecordUpdateConfirm(
   DatabaseIncRecord: GuildIncidents.IncidentRecord,
   UpdatedIncRecord: GuildIncidents.IncidentRecord
 ) {
+  const RecordSetMap: { [key: string]: any } = {};
   await BtnInteract.deferUpdate().catch(() => null);
-  if (IsEqual(DatabaseIncRecord, UpdatedIncRecord)) {
+
+  if (DatabaseIncRecord.status !== UpdatedIncRecord.status) {
+    RecordSetMap.status = UpdatedIncRecord.status;
+  }
+
+  if (DatabaseIncRecord.notes !== UpdatedIncRecord.notes) {
+    RecordSetMap.notes = UpdatedIncRecord.notes;
+  }
+
+  if (!ArraysAreEqual(DatabaseIncRecord.officers, UpdatedIncRecord.officers)) {
+    RecordSetMap.officers = UpdatedIncRecord.officers;
+  }
+
+  if (!ArraysAreEqual(DatabaseIncRecord.suspects, UpdatedIncRecord.suspects)) {
+    RecordSetMap.suspects = UpdatedIncRecord.suspects;
+  }
+
+  if (!ArraysAreEqual(DatabaseIncRecord.witnesses, UpdatedIncRecord.witnesses)) {
+    RecordSetMap.witnesses = UpdatedIncRecord.witnesses;
+  }
+
+  if (Object.keys(RecordSetMap).length === 0) {
     return BtnInteract.editReply({
       components: [],
       embeds: [
@@ -520,33 +557,16 @@ async function HandleIncidentRecordUpdateConfirm(
     });
   }
 
-  const RecordSetMap = {};
-  if (DatabaseIncRecord.status !== UpdatedIncRecord.status) {
-    RecordSetMap["logs.incidents.$[record].status"] = UpdatedIncRecord.status;
-  }
-
-  if (DatabaseIncRecord.notes !== UpdatedIncRecord.notes) {
-    RecordSetMap["logs.incidents.$[record].notes"] = UpdatedIncRecord.notes;
-  }
-
-  if (DatabaseIncRecord.suspects !== UpdatedIncRecord.suspects) {
-    RecordSetMap["logs.incidents.$[record].suspects"] = UpdatedIncRecord.suspects;
-  }
-
-  if (DatabaseIncRecord.witnesses !== UpdatedIncRecord.witnesses) {
-    RecordSetMap["logs.incidents.$[record].witnesses"] = UpdatedIncRecord.witnesses;
-  }
-
-  const UpdatedDatabaseIncRecord = await GuildModel.findOneAndUpdate(
+  const UpdatedDatabaseIncRecord = await IncidentModel.findOneAndUpdate(
     {
-      _id: BtnInteract.guildId,
-      "logs.incidents._id": DatabaseIncRecord._id,
+      guild: BtnInteract.guildId,
+      _id: DatabaseIncRecord._id,
     },
     {
       $set: {
         ...RecordSetMap,
-        "logs.incidents.$[record].last_updated": BtnInteract.createdAt,
-        "logs.incidents.$[record].last_updated_by": {
+        last_updated: BtnInteract.createdAt,
+        last_updated_by: {
           discord_id: BtnInteract.user.id,
           discord_username: BtnInteract.user.username,
         },
@@ -554,17 +574,10 @@ async function HandleIncidentRecordUpdateConfirm(
     },
     {
       new: true,
-      arrayFilters: [{ "record._id": DatabaseIncRecord._id }],
-      projection: { "logs.incidents": 1 },
     }
   )
     .lean()
-    .exec()
-    .then((GDoc) => {
-      return GDoc
-        ? GDoc.logs.incidents.find((Record) => Record._id === DatabaseIncRecord._id) || null
-        : null;
-    });
+    .exec();
 
   if (!UpdatedDatabaseIncRecord) {
     return new ErrorEmbed()
@@ -580,7 +593,7 @@ async function HandleIncidentRecordUpdateConfirm(
         new SuccessEmbed()
           .setTitle("Incident Report Updated")
           .setDescription(
-            `The incident report with the ID \`${DatabaseIncRecord._id}\` was successfully updated.`
+            `The incident report \`${UpdatedDatabaseIncRecord.num}\` was successfully updated.`
           ),
       ],
     }),
@@ -612,7 +625,7 @@ async function HandleIncidentStatusEdit(
   const RecInteract = await StatusPromptMsg.awaitMessageComponent({
     filter: (Interact) => Interact.user.id === SelectInteract.user.id,
     componentType: ComponentType.StringSelect,
-    time: 10 * 60 * 1000,
+    time: CompCollectorIdleTime,
   }).catch(() => null);
 
   if (RecInteract) {
@@ -631,7 +644,7 @@ async function HandleIncidentSuspectsOrWitnessesEdit(
   SelectInteract: StringSelectMenuInteraction<"cached">,
   IncidentRecord: GuildIncidents.IncidentRecord,
   IRUpdatesCopy: GuildIncidents.IncidentRecord,
-  InputType: "Suspects" | "Witnesses"
+  InputType: "Suspects" | "Witnesses" | "Officers"
 ) {
   const TextInputModal = GetChangeIncidentWitnessesOrSuspectsInputModal(
     SelectInteract,
@@ -646,7 +659,7 @@ async function HandleIncidentSuspectsOrWitnessesEdit(
 
   const InputSubmission = await SelectInteract.awaitModalSubmit({
     filter: (Submision) => Submision.customId === TextInputModal.data.custom_id,
-    time: 10 * 60 * 1000,
+    time: CompCollectorIdleTime,
   }).catch(() => null);
 
   if (!InputSubmission) return null;
@@ -658,7 +671,8 @@ async function HandleIncidentSuspectsOrWitnessesEdit(
     .filter((Name) => Name.length >= 2);
 
   if (InputType === "Suspects") IRUpdatesCopy.suspects = NewlySetNames;
-  else IRUpdatesCopy.witnesses = NewlySetNames;
+  else if (InputType === "Witnesses") IRUpdatesCopy.witnesses = NewlySetNames;
+  else if (InputType === "Officers") IRUpdatesCopy.officers = NewlySetNames;
   return InputSubmission;
 }
 
@@ -676,7 +690,7 @@ async function HandleIncidentNotesEdit(
 
   const InputSubmission = await SelectInteract.awaitModalSubmit({
     filter: (Submision) => Submision.customId === NotesInputModal.data.custom_id,
-    time: 10 * 60 * 1000,
+    time: CompCollectorIdleTime,
   }).catch(() => null);
 
   if (!InputSubmission) return null;
@@ -707,7 +721,7 @@ async function Callback(Interaction: MessageContextMenuCommandInteraction<"cache
   if (ValidationResult.handled && !ValidationResult.incident) return;
   await Interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-  const IncidentRecord = ValidationResult.incident as GuildIncidents.IncidentRecord;
+  const IncidentRecord = ValidationResult.incident!;
   const IncidentRecordModified = { ...IncidentRecord };
   const UpdatePromptComps = GetIncidentEditOptionsMenu();
   const UpdatePromptEmbed = new EmbedBuilder()
@@ -728,7 +742,7 @@ async function Callback(Interaction: MessageContextMenuCommandInteraction<"cache
     filter: (ButtonInteract) => ButtonInteract.user.id === Interaction.user.id,
     componentType: ComponentType.StringSelect,
     time: CompCollectorTimeout,
-    idle: 10 * 60 * 1000,
+    idle: CompCollectorIdleTime,
   });
 
   HandleComponentCollectorInteracts(

@@ -1,32 +1,16 @@
-import { AggregateResults } from "@Typings/Utilities/Database.js";
-import GuildModel from "@Models/Guild.js";
+import { Types } from "mongoose";
+import { GuildIncidents } from "@Typings/Utilities/Database.js";
+import IncidentModel from "@Models/Incident.js";
 
-export default async function GetIncidentRecord(Guild: string, IncidentNum: number) {
-  return GuildModel.aggregate<AggregateResults.GetIncidentRecord>([
-    {
-      $match: {
-        _id: Guild,
-        "logs.incidents._id": IncidentNum,
-      },
-    },
-    {
-      $unwind: "$logs.incidents",
-    },
-    {
-      $match: {
-        "logs.incidents._id": IncidentNum,
-      },
-    },
-    {
-      $project: {
-        _id: false,
-        incident: "$logs.incidents",
-      },
-    },
-  ])
-    .limit(1)
-    .then((Result) => {
-      if (Result[0]) return Result[0].incident;
-      else return null;
-    });
+export default async function GetIncidentRecord(
+  Guild: string,
+  IncidentDatabaseId: string | Types.ObjectId,
+  Lean: boolean = true
+): Promise<GuildIncidents.IncidentRecord | null> {
+  const SearchLabel =
+    typeof IncidentDatabaseId === "string" && IncidentDatabaseId.includes("-") ? "num" : "_id";
+
+  return IncidentModel.findOne({ guild: Guild, [SearchLabel]: IncidentDatabaseId })
+    .lean(Lean)
+    .exec();
 }

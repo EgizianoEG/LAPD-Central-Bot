@@ -23,3 +23,24 @@ export const BloxlinkDiscordToRobloxUsageChache = new NodeCache({
   useClones: false,
   deleteOnExpire: true,
 });
+
+export const IncidentAutocompletionCache = new NodeCache({
+  stdTTL: 5,
+  checkperiod: 5,
+  useClones: false,
+  deleteOnExpire: true,
+});
+
+export const CitationAutocompletionCache = new NodeCache({
+  stdTTL: 10,
+  useClones: false,
+  checkperiod: 5,
+  deleteOnExpire: true,
+});
+
+export const BookingAutocompletionCache = new NodeCache({
+  stdTTL: 10,
+  useClones: false,
+  checkperiod: 5,
+  deleteOnExpire: true,
+});

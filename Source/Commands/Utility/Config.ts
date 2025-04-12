@@ -924,7 +924,7 @@ async function HandleAdditionalConfigPageInteracts(
             CTAIds[ConfigTopics.AdditionalConfiguration].DActivitiesDeletionInterval
           )
         ) {
-          LogDeletionInterval = Number(RecInteract.values[0].slice(0, -1)) || 0;
+          LogDeletionInterval = (parseInt(RecInteract.values[0]) || 0) * MillisInDay;
         }
 
         if (

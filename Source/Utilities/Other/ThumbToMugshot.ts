@@ -3,6 +3,9 @@ import { Embeds } from "@Config/Shared.js";
 import UploadToImgBB from "./ImgBBUpload.js";
 
 let BgCanvas: Canvas | null = null;
+const ImgWidth = 420;
+const ImgHeight = 420;
+
 export interface GetBookingMugshotOptions {
   user_thumb_url: string;
   booking_num: string | number;
@@ -20,7 +23,7 @@ export interface GetBookingMugshotOptions {
 export default async function GetBookingMugshot<AsURL extends boolean | undefined = undefined>(
   Options: GetBookingMugshotOptions
 ): Promise<AsURL extends true ? string : AsURL extends false ? Buffer : Buffer | string> {
-  const ImgCanvas = createCanvas(180, 180);
+  const ImgCanvas = createCanvas(ImgWidth, ImgHeight);
   const ImgCTX = ImgCanvas.getContext("2d");
   const ThumbImage = await loadImage(Options.user_thumb_url).catch(() => {
     if (Options.user_gender) {
@@ -39,7 +42,7 @@ export default async function GetBookingMugshot<AsURL extends boolean | undefine
 
   // Draw the background & received user thumbnail
   ImgCTX.drawImage(GetBackgroundCanvas(), 0, 0);
-  ImgCTX.drawImage(ThumbImage, 0, 0, 180, 180);
+  ImgCTX.drawImage(ThumbImage, 0, 0, ImgHeight, ImgHeight);
 
   // Draw the rectangle for the booking number
   ImgCTX.fillStyle = "#EBEBEB";

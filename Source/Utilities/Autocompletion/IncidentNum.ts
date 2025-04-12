@@ -11,14 +11,14 @@ export default async function AutocompleteIncidentNum(
   Typed: string,
   GuildId: string
 ): Promise<Array<ApplicationCommandOptionChoiceData>> {
-  const Incidents = await GetAllIncidentNums(GuildId);
+  const Incidents = await GetAllIncidentNums(GuildId, true);
   let Suggestions: typeof Incidents;
 
   if (Typed.match(/^\s*$/)) {
     Suggestions = Incidents;
   } else {
     Suggestions = Incidents.filter((Incident) => {
-      return Incident.num.includes(Typed);
+      return Incident.autocomplete_label.toLowerCase().includes(Typed.toLowerCase());
     });
   }
 

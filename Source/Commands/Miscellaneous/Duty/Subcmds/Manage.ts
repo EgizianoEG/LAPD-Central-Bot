@@ -17,7 +17,6 @@ import {
   SlashCommandSubcommandBuilder,
 } from "discord.js";
 
-import { Types } from "mongoose";
 import { GetErrorId } from "@Utilities/Strings/Random.js";
 import { ErrorMessages } from "@Resources/AppMessages.js";
 import { Guilds, Shifts } from "@Typings/Utilities/Database.js";
@@ -149,7 +148,9 @@ export function GetShiftManagementButtons(
  */
 async function CheckShiftTypeRestrictions(
   Interaction: SlashCommandInteraction<"cached">,
-  GuildShiftTypes: Types.DocumentArray<Guilds.ShiftType>,
+  GuildShiftTypes:
+    | Guilds.ShiftType[]
+    | NonNullable<Awaited<ReturnType<typeof GetGuildSettings>>>["shift_management"]["shift_types"],
   CmdShiftType?: string | null
 ) {
   const GuildDefaultType = GuildShiftTypes.find((ShiftType) => ShiftType.is_default);
@@ -241,9 +242,8 @@ async function HandleCommandUsageVerification(
       });
   }
 
-  const IsUsageAllowed = await CheckShiftTypeRestrictions(CmdInteract, ShiftTypes, TargetShiftType);
-
   // Or if the user is not allowed to use a specific shift type.
+  const IsUsageAllowed = await CheckShiftTypeRestrictions(CmdInteract, ShiftTypes, TargetShiftType);
   if (!IsUsageAllowed) {
     return new UnauthorizedEmbed()
       .useErrTemplate("UnauthorizedShiftTypeUsage")

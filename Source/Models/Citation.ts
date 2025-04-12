@@ -1,5 +1,5 @@
 import { EyeColors, HairColors } from "@Resources/ERLCPDColors.js";
-import { Model, Schema } from "mongoose";
+import { model, Model, Schema } from "mongoose";
 import { GuildCitations } from "@Typings/Utilities/Database.js";
 import ERLCAgeGroups from "@Resources/ERLCAgeGroups.js";
 
@@ -7,6 +7,21 @@ type CitationPlainDoc = GuildCitations.AnyCitationData;
 type CitationModelType = Model<CitationPlainDoc, unknown>;
 
 const CitationSchema = new Schema<CitationPlainDoc, CitationModelType>({
+  num: {
+    min: 0,
+    type: Number,
+    index: true,
+    required: true,
+  },
+
+  guild: {
+    type: String,
+    index: true,
+    required: true,
+    match: /^\d{15,22}$/,
+    ref: "Guild",
+  },
+
   type: {
     type: String,
     enum: ["Warning", "Fine"],
@@ -18,6 +33,7 @@ const CitationSchema = new Schema<CitationPlainDoc, CitationModelType>({
 
   issued_on: {
     type: Date,
+    index: true,
     required: true,
     default: Date.now,
   },
@@ -25,12 +41,6 @@ const CitationSchema = new Schema<CitationPlainDoc, CitationModelType>({
   img_url: {
     type: String,
     required: false,
-  },
-
-  num: {
-    min: 0,
-    type: Number,
-    required: true,
   },
 
   dov: {
@@ -84,6 +94,7 @@ const CitationSchema = new Schema<CitationPlainDoc, CitationModelType>({
     type: {
       discord_id: {
         type: String,
+        index: true,
         required: true,
       },
       roblox_id: {
@@ -215,5 +226,6 @@ const CitationSchema = new Schema<CitationPlainDoc, CitationModelType>({
   },
 });
 
-CitationSchema.set("_id", false);
-export default CitationSchema;
+CitationSchema.set("optimisticConcurrency", true);
+const CitationModel = model<CitationPlainDoc, CitationModelType>("Citation", CitationSchema);
+export default CitationModel;

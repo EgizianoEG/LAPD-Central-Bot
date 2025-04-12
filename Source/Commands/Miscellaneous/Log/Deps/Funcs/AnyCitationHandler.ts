@@ -12,6 +12,7 @@ import {
   ButtonStyle,
   EmbedBuilder,
   MessageFlags,
+  userMention,
 } from "discord.js";
 
 import {
@@ -31,8 +32,8 @@ import {
 import { FilterUserInput, FilterUserInputOptions } from "@Utilities/Strings/Redactor.js";
 import { AllVehicleModelNames, AllVehicleModels } from "@Resources/ERLCVehicles.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import { GuildCitations, Guilds } from "@Typings/Utilities/Database.js";
 import { GetFilledCitation } from "@Utilities/Other/GetFilledCitation.js";
+import { GuildCitations } from "@Typings/Utilities/Database.js";
 import { ReporterInfo } from "../../Log.js";
 import { RandomString } from "@Utilities/Strings/Random.js";
 import { TitleCase } from "@Utilities/Strings/Converters.js";
@@ -44,11 +45,12 @@ import FindClosestMatch from "didyoumean2";
 import GetIdByUsername from "@Utilities/Roblox/GetIdByUsername.js";
 import BrickColors from "@Resources/BrickColors.js";
 import GetUserInfo from "@Utilities/Roblox/GetUserInfo.js";
-import GuildModel from "@Models/Guild.js";
 import Dedent from "dedent";
 
 import AppError from "@Utilities/Classes/AppError.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
+import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
+import GetAllCitationNums from "@Utilities/Database/GetCitationNumbers.js";
 
 const CmdFileLabel = "Commands:Miscellaneous:Log:CitWarn";
 const ColorNames = BrickColors.map((BC) => BC.name);
@@ -154,15 +156,16 @@ export default async function AnyCitationCallback(
 // ------------------------
 /**
  * Generates a random string of 5 characters, consisting of digits, based on a list of recorded citation numbers.
- * @param {{ num: number }[]} RecordedCits - An array of objects, where each object has a property "num" that represents a recorded citation number.
+ * @param GuildId - The ID of the guild to get citation numbers from.
  * @returns a randomly generated string of length `5`, consisting of digits, based on the input parameter.
  */
-function GenerateCitationNumber(RecordedCits: { num: number }[]): number {
-  return Number(
+async function GenerateCitationNumber(GuildId): Promise<number> {
+  const AllCitNums = await GetAllCitationNums(GuildId);
+  return parseInt(
     RandomString(
       5,
       /\d/,
-      RecordedCits.map((RCit) => RCit.num)
+      AllCitNums.map((Cit) => Cit.num.toString())
     )
   );
 }
@@ -440,16 +443,11 @@ async function OnModalSubmission(
 
   const ViolatorRobloxInfo = await GetUserInfo(PCitationData.violator.id);
   const OfficerRobloxInfo = await GetUserInfo(CitingOfficer.RobloxUserId);
-  const GuildDocument = await GuildModel.findById(ModalSubmission.guildId, {
-    "logs.citations.num": 1,
-    settings: 1,
-  })
-    .lean()
-    .exec();
+  const GuildSettings = await GetGuildSettings(ModalSubmission.guildId);
 
-  if (!GuildDocument) {
+  if (!GuildSettings) {
     return new ErrorEmbed()
-      .useErrTemplate("DBGuildDocumentNotFound")
+      .useErrTemplate("GuildConfigNotFound")
       .replyToInteract(ModalSubmission, true);
   }
 
@@ -458,9 +456,10 @@ async function OnModalSubmission(
     guild_instance: CmdInteract.guild,
     replacement_type: "Character",
     filter_links_emails: true,
-    utif_setting_enabled: GuildDocument.settings.utif_enabled,
+    utif_setting_enabled: GuildSettings.utif_enabled,
   };
 
+  const CitationNumber = await GenerateCitationNumber(ModalSubmission.guildId);
   const DateInfo = CmdInteract.createdAt
     .toLocaleDateString("en-US", {
       timeZone: "America/Los_Angeles",
@@ -482,11 +481,12 @@ async function OnModalSubmission(
   const CitationFullData: Omit<GuildCitations.AnyCitationData, "img_url"> = {
     dov: DateInfo!.groups!.date,
     tov: TimeInfo!.groups!.time,
+    guild: ModalSubmission.guildId,
     issued_on: CmdInteract.createdAt,
     type: PCitationData.fine_amount ? "Fine" : "Warning",
     dow: WeekDayToNum(DateInfo!.groups!.dow),
     ampm: TimeInfo!.groups!.day_period as any,
-    num: GenerateCitationNumber(GuildDocument.logs.citations),
+    num: CitationNumber,
     vehicle: PCitationData.vehicle,
     fine_amount: PCitationData.fine_amount,
 
@@ -530,7 +530,7 @@ async function OnModalSubmission(
 
   const CitationImgBuffer = await GetFilledCitation(CitationFullData);
   const CitImageAttachment = new AttachmentBuilder(CitationImgBuffer, {
-    name: `citation_${CitationFullData.num}.jpg`,
+    name: `citation_${CmdInteract.createdAt.getFullYear().toString().slice(-2)}_${CitationFullData.num}.jpg`,
   });
 
   const ConfirmationButtonAR = new ActionRowBuilder<ButtonBuilder>().setComponents(
@@ -549,7 +549,7 @@ async function OnModalSubmission(
     .setTitle("Confirmation Required")
     .setImage(`attachment://${CitImageAttachment.name}`)
     .setDescription(
-      `<@${CmdInteract.user.id}>, please confirm that the citation information in the attached image below is correct and ready to be submitted.`
+      `${userMention(CmdInteract.user.id)}, please confirm that the citation information in the attached image below is correct and ready to be submitted.`
     );
 
   const ConfirmationMsg = await ModalSubmission.editReply({
@@ -583,15 +583,15 @@ async function OnModalSubmission(
 
       const MainLogMsgLink = await LogTrafficCitation(
         ButtonResponse,
-        GuildDocument as any as Guilds.GuildDocument,
         CitationFullData,
-        CitationImgBuffer
+        CitationImgBuffer,
+        ViolatorRobloxInfo
       );
 
       const CEDescription = Dedent(`
         The traffic citation has been successfully created and logged.
         - Citation Number: \`${CitationFullData.num}\`
-        - Citation Link: ${MainLogMsgLink ?? "N/A"} 
+        - Citation Log: ${MainLogMsgLink ?? "N/A"} 
       `);
 
       return ButtonResponse.editReply({

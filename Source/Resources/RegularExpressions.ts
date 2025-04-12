@@ -34,6 +34,13 @@ export const DutyLeaderboardEntryRegex =
   // eslint-disable-next-line sonarjs/regex-complexity
   /^(?:\d+)?\.?\s*-?\s*@?(?<username>[\w.\s]+?)\s*-\s*(?<user_id>\d{15,22})\s*-\s*(?<shift_count>\d+)\s+shifts\s*-\s*(?<duty_ms>\d+)ms\s*-\s*(?<hr_time>[\w,\s]+?)$|^@?(?<username>[\w.\s]+?)\s*[-•]\s*(?<hr_time>[\w,\s]+?)$/i;
 
+/**
+ * Regular expression to match a line containing an incident report number.
+ * Captures the number itself.
+ */
+export const IncidentReportNumberLineRegex =
+  /\bInc(?:ident|\.)\s(?:Num|Number|#)\*{0,3}:?\*{0,3}\s(?:`)?(?:INC-)?(\d{1,2}-\d{5,6})(?:`)?\b/i;
+
 export const LEORegex = /(?:Officer|Peace Officer|\bPolice\b|\bLEO\b|\bPO\b)s?/;
 export const AddStatutesRegexes = {
   Battery: /Batt[ea]ry/i,

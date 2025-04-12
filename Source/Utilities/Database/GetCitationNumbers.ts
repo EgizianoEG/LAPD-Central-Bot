@@ -1,48 +1,45 @@
+import { CitationAutocompletionCache } from "@Utilities/Other/Cache.js";
 import { AggregateResults } from "@Typings/Utilities/Database.js";
-import GuildModel from "@Models/Guild.js";
+import CitationModel from "@Models/Citation.js";
 
-export default async function GetAllCitationNums(GuildId: string) {
-  return GuildModel.aggregate<AggregateResults.GetCitationNumbers>([
+export default async function GetAllCitationNums(
+  GuildId: string,
+  UseCache: boolean = false
+): Promise<AggregateResults.GetCitationNumbers[]> {
+  if (UseCache) {
+    const Cached = CitationAutocompletionCache.get<AggregateResults.GetCitationNumbers[]>(GuildId);
+    if (Cached) return Cached;
+  }
+
+  return CitationModel.aggregate<AggregateResults.GetCitationNumbers>([
     {
       $match: {
-        _id: GuildId,
-      },
-    },
-    {
-      $unwind: "$logs.citations",
-    },
-    {
-      $project: {
-        dov: "$logs.citations.dov",
-        num: {
-          $toString: "$logs.citations.num",
-        },
-      },
-    },
-    {
-      $group: {
-        _id: 0,
-        citations: {
-          $push: {
-            num: "$num",
-            autocomplete_label: {
-              $concat: ["#", "$num", " – ", "$dov"],
-            },
-          },
-        },
+        guild: GuildId,
       },
     },
     {
       $project: {
-        _id: 0,
-        citations: 1,
+        num: "$num",
+        autocomplete_label: {
+          $concat: [
+            "#",
+            { $toString: "$num" },
+            " – ",
+            "$type",
+            " – ",
+            "$dov",
+            " at ",
+            "$tov",
+            " ",
+            "$ampm",
+          ],
+        },
       },
     },
   ])
-    .then((Results) =>
-      Results[0]?.citations.length && Results[0].citations[0]
-        ? Results[0].citations
-        : ([] as AggregateResults.GetCitationNumbers["citations"])
-    )
-    .catch(() => [] as AggregateResults.GetCitationNumbers["citations"]);
+    .exec()
+    .then((Cits) => {
+      CitationAutocompletionCache.set(GuildId, Cits);
+      return Cits;
+    });
 }
