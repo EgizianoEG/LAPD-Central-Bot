@@ -10,7 +10,7 @@ export default async function AutocompleteUsername(
   Username: string
 ): Promise<Array<{ name: string; value: string }>> {
   Username = Username.match(/\w{3,20} \(@(\w{3,20})\)/i)?.[1] ?? Username;
-  return (await QueryUsername(Username.trim(), true))
+  return (await QueryUsername(Username.trim(), 25))
     .map((Result) => {
       return { name: FormatUsername(Result), value: Result.name };
     })

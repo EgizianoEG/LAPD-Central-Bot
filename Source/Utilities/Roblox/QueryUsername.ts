@@ -1,43 +1,15 @@
 import { IsValidRobloxUsername } from "../Other/Validators.js";
-import { RobloxAPICache } from "../Other/Cache.js";
-import { APIResponses } from "@Typings/Utilities/Roblox.js";
-import AppLogger from "@Utilities/Classes/AppLogger.js";
-import Axios from "axios";
+import { ClassicUsersApi } from "openblox/classic";
 
 /**
- * Searches for a user by their username and returns the search results
- * @param Username - The username to query and search for its user
- * @param [ExcludeBanned=false] - Whether to exclude banned users from the response
- * @returns A list of users representing search results
+ * Queries Roblox for users matching the provided username keyword.
+ * @param Typed - The username keyword to search for. Must be a valid Roblox username.
+ * @param Limit - The maximum number of results to return. Defaults to 10.
+ *                Accepted values are 10, 25, 50, or 100.
+ * @returns A promise that resolves to an array of user search results.
+ *          Returns an empty array if the provided username is invalid.
  */
-export default async function QueryUsername(
-  Username: string,
-  ExcludeBanned: boolean = false
-): Promise<APIResponses.Users.UserSearchResult[]> {
-  if (!IsValidRobloxUsername(Username)) return [];
-  if (RobloxAPICache.UsernameSearches.has(Username)) {
-    return RobloxAPICache.UsernameSearches.get(Username) ?? [];
-  }
-
-  return Axios.post<APIResponses.Users.UserSearchPOSTResponse>(
-    "https://users.roblox.com/v1/usernames/users",
-    {
-      usernames: [Username],
-      excludeBannedUsers: ExcludeBanned,
-    }
-  )
-    .then(({ data }) => {
-      RobloxAPICache.UsernameSearches.set(Username, data.data);
-      return data.data;
-    })
-    .catch((Err) => {
-      AppLogger.error({
-        message: "Could not query '%s' username;",
-        label: "Utils:Roblox:QueryUsername",
-        splat: [Username],
-        stack: Err.stack,
-        details: { ...Err },
-      });
-      return [];
-    });
+export default async function QueryUsername(Typed: string, Limit: 10 | 25 | 50 | 100 = 10) {
+  if (!IsValidRobloxUsername(Typed)) return [];
+  return ClassicUsersApi.userSearch({ keyword: Typed, limit: Limit }).then((Res) => Res.data);
 }
