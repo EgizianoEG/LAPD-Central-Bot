@@ -23,50 +23,60 @@ export default async function GetLocalCommands(
     const Commands = GetFiles(CommandCat);
     const CommandGroups = GetFiles(CommandCat, true);
 
-    for (const CommandGroup of CommandGroups) {
-      const CmdGroupName = Path.basename(CommandGroup);
-      const CommandPaths = GetFiles(CommandGroup);
-
-      for (const CommandPath of CommandPaths) {
-        if (new RegExp(`(?:${CmdGroupName}|Main).[jt]s$`).exec(CommandPath)) {
-          try {
-            const CommandObj = (await ImportWithTimeout(CommandPath)).default;
-            if (IsValidCmdObject(CommandObj, Exceptions)) {
-              LocalCommands.push(CommandObj);
-            }
-          } catch (Err: unknown) {
-            if (Err instanceof Error) {
-              AppLogger.debug({
-                message: "Failed to import main command file; Skipping...",
-                stack: Err.stack,
-                label: FileLabel,
-              });
-            }
-          }
-          break;
-        }
-      }
-    }
-
-    for (const Command of Commands) {
-      try {
-        const CommandObj = (await ImportWithTimeout(Command)).default;
-        if (IsValidCmdObject(CommandObj, Exceptions)) {
-          LocalCommands.push(CommandObj);
-        }
-      } catch (Err: unknown) {
-        if (Err instanceof Error) {
-          AppLogger.debug({
-            message: "Failed to import main command file; Skipping...",
-            stack: Err.stack,
-            label: FileLabel,
-          });
-        }
-      }
-    }
+    await ProcessCommandGroups(CommandGroups, Exceptions, LocalCommands);
+    await ProcessCommands(Commands, Exceptions, LocalCommands);
   }
 
   return LocalCommands;
+}
+
+async function ProcessCommandGroups(
+  CommandGroups: string[],
+  Exceptions: string[],
+  LocalCommands: SlashCommandObject[]
+) {
+  for (const CommandGroup of CommandGroups) {
+    const CmdGroupName = Path.basename(CommandGroup);
+    const CommandPaths = GetFiles(CommandGroup);
+
+    for (const CommandPath of CommandPaths) {
+      if (new RegExp(`(?:${CmdGroupName}|Main).[jt]s$`).exec(CommandPath)) {
+        await TryImportCommand(CommandPath, Exceptions, LocalCommands);
+        break;
+      }
+    }
+  }
+}
+
+async function ProcessCommands(
+  Commands: string[],
+  Exceptions: string[],
+  LocalCommands: SlashCommandObject[]
+) {
+  for (const Command of Commands) {
+    await TryImportCommand(Command, Exceptions, LocalCommands);
+  }
+}
+
+async function TryImportCommand(
+  CommandPath: string,
+  Exceptions: string[],
+  LocalCommands: SlashCommandObject[]
+) {
+  try {
+    const CommandObj = (await ImportWithTimeout(CommandPath)).default;
+    if (IsValidCmdObject(CommandObj, Exceptions)) {
+      LocalCommands.push(CommandObj);
+    }
+  } catch (Err: unknown) {
+    if (Err instanceof Error) {
+      AppLogger.debug({
+        message: "Failed to import main command file; Skipping...",
+        stack: Err.stack,
+        label: FileLabel,
+      });
+    }
+  }
 }
 
 async function ImportWithTimeout(CommandPath: string, TimeoutMs: number = 5000) {
