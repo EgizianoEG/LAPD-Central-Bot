@@ -32,10 +32,11 @@ import { milliseconds } from "date-fns";
 import { ArraysAreEqual } from "@Utilities/Other/ArraysAreEqual.js";
 import { SendGuildMessages } from "@Utilities/Other/GuildMessages.js";
 import { GuildIncidents, Guilds } from "@Typings/Utilities/Database.js";
+import { FormatSortRDInputNames } from "@Utilities/Strings/Formatters.js";
+import { IsValidDiscordAttachmentLink } from "@Utilities/Other/Validators.js";
 import { SanitizeDiscordAttachmentLink } from "@Utilities/Strings/OtherUtils.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { FilterUserInput, FilterUserInputOptions } from "@Utilities/Strings/Redactor.js";
-import { IsValidDiscordId, IsValidDiscordAttachmentLink } from "@Utilities/Other/Validators.js";
 import IncidentModel, { GenerateNextIncidentNumber } from "@Models/Incident.js";
 
 import IncrementActiveShiftEvent from "@Utilities/Database/IncrementActiveShiftEvent.js";
@@ -186,30 +187,6 @@ function GetConfirmationButtons(
 }
 
 /**
- * Sanitizes the input string of involved officers or witnesses by splitting it into individual names,
- * filtering out empty names, formatting each name based on its type, and finally sorts them.
- * Used for displaying involved officers or witnesses in an embed.
- * @param Input - The input string containing names of involved officers or witnesses, separated by commas.
- * @returns An array of sanitized and sorted names.
- */
-function SanitizeInvolvedOfficersOrWitnessesInput(Input: string): string[] {
-  const GetNameType = (Name: string | undefined) => {
-    if (Name && IsValidDiscordId(Name)) return 0;
-    else return 1;
-  };
-
-  return Input.split(SplitRegexForInputs)
-    .filter(Boolean)
-    .map((Name) => {
-      if (IsValidDiscordId(Name)) return userMention(Name);
-      else return Name;
-    })
-    .sort((a, b) => {
-      return GetNameType(a) - GetNameType(b);
-    });
-}
-
-/**
  * Updates the description of a field in an EmbedBuilder object. If the field
  * with the specified name exists, its value is updated. Otherwise, a new field is added to the embed.
  * @param Embed - The EmbedBuilder object to update.
@@ -294,7 +271,10 @@ async function PrepareIncidentData(
   const IncidentNumber = await GenerateNextIncidentNumber(CmdInteract.guild.id);
   const IncidentNotes = InputNotes ? await FilterUserInput(InputNotes, UTIFOpts) : null;
   const IncidentDesc = await FilterUserInput(
-    ModalSubmission.fields.getTextInputValue("incident-desc").replace(/\s+/g, " "),
+    ModalSubmission.fields
+      .getTextInputValue("incident-desc")
+      .replace(/[^\S\r\n]+/g, " ")
+      .replace(/\n{3,}/g, "\n\n"),
     UTIFOpts
   );
 
@@ -476,7 +456,7 @@ async function OnReportInvolvedOfficersOrWitnessesAddition(
   let InputText = ModalSubmission.components[0].components[0].value;
 
   if (!InputText?.trim()) InputText = "N/A";
-  CopiedTargetField = SanitizeInvolvedOfficersOrWitnessesInput(InputText);
+  CopiedTargetField = FormatSortRDInputNames(InputText.split(SplitRegexForInputs), false);
 
   if (!ArraysAreEqual(CopiedTargetField, ReportData[AdditionFor.toLowerCase()])) {
     ReportData[AdditionFor.toLowerCase()] = CopiedTargetField;
@@ -485,7 +465,7 @@ async function OnReportInvolvedOfficersOrWitnessesAddition(
         Dedent(`
           Incident Number: ${inlineCode(ReportData.num)}
           Incident Reported By: ${userMention(ModalSubmission.user.id)} on ${FormatTime(ReportData.reported_on, "f")}
-          Involved Officers: ${ListFormatter.format(ReportData.officers)}
+          Involved Officers: ${ListFormatter.format(FormatSortRDInputNames(ReportData.officers, true))}
         `)
       );
     } else {
