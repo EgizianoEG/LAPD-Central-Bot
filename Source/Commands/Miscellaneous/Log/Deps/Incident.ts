@@ -483,10 +483,11 @@ async function OnReportInvolvedOfficersOrWitnessesAddition(
   }
 
   if (!IsEqual(ReportData, CopiedReport)) {
+    ReportData[AdditionFor.toLowerCase()] = CopiedReport[AdditionFor.toLowerCase()];
     if (AdditionFor === "Officers") {
       IREmbeds[0].setDescription(
         Dedent(`
-          Incident Number: ${inlineCode(CopiedReport._id.toString())}
+          Incident Number: ${inlineCode(CopiedReport.num)}
           Incident Reported By: ${userMention(ModalSubmission.user.id)} on ${FormatTime(ReportData.reported_on, "f")}
           Involved Officers: ${ListFormatter.format(CopiedReport.officers)}
         `)
