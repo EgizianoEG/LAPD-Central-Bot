@@ -212,7 +212,6 @@ async function HandleAddAssistingOfficersUsernames(
         new TextInputBuilder()
           .setCustomId("input-usernames")
           .setLabel("Usernames")
-          .setValue((CurrentAsstUsernames || []).join(", "))
           .setPlaceholder("The usernames of assisting officers, separated by commas.")
           .setStyle(TextInputStyle.Short)
           .setMinLength(3)
@@ -220,6 +219,11 @@ async function HandleAddAssistingOfficersUsernames(
           .setRequired(false)
       )
     );
+
+  const PrefilledInput = (CurrentAsstUsernames || []).join(", ");
+  if (PrefilledInput.length >= 3) {
+    InputModal.components[0].components[0].setValue(PrefilledInput);
+  }
 
   await BtnInteract.showModal(InputModal);
   const ModalSubmitInteract = await BtnInteract.awaitModalSubmit({

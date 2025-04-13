@@ -29,7 +29,6 @@ import { Types } from "mongoose";
 import { ReporterInfo } from "../Log.js";
 import { milliseconds } from "date-fns";
 import { SendGuildMessages } from "@Utilities/Other/GuildMessages.js";
-import { FormatSortRDInputNames } from "@Utilities/Strings/Formatters.js";
 import { GuildIncidents, Guilds } from "@Typings/Utilities/Database.js";
 import { SanitizeDiscordAttachmentLink } from "@Utilities/Strings/OtherUtils.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
@@ -125,7 +124,7 @@ function GetWitnessesInvolvedOfficersInputModal(
   InputType: "Officers" | "Witnesses",
   IncidentReport: GuildIncidents.IncidentRecord
 ): ModalBuilder {
-  return new ModalBuilder()
+  const Modal = new ModalBuilder()
     .setTitle(`Add ${InputType} to Incident Report`)
     .setCustomId(
       `incident-add-${InputType.toLowerCase()}:${Interact.user.id}:${Interact.createdTimestamp}`
@@ -135,7 +134,6 @@ function GetWitnessesInvolvedOfficersInputModal(
         new TextInputBuilder()
           .setCustomId(InputType.toLowerCase())
           .setLabel(InputType === "Officers" ? "Involved Officers" : "Witnesses")
-          .setValue(FormatSortRDInputNames(IncidentReport.officers).join(", "))
           .setPlaceholder(
             `The names or Discord IDs of the ${InputType.toLowerCase()} involved, separated by commas.`
           )
@@ -145,6 +143,15 @@ function GetWitnessesInvolvedOfficersInputModal(
           .setRequired(false)
       )
     );
+
+  const PrefilledInput =
+    IncidentReport[InputType.toLowerCase() as "officers" | "witnesses"].join(", ");
+
+  if (PrefilledInput.length >= 3) {
+    Modal.components[0].components[0].setValue(PrefilledInput);
+  }
+
+  return Modal;
 }
 
 function GetIOAndWitnessesButtons(
