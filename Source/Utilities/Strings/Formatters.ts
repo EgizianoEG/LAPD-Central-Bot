@@ -716,11 +716,13 @@ export function FormatVehicleName(
  *
  * @param Names - An array of names to be formatted and sorted.
  * @param MentionDisUsers - A boolean indicating whether to mention Discord users. Defaults to `false`.
+ * @param AddRUsernamePrefix - A boolean indicating whether to prefix Roblox usernames with "@". Defaults to `true`.
  * @returns A new array of formatted and sorted names.
  */
 export function FormatSortRDInputNames(
   Names: string[],
-  MentionDisUsers: boolean = false
+  MentionDisUsers: boolean = false,
+  AddRUsernamePrefix: boolean = true
 ): string[] {
   const GetNameType = (Name: string | undefined) => {
     if (Name && IsValidDiscordId(Name)) return 0;
@@ -731,7 +733,7 @@ export function FormatSortRDInputNames(
     return GetNameType(a) - GetNameType(b);
   }).map((Name) => {
     if (IsValidDiscordId(Name)) return MentionDisUsers ? userMention(Name) : Name;
-    else if (IsValidRobloxUsername(Name)) return `@${Name}`;
+    else if (IsValidRobloxUsername(Name)) return AddRUsernamePrefix ? `@${Name}` : Name;
     else return Name;
   });
 }
