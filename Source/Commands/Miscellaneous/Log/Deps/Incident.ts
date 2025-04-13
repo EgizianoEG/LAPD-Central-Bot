@@ -26,8 +26,10 @@ import {
 } from "@Resources/IncidentConstants.js";
 
 import { Types } from "mongoose";
+import { TitleCase } from "@Utilities/Strings/Converters.js";
 import { ReporterInfo } from "../Log.js";
 import { milliseconds } from "date-fns";
+import { ArraysAreEqual } from "@Utilities/Other/ArraysAreEqual.js";
 import { SendGuildMessages } from "@Utilities/Other/GuildMessages.js";
 import { GuildIncidents, Guilds } from "@Typings/Utilities/Database.js";
 import { SanitizeDiscordAttachmentLink } from "@Utilities/Strings/OtherUtils.js";
@@ -42,9 +44,7 @@ import GetUserInfo from "@Utilities/Roblox/GetUserInfo.js";
 import GuildModel from "@Models/Guild.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import AppError from "@Utilities/Classes/AppError.js";
-import IsEqual from "lodash/isEqual.js";
 import Dedent from "dedent";
-import { TitleCase } from "@Utilities/Strings/Converters.js";
 
 const CmdFileLabel = "Commands:Miscellaneous:Log:Incident";
 const ListFormatter = new Intl.ListFormat("en");
@@ -462,7 +462,7 @@ async function OnReportInvolvedOfficersOrWitnessesAddition(
   IREmbeds: EmbedBuilder[],
   AdditionFor: "Officers" | "Witnesses"
 ) {
-  const CopiedReport = { ...ReportData };
+  let CopiedTargetField = [...ReportData[AdditionFor.toLowerCase() as "officers" | "witnesses"]];
   const InputModal = GetWitnessesInvolvedOfficersInputModal(BtnInteract, AdditionFor, ReportData);
   const ModalSubmission = await BtnInteract.showModal(InputModal).then(() =>
     BtnInteract.awaitModalSubmit({
@@ -476,27 +476,23 @@ async function OnReportInvolvedOfficersOrWitnessesAddition(
   let InputText = ModalSubmission.components[0].components[0].value;
 
   if (!InputText?.trim()) InputText = "N/A";
-  if (AdditionFor === "Officers") {
-    CopiedReport.officers = SanitizeInvolvedOfficersOrWitnessesInput(InputText);
-  } else if (AdditionFor === "Witnesses") {
-    CopiedReport.witnesses = SanitizeInvolvedOfficersOrWitnessesInput(InputText);
-  }
+  CopiedTargetField = SanitizeInvolvedOfficersOrWitnessesInput(InputText);
 
-  if (!IsEqual(ReportData, CopiedReport)) {
-    ReportData[AdditionFor.toLowerCase()] = CopiedReport[AdditionFor.toLowerCase()];
+  if (!ArraysAreEqual(CopiedTargetField, ReportData[AdditionFor.toLowerCase()])) {
+    ReportData[AdditionFor.toLowerCase()] = CopiedTargetField;
     if (AdditionFor === "Officers") {
       IREmbeds[0].setDescription(
         Dedent(`
-          Incident Number: ${inlineCode(CopiedReport.num)}
+          Incident Number: ${inlineCode(ReportData.num)}
           Incident Reported By: ${userMention(ModalSubmission.user.id)} on ${FormatTime(ReportData.reported_on, "f")}
-          Involved Officers: ${ListFormatter.format(CopiedReport.officers)}
+          Involved Officers: ${ListFormatter.format(ReportData.officers)}
         `)
       );
     } else {
       UpdateEmbedFieldDescription(
         IREmbeds[0],
         "Witnesses",
-        ListFormatter.format(CopiedReport.witnesses)
+        ListFormatter.format(ReportData.witnesses)
       );
     }
   }
