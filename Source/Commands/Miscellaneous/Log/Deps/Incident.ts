@@ -44,6 +44,7 @@ import AppLogger from "@Utilities/Classes/AppLogger.js";
 import AppError from "@Utilities/Classes/AppError.js";
 import IsEqual from "lodash/isEqual.js";
 import Dedent from "dedent";
+import { TitleCase } from "@Utilities/Strings/Converters.js";
 
 const CmdFileLabel = "Commands:Miscellaneous:Log:Incident";
 const ListFormatter = new Intl.ListFormat("en");
@@ -236,7 +237,7 @@ function UpdateEmbedFieldDescription(
 function GetCmdProvidedDetails(CmdInteract: SlashCommandInteraction<"cached">) {
   return {
     type: CmdInteract.options.getString("type", true),
-    location: CmdInteract.options.getString("location", true),
+    location: TitleCase(CmdInteract.options.getString("location", true), true),
     status: CmdInteract.options.getString("status", true),
   } as Partial<GuildIncidents.IncidentRecord> &
     Pick<GuildIncidents.IncidentRecord, "type" | "location" | "status">;
