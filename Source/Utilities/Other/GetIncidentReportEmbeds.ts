@@ -29,6 +29,22 @@ export default function GetIncidentReportEmbeds(
   }
 ) {
   const AttachmentDistributerEmbeds: EmbedBuilder[] = [];
+  const IIOfficersFormatted = IncidentRecord.officers.length
+    ? ListFormatter.format(FormatSortRDInputNames(IncidentRecord.officers, true))
+    : "None";
+
+  const IWitnessesFormatted = IncidentRecord.witnesses.length
+    ? ListFormatter.format(FormatSortRDInputNames(IncidentRecord.witnesses, true, false))
+    : "N/A";
+
+  const IVictimsFormatted = IncidentRecord.victims.length
+    ? ListFormatter.format(FormatSortRDInputNames(IncidentRecord.victims, true, false))
+    : "N/A";
+
+  const ISuspectsFormatted = IncidentRecord.suspects.length
+    ? ListFormatter.format(FormatSortRDInputNames(IncidentRecord.suspects, true, false))
+    : "N/A";
+
   const IncidentReportEmbed = new EmbedBuilder()
     .setTitle("LAPD — Incident Report")
     .setColor(Colors.DarkBlue)
@@ -37,7 +53,7 @@ export default function GetIncidentReportEmbeds(
         **Incident Number:** ${inlineCode(IncidentRecord.num)}
         **Incident Reported By:** ${userMention(IncidentRecord.reporter.discord_id)}
         **Incident Reported On:** ${FormatTime(IncidentRecord.reported_on, "f")}
-        **Involved Officers:** ${IncidentRecord.officers.length ? ListFormatter.format(FormatSortRDInputNames(IncidentRecord.officers)) : "None"}
+        **Involved Officers:** ${IIOfficersFormatted}
       `)
     )
     .setFields([
@@ -59,17 +75,17 @@ export default function GetIncidentReportEmbeds(
       {
         inline: true,
         name: "Suspects",
-        value: IncidentRecord.suspects.length ? IncidentRecord.suspects.join(", ") : "N/A",
+        value: ISuspectsFormatted,
       },
       {
         inline: true,
         name: "Victims",
-        value: IncidentRecord.victims.length ? IncidentRecord.victims.join(", ") : "N/A",
+        value: IVictimsFormatted,
       },
       {
         inline: true,
         name: "Witnesses",
-        value: IncidentRecord.witnesses?.length ? IncidentRecord.witnesses.join(", ") : "N/A",
+        value: IWitnessesFormatted,
       },
       {
         inline: false,
