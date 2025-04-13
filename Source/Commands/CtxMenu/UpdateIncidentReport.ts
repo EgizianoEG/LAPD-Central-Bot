@@ -74,6 +74,7 @@ enum IncidentEditOptionIds {
 
 enum ModalInputIds {
   Witnesses = "incident-witnesses-input",
+  Officers = "incident-officers-input",
   Suspects = "incident-suspects-input",
   Notes = "incident-notes-input",
 }
@@ -165,7 +166,6 @@ function GetChangeIncidentWitnessesOrSuspectsInputModal(
           .setStyle(TextInputStyle.Paragraph)
           .setCustomId(ModalInputIds[Type])
           .setLabel(`Incident ${Type === "Officers" ? "Involved Officers" : Type}`)
-          .setValue(FormatSortRDInputNames(IncidentRecord[Type.toLowerCase()]).join(", "))
           .setPlaceholder(`Enter the new names of ${Type.toLowerCase()} separated by commas...`)
           .setMinLength(3)
           .setMaxLength(88)
@@ -173,8 +173,9 @@ function GetChangeIncidentWitnessesOrSuspectsInputModal(
       )
     );
 
-  if (IncidentRecord[Type.toLowerCase()].length) {
-    InputModal.components[0].components[0].setValue(IncidentRecord[Type.toLowerCase()].join(", "));
+  const OriginalValue = FormatSortRDInputNames(IncidentRecord[Type.toLowerCase()]).join(", ");
+  if (OriginalValue.length >= 3) {
+    InputModal.components[0].components[0].setValue(OriginalValue);
   }
 
   return InputModal;
@@ -202,8 +203,8 @@ function GetChangeIncidentNotesInputModal(
       )
     );
 
-  if (IncidentRecord.notes?.length) {
-    NotesModal.components[0].components[0].setValue(IncidentRecord.notes);
+  if ((IncidentRecord.notes ?? "").length >= IncidentNotesLength.Min) {
+    NotesModal.components[0].components[0].setValue(IncidentRecord.notes!);
   }
 
   return NotesModal;
@@ -225,7 +226,7 @@ function GetUpdatePromptEmbedBasedOnChanges(
   UpdatedIncRecord: GuildIncidents.IncidentRecord
 ) {
   const PromptEmbed = new EmbedBuilder()
-    .setTitle(`Incident Report Modification — #${DatabaseIncRecord._id}`)
+    .setTitle(`Incident Report Modification — \`INC-${DatabaseIncRecord.num}\``)
     .setColor(Colors.Greyple);
 
   let UpdatedPromptMsgDesc =
@@ -725,7 +726,7 @@ async function Callback(Interaction: MessageContextMenuCommandInteraction<"cache
   const IncidentRecordModified = { ...IncidentRecord };
   const UpdatePromptComps = GetIncidentEditOptionsMenu();
   const UpdatePromptEmbed = new EmbedBuilder()
-    .setTitle(`Incident Report Modification — #${IncidentRecord._id}`)
+    .setTitle(`Incident Report Modification — \`INC-${IncidentRecord.num}\``)
     .setColor(Colors.Greyple)
     .setDescription(
       Dedent(`
