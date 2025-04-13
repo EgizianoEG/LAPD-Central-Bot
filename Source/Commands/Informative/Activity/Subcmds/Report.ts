@@ -30,13 +30,13 @@ const HumanizeDuration = DHumanize.humanizer({
 // ---------------------------------------------------------------------------------------
 async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
   const InputQuotaDuration = CmdInteraction.options.getString("time-requirement", false);
+  const EphemeralResponse = CmdInteraction.options.getBoolean("ephemeral", false) ?? false;
   const InputShiftType = CmdInteraction.options.getString("shift-type", false);
-  const InputSince = CmdInteraction.options.getString("since", true);
   const IMNicknames = CmdInteraction.options.getBoolean("include-nicknames", false);
+  const InputSince = CmdInteraction.options.getString("since", true);
   let SinceDate: Date | null = null;
   let QuotaDur: number | null = null;
 
-  await CmdInteraction.deferReply({ flags: MessageFlags.Ephemeral });
   if (InputQuotaDuration) {
     QuotaDur = Math.round(ParseDuration(InputQuotaDuration, "millisecond") ?? 0);
     if (!QuotaDur) {
@@ -81,6 +81,10 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
         .replyToInteract(CmdInteraction, true, false);
     }
   }
+
+  await CmdInteraction.deferReply({
+    flags: EphemeralResponse ? MessageFlags.Ephemeral : undefined,
+  });
 
   const CheckedShiftType = InputShiftType?.toLowerCase() === "default" ? "Default" : InputShiftType;
   const QuickShiftCount = await ShiftModel.countDocuments({
@@ -184,6 +188,11 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandBuilder> = {
         .setDescription(
           "Include server nicknames in the report along with the usernames. Disabled by default."
         )
+    )
+    .addBooleanOption((Option) =>
+      Option.setName("private")
+        .setRequired(false)
+        .setDescription("Whether to send the report to you privately.")
     ),
 };
 
