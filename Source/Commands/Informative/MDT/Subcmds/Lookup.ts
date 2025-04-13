@@ -42,6 +42,10 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   ]);
 
   const FormattedUsername = FormatUsername(RobloxUserInfo, false, true);
+  const IncidentsAsSuspectFormatted = UserRecords.incidents_as_suspect
+    .map((Inc) => `[\`${Inc.num}\`](${channelLink(Interaction.channelId)})`)
+    .join(", ");
+
   const ResponseEmbed = new EmbedBuilder()
     .setColor(Colors.DarkBlue)
     .setThumbnail(RobloxThumbnail)
@@ -55,7 +59,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
           - **Records:** 
             - Arrests: [${UserRecords.total_arrests}](${channelLink(Interaction.channelId)})
             - Citations: [${UserRecords.total_citations}](${channelLink(Interaction.channelId)})
-            - Incidents as Suspect: [${UserRecords.total_incidents_as_suspect}](${channelLink(Interaction.channelId)})
+            - Incidents as Suspect: ${IncidentsAsSuspectFormatted}
         `),
       },
     ]);

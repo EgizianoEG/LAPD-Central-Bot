@@ -885,7 +885,12 @@ export namespace AggregateResults {
     total_citations: number;
     recent_arrest: GuildArrests.ArrestRecord | null;
     recent_citation: GuildCitations.AnyCitationData | null;
-    total_incidents_as_suspect: number;
+
+    /**
+     * The incidents where the user is identified as a suspect.
+     * These records have only the `num` field included. Could be counted if needed.
+     */
+    incidents_as_suspect: GuildIncidents.IncidentRecord[];
   }
 
   /** Without the highest role or name of the user. */

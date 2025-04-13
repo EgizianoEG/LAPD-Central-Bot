@@ -25,7 +25,7 @@ export default async function GetUserRecords(
   RobloxUsername: string
 ): Promise<AggregateResults.GetUserRecords> {
   const [IncidentsAsSuspect, Citations, Arrests] = await Promise.all([
-    IncidentModel.countDocuments({ guild: GuildId, suspects: { $in: [RobloxUsername] } }),
+    IncidentModel.find({ guild: GuildId, suspects: { $in: [RobloxUsername] } }, { num: 1 }).lean(),
     CitationModel.find({ guild: GuildId, "violator.id": RobloxId }).sort({ issued_on: -1 }).lean(),
     ArrestModel.find({ guild: GuildId, "arrestee.roblox_id": RobloxId })
       .sort({ made_on: -1 })
@@ -37,7 +37,7 @@ export default async function GetUserRecords(
     citations: Citations,
     total_arrests: Arrests.length,
     total_citations: Citations.length,
-    total_incidents_as_suspect: IncidentsAsSuspect,
+    incidents_as_suspect: IncidentsAsSuspect,
     recent_arrest: Arrests[0] || null,
     recent_citation: Citations[0] || null,
   };
