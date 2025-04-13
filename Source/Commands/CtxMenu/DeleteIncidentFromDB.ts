@@ -81,7 +81,7 @@ async function Callback(Interaction: MessageContextMenuCommandInteraction<"cache
         new InfoEmbed()
           .setTitle("Incident Report Deleted")
           .setDescription(
-            `Incident report with ID \`${DeletedReport?.num}\` has been deleted successfully from the database.`
+            `Incident report with number \`${DeletedReport.num}\` has been deleted successfully from the database.`
           ),
       ],
     });

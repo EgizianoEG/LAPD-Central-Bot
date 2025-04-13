@@ -25,6 +25,7 @@ import {
   IncidentDescriptionLength,
 } from "@Resources/IncidentConstants.js";
 
+import { Types } from "mongoose";
 import { ReporterInfo } from "../Log.js";
 import { milliseconds } from "date-fns";
 import { SendGuildMessages } from "@Utilities/Other/GuildMessages.js";
@@ -289,9 +290,10 @@ async function PrepareIncidentData(
     UTIFOpts
   );
 
-  const IncidentRecordInst = new IncidentModel({
+  const IncidentRecordInst: GuildIncidents.IncidentRecord = {
     ...CmdProvidedDetails,
 
+    _id: new Types.ObjectId(),
     num: IncidentNumber,
     notes: IncidentNotes,
     description: IncidentDesc,
@@ -324,7 +326,7 @@ async function PrepareIncidentData(
       roblox_display_name: ReporterRobloxInfo?.displayName || "[Unknown]",
       roblox_username: ReporterRobloxInfo?.name || "[Unknown]",
     },
-  });
+  };
 
   if (
     (await HandleProvidedAttachmentsValidation(ModalSubmission, IncidentRecordInst.attachments)) ===
