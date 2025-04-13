@@ -17,18 +17,25 @@ export default function ErrorHandler() {
       (Err instanceof DiscordAPIError && !FatalDiscordAPIErrorCodes.includes(Err.code)) ||
       (Err instanceof DiscordjsError && !FatalDiscordJSErrors.includes(Err.code)) ||
       (Err instanceof AppError && Err.code !== 0) ||
-      Err instanceof Mongoose.mongo.MongoServerError
+      Err instanceof Mongoose.mongo.MongoServerError ||
+      Err instanceof RangeError ||
+      Err instanceof ReferenceError ||
+      Err.constructor.name.includes("ValidationError")
     ) {
+      // Non-fatal errors that can be logged and ignored without terminating the process.
+      // These errors are either recoverable or do not compromise the app's core functionality.
       return AppLogger.error({
-        message: "A non-fatal error has occurred - [UncaughtException].",
+        message: "A non-fatal error has occurred. [%s]:",
         label: "Handlers:ErrorHandler",
+        splat: [Err.constructor.name],
         stack: Err.stack,
       });
     }
 
     AppLogger.fatal({
-      message: "A fatal error has occurred [UncaughtException]. Terminating process.",
+      message: "An unrecoverable error has occurred. Terminating process. [%s]:",
       label: "Handlers:ErrorHandler",
+      splat: [Err.constructor.name],
       stack: Err.stack,
     });
 
