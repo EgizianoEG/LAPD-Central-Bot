@@ -102,14 +102,17 @@ export function GetShiftManagementButtons(
     new ButtonBuilder()
       .setCustomId(ShiftMgmtActions.ShiftOn)
       .setLabel("On Duty")
+      .setEmoji(Emojis.TimeClockIn)
       .setStyle(ButtonStyle.Success),
     new ButtonBuilder()
       .setCustomId(ShiftMgmtActions.ShiftBreakToggle)
       .setLabel("Toggle Break")
+      .setEmoji(Emojis.TimeClockPause)
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId(ShiftMgmtActions.ShiftOff)
       .setLabel("Off Duty")
+      .setEmoji(Emojis.TimeClockOut)
       .setStyle(ButtonStyle.Danger)
   ) as ShiftMgmtButtonsActionRow;
 

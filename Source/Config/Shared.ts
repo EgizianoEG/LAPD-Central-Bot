@@ -73,6 +73,10 @@ const SharedData = {
     LosAngeles: "<:LosAngeles:1185406541709463652>",
     HamburgerList: "<:Menu:1185793738212114484>",
 
+    TimeClockIn: "<:ClockIn30:1361004247348412436>",
+    TimeClockOut: "<:ClockOut30:1361004249026265160>",
+    TimeClockPause: "<:ClockPause30:1361004251261833337>",
+
     ClockPlus: "<:ClockPlus:1212227997059518545>",
     ClockMinus: "<:ClockMinus:1212228013375234058>",
     ClockReset: "<:ClockReset:1212228189112369153>",
