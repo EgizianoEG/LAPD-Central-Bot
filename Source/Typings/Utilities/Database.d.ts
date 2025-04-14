@@ -464,152 +464,184 @@ export namespace GuildProfiles {
   }
 }
 
-export namespace LeaveOfAbsence {
-  type LeaveStatus = "Pending" | "Approved" | "Denied" | "Cancelled";
-  type LeaveModel = Model<LeaveOfAbsenceDocument, {}, DocumentMethods, DocumentVirtuals>;
-  type LeaveOfAbsenceHydratedDocument = HydratedDocument<
-    LeaveOfAbsence.LeaveOfAbsenceDocument,
+export namespace UserActivityNotice {
+  type NoticeType = "LeaveOfAbsence" | "ReducedActivity";
+  type NoticeStatus = "Pending" | "Approved" | "Denied" | "Cancelled";
+  type NoticeModel = Model<UserActivityNoticeDocument, {}, DocumentMethods, DocumentVirtuals>;
+  type ActivityNoticeHydratedDocument = HydratedDocument<
+    UserActivityNotice.UserActivityNoticeDocument,
     DocumentVirtuals & DocumentMethods
   >;
 
   interface DocumentMethods {
     /**
-     * Fetches the latest version of the leave of absence document from the database.
+     * Fetches the latest version of the activity notice document from the database.
      * This ensures that the document reflects the most up-to-date state.
      *
-     * @returns A promise that resolves to the latest version of the leave of absence document.
+     * @returns A promise that resolves to the latest version of the activity notice document.
      */
-    getUpToDate(): Promise<LeaveOfAbsenceHydratedDocument>;
+    getUpToDate(): Promise<ActivityNoticeHydratedDocument>;
   }
 
   interface DocumentVirtuals {
     /**
      * @virtual - Not stored in the database.
-     * Indicates whether the leave of absence is currently active.
+     * Indicates whether the activity notice is currently active.
      * This is determined based on the current date and the `end_date` field.
      */
     is_active: boolean;
 
     /**
      * @virtual - Not stored in the database.
-     * Indicates whether the leave of absence has ended.
+     * Indicates whether the activity notice has ended.
      * This is determined based on the current date and the `end_date` field.
      */
     is_over: boolean;
 
     /**
      * @virtual - Not stored in the database.
-     * Indicates whether the leave of absence has been approved.
+     * Indicates whether the activity notice has been approved.
      * This is based on the `status` field being set to `"Approved"` and the presence of a `review_date`.
      */
     is_approved: boolean;
 
     /**
      * @virtual - Not stored in the database.
-     * Returns the actual duration of the leave of absence in a human-readable format.
+     * Returns the actual duration of the activity notice in a human-readable format.
      * This considers any early end or approved extensions.
      */
     duration_hr: string;
 
     /**
      * @virtual - Not stored in the database.
-     * Returns the original duration of the leave of absence in a human-readable format.
+     * Returns the original duration of the activity notice in a human-readable format.
      * This is calculated as the duration between the `review_date` (start date) and the `end_date`.
      */
     original_duration_hr: string;
 
     /**
      * @virtual - Not stored in the database.
+     * @applies_to `LeaveOfAbsence`
      * Returns the extended duration of the leave of absence in a human-readable format.
      * This does not include the original duration and is independent of whether the extension was approved.
      */
     extended_duration_hr: string;
   }
 
-  interface LeaveOfAbsenceDocument {
+  interface UserActivityNoticeDocument {
     _id: Types.ObjectId;
 
     /**
-     * The Discord snowflake ID of the user who requested the leave of absence.
+     * The Discord snowflake ID of the user who requested the activity notice.
      * This can optionally be populated by a `GuildProfile` document.
      */
     user: string;
 
     /**
-     * The Discord snowflake ID of the guild where the leave of absence was requested.
+     * The Discord snowflake ID of the guild where the activity notice was requested.
      * This can optionally be populated by a `Guild` document.
      */
     guild: string;
 
     /**
-     * The current status of the leave of absence.
-     * - `Pending`: The leave request is awaiting review.
-     * - `Approved`: The leave request has been approved.
-     * - `Denied`: The leave request has been denied.
-     * - `Cancelled`: The leave request has been cancelled by the requester.
+     * The type of the activity notice.
+     * - `LeaveOfAbsence`: A full leave of absence.
+     * - `ReducedActivity`: A period of reduced activity.
      */
-    status: LeaveStatus;
+    type: NoticeType;
 
     /**
-     * The reason provided by the requester for the leave of absence.
+     * A scaler between `0.2` and `0.75` that represents the percentage of the user's quota that will be reduced.
+     * - `0.2`: 20% reduction (80% of the user's quota is required).
+     * - `0.75`: Maximum reduction (only 25% of the user's quota is required).
+     * - Values in between represent partial reductions.
+     *
+     * @applies_to `ReducedActivity`
+     * @default null
+     */
+    quota_scale: number | null;
+
+    /**
+     * The current status of the activity notice.
+     * - `Pending`: The notice is awaiting review.
+     * - `Approved`: The notice has been approved.
+     * - `Denied`: The notice has been denied.
+     * - `Cancelled`: The notice has been cancelled by the requester.
+     */
+    status: NoticeStatus;
+
+    /**
+     * The reason provided by the requester for this activity notice.
      */
     reason: string;
 
     /**
-     * The original duration of the leave of absence in milliseconds.
-     * This value remains unchanged even if the leave ends early.
+     * The original duration of the activity notice in milliseconds.
+     * This value remains unchanged even if the notice ends early.
      */
     duration: number;
 
     /**
-     * Indicates whether the leave of absence's end has been processed.
-     * This includes logging the leave's end and updating the requester's roles.
-     * Defaults to `false`.
+     * Indicates whether the activity notice's end has been processed.
+     * This includes logging the notice's end and updating the requester's roles.
+     * @default false
      */
-    end_handled: boolean;
+    end_processed: boolean;
 
     /**
-     * Indicates whether the leave of absence is manageable by the requester.
-     * If `false`, only management staff can modify or control the leave.
+     * Indicates whether the activity notice is manageable by the requester.
+     * If `false`, only management staff can modify or control the notice.
+     * @applies_to `LeaveOfAbsence`
+     * @default true
      */
     is_manageable: boolean;
 
     /**
-     * The date when the leave of absence is scheduled to end.
-     * This value is updated when the leave is approved, saved, or extended.
+     * The date when the activity notice is scheduled to end.
+     * This value is updated when the notice is approved, saved, or extended.
+     * @default new Date(review_date.getTime() | request_date.getTime() + duration)
      */
     end_date: Date;
 
     /**
-     * The date when the leave of absence ended, regardless of its original duration.
-     * This is set only if the leave ended early.
+     * The date when the activity notice ended, regardless of its original duration.
+     * This is set only if the notice ended early.
+     *
+     * @applies_to `LeaveOfAbsence`
+     * @default null
      */
     early_end_date: Date | null;
 
     /**
-     * The reason provided by management staff for ending the leave early.
-     * This is set only if the leave ended early.
+     * The reason provided by management staff for ending the notice early.
+     * This is set only if the notice ended early.
+     * @applies_to `LeaveOfAbsence`
      */
     early_end_reason: string | null;
 
     /**
-     * The date when the leave of absence was requested.
-     * This field is read-only once the leave is recorded.
+     * The date when the activity notice was requested.
+     * This field is read-only once the notice is recorded in the database.
+     * @default Date.now()
      */
     request_date: Date;
 
     /**
-     * The message associated with the leave of absence request.
+     * The message associated with the activity notice request.
      * This is used for editing requests that are cancelled and not yet reviewed.
      * Format: `[ChannelID]:[MessageID]`.
+     * @default null
      */
     request_msg: string | null;
 
     /**
      * A request to extend the leave of absence, if any.
      * This has the same structure as the leave request but omits certain fields.
+     * Keep in mind that reduced activity notices cannot be extended, only leave of absences can.
+     * @applies_to `LeaveOfAbsence`
+     * @default null
      */
-    extension_req: {
+    extension_request: {
       /** The date when the extension request was made. */
       date: Date;
 
@@ -617,7 +649,7 @@ export namespace LeaveOfAbsence {
       duration: number;
 
       /** The status of the extension request. */
-      status: LeaveStatus;
+      status: NoticeStatus;
 
       /** The reason provided for the extension request. */
       reason?: string | null;
@@ -643,18 +675,21 @@ export namespace LeaveOfAbsence {
 
     /**
      * Notes or comments provided by the reviewer during the approval or denial process.
+     * @default null
      */
     reviewer_notes: string | null;
 
     /**
-     * The date when the leave of absence was reviewed.
-     * This could also be set to the date when the leave was cancelled by the requester.
+     * The date when the activity notice was reviewed.
+     * This could also be set to the date when the notice was cancelled by the requester.
+     * @default null
      */
     review_date: Date | null;
 
     /**
-     * Information about the reviewer who handled the leave of absence.
-     * This is `null` if the leave has not yet been reviewed.
+     * Information about the reviewer who handled the approval or denial.
+     * This is `null` if the notice has not yet been reviewed.
+     * @default null
      */
     reviewed_by: {
       /** The Discord user's unique identifier. */
@@ -983,7 +1018,7 @@ export namespace AggregateResults {
     total_time: T;
 
     recent_loa: Pick<
-      LeaveOfAbsence.LeaveOfAbsenceDocument,
+      UserActivityNotice.UserActivityNoticeDocument,
       | "status"
       | "request_date"
       | "review_date"
