@@ -7,12 +7,12 @@ import {
 
 import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { differenceInHours } from "date-fns";
-import { LeaveOfAbsence } from "@Typings/Utilities/Database.js";
+import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { milliseconds } from "date-fns/milliseconds";
 
-import LeaveOfAbsenceModel from "@Models/LeaveOfAbsence.js";
+import LeaveOfAbsenceModel from "@Models/UserActivityNotice.js";
 import MentionCmdByName from "@Utilities/Other/MentionCmd.js";
-import LOAEventLogger from "@Utilities/Classes/LOAEventLogger.js";
+import UserActivityNoticeLogger from "@Utilities/Classes/UANEventLogger.js";
 import ParseDuration from "parse-duration";
 
 const MaxDuration = milliseconds({ months: 3 });
@@ -58,7 +58,7 @@ export function HandleDurationValidation(
  */
 async function HasRecentlyDeniedCancelledLOA(Interaction: SlashCommandInteraction<"cached">) {
   const PreviousLOARequest =
-    await LeaveOfAbsenceModel.aggregate<LeaveOfAbsence.LeaveOfAbsenceHydratedDocument>([
+    await LeaveOfAbsenceModel.aggregate<UserActivityNotice.ActivityNoticeHydratedDocument>([
       {
         $match: {
           user: Interaction.user.id,
@@ -147,7 +147,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     request_date: Interaction.createdAt,
   });
 
-  const RequestMsg = await LOAEventLogger.SendRequest(Interaction, PendingLeave);
+  const RequestMsg = await UserActivityNoticeLogger.SendRequest(Interaction, PendingLeave);
   if (RequestMsg) {
     PendingLeave.request_msg = `${RequestMsg.channelId}:${RequestMsg.id}`;
   }

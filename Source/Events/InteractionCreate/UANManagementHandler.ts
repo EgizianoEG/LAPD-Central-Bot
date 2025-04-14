@@ -15,18 +15,18 @@ import {
 import { ErrorEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
 import { UserHasPermsV2 } from "@Utilities/Database/UserHasPermissions.js";
-import { LeaveOfAbsence } from "@Typings/Utilities/Database.js";
+import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { Embeds } from "@Config/Shared.js";
 
 import HandleLeaveRoleAssignment from "@Utilities/Other/HandleLeaveRoleAssignment.js";
-import LeaveOfAbsenceModel from "@Models/LeaveOfAbsence.js";
+import LeaveOfAbsenceModel from "@Models/UserActivityNotice.js";
 import GetMainShiftsData from "@Utilities/Database/GetShiftsData.js";
-import LOAEventLogger from "@Utilities/Classes/LOAEventLogger.js";
-import GetLOAsData from "@Utilities/Database/GetLOAData.js";
+import UANLogger from "@Utilities/Classes/UANEventLogger.js";
+import GetLOAsData from "@Utilities/Database/GetUANData.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import Dedent from "dedent";
 
-type HLeaveDocument = LeaveOfAbsence.LeaveOfAbsenceHydratedDocument;
+type HLeaveDocument = UserActivityNotice.ActivityNoticeHydratedDocument;
 const FunctionMap = {
   "loa-approve": HandleLeaveApproval,
   "loa-deny": HandleLeaveDenial,
@@ -120,10 +120,10 @@ async function HandleLeaveReviewValidation(
   InitialInteraction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached"> = Interaction
 ): Promise<boolean> {
   const IsExtensionRequest =
-    RequestDocument?.status !== "Pending" && RequestDocument?.extension_req;
+    RequestDocument?.status !== "Pending" && RequestDocument?.extension_request;
   const RequestHasToBeReviewed =
     (RequestDocument?.status === "Pending" && RequestDocument?.review_date === null) ||
-    (RequestDocument?.is_active && RequestDocument?.extension_req?.status === "Pending");
+    (RequestDocument?.is_active && RequestDocument?.extension_request?.status === "Pending");
 
   if (!RequestHasToBeReviewed) {
     let UpdatedReqEmbed: EmbedBuilder;
@@ -135,13 +135,13 @@ async function HandleLeaveReviewValidation(
       );
 
     if (RequestDocument && IsExtensionRequest) {
-      UpdatedReqEmbed = await LOAEventLogger.GetLOAExtRequestMessageEmbedWithStatus(
+      UpdatedReqEmbed = await UANLogger.GetLOAExtRequestMessageEmbedWithStatus(
         Interaction.guild,
         RequestDocument,
-        RequestDocument.extension_req!.status
+        RequestDocument.extension_request!.status
       );
     } else if (RequestDocument) {
-      UpdatedReqEmbed = await LOAEventLogger.GetLOARequestMessageEmbedWithStatus(
+      UpdatedReqEmbed = await UANLogger.GetLOARequestMessageEmbedWithStatus(
         Interaction.guild,
         RequestDocument,
         RequestDocument.status
@@ -191,8 +191,8 @@ async function HandleLeaveAddInfo(
       {
         name: "LOA Stats",
         value: Dedent(`
-          **Taken LOAs:** \`${LOAsData.loas_taken.length}\`
-          **Recent Leave:** ${LOAsData.recent_loa ? FormatTime(LOAsData.recent_loa.early_end_date ?? LOAsData.recent_loa.end_date, "D") : "None"}
+          **Taken LOAs:** \`${LOAsData.completed_notices.length}\`
+          **Recent Leave:** ${LOAsData.recent_notice ? FormatTime(LOAsData.recent_notice.early_end_date ?? LOAsData.recent_notice.end_date, "D") : "None"}
         `),
       },
       {
@@ -241,7 +241,7 @@ async function HandleLeaveApproval(
   return Promise.all([
     LeaveDocument.save(),
     NotesSubmission.editReply({ embeds: [ReplyEmbed] }),
-    LOAEventLogger.LogApproval(NotesSubmission, LeaveDocument),
+    UANLogger.LogApproval(NotesSubmission, LeaveDocument),
     HandleLeaveRoleAssignment(LeaveDocument.user, NotesSubmission.guild, true),
   ]);
 }
@@ -279,7 +279,7 @@ async function HandleLeaveDenial(
   return Promise.all([
     LeaveDocument.save(),
     NotesSubmission.editReply({ embeds: [ReplyEmbed] }),
-    LOAEventLogger.LogDenial(NotesSubmission, LeaveDocument),
+    UANLogger.LogDenial(NotesSubmission, LeaveDocument),
   ]);
 }
 
@@ -305,11 +305,11 @@ async function HandleExtApproval(
     .setTitle("Leave Extension Approved")
     .setDescription("Successfully approved the extension request.");
 
-  LeaveDocument.extension_req!.status = "Approved";
-  LeaveDocument.extension_req!.review_date = NotesSubmission.createdAt;
-  LeaveDocument.extension_req!.reviewer_notes =
+  LeaveDocument.extension_request!.status = "Approved";
+  LeaveDocument.extension_request!.review_date = NotesSubmission.createdAt;
+  LeaveDocument.extension_request!.reviewer_notes =
     NotesSubmission.fields.getTextInputValue("notes") || null;
-  LeaveDocument.extension_req!.reviewed_by = {
+  LeaveDocument.extension_request!.reviewed_by = {
     id: Interaction.user.id,
     username: Interaction.user.username,
   };
@@ -317,7 +317,7 @@ async function HandleExtApproval(
   return Promise.all([
     LeaveDocument.save(),
     NotesSubmission.editReply({ embeds: [ReplyEmbed] }),
-    LOAEventLogger.LogExtensionApproval(NotesSubmission, LeaveDocument),
+    UANLogger.LogExtensionApproval(NotesSubmission, LeaveDocument),
   ]);
 }
 
@@ -343,10 +343,11 @@ async function HandleExtDenial(
     .setTitle("Leave Extension Approved")
     .setDescription("Successfully approved the extension request.");
 
-  LeaveDocument.extension_req!.status = "Denied";
-  LeaveDocument.extension_req!.review_date = NotesSubmission.createdAt;
-  LeaveDocument.extension_req!.reviewer_notes = NotesSubmission.fields.getTextInputValue("notes");
-  LeaveDocument.extension_req!.reviewed_by = {
+  LeaveDocument.extension_request!.status = "Denied";
+  LeaveDocument.extension_request!.review_date = NotesSubmission.createdAt;
+  LeaveDocument.extension_request!.reviewer_notes =
+    NotesSubmission.fields.getTextInputValue("notes");
+  LeaveDocument.extension_request!.reviewed_by = {
     id: Interaction.user.id,
     username: Interaction.user.username,
   };
@@ -354,7 +355,7 @@ async function HandleExtDenial(
   return Promise.all([
     LeaveDocument.save(),
     NotesSubmission.editReply({ embeds: [ReplyEmbed] }),
-    LOAEventLogger.LogExtensionDenial(NotesSubmission, LeaveDocument),
+    UANLogger.LogExtensionDenial(NotesSubmission, LeaveDocument),
   ]);
 }
 

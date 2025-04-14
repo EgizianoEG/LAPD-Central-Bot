@@ -1,24 +1,27 @@
 import { type CronJobFileDefReturn } from "@Typings/Global.js";
-import { LeaveOfAbsence } from "@Typings/Utilities/Database.js";
+import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { subDays } from "date-fns";
 
-import HandleLeaveRoleAssignment from "@Utilities/Other/HandleLeaveRoleAssignment.js";
-import LeaveOfAbsenceModel from "@Models/LeaveOfAbsence.js";
-import LOAEventLogger from "@Utilities/Classes/LOAEventLogger.js";
+import HandleNoticeRoleAssignment from "@Utilities/Other/HandleLeaveRoleAssignment.js";
+import ActivityNoticeEventLogger from "@Utilities/Classes/UANEventLogger.js";
+import ActivityNoticeModel from "@Models/UserActivityNotice.js";
 
 /**
- * Handle leave of absence expiration and role assignment if the `end_handled` property is still `false`.
- * This will only handle leaves expired in the last 7 days or less to avoid false positives or very late responses.
+ * Handle activity notices expiration and role assignment if the `end_processed` property is still `false`.
+ * This will only handle notices expired in the last 7 days or less to avoid false positives or very late responses.
  * @param _
  * @param Client
  * @returns
  */
-async function HandleExpiredLeaves(Now: Date | "init" | "manual", Client: DiscordClient) {
+async function HandleExpiredUserActivityNotices(
+  Now: Date | "init" | "manual",
+  Client: DiscordClient
+) {
   const CurrentDate = Now instanceof Date ? Now : new Date();
   const SevenDaysAgo = subDays(CurrentDate, 7);
-  const LOAsHandled: string[] = [];
-  const LeaveDocuments = await LeaveOfAbsenceModel.aggregate<LeaveOfAbsence.LeaveOfAbsenceDocument>(
-    [
+  const NoticesHandled: string[] = [];
+  const Notices =
+    await ActivityNoticeModel.aggregate<UserActivityNotice.UserActivityNoticeDocument>([
       {
         $match: {
           status: "Approved",
@@ -31,8 +34,8 @@ async function HandleExpiredLeaves(Now: Date | "init" | "manual", Client: Discor
       },
       {
         $lookup: {
-          from: "leaves",
-          as: "active_loas",
+          from: "activity_notices",
+          as: "active_notices",
           let: { guild_id: "$guild", user_id: "$user" },
           pipeline: [
             {
@@ -53,41 +56,44 @@ async function HandleExpiredLeaves(Now: Date | "init" | "manual", Client: Discor
       },
       {
         $match: {
-          active_loas: { $eq: [] },
+          active_notices: { $eq: [] },
         },
       },
       {
         $project: {
-          active_loas: 0,
+          active_notices: 0,
         },
       },
-    ]
-  ).exec();
+    ]).exec();
 
-  if (!LeaveDocuments.length) return;
-  const CategorizedByGuild = Object.groupBy(LeaveDocuments, (Leave) => Leave.guild);
+  if (!Notices.length) return;
+  const CategorizedByGuild = Object.groupBy(Notices, (Notice) => Notice.guild);
   const GuildIds = Object.keys(CategorizedByGuild);
 
   for (const GuildId of GuildIds) {
     const GuildInst = await Client.guilds.fetch(GuildId).catch(() => null);
     if (!GuildInst) continue;
     if (!CategorizedByGuild[GuildId]?.length) continue;
-    for (const Leave of CategorizedByGuild[GuildId]) {
-      LOAsHandled.push(Leave._id as unknown as string);
-      HandleLeaveRoleAssignment(Leave.user, GuildInst, false).catch(() => null);
-      LOAEventLogger.LogLeaveEnd(Client, LeaveOfAbsenceModel.hydrate(Leave), CurrentDate);
+    for (const Notice of CategorizedByGuild[GuildId]) {
+      NoticesHandled.push(Notice._id as unknown as string);
+      HandleNoticeRoleAssignment(Notice.user, GuildInst, false).catch(() => null);
+      ActivityNoticeEventLogger.LogLeaveEnd(
+        Client,
+        ActivityNoticeModel.hydrate(Notice),
+        CurrentDate
+      );
     }
   }
 
-  return LeaveOfAbsenceModel.updateMany(
-    { _id: { $in: LOAsHandled } },
-    { $set: { end_handled: true } }
+  return ActivityNoticeModel.updateMany(
+    { _id: { $in: NoticesHandled } },
+    { $set: { end_processed: true } }
   ).exec();
 }
 
 export default {
   cron_exp: "*/3 * * * *",
-  cron_func: HandleExpiredLeaves as any,
+  cron_func: HandleExpiredUserActivityNotices as any,
   cron_opts: {
     timezone: "America/Los_Angeles",
     errorHandlingMechanism: "silent/log",

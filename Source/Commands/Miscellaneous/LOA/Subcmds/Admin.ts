@@ -22,17 +22,17 @@ import {
 
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { Embeds, Emojis } from "@Config/Shared.js";
-import { LeaveOfAbsence } from "@Typings/Utilities/Database.js";
+import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
 import { HandleDurationValidation } from "./Request.js";
 import { ValidateExtendedDuration } from "./Manage.js";
 import { addMilliseconds, compareDesc } from "date-fns";
 
 import HandleLeaveRoleAssignment from "@Utilities/Other/HandleLeaveRoleAssignment.js";
-import LeaveOfAbsenceModel from "@Models/LeaveOfAbsence.js";
-import LOAEventLogger from "@Utilities/Classes/LOAEventLogger.js";
+import LeaveOfAbsenceModel from "@Models/UserActivityNotice.js";
+import UserActivityNoticeLogger from "@Utilities/Classes/UANEventLogger.js";
 import ParseDuration from "parse-duration";
-import GetLOAsData from "@Utilities/Database/GetLOAData.js";
+import GetLOAsData from "@Utilities/Database/GetUANData.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import Dedent from "dedent";
 
@@ -95,7 +95,7 @@ function GetPanelEmbed(
   TargetMember: User,
   LOAData: Awaited<ReturnType<typeof GetLOAsData>>
 ): EmbedBuilder {
-  const ActiveOrPendingLOA = LOAData.active_loa ?? LOAData.pending_loa;
+  const ActiveOrPendingLOA = LOAData.active_notice ?? LOAData.pending_notice;
   const PanelEmbed = new EmbedBuilder()
     .setTitle("Leave of Absence Administration")
     .setColor(Colors.DarkBlue)
@@ -105,7 +105,7 @@ function GetPanelEmbed(
       iconURL: TargetMember.displayAvatarURL({ size: 128 }),
     });
 
-  const PreviousLOAsFormatted = LOAData.all_loas
+  const PreviousLOAsFormatted = LOAData.notice_history
     .filter((LOA) => {
       return (
         LOA.status === "Approved" && (LOA.early_end_date ?? LOA.end_date) <= Interaction.createdAt
@@ -119,14 +119,14 @@ function GetPanelEmbed(
   if (
     ActiveOrPendingLOA?.reviewed_by &&
     ActiveOrPendingLOA.review_date &&
-    ActiveOrPendingLOA.extension_req?.status !== "Pending"
+    ActiveOrPendingLOA.extension_request?.status !== "Pending"
   ) {
     PanelEmbed.setColor(Embeds.Colors.LOARequestApproved);
     PanelEmbed.addFields({
       inline: true,
       name:
         "Active Leave" +
-        (ActiveOrPendingLOA.extension_req?.status === "Approved" ? " *(Extended)*" : ""),
+        (ActiveOrPendingLOA.extension_request?.status === "Approved" ? " *(Extended)*" : ""),
       value: Dedent(`
         **Started:** ${FormatTime(ActiveOrPendingLOA.review_date, "D")}
         **Ends On:** ${FormatTime(ActiveOrPendingLOA.end_date, "D")}
@@ -150,18 +150,18 @@ function GetPanelEmbed(
     });
   } else if (
     ActiveOrPendingLOA?.review_date &&
-    ActiveOrPendingLOA?.extension_req?.status === "Pending"
+    ActiveOrPendingLOA?.extension_request?.status === "Pending"
   ) {
     PanelEmbed.setColor(Embeds.Colors.LOARequestPending);
     PanelEmbed.addFields({
       inline: true,
       name: "Pending Extension",
       value: Dedent(`
-        **Requested On:** ${FormatTime(ActiveOrPendingLOA.extension_req.date, "R")}
+        **Requested On:** ${FormatTime(ActiveOrPendingLOA.extension_request.date, "R")}
         **LOA Started:** ${FormatTime(ActiveOrPendingLOA.review_date, "D")}
-        **LOA Ends:** after extension, ${FormatTime(addMilliseconds(ActiveOrPendingLOA.end_date, ActiveOrPendingLOA.extension_req.duration), "d")}
+        **LOA Ends:** after extension, ${FormatTime(addMilliseconds(ActiveOrPendingLOA.end_date, ActiveOrPendingLOA.extension_request.duration), "d")}
         **Duration:** ${ActiveOrPendingLOA.extended_duration_hr}
-        **Reason:** ${ActiveOrPendingLOA.extension_req.reason ?? "`N/A`"}
+        **Reason:** ${ActiveOrPendingLOA.extension_request.reason ?? "`N/A`"}
       `),
     });
   } else {
@@ -202,7 +202,7 @@ function GetPanelEmbed(
  */
 function GetPanelComponents(
   Interaction: CmdOrButtonInteraction,
-  ActiveOrPendingLeave: Awaited<ReturnType<typeof GetLOAsData>>["active_loa"]
+  ActiveOrPendingLeave: Awaited<ReturnType<typeof GetLOAsData>>["active_notice"]
 ): ActionRowBuilder<ButtonBuilder>[] {
   const ActionRow = new ActionRowBuilder<ButtonBuilder>();
   if (ActiveOrPendingLeave?.status === "Pending") {
@@ -221,7 +221,7 @@ function GetPanelComponents(
     );
   } else if (
     ActiveOrPendingLeave?.is_active &&
-    ActiveOrPendingLeave.extension_req?.status === "Pending"
+    ActiveOrPendingLeave.extension_request?.status === "Pending"
   ) {
     // If the leave is active and has a pending extension, add the approve and deny extension buttons.
     ActionRow.addComponents(
@@ -248,7 +248,7 @@ function GetPanelComponents(
         .setCustomId(AdminActions.LeaveExtend)
         .setStyle(ButtonStyle.Success)
         .setEmoji(Emojis.WhitePlus)
-        .setDisabled(Boolean(ActiveOrPendingLeave?.extension_req))
+        .setDisabled(Boolean(ActiveOrPendingLeave?.extension_request))
         .setLabel("Extend Leave"),
       new ButtonBuilder()
         .setCustomId(AdminActions.LeaveEnd)
@@ -379,11 +379,11 @@ async function GetActiveOrPendingLOA(
 
 async function HandleLeaveReviewValidation(
   Interaction: CmdOrButtonInteraction | ModalSubmitInteraction<"cached">,
-  RequestDocument?: LeaveOfAbsence.LeaveOfAbsenceHydratedDocument | null
+  RequestDocument?: UserActivityNotice.ActivityNoticeHydratedDocument | null
 ): Promise<boolean> {
   const RequestHasToBeReviewed =
     (RequestDocument?.status === "Pending" && RequestDocument?.review_date === null) ||
-    (RequestDocument?.is_active && RequestDocument?.extension_req?.status === "Pending");
+    (RequestDocument?.is_active && RequestDocument?.extension_request?.status === "Pending");
 
   if (!RequestHasToBeReviewed) {
     const ReplyEmbed = new EmbedBuilder()
@@ -511,7 +511,7 @@ async function HandleLeaveStart(
   return PromiseAllThenTrue([
     Callback(InitialCmdInteract),
     ModalSubmission.editReply({ embeds: [ReplyEmbed] }),
-    LOAEventLogger.LogManualLeave(ModalSubmission, CreatedLeave),
+    UserActivityNoticeLogger.LogManualLeave(ModalSubmission, CreatedLeave),
     HandleLeaveRoleAssignment(CreatedLeave.user, ModalSubmission.guild, true),
   ]);
 }
@@ -526,7 +526,7 @@ async function HandleLeaveExtend(
     user: TargetMemberId,
     status: "Approved",
     early_end_date: null,
-    extension_req: null,
+    extension_request: null,
     end_date: { $gt: ButtonInteract.createdAt },
   });
 
@@ -580,7 +580,7 @@ async function HandleLeaveExtend(
   else Submission.deferReply({ flags: MessageFlags.Ephemeral });
 
   ActiveLeave = await ActiveLeave.getUpToDate();
-  if (ActiveLeave.extension_req) {
+  if (ActiveLeave.extension_request) {
     return PromiseAllThenTrue([
       Callback(InitialCmdInteract),
       new ErrorEmbed()
@@ -589,7 +589,7 @@ async function HandleLeaveExtend(
     ]);
   }
 
-  ActiveLeave.extension_req = {
+  ActiveLeave.extension_request = {
     status: "Approved",
     reason: "[Administrative]",
     date: Submission.createdAt,
@@ -613,7 +613,7 @@ async function HandleLeaveExtend(
   return PromiseAllThenTrue([
     Callback(InitialCmdInteract),
     Submission.editReply({ embeds: [ReplyEmbed] }),
-    LOAEventLogger.LogManualExtension(Submission, ActiveLeave),
+    UserActivityNoticeLogger.LogManualExtension(Submission, ActiveLeave),
   ]);
 }
 
@@ -669,7 +669,7 @@ async function HandleLeaveEnd(
   }
 
   await ModalSubmission.deferReply({ flags: MessageFlags.Ephemeral });
-  ActiveLeave.end_handled = true;
+  ActiveLeave.end_processed = true;
   ActiveLeave.early_end_date = ModalSubmission.createdAt;
   ActiveLeave.early_end_reason = ModalSubmission.fields.getTextInputValue("reason") || null;
   await ActiveLeave.save();
@@ -684,7 +684,7 @@ async function HandleLeaveEnd(
   return PromiseAllThenTrue([
     Callback(InitialCmdInteract),
     ModalSubmission.editReply({ embeds: [ReplyEmbed] }),
-    LOAEventLogger.LogEarlyLeaveEnd(ModalSubmission, ActiveLeave, "Management"),
+    UserActivityNoticeLogger.LogEarlyLeaveEnd(ModalSubmission, ActiveLeave, "Management"),
     HandleLeaveRoleAssignment(ActiveLeave.user, ModalSubmission.guild, false),
   ]);
 }
@@ -735,7 +735,7 @@ async function HandleLeaveApprovalOrDenial(
   return PromiseAllThenTrue([
     Callback(InitialCmdInteract),
     NotesSubmission.editReply({ embeds: [ReplyEmbed] }),
-    LOAEventLogger[`Log${ActionType}`](NotesSubmission, PendingLeave),
+    UserActivityNoticeLogger[`Log${ActionType}`](NotesSubmission, PendingLeave),
   ]);
 }
 
@@ -782,11 +782,12 @@ async function HandleExtensionApprovalOrDenial(
       `Successfully ${ActionType === "Extension Approval" ? "approved" : "denied"} ${userMention(TargetMemberId)}'s pending leave request.`
     );
 
-  ActiveLeave.extension_req!.status = ActionType === "Extension Approval" ? "Approved" : "Denied";
-  ActiveLeave.extension_req!.review_date = NotesSubmission.createdAt;
-  ActiveLeave.extension_req!.reviewer_notes =
+  ActiveLeave.extension_request!.status =
+    ActionType === "Extension Approval" ? "Approved" : "Denied";
+  ActiveLeave.extension_request!.review_date = NotesSubmission.createdAt;
+  ActiveLeave.extension_request!.reviewer_notes =
     NotesSubmission.fields.getTextInputValue("notes") || null;
-  ActiveLeave.extension_req!.reviewed_by = {
+  ActiveLeave.extension_request!.reviewed_by = {
     id: NotesSubmission.user.id,
     username: NotesSubmission.user.username,
   };
@@ -795,7 +796,7 @@ async function HandleExtensionApprovalOrDenial(
   return PromiseAllThenTrue([
     Callback(InitialCmdInteract),
     NotesSubmission.editReply({ embeds: [ReplyEmbed] }),
-    LOAEventLogger[`Log${ActionType.replace(" ", "")}`](NotesSubmission, ActiveLeave),
+    UserActivityNoticeLogger[`Log${ActionType.replace(" ", "")}`](NotesSubmission, ActiveLeave),
   ]);
 }
 
@@ -818,7 +819,7 @@ async function Callback(Interaction: CmdOrButtonInteraction) {
   });
 
   let PromptMessage: Message<true>;
-  const ActiveOrPendingLOA = LOAData.active_loa ?? LOAData.pending_loa;
+  const ActiveOrPendingLOA = LOAData.active_notice ?? LOAData.pending_notice;
   const PanelEmbed = GetPanelEmbed(Interaction, TargetMember, LOAData);
   const PanelComps = GetPanelComponents(Interaction, ActiveOrPendingLOA);
   const ReplyOpts = {

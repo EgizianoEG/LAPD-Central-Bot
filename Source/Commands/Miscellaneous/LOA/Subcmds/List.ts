@@ -1,4 +1,4 @@
-import { LeaveOfAbsence } from "@Typings/Utilities/Database.js";
+import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import {
   SlashCommandSubcommandBuilder,
@@ -7,7 +7,7 @@ import {
 } from "discord.js";
 
 import Chunks from "@Utilities/Other/SliceIntoChunks.js";
-import LeaveOfAbsenceModel from "@Models/LeaveOfAbsence.js";
+import LeaveOfAbsenceModel from "@Models/UserActivityNotice.js";
 import HandleEmbedPagination from "@Utilities/Other/HandleEmbedPagination.js";
 
 // ---------------------------------------------------------------------------------------
@@ -20,7 +20,7 @@ function SafeFormatTime<TStyle extends TimestampStylesString>(InputDate: Date, S
 }
 
 function FormaLOARecords(
-  LOARecords: LeaveOfAbsence.LeaveOfAbsenceDocument[][],
+  LOARecords: UserActivityNotice.UserActivityNoticeDocument[][],
   LOAStatus: "Active" | "Pending",
   RecordsTotal: number
 ) {

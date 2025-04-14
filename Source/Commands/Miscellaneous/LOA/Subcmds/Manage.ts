@@ -17,18 +17,18 @@ import {
   InteractionCollector,
 } from "discord.js";
 
-import { LeaveOfAbsence } from "@Typings/Utilities/Database.js";
+import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { Embeds, Emojis } from "@Config/Shared.js";
 import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
 import { milliseconds, compareDesc, addMilliseconds } from "date-fns";
 
 import HandleLeaveRoleAssignment from "@Utilities/Other/HandleLeaveRoleAssignment.js";
-import LeaveOfAbsenceModel from "@Models/LeaveOfAbsence.js";
+import LeaveOfAbsenceModel from "@Models/UserActivityNotice.js";
 import MentionCmdByName from "@Utilities/Other/MentionCmd.js";
-import LOAEventLogger from "@Utilities/Classes/LOAEventLogger.js";
+import UserActivityNoticeLogger from "@Utilities/Classes/UANEventLogger.js";
 import ParseDuration from "parse-duration";
-import GetLOAsData from "@Utilities/Database/GetLOAData.js";
+import GetLOAsData from "@Utilities/Database/GetUANData.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import Dedent from "dedent";
 
@@ -44,7 +44,7 @@ const ExtReqReasonExamples = [
   "reason unchanged, time extended.",
 ];
 
-type LOADocument = LeaveOfAbsence.LeaveOfAbsenceHydratedDocument;
+type LOADocument = UserActivityNotice.ActivityNoticeHydratedDocument;
 type PromptInteractType =
   | ButtonInteraction<"cached">
   | ModalSubmitInteraction<"cached">
@@ -65,7 +65,7 @@ export function ValidateExtendedDuration(
   ActiveLOA: LOADocument,
   DurationParsed?: number
 ) {
-  const TotalLOADuration = ActiveLOA.duration + (ActiveLOA.extension_req?.duration ?? 0);
+  const TotalLOADuration = ActiveLOA.duration + (ActiveLOA.extension_request?.duration ?? 0);
   if (!DurationParsed) {
     return new ErrorEmbed()
       .useErrTemplate("UnknownDurationExp")
@@ -115,16 +115,16 @@ function GetManagementComponents(
     .setLabel("End Early");
 
   const LOAExtendBtn = new ButtonBuilder()
-    .setDisabled(Boolean(LeaveDocument?.extension_req))
+    .setDisabled(Boolean(LeaveDocument?.extension_request))
     .setCustomId("loa-mng-extend")
     .setStyle(ButtonStyle.Success)
     .setEmoji(Emojis.WhitePlus)
-    .setDisabled(LeaveDocument?.is_manageable !== true || LeaveDocument?.extension_req !== null)
+    .setDisabled(LeaveDocument?.is_manageable !== true || LeaveDocument?.extension_request !== null)
     .setLabel("Request Leave Extension");
 
   if (LeaveDocument?.status === "Pending") {
     ActionRow.addComponents(LOACancelBtn);
-  } else if (LeaveDocument?.is_active && LeaveDocument.extension_req?.status === "Pending") {
+  } else if (LeaveDocument?.is_active && LeaveDocument.extension_request?.status === "Pending") {
     ActionRow.addComponents(LOAExtCancelBtn, LOAEndBtn);
   } else {
     ActionRow.addComponents(LOAExtendBtn, LOAEndBtn);
@@ -142,12 +142,12 @@ async function GetManagementEmbedAndLOA(Interaction: PromptInteractType) {
     user_id: Interaction.user.id,
   });
 
-  const ActiveOrPendingLOA = LOAData.active_loa ?? LOAData.pending_loa;
+  const ActiveOrPendingLOA = LOAData.active_notice ?? LOAData.pending_notice;
   const ReplyEmbed = new EmbedBuilder()
     .setTitle("Leave of Absence Management")
     .setColor(Embeds.Colors.Info);
 
-  const PreviousLOAsFormatted = LOAData.all_loas
+  const PreviousLOAsFormatted = LOAData.notice_history
     .filter((LOA) => {
       return (
         LOA.status === "Approved" && (LOA.early_end_date ?? LOA.end_date) <= Interaction.createdAt
@@ -189,16 +189,16 @@ async function GetManagementEmbedAndLOA(Interaction: PromptInteractType) {
   }
 
   const HasPendingExtension =
-    ActiveOrPendingLOA?.is_active && ActiveOrPendingLOA.extension_req?.status === "Pending";
+    ActiveOrPendingLOA?.is_active && ActiveOrPendingLOA.extension_request?.status === "Pending";
   if (HasPendingExtension) {
     ReplyEmbed.setColor(Embeds.Colors.LOARequestPending).addFields({
       inline: true,
       name: "Pending Extension",
       value: Dedent(`
-        **Requested:** ${FormatTime(ActiveOrPendingLOA.extension_req!.date, "R")}
+        **Requested:** ${FormatTime(ActiveOrPendingLOA.extension_request!.date, "R")}
         **Duration:** ${ActiveOrPendingLOA.extended_duration_hr}
-        **LOA Ends:** after extension, ${FormatTime(addMilliseconds(ActiveOrPendingLOA.end_date, ActiveOrPendingLOA.extension_req!.duration), "d")}
-        **Reason:** ${ActiveOrPendingLOA.extension_req!.reason ?? "`N/A`"}
+        **LOA Ends:** after extension, ${FormatTime(addMilliseconds(ActiveOrPendingLOA.end_date, ActiveOrPendingLOA.extension_request!.duration), "d")}
+        **Reason:** ${ActiveOrPendingLOA.extension_request!.reason ?? "`N/A`"}
       `),
     });
   }
@@ -245,7 +245,7 @@ async function HandleLeaveExtend(
     ]);
   }
 
-  if (ActiveLeave.extension_req) {
+  if (ActiveLeave.extension_request) {
     return Promise.allSettled([
       new ErrorEmbed()
         .useErrTemplate("LOAExtensionLimitReached")
@@ -306,7 +306,7 @@ async function HandleLeaveExtend(
           Callback(Submission, MainPromptMsgId),
           CompCollector.stop("Updated"),
         ]);
-      } else if (ActiveLeave.extension_req) {
+      } else if (ActiveLeave.extension_request) {
         return Promise.all([
           new ErrorEmbed()
             .useErrTemplate("LOAExtensionLimitReached")
@@ -317,14 +317,17 @@ async function HandleLeaveExtend(
       }
 
       Submission.deferReply({ flags: MessageFlags.Ephemeral });
-      ActiveLeave.extension_req = {
+      ActiveLeave.extension_request = {
         status: "Pending",
         date: Submission.createdAt,
         reason: Reason,
         duration: ParsedDuration,
       };
 
-      const RequestMsg = await LOAEventLogger.SendExtensionRequest(Submission, ActiveLeave);
+      const RequestMsg = await UserActivityNoticeLogger.SendExtensionRequest(
+        Submission,
+        ActiveLeave
+      );
       const ReplyEmbed = new EmbedBuilder()
         .setColor(Embeds.Colors.Success)
         .setTitle("Leave Extension Requested")
@@ -332,7 +335,7 @@ async function HandleLeaveExtend(
           "Successfully submitted leave extension request. You will be notified when the request is approved or denied via a DM notice if possible."
         );
 
-      ActiveLeave.extension_req.request_msg = RequestMsg
+      ActiveLeave.extension_request.request_msg = RequestMsg
         ? `${RequestMsg.channelId}:${RequestMsg.id}`
         : null;
 
@@ -443,7 +446,7 @@ async function HandleLeaveEarlyEnd(
   }
 
   ActiveLeave.early_end_date = ButtonInteract.createdAt;
-  ActiveLeave.end_handled = true;
+  ActiveLeave.end_processed = true;
   await ActiveLeave.save();
 
   const ReplyEmbed = new EmbedBuilder()
@@ -455,7 +458,7 @@ async function HandleLeaveEarlyEnd(
   return Promise.allSettled([
     CompCollector.stop("Updated"),
     Callback(ButtonInteract, MainPromptMsgId),
-    LOAEventLogger.LogEarlyLeaveEnd(ButtonInteract, ActiveLeave, "Requester"),
+    UserActivityNoticeLogger.LogEarlyLeaveEnd(ButtonInteract, ActiveLeave, "Requester"),
     HandleLeaveRoleAssignment(ActiveLeave.user, ButtonInteract.guild, false),
   ]);
 }
@@ -535,7 +538,7 @@ async function HandlePendingLeaveCancellation(
   return Promise.allSettled([
     CompCollector.stop("Updated"),
     Callback(ButtonInteract, MainPromptMsgId),
-    LOAEventLogger.LogCancellation(ButtonInteract, PendingLeave),
+    UserActivityNoticeLogger.LogCancellation(ButtonInteract, PendingLeave),
     ButtonInteract.editReply({ embeds: [ReplyEmbed], components: [] }),
   ]);
 }
@@ -607,8 +610,8 @@ async function HandlePendingExtensionCancellation(
       .catch(() => null);
   }
 
-  ActiveLeave.extension_req!.status = "Cancelled";
-  ActiveLeave.extension_req!.review_date = ButtonInteract.createdAt;
+  ActiveLeave.extension_request!.status = "Cancelled";
+  ActiveLeave.extension_request!.review_date = ButtonInteract.createdAt;
   await ActiveLeave.save();
 
   const SuccessCancellationEmbed = new EmbedBuilder()
@@ -619,20 +622,20 @@ async function HandlePendingExtensionCancellation(
   return Promise.allSettled([
     CompCollector.stop("Updated"),
     Callback(ButtonInteract, MainPromptMsgId),
-    LOAEventLogger.LogExtensionCancellation(Interaction, ActiveLeave),
+    UserActivityNoticeLogger.LogExtensionCancellation(Interaction, ActiveLeave),
     Interaction.editReply({ embeds: [SuccessCancellationEmbed], components: [] }),
   ]);
 }
 
 async function HandleLeaveReviewValidation(
   Interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">,
-  RequestDocument?: LeaveOfAbsence.LeaveOfAbsenceHydratedDocument | null
+  RequestDocument?: UserActivityNotice.ActivityNoticeHydratedDocument | null
 ): Promise<boolean> {
   const RequestHasToBeReviewed =
     (RequestDocument?.status === "Pending" && RequestDocument?.review_date === null) ||
     (RequestDocument?.status === "Approved" &&
       RequestDocument?.early_end_date === null &&
-      RequestDocument?.extension_req?.status === "Pending");
+      RequestDocument?.extension_request?.status === "Pending");
 
   if (!RequestHasToBeReviewed) {
     return new ErrorEmbed()
