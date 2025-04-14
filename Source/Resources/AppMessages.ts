@@ -640,6 +640,12 @@ export const ErrorMessages = {
       "The shift management module is currently disabled. You cannot initiate any of duty commands without it being enabled.",
   },
 
+  ReducedActivityModuleDisabled: {
+    Title: "Module Disabled",
+    Description:
+      "The reduced activity module is currently disabled. You cannot request, manage, or administrate reduced activity notices without it being enabled.",
+  },
+
   SANoShiftsToModify: {
     Title: "No Shifts To Modify",
     Description:
