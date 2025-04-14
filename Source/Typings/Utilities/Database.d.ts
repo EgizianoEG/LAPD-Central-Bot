@@ -140,6 +140,33 @@ export namespace Guilds {
        */
       leave_role?: string | null;
     };
+
+    reduced_activity: {
+      /**
+       * Whether or not the reduced activity module is enabled. The default value is `false`.
+       * Disabling this module will prevent staff members from using the `ra-` commands (could include exceptions).
+       */
+      enabled: boolean;
+
+      /**
+       * The channel where reduced activity requests will be sent for approval.
+       * If set to `null`, staff members can still submit requests, but management staff
+       * will not be notified unless done manually via slash commands.
+       */
+      requests_channel?: string | null;
+
+      /**
+       * The channel where updates to reduced activity requests will be logged.
+       * This includes approvals, denials, or cancellations. Can be left `null` if logging is not required.
+       */
+      log_channel?: string | null;
+
+      /**
+       * The role that will be assigned to members when their reduced activity request is approved.
+       * This role will be removed once the reduced activity period ends. Can be left `null` if no role is needed.
+       */
+      ra_role?: string | null;
+    };
   }
 
   interface GuildDocument {
