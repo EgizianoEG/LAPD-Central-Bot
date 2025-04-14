@@ -1044,8 +1044,10 @@ export namespace AggregateResults {
     total_shifts: number;
     total_time: T;
 
-    recent_loa: Pick<
+    recent_activity_notice: Pick<
       UserActivityNotice.UserActivityNoticeDocument,
+      | "type"
+      | "quota_scale"
       | "status"
       | "request_date"
       | "review_date"
