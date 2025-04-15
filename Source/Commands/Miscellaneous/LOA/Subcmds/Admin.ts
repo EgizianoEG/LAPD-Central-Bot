@@ -26,6 +26,7 @@ import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
 import { HandleDurationValidation } from "./Request.js";
 import { ValidateExtendedDuration } from "./Manage.js";
+import { LeaveOfAbsenceEventLogger } from "@Utilities/Classes/UANEventLogger.js";
 import { addMilliseconds, compareDesc } from "date-fns";
 
 import HandleLeaveRoleAssignment from "@Utilities/Other/HandleLeaveRoleAssignment.js";
@@ -33,11 +34,10 @@ import LeaveOfAbsenceModel from "@Models/UserActivityNotice.js";
 import ParseDuration from "parse-duration";
 import GetLOAsData from "@Utilities/Database/GetUANData.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
-import UANLogger from "@Utilities/Classes/UANEventLogger.js";
 import Dedent from "dedent";
 
 const PreviousLOAsLimit = 5;
-const LOAEventLogger = new UANLogger("LeaveOfAbsence");
+const LOAEventLogger = new LeaveOfAbsenceEventLogger();
 const FileLabel = "Commands:Miscellaneous:LOA:Subcmds:Admin";
 type CmdOrButtonInteraction = SlashCommandInteraction<"cached"> | ButtonInteraction<"cached">;
 enum AdminActions {

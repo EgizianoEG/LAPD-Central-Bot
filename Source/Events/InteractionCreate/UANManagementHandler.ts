@@ -13,21 +13,21 @@ import {
 } from "discord.js";
 
 import { ErrorEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { LeaveOfAbsenceEventLogger } from "@Utilities/Classes/UANEventLogger.js";
 import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
-import { UserHasPermsV2 } from "@Utilities/Database/UserHasPermissions.js";
 import { UserActivityNotice } from "@Typings/Utilities/Database.js";
+import { UserHasPermsV2 } from "@Utilities/Database/UserHasPermissions.js";
 import { Embeds } from "@Config/Shared.js";
 
 import HandleLeaveRoleAssignment from "@Utilities/Other/HandleLeaveRoleAssignment.js";
 import LeaveOfAbsenceModel from "@Models/UserActivityNotice.js";
 import GetMainShiftsData from "@Utilities/Database/GetShiftsData.js";
-import UANLogger from "@Utilities/Classes/UANEventLogger.js";
 import GetLOAsData from "@Utilities/Database/GetUANData.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import Dedent from "dedent";
 
 type HLeaveDocument = UserActivityNotice.ActivityNoticeHydratedDocument;
-const LOAEventLogger = new UANLogger("LeaveOfAbsence");
+const LOAEventLogger = new LeaveOfAbsenceEventLogger();
 const FunctionMap = {
   "loa-approve": HandleLeaveApproval,
   "loa-deny": HandleLeaveDenial,

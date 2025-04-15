@@ -1,10 +1,11 @@
 import { type CronJobFileDefReturn } from "@Typings/Global.js";
+import { BaseUserActivityNoticeLogger } from "@Utilities/Classes/UANEventLogger.js";
 import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { subDays } from "date-fns";
 
 import HandleNoticeRoleAssignment from "@Utilities/Other/HandleLeaveRoleAssignment.js";
-import ActivityNoticeEventLogger from "@Utilities/Classes/UANEventLogger.js";
 import ActivityNoticeModel from "@Models/UserActivityNotice.js";
+const BaseUANLogger = new BaseUserActivityNoticeLogger(true);
 
 /**
  * Handle activity notices expiration and role assignment if the `end_processed` property is still `false`.
@@ -25,7 +26,7 @@ async function HandleExpiredUserActivityNotices(
       {
         $match: {
           status: "Approved",
-          end_handled: false,
+          end_processed: false,
           $or: [
             { early_end_date: { $lte: CurrentDate, $gte: SevenDaysAgo } },
             { end_date: { $lte: CurrentDate, $gte: SevenDaysAgo } },
@@ -77,11 +78,7 @@ async function HandleExpiredUserActivityNotices(
     for (const Notice of CategorizedByGuild[GuildId]) {
       NoticesHandled.push(Notice._id as unknown as string);
       HandleNoticeRoleAssignment(Notice.user, GuildInst, false).catch(() => null);
-      ActivityNoticeEventLogger.LogLeaveEnd(
-        Client,
-        ActivityNoticeModel.hydrate(Notice),
-        CurrentDate
-      );
+      BaseUANLogger.LogActivityNoticeEnd(Client, ActivityNoticeModel.hydrate(Notice));
     }
   }
 

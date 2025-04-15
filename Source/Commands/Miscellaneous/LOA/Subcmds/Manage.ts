@@ -21,6 +21,7 @@ import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { Embeds, Emojis } from "@Config/Shared.js";
 import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
+import { LeaveOfAbsenceEventLogger } from "@Utilities/Classes/UANEventLogger.js";
 import { milliseconds, compareDesc, addMilliseconds } from "date-fns";
 
 import HandleLeaveRoleAssignment from "@Utilities/Other/HandleLeaveRoleAssignment.js";
@@ -28,12 +29,11 @@ import LeaveOfAbsenceModel from "@Models/UserActivityNotice.js";
 import MentionCmdByName from "@Utilities/Other/MentionCmd.js";
 import ParseDuration from "parse-duration";
 import GetLOAsData from "@Utilities/Database/GetUANData.js";
-import UANLogger from "@Utilities/Classes/UANEventLogger.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import Dedent from "dedent";
 
 const PreviousLOAsLimit = 5;
-const LOAEventLogger = new UANLogger("LeaveOfAbsence");
+const LOAEventLogger = new LeaveOfAbsenceEventLogger();
 const MinExtDuration = milliseconds({ hours: 12 });
 const MaxExtDuration = milliseconds({ months: 1 });
 const FileLabel = "Commands:Miscellaneous:LOA:Subcmds:Manage";
