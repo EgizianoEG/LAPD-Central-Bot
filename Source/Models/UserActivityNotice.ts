@@ -48,8 +48,9 @@ const ActivityNoticeSchema = new Schema<
     type: Number,
     required: false,
     default: null,
+    set: (n: number | null) => (n === null ? null : n.toFixed(2)),
     validate: [
-      (d: number | null) => d === null || (d >= 0.2 && d <= 0.75),
+      (n: number | null) => n === null || (n >= 0.2 && n <= 0.75),
       "Quota reduction must be between 0.2 and 0.75. Value received: {VALUE}.",
     ],
   },
@@ -296,6 +297,10 @@ ActivityNoticeSchema.virtual("is_active").get(function (this: NoticeDocument) {
     this.early_end_date === null &&
     isAfter(this.end_date, new Date())
   );
+});
+
+ActivityNoticeSchema.virtual("quota_reduction").get(function (this: NoticeDocument) {
+  return `${(this.quota_scale || 0) * 100}%`;
 });
 
 ActivityNoticeSchema.virtual("duration_hr").get(function (this: NoticeDocument) {

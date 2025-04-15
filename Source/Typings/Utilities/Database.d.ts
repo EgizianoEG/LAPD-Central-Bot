@@ -534,6 +534,13 @@ export namespace UserActivityNotice {
 
     /**
      * @virtual - Not stored in the database.
+     * Returns the quota reduction associated with the reduced activity notice.
+     * @example "50%"
+     */
+    quota_reduction: string;
+
+    /**
+     * @virtual - Not stored in the database.
      * Returns the actual duration of the activity notice in a human-readable format.
      * This considers any early end or approved extensions.
      */
@@ -578,6 +585,7 @@ export namespace UserActivityNotice {
     type: NoticeType;
 
     /**
+     * Quota reduction scale.
      * A scaler between `0.2` and `0.75` that represents the percentage of the user's quota that will be reduced.
      * - `0.2`: 20% reduction (80% of the user's quota is required).
      * - `0.75`: Maximum reduction (only 25% of the user's quota is required).
