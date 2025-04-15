@@ -13,11 +13,11 @@ import {
 import { ReducedActivityEventLogger } from "@Utilities/Classes/UANEventLogger.js";
 import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { Embeds, Emojis } from "@Config/Shared.js";
+import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import UserActivityNoticeModel from "@Models/UserActivityNotice.js";
 import MentionCmdByName from "@Utilities/Other/MentionCmd.js";
 import Dedent from "dedent";
-import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 type RADocument = UserActivityNotice.ActivityNoticeHydratedDocument;
 const RAEventLogger = new ReducedActivityEventLogger();
