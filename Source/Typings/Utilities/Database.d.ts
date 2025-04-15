@@ -72,6 +72,13 @@ export namespace Guilds {
        */
       log_channel?: string | null;
 
+      /**
+       * The default shift quota for members in milliseconds.
+       * Used as a fallback in certain checks like activity report minimum quota duration.
+       * Setting this value to `0` will disable the default quota (as if there is no default/quota).
+       */
+      default_quota: number;
+
       /** Self-explanatory. */
       shift_types: Types.DocumentArray<Guilds.ShiftType>[];
 

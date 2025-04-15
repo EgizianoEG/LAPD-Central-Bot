@@ -19,6 +19,7 @@ import Dedent from "dedent";
 import DHumanize from "humanize-duration";
 import ShiftModel from "@Models/Shift.js";
 import ParseDuration from "parse-duration";
+import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
 import CreateShiftReport from "@Utilities/Other/CreateShiftReport.js";
 
 const HumanizeDuration = DHumanize.humanizer({
@@ -35,11 +36,13 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
   const IMNicknames = CmdInteraction.options.getBoolean("include-nicknames", false);
   const InputSince = CmdInteraction.options.getString("since", true);
   let SinceDate: Date | null = null;
-  let QuotaDur: number | null = null;
+  let QuotaDur: number = 0;
 
   if (InputQuotaDuration) {
-    QuotaDur = Math.round(ParseDuration(InputQuotaDuration, "millisecond") ?? 0);
-    if (!QuotaDur) {
+    const ParsedDuration = ParseDuration(InputQuotaDuration, "millisecond");
+    if (ParsedDuration) {
+      QuotaDur = Math.round(ParsedDuration);
+    } else {
       return new ErrorEmbed()
         .useErrTemplate("UnknownDurationExp")
         .replyToInteract(CmdInteraction, true, true);
@@ -104,11 +107,13 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
     embeds: [new InfoEmbed().useInfoTemplate("CreatingActivityReport")],
   });
 
+  const GSettings = await GetGuildSettings(CmdInteraction.guildId, true);
+  const ServerDefaultQuota = GSettings?.shift_management.default_quota || 0;
   const ReportSpredsheetURL = await CreateShiftReport({
     guild: CmdInteraction.guild,
     shift_type: CheckedShiftType,
     after: SinceDate,
-    quota_duration: QuotaDur,
+    quota_duration: QuotaDur || ServerDefaultQuota,
     include_member_nicknames: !!IMNicknames,
     members: await CmdInteraction.guild.members
       .fetch()
@@ -122,6 +127,12 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
       .setURL(ReportSpredsheetURL)
   );
 
+  const ShiftTimeReqText = QuotaDur
+    ? HumanizeDuration(QuotaDur)
+    : ServerDefaultQuota
+      ? `${HumanizeDuration(ServerDefaultQuota)} (Server Default)`
+      : "Disabled (No Quota)";
+
   const RespEmbed = new InfoEmbed()
     .setThumbnail(null)
     .setTitle("Report Created")
@@ -131,7 +142,7 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
         **Report Configuration:**
         - **Data Since:** ${SinceDate ? FormatTime(SinceDate, "F") : "Not Specified"}
         - **Shift Type:** ${InputShiftType ?? "All Shift Types"}
-        - **Shift Time Requirement:** ${QuotaDur ? HumanizeDuration(QuotaDur) : "Disabled (No Quota)"}
+        - **Shift Time Requirement:** ${ShiftTimeReqText}
         - **Member Nicknames Included:** ${IMNicknames ? "Yes" : "No"}
         
         *Click the button below to view the report on Google Sheets.*
@@ -165,7 +176,7 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandBuilder> = {
     .addStringOption((Option) =>
       Option.setName("time-requirement")
         .setDescription(
-          "The on-duty shift time requirement for each officer. This requirement is disabled by default."
+          "Minimum on-duty time per officer. If not set, falls back to the server's default quota (if any)."
         )
         .setMinLength(2)
         .setMaxLength(20)

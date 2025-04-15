@@ -36,7 +36,9 @@ import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmb
 
 import HandleActionCollectorExceptions from "@Utilities/Other/HandleCompCollectorExceptions.js";
 import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
+import ParseDuration from "parse-duration";
 import GuildModel from "@Models/Guild.js";
+import DHumanize from "humanize-duration";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import Dedent from "dedent";
 
@@ -45,6 +47,11 @@ const ListFormatter = new Intl.ListFormat("en");
 const MillisInDay = milliseconds({ days: 1 });
 const BaseEmbedColor = "#5f9ea0";
 const FileLabel = "Commands:Utility:Config";
+const FormatDuration = DHumanize.humanizer({
+  conjunction: " and ",
+  largest: 3,
+  round: true,
+});
 
 type GuildSettings = NonNullable<Awaited<ReturnType<typeof GetGuildSettings>>>;
 enum ConfigTopics {
@@ -92,6 +99,7 @@ const CTAIds = {
   },
 
   [ConfigTopics.AdditionalConfiguration]: {
+    ServerDefaultShiftQuota: `${ConfigTopics.AdditionalConfiguration}-darq`,
     DActivitiesDeletionInterval: `${ConfigTopics.AdditionalConfiguration}-dadi`,
     UserTextInputFilteringEnabled: `${ConfigTopics.AdditionalConfiguration}-utfe`,
   },
@@ -511,13 +519,27 @@ function GetAdditionalConfigComponents(
       )
   );
 
+  const SetDefaultServerShiftQuotaAR = new ActionRowBuilder<ButtonBuilder>().setComponents(
+    new ButtonBuilder()
+      .setLabel("Set Default Server Shift Quota")
+      .setStyle(ButtonStyle.Secondary)
+      .setCustomId(
+        `${CTAIds[ConfigTopics.AdditionalConfiguration].ServerDefaultShiftQuota}:${CmdInteract.user.id}`
+      )
+  );
+
   LogDelIntervalSMAR.components[0].options.forEach((Option) => {
     if (Option.data.value === `${SetIntervalInDays}d`) {
       Option.setDefault(true);
     }
   });
 
-  return [LogDelIntervalSMAR, IncidentLogChannelAR, UTIFilteringEnabledAR] as const;
+  return [
+    LogDelIntervalSMAR,
+    IncidentLogChannelAR,
+    UTIFilteringEnabledAR,
+    SetDefaultServerShiftQuotaAR,
+  ] as const;
 }
 
 function GetReducedActivityModuleConfigComponents(
@@ -812,6 +834,45 @@ async function HandleOutsideLogChannelBtnInteracts(
   }
 }
 
+async function HandleDefaultShiftQuotaBtnInteract(
+  BtnInteract: ButtonInteraction<"cached">,
+  CurrentQuota: number
+): Promise<number> {
+  const InputModal = new ModalBuilder()
+    .setTitle("Default Shift Quota Duration")
+    .setCustomId(CTAIds[ConfigTopics.AdditionalConfiguration].ServerDefaultShiftQuota)
+    .setComponents(
+      new ActionRowBuilder<ModalActionRowComponentBuilder>().setComponents(
+        new TextInputBuilder()
+          .setLabel("Default Quota")
+          .setPlaceholder("ex., 2h, 30m (Keep blank for none)")
+          .setCustomId("default_quota")
+          .setStyle(TextInputStyle.Short)
+          .setRequired(false)
+          .setMinLength(2)
+          .setMaxLength(20)
+      )
+    );
+
+  if (CurrentQuota) {
+    const FormattedDuration = FormatDuration(CurrentQuota);
+    InputModal.components[0].components[0].setValue(FormattedDuration);
+  }
+
+  await BtnInteract.showModal(InputModal);
+  const ModalSubmission = await BtnInteract.awaitModalSubmit({
+    filter: (MS) => InputModal.data.custom_id === MS.customId,
+    time: 8 * 60 * 1000,
+  }).catch(() => null);
+
+  if (!ModalSubmission) return CurrentQuota;
+  else ModalSubmission.deferUpdate().catch(() => null);
+
+  const InputDuration = ModalSubmission.fields.getTextInputValue("default_quota").trim();
+  const ParsedDuration = ParseDuration(InputDuration, "millisecond");
+  return Math.round(ParsedDuration ?? 0);
+}
+
 async function HandleBasicConfigPageInteracts(
   CmdInteract: SlashCommandInteraction<"cached">,
   BasicConfigPrompt: Message<true> | InteractionResponse<true>,
@@ -940,6 +1001,7 @@ async function HandleAdditionalConfigPageInteracts(
 ) {
   let LogDeletionInterval = CurrConfiguration.duty_activities.log_deletion_interval;
   let IncidentLogChannel = CurrConfiguration.duty_activities.log_channels.incidents;
+  let DefaultShiftQuota = CurrConfiguration.shift_management.default_quota;
   let UTIFEnabled = CurrConfiguration.utif_enabled;
 
   const BCCompActionCollector = AddConfigPrompt.createMessageComponentCollector<
@@ -953,6 +1015,7 @@ async function HandleAdditionalConfigPageInteracts(
     if (
       CurrConfiguration.duty_activities.log_deletion_interval === LogDeletionInterval &&
       CurrConfiguration.duty_activities.log_channels.incidents === IncidentLogChannel &&
+      CurrConfiguration.shift_management.default_quota === DefaultShiftQuota &&
       CurrConfiguration.utif_enabled === UTIFEnabled
     ) {
       return new InfoEmbed()
@@ -969,6 +1032,7 @@ async function HandleAdditionalConfigPageInteracts(
         $set: {
           "settings.duty_activities.log_deletion_interval": LogDeletionInterval,
           "settings.duty_activities.log_channels.incidents": IncidentLogChannel,
+          "settings.shift_management.default_quota": DefaultShiftQuota,
           "settings.utif_enabled": UTIFEnabled,
         },
       },
@@ -998,6 +1062,7 @@ async function HandleAdditionalConfigPageInteracts(
         - **Log Deletion Interval:** ${LDIFormatted}
         - **Incidents Log Channel:** ${ILSetChannel}
         - **Input Filtering Enabled:** ${CurrConfiguration.utif_enabled ? "Yes" : "No"}
+        - **Server Default Shift Quota:** ${FormatDuration(CurrConfiguration.shift_management.default_quota)}
       `);
 
       return new SuccessEmbed().setDescription(FormattedDesc).replyToInteract(ButtonInteract);
@@ -1015,6 +1080,15 @@ async function HandleAdditionalConfigPageInteracts(
           BCCompActionCollector.stop("Back");
           await RecInteract.deferUpdate();
           return Callback(CmdInteract);
+        } else if (
+          RecInteract.customId.startsWith(
+            CTAIds[ConfigTopics.AdditionalConfiguration].ServerDefaultShiftQuota
+          )
+        ) {
+          DefaultShiftQuota = await HandleDefaultShiftQuotaBtnInteract(
+            RecInteract,
+            DefaultShiftQuota
+          );
         }
       } else {
         if (

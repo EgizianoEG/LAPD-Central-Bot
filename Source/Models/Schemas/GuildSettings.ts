@@ -62,6 +62,13 @@ const GuildSettings = new Schema({
 
       shift_types: [ShiftTypeSchema],
 
+      default_quota: {
+        type: Number,
+        required: true,
+        default: 0,
+        min: 0,
+      },
+
       role_assignment: {
         _id: false,
         default: {},
