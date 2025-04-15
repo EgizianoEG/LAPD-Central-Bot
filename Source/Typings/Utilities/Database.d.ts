@@ -480,8 +480,8 @@ export namespace GuildProfiles {
       roblox_user_id: number;
     };
 
-    /** Leave of absence records. */
-    loas: string[];
+    /** User activity notice records. */
+    activity_notices: string[];
 
     shifts: {
       total_durations: TotalDurationsData;
