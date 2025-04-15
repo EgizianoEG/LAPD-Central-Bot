@@ -597,7 +597,7 @@ export const ErrorMessages = {
   },
 
   NoPendingLOAToCancel: {
-    Title: "No Pending LOA",
+    Title: "No Pending Request",
     Description: "You don't have any pending leave of absence to cancel at the moment.",
   },
 
@@ -766,6 +766,11 @@ export const ErrorMessages = {
     Title: "Notice Previously Cancelled",
     Description:
       "You cannot request reduced activity while there is a previous notice that was cancelled less than 1 hour ago.",
+  },
+
+  NoPendingRAToCancel: {
+    Title: "No Pending Request",
+    Description: "You don't have any pending reduced activity request to cancel at the moment.",
   },
 };
 
