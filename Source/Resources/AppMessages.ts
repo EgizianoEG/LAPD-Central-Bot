@@ -819,14 +819,20 @@ export const InfoMessages = {
     Description: "There were no shifts found that could be wiped for the specified user.",
   },
 
-  NoLOAsWithActiveStatus: {
-    Title: "No Leaves of Absence",
-    Description: "There are currently no active leave of absence to display.",
+  /**
+   * @template {string} - The type of user activity notice record (e.g., "leave of absence", "reduced activity".)
+   */
+  NoUANsWithActiveStatus: {
+    Title: "No Records",
+    Description: "There are currently no active %s records to display.",
   },
 
-  NoLOAsWithSpecifiedStatus: {
-    Title: "No Leaves of Absences",
-    Description: "There are currently no LOAs with the specified status to display.",
+  /**
+   * @template {string} - The type of user activity notice record (e.g., "leave of absence", "reduced activity".)
+   */
+  NoUANsWithSpecifiedStatus: {
+    Title: "No Records",
+    Description: "There are currently no %s records with the specified status to display.",
   },
 
   /**

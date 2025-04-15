@@ -1,17 +1,11 @@
 import { SlashCommandSubcommandBuilder } from "discord.js";
-
-// ---------------------------------------------------------------------------------------
-// Functions:
-// ----------
-async function Callback(Interaction: SlashCommandInteraction<"cached">) {
-  // ...basic callback logic...
-}
-
+import UANListCmdCallback from "@Utilities/Other/UANsListCmdCallback.js";
 // ---------------------------------------------------------------------------------------
 // Command structure:
 // ------------------
 const CommandObject = {
-  callback: Callback,
+  callback: async (Interaction: SlashCommandInteraction<"cached">) =>
+    UANListCmdCallback(Interaction, "ReducedActivity"),
   data: new SlashCommandSubcommandBuilder()
     .setName("list")
     .setDescription("Lists reduced activity records.")
@@ -20,8 +14,8 @@ const CommandObject = {
         .setDescription(
           "The status of the RA records to be displayed, either active or pending; defaults to active."
         )
-        .setRequired(false)
         .setChoices({ name: "Active", value: "Active" }, { name: "Pending", value: "Pending" })
+        .setRequired(false)
     ),
 };
 
