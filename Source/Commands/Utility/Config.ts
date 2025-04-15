@@ -519,9 +519,9 @@ function GetAdditionalConfigComponents(
       )
   );
 
-  const SetDefaultServerShiftQuotaAR = new ActionRowBuilder<ButtonBuilder>().setComponents(
+  const SetDefaultShiftQuotaAR = new ActionRowBuilder<ButtonBuilder>().setComponents(
     new ButtonBuilder()
-      .setLabel("Set Default Server Shift Quota")
+      .setLabel("Set Default Shift Quota")
       .setStyle(ButtonStyle.Secondary)
       .setCustomId(
         `${CTAIds[ConfigTopics.AdditionalConfiguration].ServerDefaultShiftQuota}:${CmdInteract.user.id}`
@@ -538,7 +538,7 @@ function GetAdditionalConfigComponents(
     LogDelIntervalSMAR,
     IncidentLogChannelAR,
     UTIFilteringEnabledAR,
-    SetDefaultServerShiftQuotaAR,
+    SetDefaultShiftQuotaAR,
   ] as const;
 }
 
@@ -1048,6 +1048,7 @@ async function HandleAdditionalConfigPageInteracts(
     ).then((GuildDoc) => GuildDoc?.settings);
 
     if (CurrConfiguration) {
+      const DefaultQuota = CurrConfiguration.shift_management.default_quota;
       const LDIFormatted = GetHumanReadableLogDeletionInterval(
         CurrConfiguration.duty_activities.log_deletion_interval
       );
@@ -1062,7 +1063,7 @@ async function HandleAdditionalConfigPageInteracts(
         - **Log Deletion Interval:** ${LDIFormatted}
         - **Incidents Log Channel:** ${ILSetChannel}
         - **Input Filtering Enabled:** ${CurrConfiguration.utif_enabled ? "Yes" : "No"}
-        - **Server Default Shift Quota:** ${FormatDuration(CurrConfiguration.shift_management.default_quota)}
+        - **Server Default Shift Quota:** ${DefaultQuota ? FormatDuration(DefaultQuota) : "None"}
       `);
 
       return new SuccessEmbed().setDescription(FormattedDesc).replyToInteract(ButtonInteract);

@@ -102,6 +102,7 @@ const GuildSettings = new Schema({
   duty_activities: {
     _id: false,
     default: {},
+    required: true,
     type: {
       enabled: {
         type: Boolean,
@@ -156,6 +157,7 @@ const GuildSettings = new Schema({
   leave_notices: {
     _id: false,
     default: {},
+    required: true,
     type: {
       enabled: {
         type: Boolean,
@@ -189,6 +191,7 @@ const GuildSettings = new Schema({
   reduced_activity: {
     _id: false,
     default: {},
+    required: true,
     type: {
       enabled: {
         type: Boolean,
