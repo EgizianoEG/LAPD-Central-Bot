@@ -27,6 +27,7 @@ import AppLogger from "@Utilities/Classes/AppLogger.js";
 import Dedent from "dedent";
 
 type HLeaveDocument = UserActivityNotice.ActivityNoticeHydratedDocument;
+const LOAEventLogger = new UANLogger("LeaveOfAbsence");
 const FunctionMap = {
   "loa-approve": HandleLeaveApproval,
   "loa-deny": HandleLeaveDenial,
@@ -135,13 +136,13 @@ async function HandleLeaveReviewValidation(
       );
 
     if (RequestDocument && IsExtensionRequest) {
-      UpdatedReqEmbed = await UANLogger.GetLOAExtRequestMessageEmbedWithStatus(
+      UpdatedReqEmbed = await LOAEventLogger.GetLOAExtRequestMessageEmbedWithStatus(
         Interaction.guild,
         RequestDocument,
         RequestDocument.extension_request!.status
       );
     } else if (RequestDocument) {
-      UpdatedReqEmbed = await UANLogger.GetLOARequestMessageEmbedWithStatus(
+      UpdatedReqEmbed = await LOAEventLogger.GetRequestMessageEmbedWithStatus(
         Interaction.guild,
         RequestDocument,
         RequestDocument.status
@@ -241,7 +242,7 @@ async function HandleLeaveApproval(
   return Promise.all([
     LeaveDocument.save(),
     NotesSubmission.editReply({ embeds: [ReplyEmbed] }),
-    UANLogger.LogApproval(NotesSubmission, LeaveDocument),
+    LOAEventLogger.LogApproval(NotesSubmission, LeaveDocument),
     HandleLeaveRoleAssignment(LeaveDocument.user, NotesSubmission.guild, true),
   ]);
 }
@@ -279,7 +280,7 @@ async function HandleLeaveDenial(
   return Promise.all([
     LeaveDocument.save(),
     NotesSubmission.editReply({ embeds: [ReplyEmbed] }),
-    UANLogger.LogDenial(NotesSubmission, LeaveDocument),
+    LOAEventLogger.LogDenial(NotesSubmission, LeaveDocument),
   ]);
 }
 
@@ -317,7 +318,7 @@ async function HandleExtApproval(
   return Promise.all([
     LeaveDocument.save(),
     NotesSubmission.editReply({ embeds: [ReplyEmbed] }),
-    UANLogger.LogExtensionApproval(NotesSubmission, LeaveDocument),
+    LOAEventLogger.LogExtensionApproval(NotesSubmission, LeaveDocument),
   ]);
 }
 
@@ -355,7 +356,7 @@ async function HandleExtDenial(
   return Promise.all([
     LeaveDocument.save(),
     NotesSubmission.editReply({ embeds: [ReplyEmbed] }),
-    UANLogger.LogExtensionDenial(NotesSubmission, LeaveDocument),
+    LOAEventLogger.LogExtensionDenial(NotesSubmission, LeaveDocument),
   ]);
 }
 
