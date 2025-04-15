@@ -11,7 +11,7 @@ import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { differenceInHours } from "date-fns";
 import { milliseconds } from "date-fns/milliseconds";
 
-import LeaveOfAbsenceModel from "@Models/UserActivityNotice.js";
+import UserActivityNoticeModel from "@Models/UserActivityNotice.js";
 import MentionCmdByName from "@Utilities/Other/MentionCmd.js";
 import ParseDuration from "parse-duration";
 
@@ -58,8 +58,8 @@ export function HandleDurationValidation(
  * @returns A boolean indicating if the interaction was handled (true) or not (false).
  */
 async function HasRecentlyDeniedCancelledLOA(Interaction: SlashCommandInteraction<"cached">) {
-  const PreviousLOARequest =
-    await LeaveOfAbsenceModel.aggregate<UserActivityNotice.ActivityNoticeHydratedDocument>([
+  const PreviousDCNoticeRequest =
+    await UserActivityNoticeModel.aggregate<UserActivityNotice.ActivityNoticeHydratedDocument>([
       {
         $match: {
           user: Interaction.user.id,
@@ -70,21 +70,21 @@ async function HasRecentlyDeniedCancelledLOA(Interaction: SlashCommandInteractio
       { $sort: { request_date: -1 } },
       { $limit: 1 },
     ]).then((Results) => Results[0]);
-  if (!PreviousLOARequest) return false;
 
+  if (!PreviousDCNoticeRequest) return false;
   if (
-    PreviousLOARequest.status === "Denied" &&
-    differenceInHours(Interaction.createdAt, PreviousLOARequest.request_date) < 3
+    PreviousDCNoticeRequest.status === "Denied" &&
+    differenceInHours(Interaction.createdAt, PreviousDCNoticeRequest.request_date) < 3
   ) {
     return new ErrorEmbed()
       .useErrTemplate("LOAPreviouslyDenied")
       .replyToInteract(Interaction, true)
       .then(() => true);
   } else if (
-    PreviousLOARequest.status === "Cancelled" &&
+    PreviousDCNoticeRequest.status === "Cancelled" &&
     differenceInHours(
       Interaction.createdAt,
-      PreviousLOARequest.review_date || PreviousLOARequest.request_date
+      PreviousDCNoticeRequest.review_date || PreviousDCNoticeRequest.request_date
     ) < 1
   ) {
     return new ErrorEmbed()
@@ -92,10 +92,10 @@ async function HasRecentlyDeniedCancelledLOA(Interaction: SlashCommandInteractio
       .replyToInteract(Interaction, true)
       .then(() => true);
   } else if (
-    PreviousLOARequest.is_over &&
+    PreviousDCNoticeRequest.is_over &&
     differenceInHours(
       Interaction.createdAt,
-      PreviousLOARequest.early_end_date || PreviousLOARequest.end_date
+      PreviousDCNoticeRequest.early_end_date || PreviousDCNoticeRequest.end_date
     ) < 1
   ) {
     return new ErrorEmbed()
@@ -109,7 +109,7 @@ async function HasRecentlyDeniedCancelledLOA(Interaction: SlashCommandInteractio
 
 async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   await Interaction.deferReply({ flags: MessageFlags.Ephemeral });
-  const ActiveOrPendingLOA = await LeaveOfAbsenceModel.findOne(
+  const ActiveOrPendingNotice = await UserActivityNoticeModel.findOne(
     {
       user: Interaction.user.id,
       guild: Interaction.guildId,
@@ -127,9 +127,9 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     .lean()
     .exec();
 
-  if (ActiveOrPendingLOA) {
+  if (ActiveOrPendingNotice) {
     return new ErrorEmbed()
-      .useErrTemplate("LOAAlreadyExists")
+      .useErrTemplate("UANoticeAlreadyExists", "leave of absence")
       .replyToInteract(Interaction, true, true);
   }
 
@@ -139,7 +139,8 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   if (await HandleDurationValidation(Interaction, DurationParsed)) return;
   if (await HasRecentlyDeniedCancelledLOA(Interaction)) return;
 
-  const PendingLeave = await LeaveOfAbsenceModel.create({
+  const PendingLeave = await UserActivityNoticeModel.create({
+    type: "LeaveOfAbsence",
     user: Interaction.user.id,
     guild: Interaction.guildId,
     status: "Pending",

@@ -513,24 +513,27 @@ export const ErrorMessages = {
     `),
   },
 
-  LOAAlreadyExists: {
-    Title: "LOA Already Exists",
-    Description: "You cannot request a leave of absence while you have an active or pending one.",
+  /**
+   * @template {string} NoticeType
+   */
+  UANoticeAlreadyExists: {
+    Title: "Notice Already Exists",
+    Description: "You cannot request a %s while you have an active or pending activity notice.",
   },
 
   LOAAlreadyExistsManagement: {
-    Title: "LOA Already Exists",
+    Title: "Notice Already Exists",
     Description: "You cannot place a new leave on person who already has an active or pending one.",
   },
 
   LOADurationTooLong: {
-    Title: "LOA Duration Too Long",
+    Title: "Duration Too Long",
     Description:
       "The leave duration you have entered is too long. Kindly specify a duration of at most 90 days (3 months).",
   },
 
   LOADurationTooShort: {
-    Title: "LOA Duration Too Short",
+    Title: "Duration Too Short",
     Description:
       "The length of the leave you have entered is too short. Kindly specify a duration of at least 1 day long.",
   },
@@ -566,21 +569,21 @@ export const ErrorMessages = {
   },
 
   LOAPreviouslyDenied: {
-    Title: "LOA Previously Denied",
+    Title: "Notice Previously Denied",
     Description:
-      "You cannot request a leave of absence while the previous one was denied less than 3 hours ago.",
+      "You cannot request a leave of absence while there was a previous notice that was denied less than 3 hours ago.",
   },
 
   LOAPreviouslyCancelled: {
     Title: "LOA Previously Cancelled",
     Description:
-      "You cannot request a leave of absence while the previous one was cancelled less than 1 hour ago.",
+      "You cannot request a leave of absence while there was a previous notice that was cancelled less than 1 hour ago.",
   },
 
   LOARecentlyEnded: {
     Title: "LOA Recently Ended",
     Description:
-      "You cannot request a new leave of absence while the previous one was ended or terminated less than 1 hour ago.",
+      "You cannot request a new leave of absence while there was a previous notice that was ended or terminated less than 1 hour ago.",
   },
 
   LOAAlreadyEnded: {
@@ -739,6 +742,30 @@ export const ErrorMessages = {
   AOTargetMemberMustBeStaff: {
     Title: "Staff Restriction",
     Description: "This action can only be performed on members identified as staff.",
+  },
+
+  RADurationTooLong: {
+    Title: "Duration Too Long",
+    Description:
+      "The reduced activity duration you have entered is too long. Kindly specify a duration of at most 30 days (1 month).",
+  },
+
+  RADurationTooShort: {
+    Title: "Duration Too Short",
+    Description:
+      "The length of the reduced activity you have entered is too short. Kindly specify a duration of at least 1 day long.",
+  },
+
+  RAPreviouslyDenied: {
+    Title: "Notice Previously Denied",
+    Description:
+      "You cannot request reduced activity while there is a previous notice that was denied less than 3 hours ago.",
+  },
+
+  RAPreviouslyCancelled: {
+    Title: "Notice Previously Cancelled",
+    Description:
+      "You cannot request reduced activity while there is a previous notice that was cancelled less than 1 hour ago.",
   },
 };
 
