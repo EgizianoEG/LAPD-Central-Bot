@@ -26,13 +26,14 @@ import { milliseconds, compareDesc, addMilliseconds } from "date-fns";
 import HandleLeaveRoleAssignment from "@Utilities/Other/HandleLeaveRoleAssignment.js";
 import LeaveOfAbsenceModel from "@Models/UserActivityNotice.js";
 import MentionCmdByName from "@Utilities/Other/MentionCmd.js";
-import UserActivityNoticeLogger from "@Utilities/Classes/UANEventLogger.js";
 import ParseDuration from "parse-duration";
 import GetLOAsData from "@Utilities/Database/GetUANData.js";
+import UANLogger from "@Utilities/Classes/UANEventLogger.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import Dedent from "dedent";
 
 const PreviousLOAsLimit = 5;
+const LOAEventLogger = new UANLogger("LeaveOfAbsence");
 const MinExtDuration = milliseconds({ hours: 12 });
 const MaxExtDuration = milliseconds({ months: 1 });
 const FileLabel = "Commands:Miscellaneous:LOA:Subcmds:Manage";
@@ -324,10 +325,7 @@ async function HandleLeaveExtend(
         duration: ParsedDuration,
       };
 
-      const RequestMsg = await UserActivityNoticeLogger.SendExtensionRequest(
-        Submission,
-        ActiveLeave
-      );
+      const RequestMsg = await LOAEventLogger.SendExtensionRequest(Submission, ActiveLeave);
       const ReplyEmbed = new EmbedBuilder()
         .setColor(Embeds.Colors.Success)
         .setTitle("Leave Extension Requested")
@@ -458,7 +456,7 @@ async function HandleLeaveEarlyEnd(
   return Promise.allSettled([
     CompCollector.stop("Updated"),
     Callback(ButtonInteract, MainPromptMsgId),
-    UserActivityNoticeLogger.LogEarlyLeaveEnd(ButtonInteract, ActiveLeave, "Requester"),
+    LOAEventLogger.LogEarlyLeaveEnd(ButtonInteract, ActiveLeave, "Requester"),
     HandleLeaveRoleAssignment(ActiveLeave.user, ButtonInteract.guild, false),
   ]);
 }
@@ -538,7 +536,7 @@ async function HandlePendingLeaveCancellation(
   return Promise.allSettled([
     CompCollector.stop("Updated"),
     Callback(ButtonInteract, MainPromptMsgId),
-    UserActivityNoticeLogger.LogCancellation(ButtonInteract, PendingLeave),
+    LOAEventLogger.LogCancellation(ButtonInteract, PendingLeave),
     ButtonInteract.editReply({ embeds: [ReplyEmbed], components: [] }),
   ]);
 }
@@ -622,7 +620,7 @@ async function HandlePendingExtensionCancellation(
   return Promise.allSettled([
     CompCollector.stop("Updated"),
     Callback(ButtonInteract, MainPromptMsgId),
-    UserActivityNoticeLogger.LogExtensionCancellation(Interaction, ActiveLeave),
+    LOAEventLogger.LogExtensionCancellation(Interaction, ActiveLeave),
     Interaction.editReply({ embeds: [SuccessCancellationEmbed], components: [] }),
   ]);
 }

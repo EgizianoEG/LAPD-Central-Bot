@@ -12,11 +12,12 @@ import { milliseconds } from "date-fns/milliseconds";
 
 import LeaveOfAbsenceModel from "@Models/UserActivityNotice.js";
 import MentionCmdByName from "@Utilities/Other/MentionCmd.js";
-import UserActivityNoticeLogger from "@Utilities/Classes/UANEventLogger.js";
 import ParseDuration from "parse-duration";
+import UANLogger from "@Utilities/Classes/UANEventLogger.js";
 
 const MaxDuration = milliseconds({ months: 3 });
 const MinimumDuration = milliseconds({ days: 1 });
+const LOAEventLogger = new UANLogger("LeaveOfAbsence");
 
 // ---------------------------------------------------------------------------------------
 // Functions:
@@ -147,7 +148,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     request_date: Interaction.createdAt,
   });
 
-  const RequestMsg = await UserActivityNoticeLogger.SendRequest(Interaction, PendingLeave);
+  const RequestMsg = await LOAEventLogger.SendRequest(Interaction, PendingLeave);
   if (RequestMsg) {
     PendingLeave.request_msg = `${RequestMsg.channelId}:${RequestMsg.id}`;
   }
