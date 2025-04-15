@@ -18,9 +18,9 @@ import {
   ModalSubmitInteraction,
 } from "discord.js";
 
-import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { Embeds, Emojis, Images } from "@Config/Shared.js";
-import { addMilliseconds, isAfter } from "date-fns";
+import { UserActivityNotice } from "@Typings/Utilities/Database.js";
+import { addMilliseconds } from "date-fns";
 
 import RegularDedent from "dedent";
 import GuildModel from "@Models/Guild.js";
@@ -38,33 +38,51 @@ const Dedent = (Str: string) => {
     .replace(/(\w)\s{2,}(\w)/g, "$1 $2");
 };
 
-type ANoticeDocument = UserActivityNotice.ActivityNoticeHydratedDocument;
+type UserActivityNoticeDoc = UserActivityNotice.ActivityNoticeHydratedDocument;
 type ManagementInteraction = ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">;
 // ------------------------------------------------------------------------------------
 // Class Definition:
 // -----------------
 /**
- * #### Handles the logging of LOA events and actions, the LOA updating notices sent to requesters, and the LOA request message editing, if possible and applicable.
+ * #### Handles the logging of user activity notices (LOA and RA), including events, actions, and updates.
+ * This class is responsible for sending notifications, logging updates, and editing request messages.
+ *
  * **Note:**
- * - The cancellation of a leave of absence or loa extension request can only be done by the person who requested it, and a notice is sent to the requester if it is possible.
- * - A number of these class functions could return a Promise rejection/error when a message cannot be sent for example, so it is advised to take into consideration error handling when using them.
+ * - The cancellation of a notice can only be done by the requester, and a notice is sent to the requester if possible.
+ * - Many methods return Promises that may reject if a message cannot be sent, so error handling is advised.
  */
 export default class UserActivityNoticeLogger {
-  private static readonly AvatarIconOpts: ImageURLOptions = { size: 128 };
+  private readonly ImgURLOpts: ImageURLOptions = { size: 128 };
+  private readonly title: string;
+  private readonly title_lower: string;
+  private readonly module_setting: "leave_notices" | "reduced_activity";
+  private readonly is_leave: boolean;
+  private readonly is_reduced: boolean;
+  private readonly cmd_name: string;
+
+  constructor(Type: "LeaveOfAbsence" | "ReducedActivity") {
+    this.title = Type === "LeaveOfAbsence" ? "Leave of Absence" : "Reduced Activity";
+    this.title_lower = this.title.toLowerCase();
+    this.is_leave = Type === "LeaveOfAbsence";
+    this.is_reduced = Type === "ReducedActivity";
+    this.module_setting = Type === "LeaveOfAbsence" ? "leave_notices" : "reduced_activity";
+    this.cmd_name = this.is_leave ? "loa" : "ra";
+  }
 
   /**
-   * @param Guild
-   * @param Type - The type of logging channel to return.
-   * - `log` - The log channel where updates on leave notices will be sent.
-   * - `requests` - The log channel where requests for leave notices will be sent for approval.
-   * @returns
+   * Retrieves the logging channel for the specified type (log or requests).
+   * @param Guild - The guild where the logging channel is being retrieved.
+   * @param Type - The type of logging channel to return:
+   * - `log`: The channel where updates on notices will be sent.
+   * - `requests`: The channel where requests for notices will be sent for approval.
+   * @returns The logging channel if found and accessible, otherwise `null`.
    */
-  private static async GetLoggingChannel(Guild: Guild, Type: "log" | "requests") {
+  private async GetLoggingChannel(Guild: Guild, Type: "log" | "requests") {
     const LoggingChannelId = await GuildModel.findById(Guild.id)
-      .select("settings.leave_notices")
+      .select(`settings.${this.module_setting}`)
       .then((GuildDoc) => {
         if (GuildDoc) {
-          return GuildDoc.settings.leave_notices[`${Type}_channel`];
+          return GuildDoc.settings[this.module_setting][`${Type}_channel`];
         }
         return null;
       });
@@ -81,20 +99,77 @@ export default class UserActivityNoticeLogger {
       : null;
   }
 
-  private static async GetUserProfileImageURL(Guild: Guild, UserId: string): Promise<string> {
+  /**
+   * Retrieves the profile image URL of a user in the specified guild.
+   * @param Guild - The guild where the user is located.
+   * @param UserId - The Discord ID of the user.
+   * @returns The user's profile image URL or a fallback image if the user cannot be fetched.
+   */
+  private async GetUserProfileImageURL(Guild: Guild, UserId: string): Promise<string> {
     const User = await Guild.members.fetch(UserId).catch(() => null);
-    return User?.displayAvatarURL(this.AvatarIconOpts) ?? Embeds.Thumbs.UnknownImage;
+    return User?.displayAvatarURL(this.ImgURLOpts) ?? Embeds.Thumbs.UnknownImage;
   }
 
   /**
-   * Constructs a pre-defined embed for a LOA request.
-   * @param Opts
-   * @returns
+   * Concatenates multiple lines into a single string, filtering out null or undefined values.
+   * @param Lines - The lines to concatenate.
+   * @returns A single string with all valid lines joined by newlines.
    */
-  private static GetRequestEmbed(Opts: {
+  private ConcatenateLines(...Lines: (string | undefined | null)[]): string {
+    return Lines.filter(Boolean).join("\n");
+  }
+
+  /**
+   * Generates a quota reduction text for reduced activity notices.
+   *
+   * @param NoticeDocument - The activity notice document.
+   * @returns A formatted string representing the quota reduction, or `undefined` if not applicable.
+   */
+  private GetQuotaReductionText(NoticeDocument: UserActivityNoticeDoc): string | undefined {
+    return this.is_reduced ? `**Quota Reduction:** ${NoticeDocument.quota_reduction}` : undefined;
+  }
+
+  /**
+   * Creates a set of management buttons for approving, denying, or requesting additional information about a notice.
+   * @param IsExt - Whether the buttons are for an extension request.
+   * @param UserId - The ID of the user who submitted the notice.
+   * @param NoticeId - The ID of the notice.
+   * @returns An action row containing the management buttons.
+   */
+  private CreateManagementButtons(IsExt: boolean, UserId: string, NoticeId: string) {
+    const ExtPrefix = IsExt ? "ext-" : "";
+    return new ActionRowBuilder<ButtonBuilder>().setComponents(
+      new ButtonBuilder()
+        .setCustomId(`${this.cmd_name}-${ExtPrefix}-approve:${UserId}:${NoticeId}`)
+        .setLabel("Approve")
+        .setEmoji(Emojis.WhiteCheck)
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId(`${this.cmd_name}-${ExtPrefix}-deny:${UserId}:${NoticeId}`)
+        .setLabel("Deny")
+        .setEmoji(Emojis.WhiteCross)
+        .setStyle(ButtonStyle.Danger),
+      new ButtonBuilder()
+        .setCustomId(`${this.cmd_name}-info:${UserId}:${NoticeId}`)
+        .setLabel("Additional Information")
+        .setEmoji(Emojis.WhitePlus)
+        .setStyle(ButtonStyle.Secondary)
+    );
+  }
+
+  /**
+   * Constructs a pre-defined embed for a user activity notice request.
+   * @param Opts - Options for constructing the embed:
+   * - `Type`: The type of the request (e.g., "Cancelled", "Pending", "Extension").
+   * - `Guild`: The guild where the request was made.
+   * - `NoticeDocument`: The activity notice document.
+   * - `CancellationDate`: The date when the request was cancelled (if applicable).
+   * @returns A pre-configured embed for the request.
+   */
+  private GetRequestEmbed(Opts: {
     Type?: "Cancelled" | "Pending" | "Extension";
     Guild?: Guild;
-    NoticeDocument: ANoticeDocument;
+    NoticeDocument: UserActivityNoticeDoc;
     CancellationDate?: Date;
   }) {
     Opts.Type = Opts.Type ?? "Pending";
@@ -103,19 +178,20 @@ export default class UserActivityNoticeLogger {
     const Embed = new EmbedBuilder()
       .setImage(Images.FooterDivider)
       .setFooter({ text: `Reference ID: ${Opts.NoticeDocument._id}` })
-      .setTitle(`${Opts.Type}  |  Leave of Absence Request`)
+      .setTitle(`${Opts.Type}  |  ${this.title} Request`)
       .setColor(
         Opts.Type === "Cancelled" ? Embeds.Colors.LOARequestDenied : Embeds.Colors.LOARequestPending
       );
 
     if (Opts.Type === "Pending" || Opts.Type === "Cancelled") {
       Embed.setDescription(
-        Dedent(`
-          **Requester:** ${userMention(RequesterId)}
-          **Duration:** ${Opts.NoticeDocument.duration_hr}
-          **Ends On:** ${Strikethrough}${Opts.Type === "Pending" && Opts.NoticeDocument.review_date ? "" : "around "}${FormatTime(Opts.NoticeDocument.end_date, "D")}${Strikethrough}
-          **Reason:** ${Opts.NoticeDocument.reason}
-        `)
+        this.ConcatenateLines(
+          `**Requester:** ${userMention(RequesterId)}`,
+          this.GetQuotaReductionText(Opts.NoticeDocument),
+          `**Duration:** ${Opts.NoticeDocument.duration_hr}`,
+          `**Ends On:** ${Strikethrough}${Opts.Type === "Pending" && Opts.NoticeDocument.review_date ? "" : "around "}${FormatTime(Opts.NoticeDocument.end_date, "D")}${Strikethrough}`,
+          `**Reason:** ${Opts.NoticeDocument.reason}`
+        )
       );
 
       if (Opts.CancellationDate) {
@@ -123,9 +199,8 @@ export default class UserActivityNoticeLogger {
         Embed.setFooter({
           text: `Reference ID: ${Opts.NoticeDocument._id}; cancelled by requester on`,
           iconURL:
-            Opts.Guild?.members.cache
-              .get(RequesterId)
-              ?.user.displayAvatarURL(this.AvatarIconOpts) ?? Embeds.Thumbs.UnknownImage,
+            Opts.Guild?.members.cache.get(RequesterId)?.user.displayAvatarURL(this.ImgURLOpts) ??
+            Embeds.Thumbs.UnknownImage,
         });
       }
     } else {
@@ -148,12 +223,12 @@ export default class UserActivityNoticeLogger {
    * Retrieves the message embed for a Leave of Absence (LOA) extension request with the specified status.
    * @param Guild - The guild where the request was made.
    * @param LeaveDocument - The LOA document containing the extension request.
-   * @param RequestStatus - The status of the extension request. Can be "Approved", "Denied", or "Cancelled".
-   * @returns
+   * @param RequestStatus - The status of the extension request ("Pending", "Approved", "Denied", or "Cancelled").
+   * @returns A Promise resolving to the configured embed for the extension request.
    */
-  public static async GetLOAExtRequestMessageEmbedWithStatus(
+  async GetLOAExtRequestMessageEmbedWithStatus(
     Guild: Guild,
-    LeaveDocument: ANoticeDocument,
+    LeaveDocument: UserActivityNoticeDoc,
     RequestStatus: "Pending" | "Approved" | "Denied" | "Cancelled"
   ) {
     const RequestEmbed = this.GetRequestEmbed({
@@ -191,48 +266,48 @@ export default class UserActivityNoticeLogger {
   }
 
   /**
-   * Generates a message embed for a Leave of Absence (LOA) request with the specified status.
+   * Generates a message embed for a user activity notice request with the specified status.
    * @param Guild - The guild where the request was made.
-   * @param LeaveDocument - The updated LOA document.
-   * @param RequestStatus - The status of the request.
-   * @returns
+   * @param NoticeDocument - The updated activity notice document.
+   * @param RequestStatus - The status of the request ("Approved", "Denied", "Cancelled", or "Pending").
+   * @returns A Promise resolving to the configured embed for the request.
    */
-  public static async GetLOARequestMessageEmbedWithStatus(
+  async GetRequestMessageEmbedWithStatus(
     Guild: Guild,
-    LeaveDocument: ANoticeDocument,
+    NoticeDocument: UserActivityNoticeDoc,
     RequestStatus: "Approved" | "Denied" | "Cancelled" | "Pending"
   ) {
     const RequestEmbed = this.GetRequestEmbed({
       Guild,
       Type: RequestStatus === "Cancelled" ? RequestStatus : "Pending",
-      NoticeDocument: LeaveDocument,
+      NoticeDocument: NoticeDocument,
       CancellationDate:
-        RequestStatus === "Cancelled" ? LeaveDocument.review_date : (undefined as any),
-    }).setTimestamp(LeaveDocument.review_date);
+        RequestStatus === "Cancelled" ? NoticeDocument.review_date : (undefined as any),
+    }).setTimestamp(NoticeDocument.review_date);
 
-    if (RequestStatus === "Approved" && LeaveDocument.review_date) {
-      const AvatarURL = await this.GetUserProfileImageURL(Guild, LeaveDocument.reviewed_by!.id);
+    if (RequestStatus === "Approved" && NoticeDocument.review_date) {
+      const AvatarURL = await this.GetUserProfileImageURL(Guild, NoticeDocument.reviewed_by!.id);
       RequestEmbed.setColor(Embeds.Colors.LOARequestApproved)
-        .setTitle("Approved  |  Leave of Absence Request")
+        .setTitle(`Approved  |  ${this.title} Request`)
         .setFooter({
-          text: `Reference ID: ${LeaveDocument._id}; approved by @${LeaveDocument.reviewed_by!.username} on`,
+          text: `Reference ID: ${NoticeDocument._id}; approved by @${NoticeDocument.reviewed_by!.username} on`,
           iconURL: AvatarURL,
         });
-    } else if (RequestStatus === "Denied" && LeaveDocument.review_date) {
-      const AvatarURL = await this.GetUserProfileImageURL(Guild, LeaveDocument.reviewed_by!.id);
+    } else if (RequestStatus === "Denied" && NoticeDocument.review_date) {
+      const AvatarURL = await this.GetUserProfileImageURL(Guild, NoticeDocument.reviewed_by!.id);
       RequestEmbed.setColor(Embeds.Colors.LOARequestDenied)
-        .setTitle("Denied  |  Leave of Absence Request")
+        .setTitle(`Denied  |  ${this.title} Request`)
         .setFooter({
-          text: `Reference ID: ${LeaveDocument._id}; denied by @${LeaveDocument.reviewed_by!.username} on`,
+          text: `Reference ID: ${NoticeDocument._id}; denied by @${NoticeDocument.reviewed_by!.username} on`,
           iconURL: AvatarURL,
         });
     } else if (RequestStatus.includes("Cancelled")) {
-      const AvatarURL = await this.GetUserProfileImageURL(Guild, LeaveDocument.user);
+      const AvatarURL = await this.GetUserProfileImageURL(Guild, NoticeDocument.user);
       RequestEmbed.setColor(Embeds.Colors.LOARequestDenied)
-        .setTitle("Cancelled  |  Leave of Absence Request")
+        .setTitle(`Cancelled  |  ${this.title} Request`)
         .setFooter({
           iconURL: AvatarURL,
-          text: `Reference ID: ${LeaveDocument._id}; cancelled by requester on`,
+          text: `Reference ID: ${NoticeDocument._id}; cancelled by requester on`,
         });
     }
 
@@ -240,75 +315,61 @@ export default class UserActivityNoticeLogger {
   }
 
   /**
-   * Sends a new leave request to the requests channel for approval from management, if one exists.
-   * This function will also send a DM notice to the requester if it can.
-   * @param Interaction - The interaction originating from the one who submitted the LOA request.
-   * @param PendingLOA - The LOA that is pending for approval.
-   * @returns A Promise that resolves to the sent request message if successful.
+   * Sends a new activity notice request to the requests channel for approval.
+   * Also sends a DM notice to the requester if possible.
+   * @param Interaction - The interaction originating from the requester.
+   * @param PendingNotice - The activity notice document pending approval.
+   * @returns A Promise resolving to the sent request message if successful.
    */
-  public static async SendRequest(
+  async SendRequest(
     Interaction: SlashCommandInteraction<"cached">,
-    PendingLOA: ANoticeDocument
+    PendingNotice: UserActivityNoticeDoc
   ) {
     const RequestsChannel = await this.GetLoggingChannel(Interaction.guild, "requests");
-    const Requester = await Interaction.guild.members.fetch(PendingLOA.user).catch(() => null);
+    const Requester = await Interaction.guild.members.fetch(PendingNotice.user).catch(() => null);
 
     // Send a DM notice to the requester.
     if (Requester) {
       const DMNotice = new EmbedBuilder()
         .setTimestamp(Interaction.createdAt)
         .setColor(Embeds.Colors.LOARequestPending)
-        .setFooter({ text: `Reference ID: ${PendingLOA._id}` })
-        .setTitle("Leave of Absence — Request Under Review")
+        .setFooter({ text: `Reference ID: ${PendingNotice._id}` })
+        .setTitle(`${this.title} — Request Under Review`)
         .setDescription(
           Dedent(`
-            Your leave of absence request, submitted on ${FormatTime(PendingLOA.request_date, "D")}, has been received and is \
-            waiting for a review by the management team. The requested leave duration is ${PendingLOA.duration_hr}, and will \
-            start on the time of approval. To cancel your pending request, please use the \`/loa manage\` command on the server.
+            Your ${this.title_lower} request, submitted on ${FormatTime(PendingNotice.request_date, "D")}, has been received and is \
+            waiting for a review by the management team. The requested notice duration is ${PendingNotice.duration_hr}, and will \
+            start on the time of approval. To cancel your pending request, please use the \`/${this.cmd_name} manage\` command on the server.
           `)
         )
         .setAuthor({
           name: Interaction.guild.name,
-          iconURL: Interaction.guild.iconURL({ size: 128 }) ?? Embeds.Thumbs.Transparent,
+          iconURL: Interaction.guild.iconURL(this.ImgURLOpts) ?? Embeds.Thumbs.Transparent,
         });
 
       Requester.send({ embeds: [DMNotice] }).catch(() => null);
     }
 
-    // Send the LOA request message if a requests channel is set.
+    // Send the request message if a requests channel is set.
     if (!RequestsChannel) return;
-    const RequestEmbed = this.GetRequestEmbed({ Type: "Pending", NoticeDocument: PendingLOA });
-    const ManagementComponents = new ActionRowBuilder<ButtonBuilder>().setComponents(
-      new ButtonBuilder()
-        .setCustomId(`loa-approve:${Interaction.user.id}:${PendingLOA._id}`)
-        .setLabel("Approve")
-        .setEmoji(Emojis.WhiteCheck)
-        .setStyle(ButtonStyle.Success),
-      new ButtonBuilder()
-        .setCustomId(`loa-deny:${Interaction.user.id}:${PendingLOA._id}`)
-        .setLabel("Deny")
-        .setEmoji(Emojis.WhiteCross)
-        .setStyle(ButtonStyle.Danger),
-      new ButtonBuilder()
-        .setCustomId(`loa-info:${Interaction.user.id}:${PendingLOA._id}`)
-        .setLabel("Additional Information")
-        .setEmoji(Emojis.WhitePlus)
-        .setStyle(ButtonStyle.Secondary)
+    const RequestEmbed = this.GetRequestEmbed({ Type: "Pending", NoticeDocument: PendingNotice });
+    const ManagementComponents = this.CreateManagementButtons(
+      false,
+      Interaction.user.id,
+      PendingNotice._id.toString()
     );
 
     return RequestsChannel.send({ embeds: [RequestEmbed], components: [ManagementComponents] });
   }
 
   /**
-   * Sends a log of a cancelled LOA to the logging channel, if one exists.
-   * @param Interaction - The extension interaction received from the one who originally submitted the LOA.
-   * @param ActiveLOA - The updated LOA that is currently active and which an extension was requested for.
-   * @returns A Promise that resolves to the sent request message if successful.
+   * Sends a log of an extension request to the requests channel for approval.
+   * Also sends a DM notice to the requester if possible.
+   * @param Interaction - The interaction originating from the requester.
+   * @param ActiveLOA - The activity notice document with the extension request.
+   * @returns A Promise resolving to the sent request message if successful.
    */
-  public static async SendExtensionRequest(
-    Interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">,
-    ActiveLOA: ANoticeDocument
-  ) {
+  async SendExtensionRequest(Interaction: ManagementInteraction, ActiveLOA: UserActivityNoticeDoc) {
     const RequestsChannel = await this.GetLoggingChannel(Interaction.guild, "requests");
     const Requester = await Interaction.guild.members.fetch(ActiveLOA.user).catch(() => null);
 
@@ -322,12 +383,12 @@ export default class UserActivityNoticeLogger {
           Dedent(`
             Your leave of absence extension request, submitted on ${FormatTime(ActiveLOA.extension_request.date, "D")}, has been received and is waiting for a \
             review by the management team. The requested additional duration is ${ActiveLOA.extended_duration_hr}, and will be added to the leave once the \
-            request is approved. To cancel your pending request, please use the \`/loa manage\` command on the server.
+            request is approved. To cancel your pending request, please use the \`/${this.cmd_name} manage\` command on the server.
           `)
         )
         .setAuthor({
           name: Interaction.guild.name,
-          iconURL: Interaction.guild.iconURL({ size: 128 }) ?? Embeds.Thumbs.Transparent,
+          iconURL: Interaction.guild.iconURL(this.ImgURLOpts) ?? Embeds.Thumbs.Transparent,
         });
 
       Requester.send({ embeds: [DMNotice] }).catch(() => null);
@@ -335,47 +396,36 @@ export default class UserActivityNoticeLogger {
 
     if (!RequestsChannel) return;
     const RequestEmbed = this.GetRequestEmbed({ Type: "Extension", NoticeDocument: ActiveLOA });
-    const ManagementComponents = new ActionRowBuilder<ButtonBuilder>().setComponents(
-      new ButtonBuilder()
-        .setCustomId(`loa-ext-approve:${Interaction.user.id}:${ActiveLOA._id}`)
-        .setLabel("Approve")
-        .setStyle(ButtonStyle.Success),
-      new ButtonBuilder()
-        .setCustomId(`loa-ext-deny:${Interaction.user.id}:${ActiveLOA._id}`)
-        .setLabel("Deny")
-        .setStyle(ButtonStyle.Danger),
-      new ButtonBuilder()
-        .setCustomId(`loa-info:${Interaction.user.id}:${ActiveLOA._id}`)
-        .setLabel("Additional Information")
-        .setStyle(ButtonStyle.Secondary)
+    const ManagementComponents = this.CreateManagementButtons(
+      true,
+      Interaction.user.id,
+      ActiveLOA._id.toString()
     );
 
     return RequestsChannel.send({ embeds: [RequestEmbed], components: [ManagementComponents] });
   }
 
   /**
-   * Sends a log of an approved LOA to the logging channel, if one exists. Also sends a DM notice to the requester and edits the LOA request message.
-   * @param Interaction - The interaction received from the management staff to approve the LOA.
-   * @param ApprovedLOA - The LOA that was approved after being updated.
-   * @returns A Promise that resolves after the edition of the request message if it exists.
+   * Logs the approval of an activity notice to the logging channel.
+   * Also sends a DM notice to the requester and updates the request message if applicable.
+   * @param Interaction - The interaction from the management staff approving the notice.
+   * @param ApprovedRequest - The approved activity notice document.
+   * @returns A Promise resolving after the log and updates are completed.
    */
-  public static async LogApproval(
-    Interaction: ManagementInteraction,
-    ApprovedLOA: ANoticeDocument
-  ) {
-    const Requester = await Interaction.guild.members.fetch(ApprovedLOA.user).catch(() => null);
+  async LogApproval(Interaction: ManagementInteraction, ApprovedRequest: UserActivityNoticeDoc) {
+    const Requester = await Interaction.guild.members.fetch(ApprovedRequest.user).catch(() => null);
     const LogChannel = await this.GetLoggingChannel(Interaction.guild, "log");
 
     if (Requester) {
       const DMApprovalNotice = new EmbedBuilder()
         .setTimestamp(Interaction.createdAt)
         .setColor(Embeds.Colors.LOARequestApproved)
-        .setFooter({ text: `Reference ID: ${ApprovedLOA._id}` })
-        .setTitle("Leave of Absence — Approval Notice")
+        .setFooter({ text: `Reference ID: ${ApprovedRequest._id}` })
+        .setTitle(`${this.title} — Approval Notice`)
         .setDescription(
           Dedent(`
-            Your leave of absence request, submitted on ${FormatTime(ApprovedLOA.request_date, "D")}, has been approved.
-            Your LOA is set to expire on ${FormatTime(ApprovedLOA.end_date, "F")} (${FormatTime(ApprovedLOA.end_date, "R")}). \
+            Your leave of absence request, submitted on ${FormatTime(ApprovedRequest.request_date, "D")}, has been approved.
+            Your LOA is set to expire on ${FormatTime(ApprovedRequest.end_date, "F")} (${FormatTime(ApprovedRequest.end_date, "R")}). \
             To manage your leave, including requesting an extension or an early termination, please use the \`/loa manage\` command on the server.
           `)
         )
@@ -383,6 +433,15 @@ export default class UserActivityNoticeLogger {
           name: Interaction.guild.name,
           iconURL: Interaction.guild.iconURL({ size: 128 }) ?? Embeds.Thumbs.Transparent,
         });
+
+      if (this.is_reduced) {
+        DMApprovalNotice.setDescription(
+          Dedent(`
+            Your reduced activity request, submitted on ${FormatTime(ApprovedRequest.request_date, "D")}, has been approved.
+            Your RA is set to expire on ${FormatTime(ApprovedRequest.end_date, "F")} (${FormatTime(ApprovedRequest.end_date, "R")}).
+          `)
+        );
+      }
 
       Requester.send({ embeds: [DMApprovalNotice] }).catch(() => null);
     }
@@ -392,19 +451,20 @@ export default class UserActivityNoticeLogger {
       const LogEmbed = new EmbedBuilder()
         .setTimestamp(Interaction.createdAt)
         .setColor(Embeds.Colors.LOARequestApproved)
-        .setTitle("Leave of Absence Approval")
-        .setFooter({ text: `Reference ID: ${ApprovedLOA._id}; approved on` })
+        .setTitle(`${this.title} Approval`)
+        .setFooter({ text: `Reference ID: ${ApprovedRequest._id}; approved on` })
         .addFields(
           {
             inline: true,
             name: "Request Info",
             value: Dedent(`
-            **Requester:** ${userMention(ApprovedLOA.user)}
-            **Duration:** ${ApprovedLOA.duration_hr}
-            **Started:** ${FormatTime(ApprovedLOA.review_date || Interaction.createdAt, "F")}
-            **Ends On:** ${FormatTime(ApprovedLOA.end_date, "F")}
-            **Reason:** ${ApprovedLOA.reason}
-          `),
+              **Requester:** ${userMention(ApprovedRequest.user)}
+              **Quota Reduction:** ${ApprovedRequest.quota_reduction}
+              **Duration:** ${ApprovedRequest.duration_hr}
+              **Started:** ${FormatTime(ApprovedRequest.review_date || Interaction.createdAt, "F")}
+              **Ends On:** ${FormatTime(ApprovedRequest.end_date, "F")}
+              **Reason:** ${ApprovedRequest.reason}
+            `),
           },
           {
             inline: true,
@@ -412,7 +472,7 @@ export default class UserActivityNoticeLogger {
             value: Dedent(`
               **Approver**: ${userMention(Interaction.user.id)}
               **Notes:**
-              ${ApprovedLOA.reviewer_notes || "`N/A`"}
+              ${ApprovedRequest.reviewer_notes || "`N/A`"}
             `),
           }
         );
@@ -420,67 +480,66 @@ export default class UserActivityNoticeLogger {
       LogChannel.send({ embeds: [LogEmbed] });
     }
 
-    if (ApprovedLOA.request_msg) {
-      const [ReqChannelId, ReqMsgId] = ApprovedLOA.request_msg.split(":");
-      const RequestMessage = await Interaction.guild.channels
-        .fetch(ReqChannelId)
-        .then((Channel) => {
-          if (!Channel?.isTextBased()) return null;
-          return Channel as TextBasedChannel;
-        })
-        .then((Channel) => Channel?.messages.fetch(ReqMsgId))
-        .catch(() => null);
+    if (ApprovedRequest.request_msg) {
+      const [, ReqMsgId] = ApprovedRequest.request_msg.split(":");
+      const RequestsChannel = await this.GetLoggingChannel(Interaction.guild, "requests");
+      if (!RequestsChannel) return;
 
-      if (RequestMessage) {
-        const RequestEmbed = this.GetRequestEmbed({ Type: "Pending", NoticeDocument: ApprovedLOA })
-          .setTimestamp(Interaction.createdAt)
-          .setColor(Embeds.Colors.LOARequestApproved)
-          .setTitle("Approved  |  Leave of Absence Request")
-          .setFooter({
-            text: `Reference ID: ${ApprovedLOA._id}; approved by @${Interaction.user.username} on`,
-            iconURL: Interaction.user.displayAvatarURL(this.AvatarIconOpts),
-          });
+      const RequestMessage = await RequestsChannel.messages.fetch(ReqMsgId);
+      if (!RequestMessage) return;
 
-        const RequestButtons = ActionRowBuilder.from<ButtonBuilder>(
-          RequestMessage.components[0] as any
-        );
+      const RequestEmbed = this.GetRequestEmbed({
+        Type: "Pending",
+        NoticeDocument: ApprovedRequest,
+      })
+        .setTimestamp(Interaction.createdAt)
+        .setColor(Embeds.Colors.LOARequestApproved)
+        .setTitle(`Approved  |  ${this.title} Request`)
+        .setFooter({
+          text: `Reference ID: ${ApprovedRequest._id}; approved by @${Interaction.user.username} on`,
+          iconURL: Interaction.user.displayAvatarURL(this.ImgURLOpts),
+        });
 
-        RequestButtons.components.forEach((Button) => Button.setDisabled(true));
-        await RequestMessage.edit({ embeds: [RequestEmbed], components: [RequestButtons] }).catch(
-          () => null
-        );
-      }
+      const RequestButtons = ActionRowBuilder.from<ButtonBuilder>(
+        RequestMessage.components[0] as any
+      );
+
+      RequestButtons.components.forEach((Button) => Button.setDisabled(true));
+      await RequestMessage.edit({ embeds: [RequestEmbed], components: [RequestButtons] }).catch(
+        () => null
+      );
     }
   }
 
   /**
-   * Sends a log of a denied LOA to the logging channel, if one exists. Also sends a DM notice to the requester and edits the LOA request message.
-   * @param Interaction - The interaction received from the management staff to deny the LOA.
-   * @param DeniedLOA - The LOA that was denied after being updated.
-   * @returns A Promise that resolves after the edition of the request message if it exists.
+   * Logs the denial of an activity notice to the logging channel.
+   * Also sends a DM notice to the requester and updates the request message if applicable.
+   * @param Interaction - The interaction from the management staff denying the notice.
+   * @param DeniedRequest - The denied activity notice document.
+   * @returns A Promise resolving after the log and updates are completed.
    */
-  public static async LogDenial(Interaction: ManagementInteraction, DeniedLOA: ANoticeDocument) {
+  async LogDenial(Interaction: ManagementInteraction, DeniedRequest: UserActivityNoticeDoc) {
     const LogChannel = await this.GetLoggingChannel(Interaction.guild, "log");
-    const Requester = await Interaction.guild.members.fetch(DeniedLOA.user).catch(() => null);
+    const Requester = await Interaction.guild.members.fetch(DeniedRequest.user).catch(() => null);
 
     if (Requester) {
       const DMDenialNotice = new EmbedBuilder()
         .setTimestamp(Interaction.createdAt)
         .setColor(Embeds.Colors.LOARequestDenied)
-        .setFooter({ text: `Reference ID: ${DeniedLOA._id}` })
-        .setTitle("Leave of Absence — Denial Notice")
+        .setFooter({ text: `Reference ID: ${DeniedRequest._id}` })
+        .setTitle(`${this.title} — Denial Notice`)
         .setDescription(
           Dedent(`
-            Your leave of absence request, submitted on ${FormatTime(DeniedLOA.request_date, "D")}, has been denied. \
-            You may submit a new request within 3 hours by using the \`/loa request\` command on the server. 
+            Your ${this.title_lower} request, submitted on ${FormatTime(DeniedRequest.request_date, "D")}, has been denied. \
+            You may submit a new request within 3 hours by using the \`/${this.cmd_name} request\` command on the server. 
             
             **The following note(s) were provided by the reviewer:**
-            ${codeBlock("", DeniedLOA.reviewer_notes || "N/A")}
+            ${codeBlock("", DeniedRequest.reviewer_notes || "N/A")}
           `)
         )
         .setAuthor({
           name: Interaction.guild.name,
-          iconURL: Interaction.guild.iconURL({ size: 128 }) ?? Embeds.Thumbs.Transparent,
+          iconURL: Interaction.guild.iconURL(this.ImgURLOpts) ?? Embeds.Thumbs.Transparent,
         });
 
       Requester.send({ embeds: [DMDenialNotice] }).catch(() => null);
@@ -489,19 +548,20 @@ export default class UserActivityNoticeLogger {
     if (LogChannel) {
       const LogEmbed = new EmbedBuilder()
         .setColor(Embeds.Colors.LOARequestDenied)
-        .setTitle("Leave of Absence Denial")
-        .setFooter({ text: `Reference ID: ${DeniedLOA._id}; denied on` })
+        .setTitle(`${this.title} Denial`)
+        .setFooter({ text: `Reference ID: ${DeniedRequest._id}; denied on` })
         .setTimestamp(Interaction.createdAt)
         .addFields(
           {
             inline: true,
             name: "Request Info",
-            value: Dedent(`
-              **Requester:** ${userMention(DeniedLOA.user)}
-              **Duration:** ${DeniedLOA.duration_hr}
-              **Ends On:** ${FormatTime(DeniedLOA.end_date, "D")}
-              **Reason:** ${DeniedLOA.reason}
-            `),
+            value: this.ConcatenateLines(
+              `**Requester:** ${userMention(DeniedRequest.user)}`,
+              this.GetQuotaReductionText(DeniedRequest),
+              `**Duration:** ${DeniedRequest.duration_hr}`,
+              `**Ends On:** ${FormatTime(DeniedRequest.end_date, "D")}`,
+              `**Reason:** ${DeniedRequest.reason}`
+            ),
           },
           {
             inline: true,
@@ -509,7 +569,7 @@ export default class UserActivityNoticeLogger {
             value: Dedent(`
               **Denier**: ${userMention(Interaction.user.id)}
               **Notes:**
-              ${DeniedLOA.reviewer_notes || "`N/A`"}
+              ${DeniedRequest.reviewer_notes || "`N/A`"}
             `),
           }
         );
@@ -517,75 +577,78 @@ export default class UserActivityNoticeLogger {
       LogChannel.send({ embeds: [LogEmbed] });
     }
 
-    if (DeniedLOA.request_msg) {
-      const [ReqChannelId, ReqMsgId] = DeniedLOA.request_msg.split(":");
-      const RequestMessage = await Interaction.guild.channels
-        .fetch(ReqChannelId)
-        .then((Channel) => {
-          if (!Channel?.isTextBased()) return null;
-          return Channel as TextBasedChannel;
-        })
+    if (DeniedRequest.request_msg) {
+      const [, ReqMsgId] = DeniedRequest.request_msg.split(":");
+      const RequestMessage = await this.GetLoggingChannel(Interaction.guild, "requests")
         .then((Channel) => Channel?.messages.fetch(ReqMsgId))
         .catch(() => null);
 
-      if (RequestMessage) {
-        const RequestEmbed = this.GetRequestEmbed({ Type: "Pending", NoticeDocument: DeniedLOA })
-          .setTimestamp(Interaction.createdAt)
-          .setColor(Embeds.Colors.LOARequestDenied)
-          .setTitle("Denied  |  Leave of Absence Request")
-          .setFooter({
-            text: `Reference ID: ${DeniedLOA._id}; denied by @${Interaction.user.username} on`,
-            iconURL: Interaction.user.displayAvatarURL(this.AvatarIconOpts),
-          });
-
-        const RequestButtons = ActionRowBuilder.from<ButtonBuilder>(
-          RequestMessage.components[0] as any
-        );
-
-        RequestButtons.components.forEach((Button) => Button.setDisabled(true));
-        await RequestMessage.edit({ embeds: [RequestEmbed], components: [RequestButtons] }).catch(
-          () => null
-        );
+      if (!RequestMessage) {
+        return;
       }
+
+      const RequestEmbed = this.GetRequestEmbed({
+        Type: "Pending",
+        NoticeDocument: DeniedRequest,
+      })
+        .setTimestamp(Interaction.createdAt)
+        .setColor(Embeds.Colors.LOARequestDenied)
+        .setTitle(`Denied  |  ${this.title} Request`)
+        .setFooter({
+          text: `Reference ID: ${DeniedRequest._id}; denied by @${Interaction.user.username} on`,
+          iconURL: Interaction.user.displayAvatarURL(this.ImgURLOpts),
+        });
+
+      const RequestButtons = ActionRowBuilder.from<ButtonBuilder>(
+        RequestMessage.components[0] as any
+      );
+
+      RequestButtons.components.forEach((Button) => Button.setDisabled(true));
+      await RequestMessage.edit({ embeds: [RequestEmbed], components: [RequestButtons] }).catch(
+        () => null
+      );
     }
   }
 
   /**
-   * Sends a log of a cancelled LOA to the logging channel, if one exists. Also sends a DM notice to the requester and edits the LOA request message.
-   * @param Interaction - The cancellation interaction received from the one who originally submitted the LOA.
-   * @param CancelledLOA - The LOA that was cancelled after being updated.
-   * @returns A Promise that resolves after the edition of the request message if it exists.
+   * Logs the cancellation of an activity notice to the logging channel.
+   * Also sends a DM notice to the requester and updates the request message if applicable.
+   * @param Interaction - The interaction from the requester cancelling the notice.
+   * @param CancelledRequest - The cancelled activity notice document.
+   * @returns A Promise resolving after the log and updates are completed.
    */
-  public static async LogCancellation(
+  async LogCancellation(
     Interaction: ButtonInteraction<"cached">,
-    CancelledLOA: ANoticeDocument
+    CancelledRequest: UserActivityNoticeDoc
   ) {
     const LogChannel = await this.GetLoggingChannel(Interaction.guild, "log");
-    const Requester = await Interaction.guild.members.fetch(CancelledLOA.user).catch(() => null);
+    const Requester = await Interaction.guild.members
+      .fetch(CancelledRequest.user)
+      .catch(() => null);
 
     if (Requester) {
       const DMCancellationNotice = new EmbedBuilder()
         .setTimestamp(Interaction.createdAt)
         .setColor(Embeds.Colors.LOARequestDenied)
-        .setFooter({ text: `Reference ID: ${CancelledLOA._id}` })
-        .setTitle("Leave of Absence — Cancellation Notice")
+        .setFooter({ text: `Reference ID: ${CancelledRequest._id}` })
+        .setTitle(`${this.title} — Cancellation Notice`)
         .setAuthor({
           name: Interaction.guild.name,
-          iconURL: Interaction.guild.iconURL({ size: 128 }) ?? Embeds.Thumbs.Transparent,
+          iconURL: Interaction.guild.iconURL(this.ImgURLOpts) ?? Embeds.Thumbs.Transparent,
         });
 
-      if (CancelledLOA.reviewed_by) {
+      if (CancelledRequest.reviewed_by) {
         DMCancellationNotice.setDescription(
           Dedent(`
-            You are no longer on leave as your most recent leave of absence, submitted on ${FormatTime(CancelledLOA.request_date, "D")}, \
-            has been cancelled at your request on ${FormatTime(Interaction.createdAt, "d")}. The leave was set to end ${FormatTime(CancelledLOA.end_date, "R")}.
+            You are no longer on ${this.is_leave ? "leave" : this.title_lower} as your most recent ${this.title_lower}, submitted on ${FormatTime(CancelledRequest.request_date, "D")}, \
+            has been cancelled at your request on ${FormatTime(Interaction.createdAt, "d")}. It was set to end ${FormatTime(CancelledRequest.end_date, "R")}.
           `)
         );
       } else {
         DMCancellationNotice.setDescription(
           Dedent(`
-            Your previously submitted leave of absence request, with a duration of ${CancelledLOA.duration_hr}, has been cancelled at your request. \
-            There is no active leave of absence on record for you at this time.
+            Your previously submitted ${this.title_lower} request, with a duration of ${CancelledRequest.duration_hr}, has been cancelled at your request. \
+            There is no active ${this.title_lower} on record for you at this time.
           `)
         );
       }
@@ -597,29 +660,25 @@ export default class UserActivityNoticeLogger {
       const LogEmbed = new EmbedBuilder()
         .setTimestamp(Interaction.createdAt)
         .setColor(Embeds.Colors.LOARequestCancelled)
-        .setTitle("Leave of Absence Cancellation")
-        .setFooter({ text: `Reference ID: ${CancelledLOA._id}; cancelled by requester on` })
+        .setTitle(`${this.title} Cancellation`)
+        .setFooter({ text: `Reference ID: ${CancelledRequest._id}; cancelled by requester on` })
         .addFields({
           inline: true,
           name: "Request Info",
-          value: Dedent(`
-            **Requester:** ${userMention(CancelledLOA.user)}
-            **Duration:** ${CancelledLOA.duration_hr}
-            **Reason:** ${CancelledLOA.reason}
-          `),
+          value: this.ConcatenateLines(
+            `**Requester:** ${userMention(CancelledRequest.user)}`,
+            this.GetQuotaReductionText(CancelledRequest),
+            `**Duration:** ${CancelledRequest.duration_hr}`,
+            `**Reason:** ${CancelledRequest.reason}`
+          ),
         });
 
       LogChannel.send({ embeds: [LogEmbed] }).catch(() => null);
     }
 
-    if (CancelledLOA.request_msg) {
-      const [ReqChannelId, ReqMsgId] = CancelledLOA.request_msg.split(":");
-      const RequestMessage = await Interaction.guild.channels
-        .fetch(ReqChannelId)
-        .then((Channel) => {
-          if (!Channel?.isTextBased()) return null;
-          return Channel as TextBasedChannel;
-        })
+    if (CancelledRequest.request_msg) {
+      const [, ReqMsgId] = CancelledRequest.request_msg.split(":");
+      const RequestMessage = await this.GetLoggingChannel(Interaction.guild, "requests")
         .then((Channel) => Channel?.messages.fetch(ReqMsgId))
         .catch(() => null);
 
@@ -627,7 +686,7 @@ export default class UserActivityNoticeLogger {
       const RequestEmbed = this.GetRequestEmbed({
         Type: "Cancelled",
         Guild: Interaction.guild,
-        NoticeDocument: CancelledLOA,
+        NoticeDocument: CancelledRequest,
         CancellationDate: Interaction.createdAt,
       });
 
@@ -643,15 +702,13 @@ export default class UserActivityNoticeLogger {
   }
 
   /**
-   * Sends a log message of a manual LOA creation by a management staff member to the logging channel, if one exists. Also sends a DM notice to the requester.
-   * @param Interaction - The interaction received from the management staff to create the LOA.
-   * @param CreatedLOA - The LOA that was created.
-   * @returns A Promise that resolves after sending the log message.
+   * Logs the manual creation of a leave of absence by management staff.
+   * Also sends a DM notice to the requester if applicable.
+   * @param Interaction - The interaction from the management staff creating the LOA.
+   * @param CreatedLOA - The created leave of absence document.
+   * @returns A Promise resolving after the log is completed.
    */
-  public static async LogManualLeave(
-    Interaction: ManagementInteraction,
-    CreatedLOA: ANoticeDocument
-  ) {
+  async LogManualLeave(Interaction: ManagementInteraction, CreatedLOA: UserActivityNoticeDoc) {
     const Requester = await Interaction.guild.members.fetch(CreatedLOA.user).catch(() => null);
     const LogChannel = await this.GetLoggingChannel(Interaction.guild, "log");
 
@@ -668,7 +725,7 @@ export default class UserActivityNoticeLogger {
         )
         .setAuthor({
           name: Interaction.guild.name,
-          iconURL: Interaction.guild.iconURL({ size: 128 }) ?? Embeds.Thumbs.Transparent,
+          iconURL: Interaction.guild.iconURL(this.ImgURLOpts) ?? Embeds.Thumbs.Transparent,
         });
 
       if (CreatedLOA.is_manageable) {
@@ -727,13 +784,15 @@ export default class UserActivityNoticeLogger {
   }
 
   /**
-   * Sends a log of a manual LOA extension (immediately added and approved) to the logging channel, if one exists. Also sends a DM notice to who have the provided leave.
-   * @param Interaction - The interaction received from the management staff to extend the leave.
-   * @param NoticeDocument - The LOA document after being updated (extension added).
+   * Logs the manual extension of a leave of absenc by management staff.
+   * Also sends a DM notice to the requester if applicable.
+   * @param Interaction - The interaction from the management staff extending the leave.
+   * @param NoticeDocument - The updated leave of absence document.
+   * @returns A Promise resolving after the log is completed.
    */
-  public static async LogManualExtension(
+  async LogManualExtension(
     Interaction: ManagementInteraction,
-    NoticeDocument: ANoticeDocument
+    NoticeDocument: UserActivityNoticeDoc
   ) {
     if (!NoticeDocument.extension_request || !NoticeDocument.review_date) return;
     const LogChannel = await this.GetLoggingChannel(Interaction.guild, "log");
@@ -757,7 +816,7 @@ export default class UserActivityNoticeLogger {
         })
         .setAuthor({
           name: Interaction.guild.name,
-          iconURL: Interaction.guild.iconURL({ size: 128 }) ?? Embeds.Thumbs.Transparent,
+          iconURL: Interaction.guild.iconURL(this.ImgURLOpts) ?? Embeds.Thumbs.Transparent,
         });
 
       Requester.send({ embeds: [DMApprovalNotice] }).catch(() => null);
@@ -795,14 +854,15 @@ export default class UserActivityNoticeLogger {
   }
 
   /**
-   * Sends a log of an approved LOA extension to the logging channel, if one exists.
-   * @param Interaction - The interaction received from the management staff to approve the extension.
-   * @param NoticeDocument - The LOA document after being updated.
-   * @returns A Promise that resolves after the edition of the request message if it exists.
+   * Logs the approval of an extension request to the logging channel.
+   * Also sends a DM notice to the requester and updates the request message if applicable.
+   * @param Interaction - The interaction from the management staff approving the extension.
+   * @param NoticeDocument - The updated activity notice document.
+   * @returns A Promise resolving after the log and updates are completed.
    */
-  public static async LogExtensionApproval(
+  async LogExtensionApproval(
     Interaction: ManagementInteraction,
-    NoticeDocument: ANoticeDocument
+    NoticeDocument: UserActivityNoticeDoc
   ) {
     if (!NoticeDocument.extension_request || !NoticeDocument.review_date) return;
     const LogChannel = await this.GetLoggingChannel(Interaction.guild, "log");
@@ -885,7 +945,7 @@ export default class UserActivityNoticeLogger {
           .setTitle("Approved Extension  |  Leave of Absence Request")
           .setFooter({
             text: `Reference ID: ${NoticeDocument._id}; approved by @${Interaction.user.username} on`,
-            iconURL: Interaction.user.displayAvatarURL(this.AvatarIconOpts),
+            iconURL: Interaction.user.displayAvatarURL(this.ImgURLOpts),
           });
 
         const RequestButtons = ActionRowBuilder.from<ButtonBuilder>(
@@ -901,14 +961,15 @@ export default class UserActivityNoticeLogger {
   }
 
   /**
-   * Sends a log of a denied LOA extension to the logging channel, if one exists.
-   * @param Interaction - The interaction received from the management staff to deny the extension.
-   * @param NoticeDocument - The LOA document after being updated.
-   * @returns A Promise that resolves after the edition of the request message if it exists.
+   * Logs the denial of an extension request to the logging channel.
+   * Also sends a DM notice to the requester and updates the request message if applicable.
+   * @param Interaction - The interaction from the management staff denying the extension.
+   * @param NoticeDocument - The updated activity notice document.
+   * @returns A Promise resolving after the log and updates are completed.
    */
-  public static async LogExtensionDenial(
+  async LogExtensionDenial(
     Interaction: ManagementInteraction,
-    NoticeDocument: ANoticeDocument
+    NoticeDocument: UserActivityNoticeDoc
   ) {
     if (!NoticeDocument.extension_request || !NoticeDocument.review_date) return;
     const LogChannel = await this.GetLoggingChannel(Interaction.guild, "log");
@@ -997,7 +1058,7 @@ export default class UserActivityNoticeLogger {
         .setColor(Embeds.Colors.LOARequestDenied)
         .setTitle("Denied Extension  |  Leave of Absence Request")
         .setFooter({
-          iconURL: Interaction.user.displayAvatarURL(this.AvatarIconOpts),
+          iconURL: Interaction.user.displayAvatarURL(this.ImgURLOpts),
           text: `Reference ID: ${NoticeDocument._id}; denied by @${Interaction.user.username} on`,
         });
 
@@ -1013,14 +1074,15 @@ export default class UserActivityNoticeLogger {
   }
 
   /**
-   * Sends a log of a cancelled LOA extension (which wasn't already approved) to the logging channel, if one exists.
-   * @param Interaction - The cancellation interaction received from the one who originally submitted the LOA.
-   * @param NoticeDocument - The LOA document after being updated.
-   * @returns A Promise that resolves after the edition of the request message if it exists.
+   * Logs the cancellation of an extension request to the logging channel.
+   * Also sends a DM notice to the requester and updates the request message if applicable.
+   * @param Interaction - The interaction from the requester cancelling the extension.
+   * @param NoticeDocument - The updated activity notice document.
+   * @returns A Promise resolving after the log and updates are completed.
    */
-  public static async LogExtensionCancellation(
+  async LogExtensionCancellation(
     Interaction: ButtonInteraction<"cached">,
-    NoticeDocument: ANoticeDocument
+    NoticeDocument: UserActivityNoticeDoc
   ) {
     if (!NoticeDocument.extension_request || !NoticeDocument.review_date) return;
     const LogChannel = await this.GetLoggingChannel(Interaction.guild, "log");
@@ -1112,25 +1174,14 @@ export default class UserActivityNoticeLogger {
   }
 
   /**
-   * Sends a log of a cancelled LOA extension to the logging channel, if one exists. Also sends a DM notice to the requester if it is possible.
-   * This function is not for logging manual end (i.e. management staff end commands).
-   * @param Client
-   * @param NoticeDocument - The LOA document taking action based on.
-   *                      Required fields are: `_id`, `review_date`, `reviewed_by`, `status`, `end_date`, `user`, `guild`, and `duration_hr`.
-   * @param CurrentDate - The current date which will be used to determine if the LOA has ended.
-   * @returns A Promise resolves to the sent log message if successful.
-   * @silent This function will try not to throw any errors when executed.
+   * Logs the end of an activity notice to the logging channel.
+   * Also sends a DM notice to the requester if applicable.
+   * @param Client - The Discord client instance.
+   * @param NoticeDocument - The activity notice document that has ended.
+   * @returns A Promise resolving after the log is completed.
    */
-  public static async LogLeaveEnd(
-    Client: DiscordClient,
-    NoticeDocument: ANoticeDocument,
-    CurrentDate: Date = new Date()
-  ) {
-    if (
-      NoticeDocument.review_date === null ||
-      NoticeDocument.status !== "Approved" ||
-      isAfter(NoticeDocument.end_date, CurrentDate)
-    ) {
+  async LogActivityNoticeEnd(Client: DiscordClient, NoticeDocument: UserActivityNoticeDoc) {
+    if (!NoticeDocument.is_approved || !NoticeDocument.is_over) {
       return;
     }
 
@@ -1138,21 +1189,22 @@ export default class UserActivityNoticeLogger {
     const Requester = await Guild?.members.fetch(NoticeDocument.user).catch(() => null);
 
     if (Guild && Requester) {
+      const LeaveOrReduced = this.is_leave ? "leave" : "RA";
       const DMNotice = new EmbedBuilder()
         .setTimestamp(NoticeDocument.end_date)
         .setColor(Embeds.Colors.LOARequestEnded)
         .setFooter({ text: `Reference ID: ${NoticeDocument._id}` })
-        .setTitle("Leave of Absence — End Notice")
+        .setTitle(`${this.title} — End Notice`)
         .setDescription(
           Dedent(`
-            Your leave of absence, which began on ${FormatTime(NoticeDocument.review_date, "D")} (${FormatTime(NoticeDocument.review_date, "R")}), has \
-            ended and you are no longer on leave. If you need to request a new leave, please use the \`/loa request\` command on the server.
+            Your ${this.title_lower}, which began on ${FormatTime(NoticeDocument.review_date!, "D")} (${FormatTime(NoticeDocument.review_date!, "R")}), has \
+            ended and you are no longer on ${LeaveOrReduced}. If you need to request a new leave, please use the \`/${this.cmd_name} request\` command on the server.
           `)
         )
         .setAuthor({
           name: Guild.name,
           iconURL:
-            Client.guilds.cache.get(NoticeDocument.guild)?.iconURL({ size: 128 }) ??
+            Client.guilds.cache.get(NoticeDocument.guild)?.iconURL(this.ImgURLOpts) ??
             Embeds.Thumbs.Transparent,
         });
 
@@ -1165,18 +1217,19 @@ export default class UserActivityNoticeLogger {
         const LogEmbed = new EmbedBuilder()
           .setTimestamp(NoticeDocument.end_date)
           .setColor(Embeds.Colors.LOARequestEnded)
-          .setTitle("Leave of Absence Ended")
+          .setTitle(`${this.title} Ended`)
           .setFooter({ text: `Reference ID: ${NoticeDocument._id}; ended on` })
           .addFields(
             {
               inline: true,
-              name: "Leave Info",
-              value: Dedent(`
-              **Requester:** ${userMention(NoticeDocument.user)}
-              **Duration:** ${NoticeDocument.duration_hr}
-              **Started On:** ${FormatTime(NoticeDocument.review_date, "F")}
-              **Leave Reason:** ${NoticeDocument.reason}
-            `),
+              name: "Request Info",
+              value: this.ConcatenateLines(
+                `**Requester:** ${userMention(NoticeDocument.user)}`,
+                this.GetQuotaReductionText(NoticeDocument),
+                `**Duration:** ${NoticeDocument.duration_hr}`,
+                `**Started On:** ${FormatTime(NoticeDocument.review_date!, "F")}`,
+                `**Notice Reason:** ${NoticeDocument.reason}`
+              ),
             },
             {
               inline: true,
@@ -1195,18 +1248,21 @@ export default class UserActivityNoticeLogger {
   }
 
   /**
-   * Logs an early leave end upon the management staff or the requester request to the logging channel and sends a DM notice to the requester.
-   * @param Interaction - The interaction received from the management staff or the requester to early end the LOA.
-   * @param NoticeDocument - The ended leave.
+   * Logs the early termination of an activity notice to the logging channel.
+   * Also sends a DM notice to the requester if applicable.
+   * @param Interaction - The interaction from the management staff or requester ending the notice early.
+   * @param LeaveDocument - The activity notice document that was ended early.
+   * @param EndRequestBy - Indicates whether the termination was requested by "Management" or "Requester".
+   * @returns A Promise resolving after the log is completed.
    */
-  public static async LogEarlyLeaveEnd(
+  async LogEarlyLeaveEnd(
     Interaction: ManagementInteraction,
-    NoticeDocument: ANoticeDocument,
+    LeaveDocument: UserActivityNoticeDoc,
     EndRequestBy: "Management" | "Requester"
   ) {
-    if (!NoticeDocument.review_date) return;
+    if (!LeaveDocument.review_date || LeaveDocument.type !== "LeaveOfAbsence") return;
     const LogChannel = await this.GetLoggingChannel(Interaction.guild, "log");
-    const Requester = await Interaction.guild.members.fetch(NoticeDocument.user).catch(() => null);
+    const Requester = await Interaction.guild.members.fetch(LeaveDocument.user).catch(() => null);
 
     if (Requester) {
       const DMNotice = new EmbedBuilder()
@@ -1215,32 +1271,32 @@ export default class UserActivityNoticeLogger {
         .setTitle("Leave of Absence — End Notice")
         .setAuthor({
           name: Interaction.guild.name,
-          iconURL: Interaction.guild.iconURL({ size: 128 }) ?? Embeds.Thumbs.Transparent,
+          iconURL: Interaction.guild.iconURL(this.ImgURLOpts) ?? Embeds.Thumbs.Transparent,
         });
 
       if (EndRequestBy === "Requester") {
         DMNotice.setDescription(
           Dedent(`
-            Your leave of absence, originally scheduled to end on ${FormatTime(NoticeDocument.end_date, "D")} (${FormatTime(NoticeDocument.end_date, "R")}), has \
+            Your leave of absence, originally scheduled to end on ${FormatTime(LeaveDocument.end_date, "D")} (${FormatTime(LeaveDocument.end_date, "R")}), has \
             been terminated (ended) early upon your request. If you need to request a new leave, please use the \`/loa request\` command on the server.
           `)
         ).setFooter({
-          text: `Reference ID: ${NoticeDocument._id}`,
+          text: `Reference ID: ${LeaveDocument._id}`,
         });
       } else {
         DMNotice.setDescription(
           Dedent(`
-            Your leave of absence, originally scheduled to end on ${FormatTime(NoticeDocument.end_date, "D")} (${FormatTime(NoticeDocument.end_date, "R")}), has \
+            Your leave of absence, originally scheduled to end on ${FormatTime(LeaveDocument.end_date, "D")} (${FormatTime(LeaveDocument.end_date, "R")}), has \
             been terminated (ended) early by management. If you need to request a new leave, please use the \`/loa request\` command on the server.
           `)
         ).setFooter({
-          text: `Reference ID: ${NoticeDocument._id}; ended by: @${Interaction.user.username}`,
+          text: `Reference ID: ${LeaveDocument._id}; ended by: @${Interaction.user.username}`,
         });
 
-        if (NoticeDocument.early_end_reason) {
+        if (LeaveDocument.early_end_reason) {
           DMNotice.setDescription(
             DMNotice.data.description +
-              `\n\n**Reason Provided by Management:**\n${codeBlock("", NoticeDocument.early_end_reason)}`
+              `\n\n**Reason Provided by Management:**\n${codeBlock("", LeaveDocument.early_end_reason)}`
           );
         }
       }
@@ -1253,17 +1309,17 @@ export default class UserActivityNoticeLogger {
         .setTimestamp(Interaction.createdAt)
         .setColor(Embeds.Colors.LOARequestEnded)
         .setTitle("Leave of Absence Ended")
-        .setFooter({ text: `Reference ID: ${NoticeDocument._id}; ended early on` })
+        .setFooter({ text: `Reference ID: ${LeaveDocument._id}; ended early on` })
         .addFields({
           inline: true,
           name: "Leave Info",
           value: Dedent(`
-              **Requester:** ${userMention(NoticeDocument.user)}
-              **Org. Duration:** ${NoticeDocument.original_duration_hr}
-              **Leave Duration:** ${NoticeDocument.duration_hr}
-              **Started On:** ${FormatTime(NoticeDocument.review_date, "F")}
-              **Scheduled to End On:** ${FormatTime(NoticeDocument.end_date, "D")}
-              **Leave Reason:** ${NoticeDocument.reason}
+              **Requester:** ${userMention(LeaveDocument.user)}
+              **Org. Duration:** ${LeaveDocument.original_duration_hr}
+              **Leave Duration:** ${LeaveDocument.duration_hr}
+              **Started On:** ${FormatTime(LeaveDocument.review_date, "F")}
+              **Scheduled to End On:** ${FormatTime(LeaveDocument.end_date, "D")}
+              **Leave Reason:** ${LeaveDocument.reason}
             `),
         });
 
@@ -1272,9 +1328,9 @@ export default class UserActivityNoticeLogger {
           inline: true,
           name: "Approval Info",
           value: Dedent(`
-            **Approver:** ${userMention(NoticeDocument.reviewed_by!.id)}
+            **Approver:** ${userMention(LeaveDocument.reviewed_by!.id)}
             **Notes:**
-            ${NoticeDocument.reviewer_notes || "`N/A`"}
+            ${LeaveDocument.reviewer_notes || "`N/A`"}
           `),
         });
       } else {
@@ -1282,11 +1338,11 @@ export default class UserActivityNoticeLogger {
           inline: true,
           name: "Management Staff",
           value: Dedent(`
-            **Approver:** ${userMention(NoticeDocument.reviewed_by!.id)}
-            **Approver Notes:** ${NoticeDocument.reviewer_notes || "`N/A`"}
+            **Approver:** ${userMention(LeaveDocument.reviewed_by!.id)}
+            **Approver Notes:** ${LeaveDocument.reviewer_notes || "`N/A`"}
 
             **Ended By:** ${userMention(Interaction.user.id)}
-            **End Reason:** ${NoticeDocument.early_end_reason || "`N/A`"}
+            **End Reason:** ${LeaveDocument.early_end_reason || "`N/A`"}
           `),
         });
       }
@@ -1296,22 +1352,27 @@ export default class UserActivityNoticeLogger {
   }
 
   /**
-   * @param MgmtInteract - The received management interaction (button/cmd).
-   * @param WipeResult - The deletion result of mongoose/mongodb.
-   * @param RecordsStatus - The status of the records.
-   * @param TargettedUser - An optional parameter to only specify a targetted user.
-   * @returns A promise that resolves to the logging message sent or `undefined` if it wasn't.
+   * Logs the wiping of user activity notices to the logging channel.
+   * @param MgmtInteract - The interaction from the management staff initiating the wipe.
+   * @param WipeResult - The result of the wipe operation.
+   * @param RecordsStatus - The status of the records being wiped.
+   * @param TargettedUser - The user whose records were wiped (optional).
+   * @returns A Promise resolving to the sent log message or `undefined` if no log was sent.
    */
-  public static async LogLOAsWipe(
+  async LogUserActivityNoticesWipe(
     MgmtInteract: BaseInteraction<"cached"> | GuildMember,
     WipeResult: Mongoose.mongo.DeleteResult & { recordsAfter?: Date; recordsBefore?: Date },
-    RecordsStatus?: string,
+    RecordsStatus?: UserActivityNotice.NoticeStatus,
     TargettedUser?: User
   ) {
     const LoggingChannel = await this.GetLoggingChannel(MgmtInteract.guild, "log");
     const LogEmbed = new EmbedBuilder()
       .setColor(Embeds.Colors.LOARequestCancelled)
-      .setTitle(TargettedUser ? "Member LOA Records Wiped" : "LOA Records Wiped")
+      .setTitle(
+        TargettedUser
+          ? `Member ${this.cmd_name.toUpperCase()} Records Wiped`
+          : `${this.cmd_name.toUpperCase()} Records Wiped`
+      )
       .setFooter({ text: `Wiped by: @${MgmtInteract.user.username} on` })
       .setDescription(
         Dedent(`
