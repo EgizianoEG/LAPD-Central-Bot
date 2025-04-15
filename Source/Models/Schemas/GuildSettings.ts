@@ -178,6 +178,39 @@ const GuildSettings = new Schema({
       },
     },
   },
+
+  reduced_activity: {
+    _id: false,
+    default: {},
+    type: {
+      enabled: {
+        type: Boolean,
+        default: false,
+        required: true,
+      },
+
+      requests_channel: {
+        type: String,
+        default: null,
+        required: false,
+        match: SnowflakeIDValidationN1,
+      },
+
+      log_channel: {
+        type: String,
+        default: null,
+        required: false,
+        match: SnowflakeIDValidationN1,
+      },
+
+      ra_role: {
+        type: String,
+        default: null,
+        required: false,
+        match: SnowflakeIDValidationN1,
+      },
+    },
+  },
 });
 
 export default GuildSettings;
