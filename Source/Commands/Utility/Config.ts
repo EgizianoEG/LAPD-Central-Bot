@@ -1,4 +1,5 @@
 /* eslint-disable sonarjs/no-duplicate-string */
+/* eslint-disable sonarjs/use-type-alias */
 import {
   Message,
   ButtonStyle,
@@ -53,6 +54,7 @@ enum ConfigTopics {
   LeaveConfiguration = "app-config-loa",
   DutyActConfiguration = "app-config-da",
   AdditionalConfiguration = "app-config-ac",
+  ReducedActivityConfiguration = "app-config-ra",
 }
 
 /**
@@ -92,6 +94,13 @@ const CTAIds = {
   [ConfigTopics.AdditionalConfiguration]: {
     DActivitiesDeletionInterval: `${ConfigTopics.AdditionalConfiguration}-dadi`,
     UserTextInputFilteringEnabled: `${ConfigTopics.AdditionalConfiguration}-utfe`,
+  },
+
+  [ConfigTopics.ReducedActivityConfiguration]: {
+    ModuleEnabled: `${ConfigTopics.ReducedActivityConfiguration}-me`,
+    RequestsChannel: `${ConfigTopics.ReducedActivityConfiguration}-rc`,
+    LogChannel: `${ConfigTopics.ReducedActivityConfiguration}-lc`,
+    RARole: `${ConfigTopics.ReducedActivityConfiguration}-rar`,
   },
 };
 
@@ -150,6 +159,10 @@ function GetConfigTopicsDropdownMenu(CmdInteract: SlashCommandInteraction<"cache
           .setLabel("Leave of Absence Module Configuration")
           .setDescription("Set on-leave role, requests channel, and more.")
           .setValue(ConfigTopics.LeaveConfiguration),
+        new StringSelectMenuOptionBuilder()
+          .setLabel("Reduced Activity Module Configuration")
+          .setDescription("Set reduced activity role, requests channel, and more.")
+          .setValue(ConfigTopics.ReducedActivityConfiguration),
         new StringSelectMenuOptionBuilder()
           .setLabel("Duty Activities Module Configuration")
           .setDescription("Set arrest, citation, and incident log channels and more.")
@@ -507,6 +520,74 @@ function GetAdditionalConfigComponents(
   return [LogDelIntervalSMAR, IncidentLogChannelAR, UTIFilteringEnabledAR] as const;
 }
 
+function GetReducedActivityModuleConfigComponents(
+  CmdInteract: SlashCommandInteraction<"cached">,
+  ReducedActivityConfig: GuildSettings["reduced_activity"]
+) {
+  const ModuleEnabledAR = new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(
+    new StringSelectMenuBuilder()
+      .setPlaceholder("Module Enabled/Disabled")
+      .setMinValues(1)
+      .setMaxValues(1)
+      .setCustomId(
+        `${CTAIds[ConfigTopics.ReducedActivityConfiguration].ModuleEnabled}:${CmdInteract.user.id}`
+      )
+      .setOptions(
+        new StringSelectMenuOptionBuilder()
+          .setLabel("Enabled")
+          .setValue("true")
+          .setDescription("Allow the usage of reduced activity commands.")
+          .setDefault(ReducedActivityConfig.enabled),
+        new StringSelectMenuOptionBuilder()
+          .setLabel("Disabled")
+          .setValue("false")
+          .setDescription("Prevent the usage of reduced activity commands.")
+          .setDefault(!ReducedActivityConfig.enabled)
+      )
+  );
+
+  const RARoleAR = new ActionRowBuilder<RoleSelectMenuBuilder>().setComponents(
+    new RoleSelectMenuBuilder()
+      .setCustomId(
+        `${CTAIds[ConfigTopics.ReducedActivityConfiguration].RARole}:${CmdInteract.user.id}`
+      )
+      .setDefaultRoles(ReducedActivityConfig.ra_role ? [ReducedActivityConfig.ra_role] : [])
+      .setPlaceholder("Reduced Activity Role")
+      .setMinValues(0)
+      .setMaxValues(1)
+  );
+
+  const RequestsChannelAR = new ActionRowBuilder<ChannelSelectMenuBuilder>().setComponents(
+    new ChannelSelectMenuBuilder()
+      .setMinValues(0)
+      .setMaxValues(1)
+      .setPlaceholder("Requests Channel")
+      .setChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+      .setCustomId(
+        `${CTAIds[ConfigTopics.ReducedActivityConfiguration].RequestsChannel}:${CmdInteract.user.id}`
+      )
+      .setDefaultChannels(
+        ReducedActivityConfig.requests_channel ? [ReducedActivityConfig.requests_channel] : []
+      )
+  );
+
+  const LogChannelAR = new ActionRowBuilder<ChannelSelectMenuBuilder>().setComponents(
+    new ChannelSelectMenuBuilder()
+      .setMinValues(0)
+      .setMaxValues(1)
+      .setPlaceholder("Log Channel")
+      .setChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+      .setCustomId(
+        `${CTAIds[ConfigTopics.ReducedActivityConfiguration].LogChannel}:${CmdInteract.user.id}`
+      )
+      .setDefaultChannels(
+        ReducedActivityConfig.log_channel ? [ReducedActivityConfig.log_channel] : []
+      )
+  );
+
+  return [ModuleEnabledAR, RARoleAR, RequestsChannelAR, LogChannelAR] as const;
+}
+
 function GetShowConfigurationsPageComponents(CmdInteract: SlashCommandInteraction<"cached">) {
   return [
     new ActionRowBuilder<ButtonBuilder>().setComponents(
@@ -620,6 +701,24 @@ function GetAdditionalConfigExplanationEmbed() {
       `)
         .replace(/\.\s{2,}(\w)/g, ". $1")
         .replace(/(\w)\s{2,}(\w)/g, "$1 $2")
+    );
+}
+
+function GetReducedActivityModuleConfigExplanationEmbed() {
+  return new EmbedBuilder()
+    .setColor(BaseEmbedColor)
+    .setTitle("Reduced Activity Module Configuration")
+    .setDescription(
+      Dedent(`
+        1. **Module Enabled**
+          Toggle whether to enable or disable reduced activity commands.
+        2. **Reduced Activity Role**
+          The role that will be assigned to members when their reduced activity request is approved.
+        3. **Requests Channel**
+          The channel where reduced activity requests will be sent for approval.
+        4. **Log Channel**
+          The channel where updates to reduced activity requests will be logged.
+      `)
     );
 }
 
@@ -1452,6 +1551,151 @@ async function HandleDutyActivitiesConfigPageInteracts(
   });
 }
 
+async function HandleReducedActivityConfigPageInteracts(
+  CmdInteract: SlashCommandInteraction<"cached">,
+  ConfigPrompt: Message<true> | InteractionResponse<true>,
+  RACurrConfiguration: GuildSettings["reduced_activity"]
+) {
+  let ModuleEnabled = RACurrConfiguration.enabled;
+  let RARole = RACurrConfiguration.ra_role;
+  let LogChannel = RACurrConfiguration.log_channel;
+  let RequestsChannel = RACurrConfiguration.requests_channel;
+
+  const RACompActionCollector = ConfigPrompt.createMessageComponentCollector<
+    | ComponentType.Button
+    | ComponentType.ChannelSelect
+    | ComponentType.StringSelect
+    | ComponentType.RoleSelect
+  >({
+    filter: (Interact) => Interact.user.id === CmdInteract.user.id,
+    time: 10 * 60 * 1000,
+  });
+
+  const HandleSettingsSave = async (ButtonInteract: ButtonInteraction<"cached">) => {
+    if (
+      RACurrConfiguration.enabled === ModuleEnabled &&
+      RACurrConfiguration.ra_role === RARole &&
+      RACurrConfiguration.log_channel === LogChannel &&
+      RACurrConfiguration.requests_channel === RequestsChannel
+    ) {
+      return new InfoEmbed()
+        .useInfoTemplate("ConfigTopicNoChangesMade", "reduced activity")
+        .replyToInteract(ButtonInteract, true);
+    }
+
+    if (!ButtonInteract.deferred)
+      await ButtonInteract.deferReply({ flags: MessageFlags.Ephemeral });
+
+    RACurrConfiguration = await GuildModel.findByIdAndUpdate(
+      CmdInteract.guildId,
+      {
+        $set: {
+          "settings.reduced_activity.enabled": ModuleEnabled,
+          "settings.reduced_activity.ra_role": RARole,
+          "settings.reduced_activity.log_channel": LogChannel,
+          "settings.reduced_activity.requests_channel": RequestsChannel,
+        },
+      },
+      {
+        new: true,
+        upsert: true,
+        strict: true,
+        runValidators: true,
+        projection: {
+          settings: 1,
+        },
+      }
+    ).then((GuildDoc) => GuildDoc?.settings.reduced_activity);
+
+    if (RACurrConfiguration) {
+      const SetRARole = RACurrConfiguration.ra_role
+        ? roleMention(RACurrConfiguration.ra_role)
+        : "`None`";
+      const SetLogChannel = RACurrConfiguration.log_channel
+        ? channelMention(RACurrConfiguration.log_channel)
+        : "`None`";
+      const SetRequestsChannel = RACurrConfiguration.requests_channel
+        ? channelMention(RACurrConfiguration.requests_channel)
+        : "`None`";
+
+      const FormattedDesc = Dedent(`
+        Successfully set/updated the app's reduced activity module configuration.
+        Current Configuration:
+        - **Module Enabled:** ${RACurrConfiguration.enabled ? "Yes" : "No"}
+        - **Reduced Activity Role:** ${SetRARole}
+        - **Requests Channel:** ${SetRequestsChannel}
+        - **Log Channel:** ${SetLogChannel}
+      `);
+
+      return new SuccessEmbed().setDescription(FormattedDesc).replyToInteract(ButtonInteract);
+    } else {
+      return new ErrorEmbed().useErrTemplate("AppError").replyToInteract(ButtonInteract);
+    }
+  };
+
+  RACompActionCollector.on("collect", async (RecInteract) => {
+    const ActionId = RecInteract.customId;
+    try {
+      if (!RecInteract.isButton()) RecInteract.deferUpdate().catch(() => null);
+      if (
+        RecInteract.isButton() &&
+        ActionId.startsWith(`${ConfigTopics.ReducedActivityConfiguration}-cfm`)
+      ) {
+        await HandleSettingsSave(RecInteract);
+      } else if (
+        RecInteract.isButton() &&
+        ActionId.startsWith(`${ConfigTopics.ReducedActivityConfiguration}-bck`)
+      ) {
+        RACompActionCollector.stop("Back");
+        await RecInteract.deferUpdate();
+        return Callback(CmdInteract);
+      } else if (
+        RecInteract.isStringSelectMenu() &&
+        ActionId.startsWith(CTAIds[ConfigTopics.ReducedActivityConfiguration].ModuleEnabled)
+      ) {
+        ModuleEnabled = RecInteract.values[0] === "true";
+      } else if (RecInteract.isChannelSelectMenu()) {
+        if (ActionId.startsWith(CTAIds[ConfigTopics.ReducedActivityConfiguration].LogChannel)) {
+          LogChannel = RecInteract.values[0] || null;
+        } else if (
+          ActionId.startsWith(CTAIds[ConfigTopics.ReducedActivityConfiguration].RequestsChannel)
+        ) {
+          RequestsChannel = RecInteract.values[0] || null;
+        }
+      } else if (
+        RecInteract.isRoleSelectMenu() &&
+        ActionId.startsWith(CTAIds[ConfigTopics.ReducedActivityConfiguration].RARole)
+      ) {
+        RARole = RecInteract.values[0] || null;
+      }
+    } catch (Err: any) {
+      const ErrorId = GetErrorId();
+      new ErrorEmbed()
+        .useErrTemplate("AppError")
+        .setErrorId(ErrorId)
+        .replyToInteract(RecInteract, true);
+
+      AppLogger.error({
+        message: "Failed to handle component interactions for reduced activity configuration;",
+        error_id: ErrorId,
+        label: FileLabel,
+        stack: Err.stack,
+      });
+    }
+  });
+
+  RACompActionCollector.on("end", async (Collected, EndReason) => {
+    if (EndReason.includes("time") || EndReason.includes("idle")) {
+      const LastInteract = Collected.last() || CmdInteract;
+      if (!(await ConfigPrompt.fetch(true).catch(() => null))) return;
+      return new InfoEmbed()
+        .useInfoTemplate("TimedOutConfigPrompt")
+        .setTitle("Timed Out - Reduced Activity Module Configuration")
+        .replyToInteract(LastInteract);
+    }
+  });
+}
+
 async function HandleConfigShowPageInteracts(
   CmdInteract: SlashCommandInteraction<"cached">,
   ConfigPrompt: Message<true> | InteractionResponse<true>
@@ -1625,6 +1869,40 @@ async function HandleLeaveModuleSelection(
   }
 }
 
+async function HandleReducedActivityModuleSelection(
+  SelectInteract: StringSelectMenuInteraction<"cached">,
+  CmdInteract: SlashCommandInteraction<"cached">
+) {
+  const GuildConfig = await GetGuildSettings(CmdInteract.guildId);
+
+  if (GuildConfig) {
+    const ExplanationEmbed = GetReducedActivityModuleConfigExplanationEmbed();
+    const ModulePageComps = GetReducedActivityModuleConfigComponents(
+      CmdInteract,
+      GuildConfig.reduced_activity
+    );
+    const ConfirmBackBtns = GetConfigTopicConfirmAndBackBtns(
+      CmdInteract,
+      ConfigTopics.ReducedActivityConfiguration
+    );
+
+    const ConfigPrompt = await SelectInteract.update({
+      components: [...ModulePageComps, ConfirmBackBtns],
+      embeds: [ExplanationEmbed],
+    });
+
+    return HandleReducedActivityConfigPageInteracts(
+      CmdInteract,
+      ConfigPrompt,
+      GuildConfig.reduced_activity
+    );
+  } else {
+    return new ErrorEmbed()
+      .useErrTemplate("GuildConfigNotFound")
+      .replyToInteract(SelectInteract, true);
+  }
+}
+
 async function HandleConfigShowSelection(
   SelectInteract: StringSelectMenuInteraction<"cached">,
   CmdInteract: SlashCommandInteraction<"cached">
@@ -1699,6 +1977,13 @@ async function HandleConfigShowSelection(
     **Leave Log Channel:** ${GuildSettings.leave_notices.log_channel ? channelMention(GuildSettings.leave_notices.log_channel) : "None"}
   `);
 
+  const ReducedActivityModuleFieldDesc = Dedent(`
+    >>> **Module Enabled:** ${GuildSettings.reduced_activity.enabled ? "Yes" : "No"}
+    **Reduced Activity Role:** ${GuildSettings.reduced_activity.ra_role ? roleMention(GuildSettings.reduced_activity.ra_role) : "None"}
+    **Requests Channel:** ${GuildSettings.reduced_activity.requests_channel ? channelMention(GuildSettings.reduced_activity.requests_channel) : "None"}
+    **Log Channel:** ${GuildSettings.reduced_activity.log_channel ? channelMention(GuildSettings.reduced_activity.log_channel) : "None"}
+  `);
+
   const ResponseEmbed = new EmbedBuilder()
     .setTitle("Current App Configuration")
     .setFooter({ text: "Showing configuration as of" })
@@ -1716,6 +2001,10 @@ async function HandleConfigShowSelection(
       {
         name: "**Leave Notices Module**",
         value: LeaveNoticesModuleFieldDesc,
+      },
+      {
+        name: "**Reduced Activity Module**",
+        value: ReducedActivityModuleFieldDesc,
       },
       {
         name: "**Duty Activities Module**",
@@ -1763,6 +2052,8 @@ async function HandleInitialRespActions(
         return HandleLeaveModuleSelection(TopicSelectInteract, CmdInteract);
       } else if (SelectedConfigTopic === ConfigTopics.AdditionalConfiguration) {
         return HandleAdditionalConfigSelection(TopicSelectInteract, CmdInteract);
+      } else if (SelectedConfigTopic === ConfigTopics.ReducedActivityConfiguration) {
+        return HandleReducedActivityModuleSelection(TopicSelectInteract, CmdInteract);
       } else {
         return new ErrorEmbed()
           .useErrTemplate("UnknownConfigTopic")
