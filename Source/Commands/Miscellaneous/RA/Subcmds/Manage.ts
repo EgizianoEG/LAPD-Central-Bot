@@ -8,6 +8,7 @@ import {
   MessageFlags,
   EmbedBuilder,
   ButtonStyle,
+  Message,
 } from "discord.js";
 
 import { ReducedActivityEventLogger } from "@Utilities/Classes/UANEventLogger.js";
@@ -25,6 +26,60 @@ const RAEventLogger = new ReducedActivityEventLogger();
 // ---------------------------------------------------------------------------------------
 // Functions:
 // ----------
+function GetManagementComponents(ActiveOrPendingRA?: RADocument | null) {
+  const ActionRow = new ActionRowBuilder<ButtonBuilder>();
+  const CancelBtn = new ButtonBuilder()
+    .setCustomId("ra-mng-cancel")
+    .setStyle(ButtonStyle.Danger)
+    .setEmoji(Emojis.WhiteCross)
+    .setLabel("Cancel Pending Request");
+
+  if (ActiveOrPendingRA?.status === "Pending") {
+    ActionRow.addComponents(CancelBtn);
+  }
+
+  return ActiveOrPendingRA?.status === "Pending" ? [ActionRow] : [];
+}
+
+function GetManagementPromptEmbed(ActiveOrPendingRA?: RADocument | null) {
+  const PromptEmbed = new EmbedBuilder()
+    .setTitle("Reduced Activity Management")
+    .setColor(Embeds.Colors.Info);
+
+  if (ActiveOrPendingRA?.status === "Approved") {
+    PromptEmbed.setColor(Embeds.Colors.LOARequestApproved).addFields({
+      inline: true,
+      name: "Active Notice",
+      value: Dedent(`
+      **Started:** ${FormatTime(ActiveOrPendingRA.review_date!, "D")}
+      **Ends On:** ${FormatTime(ActiveOrPendingRA.end_date, "D")}
+      **Quota Reduction:** ~${Math.round((ActiveOrPendingRA.quota_scale ?? 0) * 100)}%
+      **Reason:** ${ActiveOrPendingRA.reason}
+    `),
+    });
+  } else if (ActiveOrPendingRA?.status === "Pending") {
+    PromptEmbed.setColor(Embeds.Colors.LOARequestPending).addFields({
+      inline: true,
+      name: "Pending Notice",
+      value: Dedent(`
+      **Requested:** ${FormatTime(ActiveOrPendingRA.request_date, "R")}
+      **Starts On:** *once approved.*
+      **Ends On:** around ${FormatTime(new Date(ActiveOrPendingRA.request_date.getTime() + ActiveOrPendingRA.duration), "D")}
+      **Quota Reduction:** ~${Math.round((ActiveOrPendingRA.quota_scale ?? 0) * 100)}%
+      **Reason:** ${ActiveOrPendingRA.reason}
+    `),
+    });
+  } else {
+    PromptEmbed.setDescription(
+      `You currently do not have an active or pending reduced activity notice to manage.\nYou may request one using the ${MentionCmdByName(
+        "ra request"
+      )} command.`
+    );
+  }
+
+  return PromptEmbed;
+}
+
 async function GetManagementEmbedAndRA(
   Interaction: SlashCommandInteraction<"cached"> | ButtonInteraction<"cached">
 ) {
@@ -42,57 +97,8 @@ async function GetManagementEmbedAndRA(
     ],
   });
 
-  const ReplyEmbed = new EmbedBuilder()
-    .setTitle("Reduced Activity Management")
-    .setColor(Embeds.Colors.Info);
-
-  if (ActiveOrPendingRA?.status === "Approved") {
-    ReplyEmbed.setColor(Embeds.Colors.LOARequestApproved).addFields({
-      inline: true,
-      name: "Active Reduced Activity",
-      value: Dedent(`
-        **Started:** ${FormatTime(ActiveOrPendingRA.review_date!, "D")}
-        **Ends On:** ${FormatTime(ActiveOrPendingRA.end_date, "D")}
-        **Quota Reduction:** ~${Math.round((ActiveOrPendingRA.quota_scale ?? 0) * 100)}%
-        **Reason:** ${ActiveOrPendingRA.reason}
-      `),
-    });
-  } else if (ActiveOrPendingRA?.status === "Pending") {
-    ReplyEmbed.setColor(Embeds.Colors.LOARequestPending).addFields({
-      inline: true,
-      name: "Pending Reduced Activity",
-      value: Dedent(`
-        **Requested:** ${FormatTime(ActiveOrPendingRA.request_date, "R")}
-        **Starts On:** *once approved.*
-        **Ends On:** around ${FormatTime(new Date(ActiveOrPendingRA.request_date.getTime() + ActiveOrPendingRA.duration), "D")}
-        **Quota Reduction:** ~${Math.round((ActiveOrPendingRA.quota_scale ?? 0) * 100)}%
-        **Reason:** ${ActiveOrPendingRA.reason}
-      `),
-    });
-  } else {
-    ReplyEmbed.setDescription(
-      `You currently do not have an active or pending reduced activity notice to manage.\nYou may request one using the ${MentionCmdByName(
-        "ra request"
-      )} command.`
-    );
-  }
-
-  return [ReplyEmbed, ActiveOrPendingRA] as const;
-}
-
-function GetManagementComponents(ActiveOrPendingRA?: RADocument | null) {
-  const ActionRow = new ActionRowBuilder<ButtonBuilder>();
-  const CancelBtn = new ButtonBuilder()
-    .setCustomId("ra-mng-cancel")
-    .setStyle(ButtonStyle.Danger)
-    .setEmoji(Emojis.WhiteCross)
-    .setLabel("Cancel Pending Request");
-
-  if (ActiveOrPendingRA?.status === "Pending") {
-    ActionRow.addComponents(CancelBtn);
-  }
-
-  return ActiveOrPendingRA?.status === "Pending" ? [ActionRow] : [];
+  const PromptEmbed = GetManagementPromptEmbed(ActiveOrPendingRA);
+  return [PromptEmbed, ActiveOrPendingRA] as const;
 }
 
 async function HandlePendingCancellation(
@@ -122,10 +128,11 @@ async function HandlePendingCancellation(
   );
 
   const ConfirmationMsg = await Interaction.reply({
+    withResponse: true,
     components: [ConfirmationBtns],
     embeds: [ConfirmationEmbed],
     flags: MessageFlags.Ephemeral,
-  });
+  }).then((Resp) => Resp.resource!.message! as Message<true>);
 
   const ButtonInteract = await ConfirmationMsg.awaitMessageComponent({
     componentType: ComponentType.Button,
@@ -134,7 +141,18 @@ async function HandlePendingCancellation(
   }).catch(() => null);
 
   if (!ButtonInteract || ButtonInteract.customId.includes("keep")) {
-    return Interaction.deleteReply(ConfirmationMsg.id).catch(() => null);
+    if (ButtonInteract) {
+      return ButtonInteract.deferUpdate()
+        .then(() => ButtonInteract.deleteReply())
+        .then(() => false)
+        .catch(() => false);
+    } else {
+      return Interaction.deleteReply(ConfirmationMsg.id)
+        .then(() => false)
+        .catch(() => false);
+    }
+  } else {
+    await ButtonInteract.deferUpdate();
   }
 
   const ExistingRA = await UserActivityNoticeModel.findById(ActiveOrPendingRA._id).exec();
@@ -154,12 +172,14 @@ async function HandlePendingCancellation(
     .setDescription("Your reduced activity request was successfully cancelled.");
 
   await RAEventLogger.LogCancellation(ButtonInteract, ExistingRA);
-  const [UpdatedEmbed] = await GetManagementEmbedAndRA(ButtonInteract);
-  await ButtonInteract.editReply({ message: PromptMsgId, embeds: [ReplyEmbed], components: [] });
+  const UpdatedPromptEmbed = GetManagementPromptEmbed(ExistingRA);
+
+  await ButtonInteract.editReply({ embeds: [ReplyEmbed], components: [] });
   return ButtonInteract.editReply({
     components: [],
-    embeds: [UpdatedEmbed],
-  });
+    message: PromptMsgId,
+    embeds: [UpdatedPromptEmbed],
+  }).then(() => true);
 }
 
 // ---------------------------------------------------------------------------------------
@@ -183,13 +203,21 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
 
   CompCollector.on("collect", async (ButtonInteract) => {
     if (ButtonInteract.customId.includes("cancel")) {
-      await HandlePendingCancellation(ButtonInteract, ActiveOrPendingRA, ReplyMsg.id);
-      CompCollector.stop("Cancelled");
+      const RequestCancelled = await HandlePendingCancellation(
+        ButtonInteract,
+        ActiveOrPendingRA,
+        ReplyMsg.id
+      );
+
+      if (RequestCancelled) {
+        CompCollector.stop("Cancelled");
+        return;
+      }
     }
   });
 
   CompCollector.on("end", async (Collected, EndReason) => {
-    if (EndReason.match(/^\w+Delete/)) return;
+    if (EndReason.match(/^\w+Delete/) || EndReason === "Cancelled") return;
     ManagementComps[0]?.components.forEach((Btn) => Btn.setDisabled(true));
     const LastInteract = (Collected.last() as ButtonInteraction<"cached">) || Interaction;
     await LastInteract.editReply({ message: ReplyMsg.id, components: ManagementComps }).catch(
