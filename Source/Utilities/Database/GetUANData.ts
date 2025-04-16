@@ -4,6 +4,7 @@ import UserActivityNoticeModel from "@Models/UserActivityNotice.js";
 interface GetUANDataOptions {
   guild_id: string;
   user_id?: string;
+  type: UserActivityNotice.NoticeType | UserActivityNotice.NoticeType[];
 
   /**
    * @optional The date to compare activity notices to when determining if they are expired or not.
@@ -37,7 +38,11 @@ interface GetUANDataReturn {
  */
 export default async function GetUANData(Opts: GetUANDataOptions): Promise<GetUANDataReturn> {
   const ComparisonDate = Opts.comparison_date || new Date();
-  const Notices = await UserActivityNoticeModel.find({ guild: Opts.guild_id, user: Opts.user_id })
+  const Notices = await UserActivityNoticeModel.find({
+    guild: Opts.guild_id,
+    user: Opts.user_id,
+    type: typeof Opts.type === "string" ? Opts.type : { $in: Opts.type },
+  })
     .sort({ end_date: -1 })
     .exec();
 

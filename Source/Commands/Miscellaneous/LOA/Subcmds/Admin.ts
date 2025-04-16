@@ -817,6 +817,7 @@ async function Callback(Interaction: CmdOrButtonInteraction) {
     comparison_date: Interaction.createdAt,
     guild_id: Interaction.guildId,
     user_id: TargetMember.id,
+    type: "LeaveOfAbsence",
   });
 
   let PromptMessage: Message<true>;

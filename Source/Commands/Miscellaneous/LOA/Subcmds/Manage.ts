@@ -141,6 +141,7 @@ async function GetManagementEmbedAndLOA(Interaction: PromptInteractType) {
   const LOAData = await GetLOAsData({
     guild_id: Interaction.guildId,
     user_id: Interaction.user.id,
+    type: "LeaveOfAbsence",
   });
 
   const ActiveOrPendingLOA = LOAData.active_notice ?? LOAData.pending_notice;
