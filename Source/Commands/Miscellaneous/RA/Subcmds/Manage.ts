@@ -14,14 +14,17 @@ import {
 import { ReducedActivityEventLogger } from "@Utilities/Classes/UANEventLogger.js";
 import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { Embeds, Emojis } from "@Config/Shared.js";
+import { compareDesc } from "date-fns";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import UserActivityNoticeModel from "@Models/UserActivityNotice.js";
 import MentionCmdByName from "@Utilities/Other/MentionCmd.js";
+import GetUANData from "@Utilities/Database/GetUANData.js";
 import Dedent from "dedent";
 
 type RADocument = UserActivityNotice.ActivityNoticeHydratedDocument;
 const RAEventLogger = new ReducedActivityEventLogger();
+const PreviousRALimit = 5;
 
 // ---------------------------------------------------------------------------------------
 // Functions:
@@ -83,21 +86,43 @@ function GetManagementPromptEmbed(ActiveOrPendingRA?: RADocument | null) {
 async function GetManagementEmbedAndRA(
   Interaction: SlashCommandInteraction<"cached"> | ButtonInteraction<"cached">
 ) {
-  const ActiveOrPendingRA = await UserActivityNoticeModel.findOne({
-    guild: Interaction.guildId,
-    user: Interaction.user.id,
+  const NoticesData = await GetUANData({
+    guild_id: Interaction.guildId,
+    user_id: Interaction.user.id,
     type: "ReducedActivity",
-    $or: [
-      { status: "Pending", review_date: null },
-      {
-        status: "Approved",
-        early_end_date: null,
-        end_date: { $gt: Interaction.createdAt },
-      },
-    ],
   });
 
+  const ActiveOrPendingRA = NoticesData.active_notice ?? NoticesData.pending_notice;
   const PromptEmbed = GetManagementPromptEmbed(ActiveOrPendingRA);
+  const PreviousRAsFormatted = NoticesData.notice_history
+    .filter((RA) => {
+      return (
+        RA.status === "Approved" && (RA.early_end_date ?? RA.end_date) <= Interaction.createdAt
+      );
+    })
+    .sort((a, b) => compareDesc(a.early_end_date ?? a.end_date, b.early_end_date ?? b.end_date))
+    .map((RA) => {
+      return `${FormatTime(RA.review_date!, "D")} — ${FormatTime(RA.early_end_date ?? RA.end_date, "D")}`;
+    });
+
+  if (PreviousRAsFormatted.length > 0 && PreviousRAsFormatted.length <= PreviousRALimit) {
+    PromptEmbed.addFields({
+      inline: true,
+      name: "Previously Taken RAs",
+      value: PreviousRAsFormatted.join("\n"),
+    });
+  } else if (PreviousRAsFormatted.length > PreviousRALimit) {
+    PromptEmbed.addFields({
+      inline: true,
+      name: "Previously Taken RAs",
+      value: `${PreviousRAsFormatted.slice(0, PreviousRALimit).join("\n")}\n-# *...and ${PreviousRAsFormatted.length - PreviousRALimit} more*`,
+    });
+  } else if (!(PromptEmbed.data.fields?.length && ActiveOrPendingRA)) {
+    PromptEmbed.setDescription(
+      `${PromptEmbed.data.description}\n-# There are no previously approved RAs to display.`
+    );
+  }
+
   return [PromptEmbed, ActiveOrPendingRA] as const;
 }
 
