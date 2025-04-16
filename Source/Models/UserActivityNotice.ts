@@ -300,7 +300,7 @@ ActivityNoticeSchema.virtual("is_active").get(function (this: NoticeDocument) {
 });
 
 ActivityNoticeSchema.virtual("quota_reduction").get(function (this: NoticeDocument) {
-  return `${(this.quota_scale || 0) * 100}%`;
+  return `${Math.round((this.quota_scale || 0) * 100)}%`;
 });
 
 ActivityNoticeSchema.virtual("duration_hr").get(function (this: NoticeDocument) {
