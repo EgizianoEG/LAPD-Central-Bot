@@ -569,7 +569,7 @@ async function HandleLeaveExtend(
   await ButtonInteract.showModal(ExtensionOptsModal);
   const Submission = await ButtonInteract.awaitModalSubmit({
     filter: (s) => s.customId === ExtensionOptsModal.data.custom_id,
-    time: 5 * 60_000,
+    time: 8 * 60_000,
   }).catch(() => null);
 
   if (!Submission) return;
@@ -657,7 +657,7 @@ async function HandleLeaveEnd(
   await ButtonInteract.showModal(ReasonModal);
   const ModalSubmission = await ButtonInteract.awaitModalSubmit({
     filter: (Modal) => Modal.customId === ReasonModal.data.custom_id,
-    time: 5 * 60_000,
+    time: 8 * 60_000,
   }).catch(() => null);
 
   ActiveLeave = await ActiveLeave.getUpToDate();
@@ -685,7 +685,7 @@ async function HandleLeaveEnd(
   return PromiseAllThenTrue([
     Callback(InitialCmdInteract),
     ModalSubmission.editReply({ embeds: [ReplyEmbed] }),
-    LOAEventLogger.LogEarlyLeaveEnd(ModalSubmission, ActiveLeave, "Management"),
+    LOAEventLogger.LogEarlyUANEnd(ModalSubmission, ActiveLeave, "Management"),
     HandleLeaveRoleAssignment(ActiveLeave.user, ModalSubmission.guild, false),
   ]);
 }
@@ -701,7 +701,7 @@ async function HandleLeaveApprovalOrDenial(
 
   const NotesSubmission = await ButtonInteract.awaitModalSubmit({
     filter: (s) => s.customId === NotesModal.data.custom_id,
-    time: 5 * 60_000,
+    time: 8 * 60_000,
   }).catch(() => null);
 
   if (!NotesSubmission) return;
@@ -751,7 +751,7 @@ async function HandleExtensionApprovalOrDenial(
 
   const NotesSubmission = await ButtonInteract.awaitModalSubmit({
     filter: (s) => s.customId === NotesModal.data.custom_id,
-    time: 5 * 60_000,
+    time: 8 * 60_000,
   }).catch(() => null);
 
   if (!NotesSubmission) return;
@@ -814,7 +814,6 @@ async function Callback(Interaction: CmdOrButtonInteraction) {
   }
 
   const LOAData = await GetLOAsData({
-    comparison_date: Interaction.createdAt,
     guild_id: Interaction.guildId,
     user_id: TargetMember.id,
     type: "LeaveOfAbsence",
@@ -840,7 +839,7 @@ async function Callback(Interaction: CmdOrButtonInteraction) {
   const CompActionCollector = PromptMessage.createMessageComponentCollector({
     filter: (i) => i.user.id === Interaction.user.id,
     componentType: ComponentType.Button,
-    time: 10 * 60_000,
+    time: 14.5 * 60_000,
   });
 
   CompActionCollector.on("collect", async (ButtonInteract) => {
@@ -872,8 +871,7 @@ async function Callback(Interaction: CmdOrButtonInteraction) {
   });
 
   CompActionCollector.on("end", async (Collected, EndReason) => {
-    if (/\w{1,10}Delete/.test(EndReason)) return;
-    if (["NoActiveLeave", "CmdReinstated"].includes(EndReason)) return;
+    if (/\w{1,10}Delete/.test(EndReason) || EndReason === "CmdReinstated") return;
     try {
       PanelComps[0].components.forEach((Btn) => Btn.setDisabled(true));
       const LastInteract = Collected.last();
