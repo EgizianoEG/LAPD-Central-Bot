@@ -1076,7 +1076,7 @@ export namespace AggregateResults {
       | "end_date"
       | "reviewed_by"
       | "early_end_date"
-      | "extension_req"
+      | "extension_request"
     > | null;
 
     quota_met: boolean;

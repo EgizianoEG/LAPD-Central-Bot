@@ -1,3 +1,4 @@
+import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { Guild, GuildMember } from "discord.js";
 import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
 
@@ -7,39 +8,41 @@ import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
  * @param Guild - The guild the user is in.
  * @param IsOnLeave - Whether the user is on leave or not.
  */
-export default async function HandleLeaveRoleAssignment(
+export default async function HandleUserActivityNoticeRoleAssignment(
   UserId: string | string[],
   Guild: Guild,
-  IsOnLeave: boolean
+  TypeOfNotice: UserActivityNotice.NoticeType,
+  IsNoticeActive: boolean
 ) {
-  const LeaveRole = await GetGuildSettings(Guild.id).then((Settings) => {
-    if (!Settings) return null;
-    return Settings.leave_notices.leave_role;
-  });
+  const GuildSettings = await GetGuildSettings(Guild.id);
+  const NoticeRole =
+    TypeOfNotice === "LeaveOfAbsence"
+      ? GuildSettings?.leave_notices.leave_role
+      : GuildSettings?.reduced_activity.ra_role;
 
-  if (!LeaveRole) return;
+  if (!NoticeRole) return;
   if (Array.isArray(UserId)) {
     return Promise.all(
       UserId.map(async (User) => {
         const GuildMember = await Guild.members.fetch(User).catch(() => null);
         if (!GuildMember) return Promise.resolve();
-        return HandleSingleUserRoleAssignment(LeaveRole, GuildMember, IsOnLeave);
+        return HandleSingleUserRoleAssignment(NoticeRole, GuildMember, IsNoticeActive);
       })
     );
   } else {
     const GuildMember = await Guild.members.fetch(UserId).catch(() => null);
     if (!GuildMember) return;
-    return HandleSingleUserRoleAssignment(LeaveRole, GuildMember, IsOnLeave);
+    return HandleSingleUserRoleAssignment(NoticeRole, GuildMember, IsNoticeActive);
   }
 }
 
 async function HandleSingleUserRoleAssignment(
-  OnLeaveRole: string,
+  NoticeActiveRole: string,
   GuildMember: GuildMember,
-  IsOnLeave: boolean
+  IsNoticeActive: boolean
 ) {
   if (!GuildMember) return Promise.resolve();
-  return IsOnLeave
-    ? GuildMember.roles.add(OnLeaveRole, "Staff member is on leave of absence.")
-    : GuildMember.roles.remove(OnLeaveRole, "Staff member is not on leave anymore.");
+  return IsNoticeActive
+    ? GuildMember.roles.add(NoticeActiveRole, "Staff member is on leave of absence.")
+    : GuildMember.roles.remove(NoticeActiveRole, "Staff member is not on leave anymore.");
 }

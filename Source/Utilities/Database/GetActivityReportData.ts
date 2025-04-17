@@ -400,7 +400,7 @@ function CreateActivityReportAggregationPipeline(
               quota_scale: 1,
               reviewed_by: 1,
               early_end_date: 1,
-              extension_req: 1,
+              extension_request: 1,
               request_date: 1,
               review_date: 1,
               end_date: 1,

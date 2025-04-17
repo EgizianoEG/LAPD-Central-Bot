@@ -182,9 +182,16 @@ async function HandlePendingCancellation(
 
   const ExistingRA = await UserActivityNoticeModel.findById(ActiveOrPendingRA._id).exec();
   if (!ExistingRA || ExistingRA.status !== "Pending") {
-    return new ErrorEmbed()
-      .useErrTemplate("NoPendingRAToCancel")
-      .replyToInteract(ButtonInteract, true, true, "update");
+    return Promise.all([
+      ButtonInteract.editReply({
+        components: [],
+        message: PromptMsgId,
+        embeds: [GetManagementPromptEmbed(ExistingRA)],
+      }),
+      new ErrorEmbed()
+        .useErrTemplate("NoPendingRAToCancel")
+        .replyToInteract(ButtonInteract, true, true, "editReply"),
+    ]).then(() => true);
   }
 
   ExistingRA.status = "Cancelled";

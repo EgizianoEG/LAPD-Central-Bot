@@ -177,14 +177,11 @@ async function HandleApprovalOrDenial(
   const NotesModal = GetNotesModal(Interaction, ActionType);
   await Interaction.showModal(NotesModal);
 
-  console.log("Showed Modal");
-
   const NotesSubmission = await Interaction.awaitModalSubmit({
     filter: (i) => i.customId === NotesModal.data.custom_id,
     time: 10 * 60_000,
   }).catch(() => null);
 
-  console.log("Awaited Modal");
   if (!NotesSubmission) return false;
   await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
 

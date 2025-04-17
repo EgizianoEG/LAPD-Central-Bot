@@ -1,9 +1,9 @@
-import { type CronJobFileDefReturn } from "@Typings/Global.js";
 import { BaseUserActivityNoticeLogger } from "@Utilities/Classes/UANEventLogger.js";
+import { type CronJobFileDefReturn } from "@Typings/Global.js";
 import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { subDays } from "date-fns";
 
-import HandleNoticeRoleAssignment from "@Utilities/Other/HandleLeaveRoleAssignment.js";
+import HandleNoticeRoleAssignment from "@Utilities/Other/HandleUANRoleAssignment.js";
 import ActivityNoticeModel from "@Models/UserActivityNotice.js";
 const BaseUANLogger = new BaseUserActivityNoticeLogger(true);
 
@@ -77,7 +77,7 @@ async function HandleExpiredUserActivityNotices(
     if (!CategorizedByGuild[GuildId]?.length) continue;
     for (const Notice of CategorizedByGuild[GuildId]) {
       NoticesHandled.push(Notice._id as unknown as string);
-      HandleNoticeRoleAssignment(Notice.user, GuildInst, false).catch(() => null);
+      HandleNoticeRoleAssignment(Notice.user, GuildInst, Notice.type, false).catch(() => null);
       BaseUANLogger.LogActivityNoticeEnd(Client, ActivityNoticeModel.hydrate(Notice));
     }
   }

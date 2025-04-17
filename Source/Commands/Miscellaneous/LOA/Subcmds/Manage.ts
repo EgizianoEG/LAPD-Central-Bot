@@ -24,7 +24,7 @@ import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
 import { LeaveOfAbsenceEventLogger } from "@Utilities/Classes/UANEventLogger.js";
 import { milliseconds, compareDesc, addMilliseconds } from "date-fns";
 
-import HandleLeaveRoleAssignment from "@Utilities/Other/HandleLeaveRoleAssignment.js";
+import HandleUserActivityNoticeRoleAssignment from "@Utilities/Other/HandleUANRoleAssignment.js";
 import LeaveOfAbsenceModel from "@Models/UserActivityNotice.js";
 import MentionCmdByName from "@Utilities/Other/MentionCmd.js";
 import ParseDuration from "parse-duration";
@@ -458,7 +458,7 @@ async function HandleLeaveEarlyEnd(
     CompCollector.stop("Updated"),
     Callback(ButtonInteract, MainPromptMsgId),
     LOAEventLogger.LogEarlyUANEnd(ButtonInteract, ActiveLeave, "Requester"),
-    HandleLeaveRoleAssignment(ActiveLeave.user, ButtonInteract.guild, false),
+    HandleUserActivityNoticeRoleAssignment(ActiveLeave.user, ButtonInteract.guild, false),
   ]);
 }
 

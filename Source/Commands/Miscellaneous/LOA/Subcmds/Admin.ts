@@ -29,8 +29,8 @@ import { ValidateExtendedDuration } from "./Manage.js";
 import { LeaveOfAbsenceEventLogger } from "@Utilities/Classes/UANEventLogger.js";
 import { addMilliseconds, compareDesc } from "date-fns";
 
-import HandleLeaveRoleAssignment from "@Utilities/Other/HandleLeaveRoleAssignment.js";
-import LeaveOfAbsenceModel from "@Models/UserActivityNotice.js";
+import HandleUserActivityNoticeRoleAssignment from "@Utilities/Other/HandleUANRoleAssignment.js";
+import UserActivityNoticeModel from "@Models/UserActivityNotice.js";
 import ParseDuration from "parse-duration";
 import GetLOAsData from "@Utilities/Database/GetUANData.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
@@ -361,10 +361,11 @@ async function GetActiveOrPendingLOA(
   TargetGuild: string,
   ComparisonDate: Date = new Date()
 ) {
-  return LeaveOfAbsenceModel.findOne(
+  return UserActivityNoticeModel.findOne(
     {
       user: TargetUser,
       guild: TargetGuild,
+      type: "LeaveOfAbsence",
       $or: [
         { status: "Pending", review_date: null },
         {
@@ -486,7 +487,7 @@ async function HandleLeaveStart(
       .replyToInteract(ModalSubmission, true, true);
   }
 
-  const CreatedLeave = await LeaveOfAbsenceModel.create({
+  const CreatedLeave = await UserActivityNoticeModel.create({
     guild: ModalSubmission.guildId,
     user: TargetMemberId,
     status: "Approved",
@@ -513,7 +514,12 @@ async function HandleLeaveStart(
     Callback(InitialCmdInteract),
     ModalSubmission.editReply({ embeds: [ReplyEmbed] }),
     LOAEventLogger.LogManualLeave(ModalSubmission, CreatedLeave),
-    HandleLeaveRoleAssignment(CreatedLeave.user, ModalSubmission.guild, true),
+    HandleUserActivityNoticeRoleAssignment(
+      CreatedLeave.user,
+      ModalSubmission.guild,
+      "LeaveOfAbsence",
+      true
+    ),
   ]);
 }
 
@@ -522,10 +528,11 @@ async function HandleLeaveExtend(
   TargetMemberId: string,
   InitialCmdInteract: CmdOrButtonInteraction
 ) {
-  let ActiveLeave = await LeaveOfAbsenceModel.findOne({
+  let ActiveLeave = await UserActivityNoticeModel.findOne({
     guild: ButtonInteract.guildId,
     user: TargetMemberId,
     status: "Approved",
+    type: "LeaveOfAbsence",
     early_end_date: null,
     extension_request: null,
     end_date: { $gt: ButtonInteract.createdAt },
@@ -623,10 +630,11 @@ async function HandleLeaveEnd(
   TargetMemberId: string,
   InitialCmdInteract: CmdOrButtonInteraction
 ) {
-  let ActiveLeave = await LeaveOfAbsenceModel.findOne({
+  let ActiveLeave = await UserActivityNoticeModel.findOne({
     guild: ButtonInteract.guildId,
     user: TargetMemberId,
     status: "Approved",
+    type: "LeaveOfAbsence",
     early_end_date: null,
     end_date: { $gt: ButtonInteract.createdAt },
   });
@@ -683,11 +691,17 @@ async function HandleLeaveEnd(
     );
 
   return PromiseAllThenTrue([
-    Callback(InitialCmdInteract),
     ModalSubmission.editReply({ embeds: [ReplyEmbed] }),
     LOAEventLogger.LogEarlyUANEnd(ModalSubmission, ActiveLeave, "Management"),
-    HandleLeaveRoleAssignment(ActiveLeave.user, ModalSubmission.guild, false),
-  ]);
+    HandleUserActivityNoticeRoleAssignment(
+      ActiveLeave.user,
+      ModalSubmission.guild,
+      "LeaveOfAbsence",
+      false
+    ),
+  ])
+    .then(() => Callback(InitialCmdInteract))
+    .catch(() => null);
 }
 
 async function HandleLeaveApprovalOrDenial(
@@ -706,10 +720,11 @@ async function HandleLeaveApprovalOrDenial(
 
   if (!NotesSubmission) return;
   await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
-  const PendingLeave = await LeaveOfAbsenceModel.findOne({
+  const PendingLeave = await UserActivityNoticeModel.findOne({
     guild: ButtonInteract.guildId,
     user: TargetMemberId,
     status: "Pending",
+    type: "LeaveOfAbsence",
   });
 
   if ((await HandleLeaveReviewValidation(NotesSubmission, PendingLeave)) || !PendingLeave) {
@@ -756,13 +771,14 @@ async function HandleExtensionApprovalOrDenial(
 
   if (!NotesSubmission) return;
   await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
-  const ActiveLeave = await LeaveOfAbsenceModel.findOne({
+  const ActiveLeave = await UserActivityNoticeModel.findOne({
     guild: ButtonInteract.guildId,
     user: TargetMemberId,
     status: "Approved",
+    type: "LeaveOfAbsence",
     early_end_date: null,
     end_date: { $gt: NotesSubmission.createdAt },
-    "extension_req.status": "Pending",
+    "extension_request.status": "Pending",
   });
 
   if (!ActiveLeave) {
@@ -770,7 +786,7 @@ async function HandleExtensionApprovalOrDenial(
       Callback(InitialCmdInteract),
       new ErrorEmbed()
         .useErrTemplate("LOAExtensionNotFoundForReview")
-        .replyToInteract(ButtonInteract, true),
+        .replyToInteract(NotesSubmission, true),
     ]);
   }
 
@@ -780,7 +796,7 @@ async function HandleExtensionApprovalOrDenial(
     .setColor(Embeds.Colors.Success)
     .setTitle(`Leave of Absence ${ActionInPastForm}`)
     .setDescription(
-      `Successfully ${ActionType === "Extension Approval" ? "approved" : "denied"} ${userMention(TargetMemberId)}'s pending leave request.`
+      `Successfully ${ActionType === "Extension Approval" ? "approved" : "denied"} ${userMention(TargetMemberId)}'s pending extension request.`
     );
 
   ActiveLeave.extension_request!.status =

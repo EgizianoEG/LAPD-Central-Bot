@@ -131,15 +131,15 @@ export class BaseUserActivityNoticeLogger {
    * @returns An action row containing the management buttons.
    */
   protected CreateManagementButtons(IsExt: boolean, UserId: string, NoticeId: string) {
-    const ExtPrefix = IsExt ? "ext" : "";
+    const ExtPrefix = IsExt ? "ext-" : "";
     return new ActionRowBuilder<ButtonBuilder>().setComponents(
       new ButtonBuilder()
-        .setCustomId(`${this.cmd_name}-${ExtPrefix}-approve:${UserId}:${NoticeId}`)
+        .setCustomId(`${this.cmd_name}-${ExtPrefix}approve:${UserId}:${NoticeId}`)
         .setLabel("Approve")
         .setEmoji(Emojis.WhiteCheck)
         .setStyle(ButtonStyle.Success),
       new ButtonBuilder()
-        .setCustomId(`${this.cmd_name}-${ExtPrefix}-deny:${UserId}:${NoticeId}`)
+        .setCustomId(`${this.cmd_name}-${ExtPrefix}deny:${UserId}:${NoticeId}`)
         .setLabel("Deny")
         .setEmoji(Emojis.WhiteCross)
         .setStyle(ButtonStyle.Danger),
@@ -362,14 +362,14 @@ export class BaseUserActivityNoticeLogger {
           {
             inline: true,
             name: "Request Info",
-            value: Dedent(`
-              **Requester:** ${userMention(ApprovedRequest.user)}
-              **Quota Reduction:** ${ApprovedRequest.quota_reduction}
-              **Duration:** ${ApprovedRequest.duration_hr}
-              **Started:** ${FormatTime(ApprovedRequest.review_date || Interaction.createdAt, "F")}
-              **Ends On:** ${FormatTime(ApprovedRequest.end_date, "F")}
-              **Reason:** ${ApprovedRequest.reason}
-            `),
+            value: this.ConcatenateLines(
+              `**Requester:** ${userMention(ApprovedRequest.user)}`,
+              this.GetQuotaReductionText(ApprovedRequest),
+              `**Duration:** ${ApprovedRequest.duration_hr}`,
+              `**Started:** ${FormatTime(ApprovedRequest.review_date || Interaction.createdAt, "F")}`,
+              `**Ends On:** ${FormatTime(ApprovedRequest.end_date, "F")}`,
+              `**Reason:** ${ApprovedRequest.reason}`
+            ),
           },
           {
             inline: true,
