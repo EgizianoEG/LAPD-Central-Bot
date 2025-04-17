@@ -681,6 +681,112 @@ export class BaseUserActivityNoticeLogger {
   }
 
   /**
+   * Logs the early termination of an activity notice to the logging channel.
+   * Also sends a DM notice to the requester if applicable.
+   * @param Interaction - The interaction from the management staff or requester ending the notice early.
+   * @param NoticeDocument - The activity notice document that was ended early.
+   * @param EndRequestBy - Indicates whether the termination was requested by "Management" or "Requester".
+   * @returns A Promise resolving after the log is completed.
+   */
+  async LogEarlyUANEnd(
+    Interaction: ManagementInteraction,
+    NoticeDocument: UserActivityNoticeDoc,
+    EndRequestBy: "Management" | "Requester"
+  ) {
+    if (!NoticeDocument.review_date) return;
+    const LogChannel = await this.GetLoggingChannel(Interaction.guild, "log");
+    const Requester = await Interaction.guild.members.fetch(NoticeDocument.user).catch(() => null);
+
+    if (Requester) {
+      const DMNotice = new EmbedBuilder()
+        .setTimestamp(Interaction.createdAt)
+        .setColor(Embeds.Colors.LOARequestEnded)
+        .setTitle(`${this.title} — End Notice`)
+        .setAuthor({
+          name: Interaction.guild.name,
+          iconURL: Interaction.guild.iconURL(this.ImgURLOpts) ?? Embeds.Thumbs.Transparent,
+        });
+
+      if (EndRequestBy === "Requester") {
+        DMNotice.setDescription(
+          Dedent(`
+            Your ${this.title_lower}, originally scheduled to end on ${FormatTime(NoticeDocument.end_date, "D")} (${FormatTime(NoticeDocument.end_date, "R")}), has \
+            been terminated (ended) early upon your request. If you need to request a new one, please use the \`/${this.cmd_name} request\` command on the server.
+          `)
+        ).setFooter({
+          text: `Reference ID: ${NoticeDocument._id}`,
+        });
+      } else {
+        DMNotice.setDescription(
+          Dedent(`
+            Your ${this.title_lower}, originally scheduled to end on ${FormatTime(NoticeDocument.end_date, "D")} (${FormatTime(NoticeDocument.end_date, "R")}), has \
+            been terminated (ended) early by management. If you need to request a new one, please use the \`/${this.cmd_name} request\` command on the server.
+          `)
+        ).setFooter({
+          text: `Reference ID: ${NoticeDocument._id}; ended by: @${Interaction.user.username}`,
+        });
+
+        if (NoticeDocument.early_end_reason) {
+          DMNotice.setDescription(
+            DMNotice.data.description +
+              `\n\n**Reason Provided by Management:**\n${codeBlock("", NoticeDocument.early_end_reason)}`
+          );
+        }
+      }
+
+      Requester.send({ embeds: [DMNotice] }).catch(() => null);
+    }
+
+    if (LogChannel) {
+      const LeaveOrRAText = this.is_leave ? "Leave" : "RA";
+      const LogEmbed = new EmbedBuilder()
+        .setTimestamp(Interaction.createdAt)
+        .setColor(Embeds.Colors.LOARequestEnded)
+        .setTitle(`${this.title} Ended`)
+        .setFooter({ text: `Reference ID: ${NoticeDocument._id}; ended early on` })
+        .addFields({
+          inline: true,
+          name: `${LeaveOrRAText} Info`,
+          value: this.ConcatenateLines(
+            `**Requester:** ${userMention(NoticeDocument.user)}`,
+            `**Org. Duration:** ${NoticeDocument.original_duration_hr}`,
+            `**${LeaveOrRAText} Duration:** ${NoticeDocument.duration_hr}`,
+            this.is_leave ? undefined : this.GetQuotaReductionText(NoticeDocument),
+            `**Started On:** ${FormatTime(NoticeDocument.review_date, "F")}`,
+            `**Scheduled to End On:** ${FormatTime(NoticeDocument.end_date, "D")}`,
+            `**${LeaveOrRAText} Reason:** ${NoticeDocument.reason}`
+          ),
+        });
+
+      if (EndRequestBy === "Requester") {
+        LogEmbed.addFields({
+          inline: true,
+          name: "Approval Info",
+          value: Dedent(`
+            **Approver:** ${userMention(NoticeDocument.reviewed_by!.id)}
+            **Notes:**
+            ${NoticeDocument.reviewer_notes || "`N/A`"}
+          `),
+        });
+      } else {
+        LogEmbed.addFields({
+          inline: true,
+          name: "Management Staff",
+          value: Dedent(`
+            **Approver:** ${userMention(NoticeDocument.reviewed_by!.id)}
+            **Approver Notes:** ${NoticeDocument.reviewer_notes || "`N/A`"}
+
+            **Ended By:** ${userMention(Interaction.user.id)}
+            **End Reason:** ${NoticeDocument.early_end_reason || "`N/A`"}
+          `),
+        });
+      }
+
+      LogChannel.send({ embeds: [LogEmbed] }).catch(() => null);
+    }
+  }
+
+  /**
    * Logs the wiping of user activity notices to the logging channel.
    * @param MgmtInteract - The interaction from the management staff initiating the wipe.
    * @param WipeResult - The result of the wipe operation.
@@ -1253,110 +1359,6 @@ export class LeaveOfAbsenceEventLogger extends BaseUserActivityNoticeLogger {
       await RequestMessage.edit({ embeds: [RequestEmbed], components: [RequestButtons] }).catch(
         () => null
       );
-    }
-  }
-
-  /**
-   * Logs the early termination of an activity notice to the logging channel.
-   * Also sends a DM notice to the requester if applicable.
-   * @param Interaction - The interaction from the management staff or requester ending the notice early.
-   * @param LeaveDocument - The activity notice document that was ended early.
-   * @param EndRequestBy - Indicates whether the termination was requested by "Management" or "Requester".
-   * @returns A Promise resolving after the log is completed.
-   */
-  async LogEarlyLeaveEnd(
-    Interaction: ManagementInteraction,
-    LeaveDocument: UserActivityNoticeDoc,
-    EndRequestBy: "Management" | "Requester"
-  ) {
-    if (!LeaveDocument.review_date || LeaveDocument.type !== "LeaveOfAbsence") return;
-    const LogChannel = await this.GetLoggingChannel(Interaction.guild, "log");
-    const Requester = await Interaction.guild.members.fetch(LeaveDocument.user).catch(() => null);
-
-    if (Requester) {
-      const DMNotice = new EmbedBuilder()
-        .setTimestamp(Interaction.createdAt)
-        .setColor(Embeds.Colors.LOARequestEnded)
-        .setTitle("Leave of Absence — End Notice")
-        .setAuthor({
-          name: Interaction.guild.name,
-          iconURL: Interaction.guild.iconURL(this.ImgURLOpts) ?? Embeds.Thumbs.Transparent,
-        });
-
-      if (EndRequestBy === "Requester") {
-        DMNotice.setDescription(
-          Dedent(`
-            Your leave of absence, originally scheduled to end on ${FormatTime(LeaveDocument.end_date, "D")} (${FormatTime(LeaveDocument.end_date, "R")}), has \
-            been terminated (ended) early upon your request. If you need to request a new leave, please use the \`/loa request\` command on the server.
-          `)
-        ).setFooter({
-          text: `Reference ID: ${LeaveDocument._id}`,
-        });
-      } else {
-        DMNotice.setDescription(
-          Dedent(`
-            Your leave of absence, originally scheduled to end on ${FormatTime(LeaveDocument.end_date, "D")} (${FormatTime(LeaveDocument.end_date, "R")}), has \
-            been terminated (ended) early by management. If you need to request a new leave, please use the \`/loa request\` command on the server.
-          `)
-        ).setFooter({
-          text: `Reference ID: ${LeaveDocument._id}; ended by: @${Interaction.user.username}`,
-        });
-
-        if (LeaveDocument.early_end_reason) {
-          DMNotice.setDescription(
-            DMNotice.data.description +
-              `\n\n**Reason Provided by Management:**\n${codeBlock("", LeaveDocument.early_end_reason)}`
-          );
-        }
-      }
-
-      Requester.send({ embeds: [DMNotice] }).catch(() => null);
-    }
-
-    if (LogChannel) {
-      const LogEmbed = new EmbedBuilder()
-        .setTimestamp(Interaction.createdAt)
-        .setColor(Embeds.Colors.LOARequestEnded)
-        .setTitle("Leave of Absence Ended")
-        .setFooter({ text: `Reference ID: ${LeaveDocument._id}; ended early on` })
-        .addFields({
-          inline: true,
-          name: "Leave Info",
-          value: Dedent(`
-              **Requester:** ${userMention(LeaveDocument.user)}
-              **Org. Duration:** ${LeaveDocument.original_duration_hr}
-              **Leave Duration:** ${LeaveDocument.duration_hr}
-              **Started On:** ${FormatTime(LeaveDocument.review_date, "F")}
-              **Scheduled to End On:** ${FormatTime(LeaveDocument.end_date, "D")}
-              **Leave Reason:** ${LeaveDocument.reason}
-            `),
-        });
-
-      if (EndRequestBy === "Requester") {
-        LogEmbed.addFields({
-          inline: true,
-          name: "Approval Info",
-          value: Dedent(`
-            **Approver:** ${userMention(LeaveDocument.reviewed_by!.id)}
-            **Notes:**
-            ${LeaveDocument.reviewer_notes || "`N/A`"}
-          `),
-        });
-      } else {
-        LogEmbed.addFields({
-          inline: true,
-          name: "Management Staff",
-          value: Dedent(`
-            **Approver:** ${userMention(LeaveDocument.reviewed_by!.id)}
-            **Approver Notes:** ${LeaveDocument.reviewer_notes || "`N/A`"}
-
-            **Ended By:** ${userMention(Interaction.user.id)}
-            **End Reason:** ${LeaveDocument.early_end_reason || "`N/A`"}
-          `),
-        });
-      }
-
-      LogChannel.send({ embeds: [LogEmbed] }).catch(() => null);
     }
   }
 

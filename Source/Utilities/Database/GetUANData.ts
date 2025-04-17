@@ -5,12 +5,6 @@ interface GetUANDataOptions {
   guild_id: string;
   user_id?: string;
   type: UserActivityNotice.NoticeType | UserActivityNotice.NoticeType[];
-
-  /**
-   * @optional The date to compare activity notices to when determining if they are expired or not.
-   * @default new Date()  // (to the current date)
-   */
-  comparison_date?: Date;
 }
 
 interface GetUANDataReturn {
@@ -37,7 +31,6 @@ interface GetUANDataReturn {
  * @returns An object containing categorized activity notices.
  */
 export default async function GetUANData(Opts: GetUANDataOptions): Promise<GetUANDataReturn> {
-  const ComparisonDate = Opts.comparison_date || new Date();
   const Notices = await UserActivityNoticeModel.find({
     guild: Opts.guild_id,
     user: Opts.user_id,
@@ -46,20 +39,8 @@ export default async function GetUANData(Opts: GetUANDataOptions): Promise<GetUA
     .sort({ end_date: -1 })
     .exec();
 
-  const ActiveOrPendingNotice = Notices.find(
-    (Notice) =>
-      Notice.status === "Pending" ||
-      (Notice.status === "Approved" &&
-        Notice.early_end_date === null &&
-        Notice.end_date > ComparisonDate)
-  );
-
-  const PreviouslyEndedNotices = Notices.filter(
-    (Notice) =>
-      Notice.review_date &&
-      Notice.status === "Approved" &&
-      (Notice.early_end_date ?? Notice.end_date) < ComparisonDate
-  );
+  const ActiveOrPendingNotice = Notices.find((Notice) => Notice.is_active || Notice.is_pending);
+  const PreviouslyEndedNotices = Notices.filter((Notice) => Notice.is_over);
 
   return {
     recent_notice: PreviouslyEndedNotices[0] || null,
