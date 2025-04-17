@@ -890,12 +890,8 @@ async function Callback(Interaction: CmdOrButtonInteraction) {
     if (/\w{1,10}Delete/.test(EndReason) || EndReason === "CmdReinstated") return;
     try {
       PanelComps[0].components.forEach((Btn) => Btn.setDisabled(true));
-      const LastInteract = Collected.last();
-      if (LastInteract) {
-        await LastInteract.editReply({ components: PanelComps, message: PromptMessage.id });
-      } else {
-        await PromptMessage.edit({ components: PanelComps });
-      }
+      const LastInteract = Collected.last() || Interaction;
+      await LastInteract.editReply({ components: PanelComps, message: PromptMessage.id });
     } catch (Err: any) {
       AppLogger.error({
         message: "An error occurred while ending the component collector for LOA admin;",
