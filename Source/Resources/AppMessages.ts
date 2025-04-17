@@ -619,10 +619,10 @@ export const ErrorMessages = {
       "You cannot extend this leave of absence further more. Only one extension is allowed per leave, regardless of whether it was approved, denied, or cancelled.",
   },
 
-  LOAUnauthorizedManagement: {
-    Title: "Unauthorized Leave Management",
+  UANUnauthorizedManagement: {
+    Title: "Unauthorized Management",
     Description:
-      "You are not authorized to take action or view information on this leave of absence unless you are a management or administrator member.",
+      "You are not authorized to take action or view information on this activity notice unless you are a management or administrator member.",
   },
 
   LOAModuleDisabled: {
@@ -771,6 +771,12 @@ export const ErrorMessages = {
   NoPendingRAToCancel: {
     Title: "No Pending Request",
     Description: "You don't have any pending reduced activity request to cancel at the moment.",
+  },
+
+  OnlyLeaveExtensionsPossible: {
+    Title: "Restricted Extensions",
+    Description:
+      "Extension requests are only available for leave of absence, not reduced activity.",
   },
 };
 

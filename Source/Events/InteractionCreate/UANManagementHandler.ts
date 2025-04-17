@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/no-duplicate-string */
 import {
   ModalSubmitInteraction,
   createComponentBuilder,
@@ -12,95 +13,104 @@ import {
   MessageFlags,
 } from "discord.js";
 
-import { ErrorEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import { LeaveOfAbsenceEventLogger } from "@Utilities/Classes/UANEventLogger.js";
-import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
-import { UserActivityNotice } from "@Typings/Utilities/Database.js";
-import { UserHasPermsV2 } from "@Utilities/Database/UserHasPermissions.js";
-import { Embeds } from "@Config/Shared.js";
+import {
+  LeaveOfAbsenceEventLogger,
+  ReducedActivityEventLogger,
+} from "@Utilities/Classes/UANEventLogger.js";
 
-import HandleLeaveRoleAssignment from "@Utilities/Other/HandleLeaveRoleAssignment.js";
+import { Embeds } from "@Config/Shared.js";
+import { UserHasPermsV2 } from "@Utilities/Database/UserHasPermissions.js";
+import { UserActivityNotice } from "@Typings/Utilities/Database.js";
+import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
+import { ErrorEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+
+import HandleUserActivityNoticeRoleAssignment from "@Utilities/Other/HandleUANRoleAssignment.js";
 import LeaveOfAbsenceModel from "@Models/UserActivityNotice.js";
 import GetMainShiftsData from "@Utilities/Database/GetShiftsData.js";
-import GetLOAsData from "@Utilities/Database/GetUANData.js";
+import GetUANsData from "@Utilities/Database/GetUANData.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import Dedent from "dedent";
 
-type HLeaveDocument = UserActivityNotice.ActivityNoticeHydratedDocument;
+type HNoticeDocument = UserActivityNotice.ActivityNoticeHydratedDocument;
 const LOAEventLogger = new LeaveOfAbsenceEventLogger();
-const FunctionMap = {
-  "loa-approve": HandleLeaveApproval,
-  "loa-deny": HandleLeaveDenial,
-  "loa-info": HandleLeaveAddInfo,
+const RAEventLogger = new ReducedActivityEventLogger();
 
+// Function maps for both LOA and RA handlers
+const FunctionMap = {
+  "loa-approve": HandleUANApproval,
+  "loa-deny": HandleUANDenial,
+  "loa-info": HandleNoticeAddInfo,
   "loa-ext-approve": HandleExtApproval,
   "loa-ext-deny": HandleExtDenial,
+
+  "ra-approve": HandleUANApproval,
+  "ra-deny": HandleUANDenial,
+  "ra-info": HandleNoticeAddInfo,
 };
 
 // ---------------------------------------------------------------------------------------
 // Functions:
 // ----------
-export default async function LOAManagementHandlerWrapper(
+export default async function UANManagementHandlerWrapper(
   _: DiscordClient,
   Interaction: BaseInteraction
 ) {
   if (
     !Interaction.isButton() ||
     !Interaction.inCachedGuild() ||
-    !Interaction.customId.match(/^loa-(app|den|inf)[\w-]*:/)
+    !Interaction.customId.match(/^(?:loa|ra)-(?:ext-)?(?:app|den|inf)[\w-]*:/)
   ) {
     return;
   }
 
   try {
-    if (await HandleUnauthorizedLeaveManagement(Interaction)) return;
-    await LOAManagementHandler(Interaction);
+    if (await HandleUnauthorizedManagement(Interaction)) return;
+    await UANManagementHandler(Interaction);
   } catch (Err: any) {
     const ErrorId = GetErrorId();
     AppLogger.error({
-      label: "Events:InteractionCreate:LOAManagementHandler.ts",
-      message: "Failed to handle LOA management button interaction;",
+      label: "Events:InteractionCreate:UANManagementHandler.ts",
+      message: "Failed to handle UAN management button interaction;",
       error_id: ErrorId,
       stack: Err.stack,
     });
 
     return new ErrorEmbed()
       .useErrTemplate("UnknownError")
-      .setDescription("Something went wrong while handling your request.")
       .setErrorId(ErrorId)
       .replyToInteract(Interaction, true);
   }
 }
 
 /**
- * Handles the LOA management buttons on sent/pending requests, i.e., approving, denying, and reviewing LOAs by a management staff member.
- * Button custom id format: loa-<action>:<requester_id>:<request_id/loa_id>
- * - Actions: `loa-approve`, `loa-deny`, `loa-info`, `loa-ext-approve`, `loa-ext-deny`.
- * - The `request_id` is the unique Id of the LOA request, which is stored in the database.
- * @param Client
- * @param Interaction
- * @returns
+ * Handles the UAN management buttons on sent/pending requests, i.e., approving, denying, and reviewing UANs by a management staff member.
+ * Button custom id format: <type>-<action>:<requester_id>:<request_id/notice_id>
+ * - Types: `loa` for Leave of Absence or `ra` for Reduced Activity
+ * - Actions: `approve`, `deny`, `info`, `ext-approve`, `ext-deny` (ext actions only for LOA)
+ * - The `request_id` is the unique Id of the UAN request, which is stored in the database.
+ * @param Interaction Button interaction
+ * @returns Promise
  */
-async function LOAManagementHandler(Interaction: ButtonInteraction<"cached">) {
-  const [Action, , LeaveId] = Interaction.customId.split(":");
-  const RequestDocument = await LeaveOfAbsenceModel.findById(LeaveId).exec();
-  if (await HandleLeaveReviewValidation(Interaction, RequestDocument)) return;
+async function UANManagementHandler(Interaction: ButtonInteraction<"cached">) {
+  const [Action, , NoticeId] = Interaction.customId.split(":");
+  const RequestDocument = await LeaveOfAbsenceModel.findById(NoticeId).exec();
+  if (await HandleNoticeReviewValidation(Interaction, RequestDocument)) return;
   return FunctionMap[Action](Interaction, RequestDocument);
 }
 
 /**
- * Handles unauthorized leave management.
+ * Handles unauthorized UAN management.
  * @param Interaction - The button interaction.
  * @returns A boolean indicating whether the action was authorized or not.
  */
-async function HandleUnauthorizedLeaveManagement(Interaction: ButtonInteraction<"cached">) {
+async function HandleUnauthorizedManagement(Interaction: ButtonInteraction<"cached">) {
   const IsActionAuthorized = await UserHasPermsV2(Interaction.user.id, Interaction.guildId, {
     management: true,
   });
 
   if (!IsActionAuthorized) {
     return new UnauthorizedEmbed()
-      .useErrTemplate("LOAUnauthorizedManagement")
+      .useErrTemplate("UANUnauthorizedManagement")
       .replyToInteract(Interaction, true)
       .then(() => true);
   }
@@ -109,25 +119,26 @@ async function HandleUnauthorizedLeaveManagement(Interaction: ButtonInteraction<
 }
 
 /**
- * Validates approval or denial of a leave of absence request before proceeding.
+ * Validates approval or denial of a user activity notice request before proceeding.
  * @param Interaction
  * @param RequestDocument
  * @param InitialInteraction
  * @returns
  */
-async function HandleLeaveReviewValidation(
+async function HandleNoticeReviewValidation(
   Interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">,
-  RequestDocument?: HLeaveDocument | null,
+  RequestDocument?: HNoticeDocument | null,
   InitialInteraction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached"> = Interaction
 ): Promise<boolean> {
+  const IsLOA = RequestDocument?.type === "LeaveOfAbsence";
   const IsExtensionRequest =
-    RequestDocument?.status !== "Pending" && RequestDocument?.extension_request;
+    IsLOA && RequestDocument?.status !== "Pending" && RequestDocument.extension_request;
   const RequestHasToBeReviewed =
-    (RequestDocument?.status === "Pending" && RequestDocument?.review_date === null) ||
-    (RequestDocument?.is_active && RequestDocument?.extension_request?.status === "Pending");
+    (RequestDocument?.status === "Pending" && RequestDocument.review_date === null) ||
+    (IsLOA && RequestDocument.is_active && RequestDocument.extension_request?.status === "Pending");
 
   if (!RequestHasToBeReviewed) {
-    let UpdatedReqEmbed: EmbedBuilder;
+    let UpdatedReqEmbed: EmbedBuilder | null = null;
     const ReplyEmbed = new EmbedBuilder()
       .setColor(Embeds.Colors.Error)
       .setTitle("Request Modified")
@@ -135,6 +146,7 @@ async function HandleLeaveReviewValidation(
         "The request you are taking action on either does not exist or has already been reviewed."
       );
 
+    const EventLogger = IsLOA ? LOAEventLogger : RAEventLogger;
     if (RequestDocument && IsExtensionRequest) {
       UpdatedReqEmbed = await LOAEventLogger.GetLOAExtRequestMessageEmbedWithStatus(
         Interaction.guild,
@@ -142,232 +154,295 @@ async function HandleLeaveReviewValidation(
         RequestDocument.extension_request!.status
       );
     } else if (RequestDocument) {
-      UpdatedReqEmbed = await LOAEventLogger.GetRequestMessageEmbedWithStatus(
+      UpdatedReqEmbed = await EventLogger.GetRequestMessageEmbedWithStatus(
         Interaction.guild,
         RequestDocument,
         RequestDocument.status
       );
     }
 
-    return Promise.all([
-      Interaction.reply({ embeds: [ReplyEmbed], flags: MessageFlags.Ephemeral }).catch(() =>
-        Interaction.editReply({ embeds: [ReplyEmbed] })
-      ),
-      InitialInteraction.editReply({
-        embeds: [UpdatedReqEmbed!],
-        message: RequestDocument?.request_msg?.split(":")[1],
-        components: GetDisabledMessageComponents(InitialInteraction),
-      }),
-    ]).then(() => true);
+    const Tasks: Promise<any>[] = [
+      Interaction.deferred || Interaction.replied
+        ? Interaction.editReply({ embeds: [ReplyEmbed] })
+        : Interaction.reply({ embeds: [ReplyEmbed], flags: MessageFlags.Ephemeral }),
+    ];
+
+    if (UpdatedReqEmbed) {
+      Tasks.push(
+        InitialInteraction.editReply({
+          embeds: [UpdatedReqEmbed],
+          message: RequestDocument?.request_msg?.split(":")[1],
+          components: GetDisabledMessageComponents(InitialInteraction),
+        })
+      );
+    }
+
+    return Promise.all(Tasks)
+      .catch(() => true)
+      .then(() => true);
   }
 
   return false;
 }
 
 /**
- * Handles "Additional Information" button. Shows the LOA stats and shift stats of the requester.
- * The 'Recent Leave' field represents the most recent LOA taken by the user which has ended, not the active or pending one.
- * Average and total time of the shift statistics are calculated using the "on_duty" durations.
+ * Handles "Additional Information" button. Shows the UAN stats and shift stats of the requester.
  * @param Interaction
- * @param LeaveDocument
+ * @param NoticeDocument
  */
-async function HandleLeaveAddInfo(
+async function HandleNoticeAddInfo(
   Interaction: ButtonInteraction<"cached">,
-  LeaveDocument: HLeaveDocument
+  NoticeDocument: HNoticeDocument
 ) {
-  const LOAsData = await GetLOAsData({
+  const IsLOA = NoticeDocument.type === "LeaveOfAbsence";
+  const UANsData = await GetUANsData({
     guild_id: Interaction.guildId,
-    user_id: LeaveDocument.user,
+    user_id: NoticeDocument.user,
+    type: NoticeDocument.type,
   });
 
   const ShiftsData = await GetMainShiftsData({
-    user: LeaveDocument.user,
-    guild: LeaveDocument.guild,
+    user: NoticeDocument.user,
+    guild: NoticeDocument.guild,
   });
 
+  const NoticeType = IsLOA ? "LOA" : "RA";
+  const NoticeTypeMid = IsLOA ? "Leave" : "Reduced Activity";
   const ReplyEmbed = new EmbedBuilder()
     .setColor(Embeds.Colors.Info)
-    .setTitle("Additional Officer Info")
-    .setFields(
-      {
-        name: "LOA Stats",
-        value: Dedent(`
-          **Taken LOAs:** \`${LOAsData.completed_notices.length}\`
-          **Recent Leave:** ${LOAsData.recent_notice ? FormatTime(LOAsData.recent_notice.early_end_date ?? LOAsData.recent_notice.end_date, "D") : "None"}
-        `),
-      },
-      {
-        name: "Shift Stats",
-        value: Dedent(`
-        **Shift Count:** \`${ShiftsData.shift_count}\`
-        **Total Time:** ${ShiftsData.total_onduty}
-        **Average Time:** ${ShiftsData.avg_onduty}
+    .setTitle("Additional Officer Info");
+
+  if (UANsData.recent_notice) {
+    ReplyEmbed.addFields({
+      name: `${NoticeType} Statistics`,
+      value: Dedent(`
+        >>> **Taken ${NoticeType}s:** \`${UANsData.completed_notices.length}\`
+        **Recent ${NoticeTypeMid}:**
+        - Ended: ${FormatTime(UANsData.recent_notice.early_end_date ?? UANsData.recent_notice.end_date, "D")}
+        - Duration: ${UANsData.recent_notice.duration_hr}
       `),
-      }
-    );
+    });
+  } else {
+    ReplyEmbed.addFields({
+      name: `${NoticeType} Statistics`,
+      value: Dedent(`
+        >>> **Taken ${NoticeType}s:** \`${UANsData.completed_notices.length}\`
+        **Recent ${NoticeTypeMid}:** None
+      `),
+    });
+  }
+
+  ReplyEmbed.addFields({
+    name: "Shift Statistics",
+    value: Dedent(`
+      >>> **Shift Count:** \`${ShiftsData.shift_count}\`
+      **Frequent S. Type:** \`${ShiftsData.frequent_shift_type}\`
+      **Total Time:** ${ShiftsData.total_onduty}
+      **Average Time:** ${ShiftsData.avg_onduty}
+    `),
+  });
 
   Interaction.reply({ embeds: [ReplyEmbed], flags: MessageFlags.Ephemeral });
 }
 
-async function HandleLeaveApproval(
+/**
+ * Handles approval of a user activity notice, whether LOA or RA.
+ * @param Interaction - The button interaction.
+ * @param NoticeDocument - The notice document to be approved.
+ * @returns A Promise resolving after the approval process is completed.
+ */
+async function HandleUANApproval(
   Interaction: ButtonInteraction<"cached">,
-  LeaveDocument: HLeaveDocument
+  NoticeDocument: HNoticeDocument
 ) {
-  const NotesModal = GetNotesModal(Interaction, "Approval", false);
+  const IsLOA = NoticeDocument.type === "LeaveOfAbsence";
+  const EventLogger = IsLOA ? LOAEventLogger : RAEventLogger;
+  const NoticeType = IsLOA ? "Leave" : "Reduced Activity";
+
+  const NotesModal = GetNotesModal(Interaction, "Approval", false, IsLOA);
   await Interaction.showModal(NotesModal);
 
   const NotesSubmission = await Interaction.awaitModalSubmit({
     filter: (ModalSubmission) => ModalSubmission.customId === NotesModal.data.custom_id,
-    time: 5 * 60_000,
+    time: 8 * 60_000,
   }).catch(() => null);
 
   if (!NotesSubmission) return;
+  const UpdatedDocument = await NoticeDocument.getUpToDate();
+  if (await HandleNoticeReviewValidation(NotesSubmission, UpdatedDocument, Interaction)) return;
   await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
-  LeaveDocument = await LeaveDocument.getUpToDate();
-  if (await HandleLeaveReviewValidation(NotesSubmission, LeaveDocument, Interaction)) return;
 
   const ReplyEmbed = new EmbedBuilder()
     .setColor(Embeds.Colors.Success)
-    .setTitle("Leave Approved")
-    .setDescription("Successfully approved the leave request.");
+    .setTitle(`${NoticeType} Approved`)
+    .setDescription(`Successfully approved the ${NoticeType.toLowerCase()} request.`);
 
-  LeaveDocument.status = "Approved";
-  LeaveDocument.review_date = NotesSubmission.createdAt;
-  LeaveDocument.reviewer_notes = NotesSubmission.fields.getTextInputValue("notes") || null;
-  LeaveDocument.reviewed_by = {
+  UpdatedDocument.status = "Approved";
+  UpdatedDocument.review_date = NotesSubmission.createdAt;
+  UpdatedDocument.reviewer_notes = NotesSubmission.fields.getTextInputValue("notes") || null;
+  UpdatedDocument.reviewed_by = {
     id: Interaction.user.id,
     username: Interaction.user.username,
   };
 
   return Promise.all([
-    LeaveDocument.save(),
+    UpdatedDocument.save(),
     NotesSubmission.editReply({ embeds: [ReplyEmbed] }),
-    LOAEventLogger.LogApproval(NotesSubmission, LeaveDocument),
-    HandleLeaveRoleAssignment(LeaveDocument.user, NotesSubmission.guild, true),
+    EventLogger.LogApproval(NotesSubmission, UpdatedDocument),
+    HandleUserActivityNoticeRoleAssignment(
+      UpdatedDocument.user,
+      NotesSubmission.guild,
+      IsLOA ? "LeaveOfAbsence" : "ReducedActivity",
+      true
+    ),
   ]);
 }
 
-async function HandleLeaveDenial(
+/**
+ * Handles denial of a user activity notice, whether LOA or RA.
+ * @param Interaction - The button interaction.
+ * @param NoticeDocument - The notice document to be denied.
+ * @returns A Promise resolving after the denial process is completed.
+ */
+async function HandleUANDenial(
   Interaction: ButtonInteraction<"cached">,
-  LeaveDocument: HLeaveDocument
+  NoticeDocument: HNoticeDocument
 ) {
-  const NotesModal = GetNotesModal(Interaction, "Denial", true);
+  const IsLOA = NoticeDocument.type === "LeaveOfAbsence";
+  const EventLogger = IsLOA ? LOAEventLogger : RAEventLogger;
+  const NoticeType = IsLOA ? "Leave" : "Reduced Activity";
+
+  const NotesModal = GetNotesModal(Interaction, "Denial", true, IsLOA);
   await Interaction.showModal(NotesModal);
 
   const NotesSubmission = await Interaction.awaitModalSubmit({
     filter: (ModalSubmission) => ModalSubmission.customId === NotesModal.data.custom_id,
-    time: 5 * 60_000,
+    time: 8 * 60_000,
   }).catch(() => null);
 
   if (!NotesSubmission) return;
+  const UpdatedDocument = await NoticeDocument.getUpToDate();
+  if (await HandleNoticeReviewValidation(NotesSubmission, UpdatedDocument, Interaction)) return;
   await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
-  LeaveDocument = await LeaveDocument.getUpToDate();
-  if (await HandleLeaveReviewValidation(NotesSubmission, LeaveDocument, Interaction)) return;
 
   const ReplyEmbed = new EmbedBuilder()
     .setColor(Embeds.Colors.Success)
-    .setTitle("Leave Denied")
-    .setDescription("Successfully denied the leave request.");
+    .setTitle(`${NoticeType} Denied`)
+    .setDescription(`Successfully denied the ${NoticeType.toLowerCase()} request.`);
 
-  LeaveDocument.status = "Denied";
-  LeaveDocument.review_date = NotesSubmission.createdAt;
-  LeaveDocument.reviewer_notes = NotesSubmission.fields.getTextInputValue("notes");
-  LeaveDocument.reviewed_by = {
+  UpdatedDocument.status = "Denied";
+  UpdatedDocument.review_date = NotesSubmission.createdAt;
+  UpdatedDocument.reviewer_notes = NotesSubmission.fields.getTextInputValue("notes");
+  UpdatedDocument.reviewed_by = {
     id: Interaction.user.id,
     username: Interaction.user.username,
   };
 
   return Promise.all([
-    LeaveDocument.save(),
+    UpdatedDocument.save(),
     NotesSubmission.editReply({ embeds: [ReplyEmbed] }),
-    LOAEventLogger.LogDenial(NotesSubmission, LeaveDocument),
+    EventLogger.LogDenial(NotesSubmission, UpdatedDocument),
   ]);
 }
 
 async function HandleExtApproval(
   Interaction: ButtonInteraction<"cached">,
-  LeaveDocument: HLeaveDocument
+  LeaveDocument: HNoticeDocument
 ) {
-  const NotesModal = GetNotesModal(Interaction, "Extension Approval", false);
+  if (LeaveDocument.type !== "LeaveOfAbsence") {
+    return new ErrorEmbed()
+      .useErrTemplate("OnlyLeaveExtensionsPossible")
+      .replyToInteract(Interaction, true);
+  }
+
+  const NotesModal = GetNotesModal(Interaction, "Extension Approval", false, true);
   await Interaction.showModal(NotesModal);
 
   const NotesSubmission = await Interaction.awaitModalSubmit({
     filter: (ModalSubmission) => ModalSubmission.customId === NotesModal.data.custom_id,
-    time: 5 * 60_000,
+    time: 8 * 60_000,
   }).catch(() => null);
 
   if (!NotesSubmission) return;
+  const UpdatedDocument = await LeaveDocument.getUpToDate();
+  if (await HandleNoticeReviewValidation(NotesSubmission, UpdatedDocument, Interaction)) return;
   await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
-  LeaveDocument = await LeaveDocument.getUpToDate();
-  if (await HandleLeaveReviewValidation(NotesSubmission, LeaveDocument, Interaction)) return;
 
   const ReplyEmbed = new EmbedBuilder()
     .setColor(Embeds.Colors.Success)
     .setTitle("Leave Extension Approved")
     .setDescription("Successfully approved the extension request.");
 
-  LeaveDocument.extension_request!.status = "Approved";
-  LeaveDocument.extension_request!.review_date = NotesSubmission.createdAt;
-  LeaveDocument.extension_request!.reviewer_notes =
+  UpdatedDocument.extension_request!.status = "Approved";
+  UpdatedDocument.extension_request!.review_date = NotesSubmission.createdAt;
+  UpdatedDocument.extension_request!.reviewer_notes =
     NotesSubmission.fields.getTextInputValue("notes") || null;
-  LeaveDocument.extension_request!.reviewed_by = {
+  UpdatedDocument.extension_request!.reviewed_by = {
     id: Interaction.user.id,
     username: Interaction.user.username,
   };
 
   return Promise.all([
-    LeaveDocument.save(),
+    UpdatedDocument.save(),
     NotesSubmission.editReply({ embeds: [ReplyEmbed] }),
-    LOAEventLogger.LogExtensionApproval(NotesSubmission, LeaveDocument),
+    LOAEventLogger.LogExtensionApproval(NotesSubmission, UpdatedDocument),
   ]);
 }
 
 async function HandleExtDenial(
   Interaction: ButtonInteraction<"cached">,
-  LeaveDocument: HLeaveDocument
+  LeaveDocument: HNoticeDocument
 ) {
-  const NotesModal = GetNotesModal(Interaction, "Extension Denial", true);
+  if (LeaveDocument.type !== "LeaveOfAbsence") {
+    return new ErrorEmbed()
+      .useErrTemplate("OnlyLeaveExtensionsPossible")
+      .replyToInteract(Interaction, true);
+  }
+
+  const NotesModal = GetNotesModal(Interaction, "Extension Denial", true, true);
   await Interaction.showModal(NotesModal);
 
   const NotesSubmission = await Interaction.awaitModalSubmit({
     filter: (ModalSubmission) => ModalSubmission.customId === NotesModal.data.custom_id,
-    time: 5 * 60_000,
+    time: 8 * 60_000,
   }).catch(() => null);
 
   if (!NotesSubmission) return;
+  const UpdatedDocument = await LeaveDocument.getUpToDate();
+  if (await HandleNoticeReviewValidation(NotesSubmission, UpdatedDocument, Interaction)) return;
   await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
-  LeaveDocument = await LeaveDocument.getUpToDate();
-  if (await HandleLeaveReviewValidation(NotesSubmission, LeaveDocument, Interaction)) return;
 
   const ReplyEmbed = new EmbedBuilder()
     .setColor(Embeds.Colors.Success)
-    .setTitle("Leave Extension Approved")
-    .setDescription("Successfully approved the extension request.");
+    .setTitle("Leave Extension Denied")
+    .setDescription("Successfully denied the extension request.");
 
-  LeaveDocument.extension_request!.status = "Denied";
-  LeaveDocument.extension_request!.review_date = NotesSubmission.createdAt;
-  LeaveDocument.extension_request!.reviewer_notes =
-    NotesSubmission.fields.getTextInputValue("notes");
-  LeaveDocument.extension_request!.reviewed_by = {
+  UpdatedDocument.extension_request!.status = "Denied";
+  UpdatedDocument.extension_request!.review_date = NotesSubmission.createdAt;
+  UpdatedDocument.extension_request!.reviewer_notes =
+    NotesSubmission.fields.getTextInputValue("notes") || null;
+  UpdatedDocument.extension_request!.reviewed_by = {
     id: Interaction.user.id,
     username: Interaction.user.username,
   };
 
   return Promise.all([
-    LeaveDocument.save(),
+    UpdatedDocument.save(),
     NotesSubmission.editReply({ embeds: [ReplyEmbed] }),
-    LOAEventLogger.LogExtensionDenial(NotesSubmission, LeaveDocument),
+    LOAEventLogger.LogExtensionDenial(NotesSubmission, UpdatedDocument),
   ]);
 }
 
 function GetNotesModal(
   Interaction: ButtonInteraction<"cached">,
-  Status: "Approval" | "Denial" | "Extension Approval" | "Extension Denial",
-  NotesRequired: boolean = false
+  ReviewOutcome: "Approval" | "Denial" | "Extension Approval" | "Extension Denial",
+  NotesRequired: boolean = false,
+  IsLOA: boolean = true
 ) {
+  const NoticeType = IsLOA ? "Leave of Absence" : "Reduced Activity";
   const Modal = new ModalBuilder()
-    .setTitle(`Leave of Absence ${Status}`)
-    .setCustomId(`loa-rev-notes:${Interaction.user.id}:${RandomString(4)}`)
+    .setTitle(`${NoticeType} ${ReviewOutcome}`)
+    .setCustomId(`uan-rev-notes:${Interaction.user.id}:${RandomString(4)}`)
     .setComponents(
       new ActionRowBuilder<TextInputBuilder>().setComponents(
         new TextInputBuilder()
@@ -380,7 +455,7 @@ function GetNotesModal(
       )
     );
 
-  if (Status.endsWith("Approval")) {
+  if (ReviewOutcome.endsWith("Approval")) {
     Modal.components[0].components[0].setPlaceholder("Any notes or comments to add.");
   } else {
     Modal.components[0].components[0].setPlaceholder(
