@@ -527,8 +527,15 @@ export namespace UserActivityNotice {
 
     /**
      * @virtual - Not stored in the database.
+     * Indicates whether the activity notice is currently pending.
+     * This is determined based on the `status` field being set to `"Pending"` and the absence of a `review_date`.
+     */
+    is_pending: boolean;
+
+    /**
+     * @virtual - Not stored in the database.
      * Indicates whether the activity notice has ended.
-     * This is determined based on the current date and the `end_date` field.
+     * This is determined based on the current date, the `end_date`, and the `status` fields.
      */
     is_over: boolean;
 

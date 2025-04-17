@@ -272,14 +272,12 @@ ActivityNoticeSchema.virtual("is_over").get(function (this: NoticeDocument) {
     this.status === "Approved" &&
     isBefore(
       this.early_end_date ||
-        new Date(
+        addMilliseconds(
           addMilliseconds(
-            addMilliseconds(
-              this.review_date || this.request_date,
-              this.extension_request?.duration || 0
-            ),
-            this.duration
-          )
+            this.review_date || this.request_date,
+            this.extension_request?.duration || 0
+          ),
+          this.duration
         ),
       new Date()
     )
@@ -288,6 +286,10 @@ ActivityNoticeSchema.virtual("is_over").get(function (this: NoticeDocument) {
 
 ActivityNoticeSchema.virtual("is_approved").get(function (this: NoticeDocument) {
   return this.review_date && this.status === "Approved";
+});
+
+ActivityNoticeSchema.virtual("is_pending").get(function (this: NoticeDocument) {
+  return this.status === "Pending" && !this.review_date;
 });
 
 ActivityNoticeSchema.virtual("is_active").get(function (this: NoticeDocument) {
