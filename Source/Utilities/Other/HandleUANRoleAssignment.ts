@@ -7,6 +7,9 @@ import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
  * @param UserId - The user(s) to assign leave role to.
  * @param Guild - The guild the user is in.
  * @param IsOnLeave - Whether the user is on leave or not.
+ * @param TypeOfNotice - The type of notice (LeaveOfAbsence or ReducedActivity).
+ * @param IsNoticeActive - Whether the notice is active or not.
+ * @returns A promise that resolves when the role assignment is complete.
  */
 export default async function HandleUserActivityNoticeRoleAssignment(
   UserId: string | string[],

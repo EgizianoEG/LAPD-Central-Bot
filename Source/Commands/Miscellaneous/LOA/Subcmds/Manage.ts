@@ -458,7 +458,12 @@ async function HandleLeaveEarlyEnd(
     CompCollector.stop("Updated"),
     Callback(ButtonInteract, MainPromptMsgId),
     LOAEventLogger.LogEarlyUANEnd(ButtonInteract, ActiveLeave, "Requester"),
-    HandleUserActivityNoticeRoleAssignment(ActiveLeave.user, ButtonInteract.guild, false),
+    HandleUserActivityNoticeRoleAssignment(
+      ActiveLeave.user,
+      ButtonInteract.guild,
+      "LeaveOfAbsence",
+      false
+    ),
   ]);
 }
 
