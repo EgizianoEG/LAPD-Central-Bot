@@ -5,7 +5,7 @@ import UANListCmdCallback from "@Utilities/Other/UANsListCmdCallback.js";
 // ------------------
 const CommandObject = {
   callback: async (Interaction: SlashCommandInteraction<"cached">) =>
-    UANListCmdCallback(Interaction, "ReducedActivity"),
+    UANListCmdCallback(Interaction, "LeaveOfAbsence"),
   data: new SlashCommandSubcommandBuilder()
     .setName("list")
     .setDescription("Displays the server's leave of absence records with a specified status.")

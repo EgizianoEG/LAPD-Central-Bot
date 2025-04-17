@@ -131,7 +131,7 @@ export class BaseUserActivityNoticeLogger {
    * @returns An action row containing the management buttons.
    */
   protected CreateManagementButtons(IsExt: boolean, UserId: string, NoticeId: string) {
-    const ExtPrefix = IsExt ? "ext-" : "";
+    const ExtPrefix = IsExt ? "ext" : "";
     return new ActionRowBuilder<ButtonBuilder>().setComponents(
       new ButtonBuilder()
         .setCustomId(`${this.cmd_name}-${ExtPrefix}-approve:${UserId}:${NoticeId}`)
@@ -1398,11 +1398,13 @@ export class LeaveOfAbsenceEventLogger extends BaseUserActivityNoticeLogger {
     } else if (RequestStatus === "Cancelled") {
       const AvatarURL = await this.GetUserProfileImageURL(Guild, LeaveDocument.user);
       RequestEmbed.setColor(Embeds.Colors.LOARequestDenied)
+        .setTitle("Cancelled Extension  |  Leave of Absence Request")
         .setFooter({
           iconURL: AvatarURL,
           text: `Reference ID: ${LeaveDocument._id}; cancelled by requester on`,
-        })
-        .setTitle("Cancelled Extension  |  Leave of Absence Request");
+        });
+    } else {
+      RequestEmbed.setTitle("Pending Extension  |  Leave of Absence Request");
     }
 
     return RequestEmbed;

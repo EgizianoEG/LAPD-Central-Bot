@@ -457,7 +457,7 @@ async function HandleLeaveEarlyEnd(
   return Promise.allSettled([
     CompCollector.stop("Updated"),
     Callback(ButtonInteract, MainPromptMsgId),
-    LOAEventLogger.LogEarlyLeaveEnd(ButtonInteract, ActiveLeave, "Requester"),
+    LOAEventLogger.LogEarlyUANEnd(ButtonInteract, ActiveLeave, "Requester"),
     HandleLeaveRoleAssignment(ActiveLeave.user, ButtonInteract.guild, false),
   ]);
 }

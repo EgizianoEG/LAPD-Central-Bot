@@ -54,23 +54,23 @@ function GetManagementPromptEmbed(ActiveOrPendingRA?: RADocument | null) {
       inline: true,
       name: "Active Notice",
       value: Dedent(`
-      **Started:** ${FormatTime(ActiveOrPendingRA.review_date!, "D")}
-      **Ends On:** ${FormatTime(ActiveOrPendingRA.end_date, "D")}
-      **Quota Reduction:** ~${Math.round((ActiveOrPendingRA.quota_scale ?? 0) * 100)}%
-      **Reason:** ${ActiveOrPendingRA.reason}
-    `),
+        **Started:** ${FormatTime(ActiveOrPendingRA.review_date!, "D")}
+        **Ends On:** ${FormatTime(ActiveOrPendingRA.end_date, "D")}
+        **Quota Reduction:** ~${ActiveOrPendingRA.quota_reduction}
+        **Reason:** ${ActiveOrPendingRA.reason}
+      `),
     });
   } else if (ActiveOrPendingRA?.status === "Pending") {
     PromptEmbed.setColor(Embeds.Colors.LOARequestPending).addFields({
       inline: true,
       name: "Pending Notice",
       value: Dedent(`
-      **Requested:** ${FormatTime(ActiveOrPendingRA.request_date, "R")}
-      **Starts On:** *once approved.*
-      **Ends On:** around ${FormatTime(new Date(ActiveOrPendingRA.request_date.getTime() + ActiveOrPendingRA.duration), "D")}
-      **Quota Reduction:** ~${Math.round((ActiveOrPendingRA.quota_scale ?? 0) * 100)}%
-      **Reason:** ${ActiveOrPendingRA.reason}
-    `),
+        **Requested:** ${FormatTime(ActiveOrPendingRA.request_date, "R")}
+        **Starts On:** *once approved.*
+        **Ends On:** around ${FormatTime(new Date(ActiveOrPendingRA.request_date.getTime() + ActiveOrPendingRA.duration), "D")}
+        **Quota Reduction:** ~${ActiveOrPendingRA.quota_reduction}
+        **Reason:** ${ActiveOrPendingRA.reason}
+      `),
     });
   } else {
     PromptEmbed.setDescription(
@@ -181,7 +181,7 @@ async function HandlePendingCancellation(
   }
 
   const ExistingRA = await UserActivityNoticeModel.findById(ActiveOrPendingRA._id).exec();
-  if (!ExistingRA) {
+  if (!ExistingRA || ExistingRA.status !== "Pending") {
     return new ErrorEmbed()
       .useErrTemplate("NoPendingRAToCancel")
       .replyToInteract(ButtonInteract, true, true, "update");

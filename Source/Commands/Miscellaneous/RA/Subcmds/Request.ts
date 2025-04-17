@@ -97,11 +97,10 @@ async function HasRecentlyDeniedCancelledRA(Interaction: SlashCommandInteraction
 
 async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   await Interaction.deferReply({ flags: MessageFlags.Ephemeral });
-  const ActiveOrPendingRA = await UserActivityNoticeModel.findOne(
+  const ActiveOrPendingNotice = await UserActivityNoticeModel.findOne(
     {
       user: Interaction.user.id,
       guild: Interaction.guildId,
-      type: "ReducedActivity",
       $or: [
         { status: "Pending", review_date: null },
         {
@@ -116,7 +115,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     .lean()
     .exec();
 
-  if (ActiveOrPendingRA) {
+  if (ActiveOrPendingNotice) {
     return new ErrorEmbed()
       .useErrTemplate("UANoticeAlreadyExists", "reduced activity")
       .replyToInteract(Interaction, true, true);
