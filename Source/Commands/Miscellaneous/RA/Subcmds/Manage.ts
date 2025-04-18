@@ -17,7 +17,6 @@ import { Embeds, Emojis } from "@Config/Shared.js";
 import { compareDesc } from "date-fns";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
-import UserActivityNoticeModel from "@Models/UserActivityNotice.js";
 import MentionCmdByName from "@Utilities/Other/MentionCmd.js";
 import GetUANData from "@Utilities/Database/GetUANData.js";
 import Dedent from "dedent";
@@ -29,19 +28,16 @@ const PreviousRALimit = 5;
 // ---------------------------------------------------------------------------------------
 // Functions:
 // ----------
-function GetManagementComponents(ActiveOrPendingRA?: RADocument | null) {
-  const ActionRow = new ActionRowBuilder<ButtonBuilder>();
-  const CancelBtn = new ButtonBuilder()
-    .setCustomId("ra-mng-cancel")
-    .setStyle(ButtonStyle.Danger)
-    .setEmoji(Emojis.WhiteCross)
-    .setLabel("Cancel Pending Request");
+function GetManagementComponents(RADocument?: RADocument | null) {
+  const ActionRow = new ActionRowBuilder<ButtonBuilder>().setComponents(
+    new ButtonBuilder()
+      .setCustomId("ra-mng-cancel")
+      .setStyle(ButtonStyle.Danger)
+      .setEmoji(Emojis.WhiteCross)
+      .setLabel("Cancel Pending Request")
+  );
 
-  if (ActiveOrPendingRA?.status === "Pending") {
-    ActionRow.addComponents(CancelBtn);
-  }
-
-  return ActiveOrPendingRA?.status === "Pending" ? [ActionRow] : [];
+  return RADocument?.status === "Pending" ? [ActionRow] : [];
 }
 
 function GetManagementPromptEmbed(ActiveOrPendingRA?: RADocument | null) {
@@ -180,7 +176,7 @@ async function HandlePendingCancellation(
     await ButtonInteract.deferUpdate();
   }
 
-  const ExistingRA = await UserActivityNoticeModel.findById(ActiveOrPendingRA._id).exec();
+  const ExistingRA = await ActiveOrPendingRA.getUpToDate(false);
   if (!ExistingRA || ExistingRA.status !== "Pending") {
     return Promise.all([
       ButtonInteract.editReply({
@@ -198,20 +194,21 @@ async function HandlePendingCancellation(
   ExistingRA.review_date = ButtonInteract.createdAt;
   await ExistingRA.save();
 
+  const UpdatedPromptEmbed = GetManagementPromptEmbed(ExistingRA);
   const ReplyEmbed = new EmbedBuilder()
     .setColor(Embeds.Colors.Success)
     .setTitle("Request Cancelled")
     .setDescription("Your reduced activity request was successfully cancelled.");
 
-  await RAEventLogger.LogCancellation(ButtonInteract, ExistingRA);
-  const UpdatedPromptEmbed = GetManagementPromptEmbed(ExistingRA);
-
-  await ButtonInteract.editReply({ embeds: [ReplyEmbed], components: [] });
-  return ButtonInteract.editReply({
-    components: [],
-    message: PromptMsgId,
-    embeds: [UpdatedPromptEmbed],
-  }).then(() => true);
+  return Promise.all([
+    RAEventLogger.LogCancellation(ButtonInteract, ExistingRA),
+    ButtonInteract.editReply({ embeds: [ReplyEmbed], components: [] }),
+    ButtonInteract.editReply({
+      components: [],
+      message: PromptMsgId,
+      embeds: [UpdatedPromptEmbed],
+    }),
+  ]).then(() => true);
 }
 
 // ---------------------------------------------------------------------------------------

@@ -669,13 +669,13 @@ function GetLeaveModuleConfigExplanationEmbed() {
     .setDescription(
       Dedent(`
         1. **Module Enabled**
-          Whether to allow the usage of leave of absence commands or not, with certain exceptions included.
-        2. **On Leave Role**
+          Whether to allow the usage of leave of absence commands or not.
+        2. **Leave Status Role**
           The role that will be assigned to members when their leave of absence starts, and will be removed when their leave ends.
         3. **Leave Requests Channel**
           The channel used to send leave requests submitted by members. Setting this channel is optional, but if not set, management \
           staff will need to use the \`loa admin\` command to review members' pending requests.
-        4. **Leave Logs Channel**
+        4. **Activity Log Channel**
           A separate channel used to log various activities in the leave of absence module, including leave approvals, denials, cancellations, and terminations.
       `)
         .replace(/\.\s{2,}(\w)/g, ". $1")
@@ -732,14 +732,14 @@ function GetReducedActivityModuleConfigExplanationEmbed() {
     .setTitle("Reduced Activity Module Configuration")
     .setDescription(
       Dedent(`
-        1. **Module Enabled**
-          Toggle whether to enable or disable reduced activity commands.
-        2. **Reduced Activity Role**
-          The role that will be assigned to members when their reduced activity request is approved.
-        3. **Requests Channel**
-          The channel where reduced activity requests will be sent for approval.
-        4. **Log Channel**
-          The channel where updates to reduced activity requests will be logged.
+        **1. Module Status**  
+          Controls whether reduced activity features are available.
+        **2. RA Status Role**  
+          This role will be automatically applied when reduced activity begins and removed when it concludes.
+        **3. Request Submission Channel** 
+          Designated channel for member reduced activity notices. If not configured, staff must process requests via the \`ra admin\` command.
+        **4. Activity Log Channel**  
+          Records all reduced activity transactions including approvals, rejections, cancellations, and early terminations.
       `)
     );
 }
