@@ -463,7 +463,7 @@ async function HandleLeaveStart(
   await ButtonInteract.showModal(LeaveOptsModal);
   const ModalSubmission = await ButtonInteract.awaitModalSubmit({
     filter: (Modal) => Modal.customId === LeaveOptsModal.data.custom_id,
-    time: 5 * 60_000,
+    time: 8 * 60_000,
   }).catch(() => null);
 
   if (!ModalSubmission) return;

@@ -293,7 +293,7 @@ async function HandleLeaveExtend(
 
   await Interaction.showModal(ExtendModal);
   await Interaction.awaitModalSubmit({
-    time: 5 * 60_000,
+    time: 8 * 60_000,
     filter: (i) => i.customId === `loa-extend-modal:${Interaction.user.id}:${UniqueID}`,
   })
     .then(async (Submission) => {
@@ -519,7 +519,7 @@ async function HandlePendingLeaveCancellation(
   const ButtonInteract = await ConfirmationMsg.awaitMessageComponent({
     componentType: ComponentType.Button,
     filter: (i) => i.user.id === Interaction.user.id,
-    time: 8 * 60_000,
+    time: 5 * 60_000,
   }).catch(() => null);
 
   if (!ButtonInteract || ButtonInteract.customId === "loa-cancel-keep") {
@@ -603,7 +603,7 @@ async function HandlePendingExtensionCancellation(
   const ButtonInteract = await ConfirmationMsg.awaitMessageComponent({
     componentType: ComponentType.Button,
     filter: (i) => i.user.id === Interaction.user.id,
-    time: 8 * 60_000,
+    time: 5 * 60_000,
   }).catch(() => null);
 
   if (!ButtonInteract || ButtonInteract.customId === "loa-ext-cancel-keep") {
@@ -681,7 +681,7 @@ async function Callback(Interaction: PromptInteractType, CmdInteractReplyMsgId?:
   const CompActionCollector = ReplyMsg.createMessageComponentCollector({
     filter: (ButtonInteract) => ButtonInteract.user.id === Interaction.user.id,
     componentType: ComponentType.Button,
-    time: 10 * 60_000,
+    time: 14.5 * 60_000,
   });
 
   CompActionCollector.on("collect", async (ButtonInteract) => {

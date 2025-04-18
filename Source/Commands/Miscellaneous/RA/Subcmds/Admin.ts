@@ -24,6 +24,7 @@ import { Embeds, Emojis } from "@Config/Shared.js";
 import { RandomString } from "@Utilities/Strings/Random.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
+import HandleUserActivityNoticeRoleAssignment from "@Utilities/Other/HandleUANRoleAssignment.js";
 import GetUANData from "@Utilities/Database/GetUANData.js";
 import Dedent from "dedent";
 
@@ -181,7 +182,7 @@ async function HandleApprovalOrDenial(
 
   const NotesSubmission = await Interaction.awaitModalSubmit({
     filter: (i) => i.customId === NotesModal.data.custom_id,
-    time: 10 * 60_000,
+    time: 8 * 60_000,
   }).catch(() => null);
 
   if (!NotesSubmission) return false;
@@ -215,6 +216,12 @@ async function HandleApprovalOrDenial(
     RefreshedRA.save(),
     RAEventLogger[`Log${ActionType}`](NotesSubmission, RefreshedRA),
     NotesSubmission.editReply({ embeds: [ReplyEmbed] }),
+    HandleUserActivityNoticeRoleAssignment(
+      RefreshedRA.user,
+      NotesSubmission.guild,
+      "ReducedActivity",
+      ActionType === "Approval"
+    ),
   ]);
 
   return true;
@@ -229,7 +236,7 @@ async function HandleEarlyTermination(
 
   const NotesSubmission = await Interaction.awaitModalSubmit({
     filter: (i) => i.customId === NotesModal.data.custom_id,
-    time: 10 * 60_000,
+    time: 8 * 60_000,
   }).catch(() => null);
 
   if (!NotesSubmission) return false;
@@ -262,6 +269,12 @@ async function HandleEarlyTermination(
     RefreshedActiveRA.save(),
     RAEventLogger.LogEarlyUANEnd(NotesSubmission, RefreshedActiveRA, "Management"),
     NotesSubmission.editReply({ embeds: [ReplyEmbed] }),
+    HandleUserActivityNoticeRoleAssignment(
+      RefreshedActiveRA.user,
+      NotesSubmission.guild,
+      "ReducedActivity",
+      false
+    ),
   ]);
 
   return true;
