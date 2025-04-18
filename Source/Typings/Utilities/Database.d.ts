@@ -511,11 +511,11 @@ export namespace UserActivityNotice {
     /**
      * Fetches the latest version of the activity notice document from the database.
      * This ensures that the document reflects the most up-to-date state.
-     * @param [old_fallback=true] - If `true`, returns the old document if the latest version is not found.
+     * @param [old_fallback=false] - If `true`, returns the old document if the latest version is not found. Defaults to `false`.
      * @returns A promise that resolves to the latest version of the activity notice document.
      */
-    getUpToDate<OldFallback extends boolean = true>(
-      old_fallback: OldFallback = true
+    getUpToDate<OldFallback extends boolean = false>(
+      old_fallback: OldFallback = false
     ): Promise<
       OldFallback extends true
         ? ActivityNoticeHydratedDocument

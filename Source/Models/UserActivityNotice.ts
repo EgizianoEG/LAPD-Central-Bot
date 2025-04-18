@@ -337,7 +337,7 @@ ActivityNoticeSchema.pre("validate", function PreLeaveValidate() {
 
 ActivityNoticeSchema.methods.getUpToDate = async function (
   this: NoticeDocument,
-  old_fallback: boolean = true
+  old_fallback: boolean = false
 ) {
   return (this.constructor as UserActivityNotice.NoticeModel)
     .findById(this._id)
