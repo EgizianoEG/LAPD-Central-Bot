@@ -297,7 +297,7 @@ function GetNotesModal(
 ): ModalBuilder {
   const Modal = new ModalBuilder()
     .setTitle(`Leave of Absence ${Status}`)
-    .setCustomId(`loa-rev-notes:${Interaction.user.id}:${RandomString(4)}`)
+    .setCustomId(`loa-rev-notes:${Interaction.user.id}:${RandomString(6)}`)
     .setComponents(
       new ActionRowBuilder<TextInputBuilder>().setComponents(
         new TextInputBuilder()

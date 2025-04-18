@@ -494,7 +494,7 @@ function GetNotesModal(
   const NoticeType = IsLOA ? "Leave of Absence" : "Reduced Activity";
   const Modal = new ModalBuilder()
     .setTitle(`${NoticeType} ${ReviewOutcome}`)
-    .setCustomId(`uan-rev-notes:${Interaction.user.id}:${RandomString(4)}`)
+    .setCustomId(`uan-rev-notes:${Interaction.user.id}:${RandomString(6)}`)
     .setComponents(
       new ActionRowBuilder<TextInputBuilder>().setComponents(
         new TextInputBuilder()

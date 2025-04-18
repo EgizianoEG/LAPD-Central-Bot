@@ -157,9 +157,7 @@ function GetNotesModal(
 ) {
   return new ModalBuilder()
     .setTitle(`Reduced Activity ${ActionType}`)
-    .setCustomId(
-      `ra-admin-notes:${Interaction.user.id}:${ActionType.toLowerCase()}-${RandomString(4)}`
-    )
+    .setCustomId(`ra-rev-notes:${Interaction.user.id}:${RandomString(6)}`)
     .setComponents(
       new ActionRowBuilder<TextInputBuilder>().setComponents(
         new TextInputBuilder()
