@@ -15,8 +15,10 @@ import UserActivityNoticeModel from "@Models/UserActivityNotice.js";
 import MentionCmdByName from "@Utilities/Other/MentionCmd.js";
 import ParseDuration from "parse-duration";
 
-const MaxDuration = milliseconds({ months: 3 });
-const MinimumDuration = milliseconds({ days: 1 });
+const MaxLeaveDuration = milliseconds({ months: 3 });
+const MinLeaveDuration = milliseconds({ days: 1 });
+const MaxRADuration = milliseconds({ months: 1 });
+const MinRADuration = MinLeaveDuration;
 const LOAEventLogger = new LeaveOfAbsenceEventLogger();
 
 // ---------------------------------------------------------------------------------------
@@ -37,6 +39,9 @@ export function HandleDurationValidation(
   DurationParsed?: number
 ) {
   const NTShortened = NoticeType === "LeaveOfAbsence" ? "LOA" : "RA";
+  const MaxDuration = NTShortened === "LOA" ? MaxLeaveDuration : MaxRADuration;
+  const MinDuration = NTShortened === "LOA" ? MinLeaveDuration : MinRADuration;
+
   if (!DurationParsed) {
     return new ErrorEmbed()
       .useErrTemplate("UnknownDurationExp")
@@ -47,7 +52,7 @@ export function HandleDurationValidation(
       .useErrTemplate(`${NTShortened}DurationTooLong`)
       .replyToInteract(Interaction, true)
       .then(() => true);
-  } else if (DurationParsed < MinimumDuration) {
+  } else if (DurationParsed < MinDuration) {
     return new ErrorEmbed()
       .useErrTemplate(`${NTShortened}DurationTooShort`)
       .replyToInteract(Interaction, true)
