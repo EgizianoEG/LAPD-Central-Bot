@@ -310,6 +310,7 @@ async function OnChargesModalSubmission(
     user_thumb_url: ThumbUrl,
     booking_num: BookingNumber,
     user_gender: CmdOptions.Gender,
+    booking_date: CmdInteract.createdAt,
   });
 
   const ConfirmationEmbed = new EmbedBuilder()
