@@ -4,6 +4,7 @@ import AppError from "@Utilities/Classes/AppError.js";
 import Mongoose from "mongoose";
 
 const FatalDiscordAPIErrorCodes: DiscordAPIError["code"][] = [50_014, 50_017];
+const NonFatalErrorsFromConstructors: string[] = ["ValidationError", "VersionError"];
 const FatalDiscordJSErrors: DiscordjsErrorCodes[] = [
   DiscordjsErrorCodes.TokenInvalid,
   DiscordjsErrorCodes.TokenMissing,
@@ -20,7 +21,7 @@ export default function ErrorHandler() {
       Err instanceof Mongoose.mongo.MongoServerError ||
       Err instanceof RangeError ||
       Err instanceof ReferenceError ||
-      Err.constructor.name.includes("ValidationError")
+      NonFatalErrorsFromConstructors.includes(Err.constructor.name)
     ) {
       // Non-fatal errors that can be logged and ignored without terminating the process.
       // These errors are either recoverable or do not compromise the app's core functionality.
