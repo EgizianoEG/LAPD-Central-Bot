@@ -490,6 +490,7 @@ async function HandleLeaveStart(
   const CreatedLeave = await UserActivityNoticeModel.create({
     guild: ModalSubmission.guildId,
     user: TargetMemberId,
+    type: "LeaveOfAbsence",
     status: "Approved",
     reason: "[Administrative]",
     duration: DurationParsed,
