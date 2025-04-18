@@ -379,7 +379,7 @@ async function GetActiveOrPendingLOA(
   ).exec();
 }
 
-async function HandleLeaveReviewValidation(
+export async function HandleLeaveReviewValidation(
   Interaction: CmdOrButtonInteraction | ModalSubmitInteraction<"cached">,
   RequestDocument?: UserActivityNotice.ActivityNoticeHydratedDocument | null
 ): Promise<boolean> {

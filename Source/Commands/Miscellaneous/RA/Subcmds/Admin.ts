@@ -17,6 +17,7 @@ import {
   User,
 } from "discord.js";
 
+import { HandleLeaveReviewValidation } from "@Cmds/Miscellaneous/LOA/Subcmds/Admin.js";
 import { ReducedActivityEventLogger } from "@Utilities/Classes/UANEventLogger.js";
 import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { Embeds, Emojis } from "@Config/Shared.js";
@@ -185,6 +186,11 @@ async function HandleApprovalOrDenial(
   if (!NotesSubmission) return false;
   await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
 
+  const RefreshedRA = await ActiveOrPendingRA.getUpToDate(false);
+  if (!RefreshedRA || (await HandleLeaveReviewValidation(NotesSubmission, RefreshedRA))) {
+    return true;
+  }
+
   const ReviewerNotes = NotesSubmission.fields.getTextInputValue("notes") || null;
   const ActionInPastForm = ActionType === "Approval" ? "Approved" : "Denied";
   const ReplyEmbed = new EmbedBuilder()
@@ -192,21 +198,21 @@ async function HandleApprovalOrDenial(
     .setTitle(`Reduced Activity ${ActionInPastForm}`)
     .setDescription(
       `Successfully ${ActionInPastForm.toLowerCase()} the pending reduced activity request for ${userMention(
-        ActiveOrPendingRA.user
+        RefreshedRA.user
       )}.`
     );
 
-  ActiveOrPendingRA.status = ActionInPastForm;
-  ActiveOrPendingRA.review_date = NotesSubmission.createdAt;
-  ActiveOrPendingRA.reviewer_notes = ReviewerNotes;
-  ActiveOrPendingRA.reviewed_by = {
+  RefreshedRA.status = ActionInPastForm;
+  RefreshedRA.review_date = NotesSubmission.createdAt;
+  RefreshedRA.reviewer_notes = ReviewerNotes;
+  RefreshedRA.reviewed_by = {
     id: NotesSubmission.user.id,
     username: NotesSubmission.user.username,
   };
 
   await Promise.all([
-    ActiveOrPendingRA.save(),
-    RAEventLogger[`Log${ActionType}`](NotesSubmission, ActiveOrPendingRA),
+    RefreshedRA.save(),
+    RAEventLogger[`Log${ActionType}`](NotesSubmission, RefreshedRA),
     NotesSubmission.editReply({ embeds: [ReplyEmbed] }),
   ]);
 
@@ -228,6 +234,14 @@ async function HandleEarlyTermination(
   if (!NotesSubmission) return false;
   await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
 
+  const RefreshedActiveRA = await ActiveRA.getUpToDate(false);
+  if (
+    !RefreshedActiveRA ||
+    (await HandleLeaveReviewValidation(NotesSubmission, RefreshedActiveRA))
+  ) {
+    return true;
+  }
+
   const ReplyEmbed = new EmbedBuilder()
     .setColor(Embeds.Colors.Success)
     .setTitle("Reduced Activity Terminated")
@@ -238,13 +252,13 @@ async function HandleEarlyTermination(
     );
 
   const ReviewerNotes = NotesSubmission.fields.getTextInputValue("notes") || null;
-  ActiveRA.early_end_date = NotesSubmission.createdAt;
-  ActiveRA.end_processed = true;
-  ActiveRA.reviewer_notes = ReviewerNotes;
+  RefreshedActiveRA.end_processed = true;
+  RefreshedActiveRA.early_end_date = NotesSubmission.createdAt;
+  RefreshedActiveRA.early_end_reason = ReviewerNotes;
 
   await Promise.all([
-    ActiveRA.save(),
-    RAEventLogger.LogEarlyUANEnd(NotesSubmission, ActiveRA, "Management"),
+    RefreshedActiveRA.save(),
+    RAEventLogger.LogEarlyUANEnd(NotesSubmission, RefreshedActiveRA, "Management"),
     NotesSubmission.editReply({ embeds: [ReplyEmbed] }),
   ]);
 
