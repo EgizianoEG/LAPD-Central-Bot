@@ -587,7 +587,7 @@ async function HandleLeaveExtend(
   const ParsedDuration = Math.round(ParseDuration(Duration, "millisecond") ?? 0);
   const SubmissionHandled = ValidateExtendedDuration(Submission, ActiveLeave, ParsedDuration);
   if (SubmissionHandled) return;
-  else Submission.deferReply({ flags: MessageFlags.Ephemeral });
+  else await Submission.deferReply({ flags: MessageFlags.Ephemeral });
 
   ActiveLeave = await ActiveLeave.getUpToDate();
   if (!ActiveLeave?.is_active) return HandleNonActiveLeave();
