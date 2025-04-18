@@ -732,13 +732,13 @@ function GetReducedActivityModuleConfigExplanationEmbed() {
     .setTitle("Reduced Activity Module Configuration")
     .setDescription(
       Dedent(`
-        **1. Module Status**  
+        1. **Module Status**
           Controls whether reduced activity features are available.
-        **2. RA Status Role**  
+        2. **RA Status Role**
           This role will be automatically applied when reduced activity begins and removed when it concludes.
-        **3. Request Submission Channel** 
+        3. **Request Submission Channel**
           Designated channel for member reduced activity notices. If not configured, staff must process requests via the \`ra admin\` command.
-        **4. Activity Log Channel**  
+        4. **Activity Log Channel**
           Records all reduced activity transactions including approvals, rejections, cancellations, and early terminations.
       `)
     );
