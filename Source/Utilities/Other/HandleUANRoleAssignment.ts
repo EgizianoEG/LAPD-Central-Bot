@@ -17,10 +17,10 @@ export default async function HandleUserActivityNoticeRoleAssignment(
   IsNoticeActive: boolean
 ) {
   const GuildSettings = await GetGuildSettings(Guild.id);
-  const NoticeRole =
-    TypeOfNotice === "LeaveOfAbsence"
-      ? GuildSettings?.leave_notices.leave_role
-      : GuildSettings?.reduced_activity.ra_role;
+  const IsLeaveNotice = TypeOfNotice === "LeaveOfAbsence";
+  const NoticeRole = IsLeaveNotice
+    ? GuildSettings?.leave_notices.leave_role
+    : GuildSettings?.reduced_activity.ra_role;
 
   if (!NoticeRole) return;
   if (Array.isArray(UserId)) {
@@ -28,13 +28,18 @@ export default async function HandleUserActivityNoticeRoleAssignment(
       UserId.map(async (User) => {
         const GuildMember = await Guild.members.fetch(User).catch(() => null);
         if (!GuildMember) return Promise.resolve();
-        return HandleSingleUserRoleAssignment(NoticeRole, GuildMember, IsNoticeActive);
+        return HandleSingleUserRoleAssignment(
+          NoticeRole,
+          GuildMember,
+          IsLeaveNotice,
+          IsNoticeActive
+        );
       })
     );
   } else {
     const GuildMember = await Guild.members.fetch(UserId).catch(() => null);
     if (!GuildMember) return;
-    return HandleSingleUserRoleAssignment(NoticeRole, GuildMember, IsNoticeActive);
+    return HandleSingleUserRoleAssignment(NoticeRole, GuildMember, IsLeaveNotice, IsNoticeActive);
   }
 }
 
@@ -42,16 +47,19 @@ export default async function HandleUserActivityNoticeRoleAssignment(
  * Handles role assignment/removal for a single guild member.
  * @param NoticeActiveRole - The Discord role ID to add or remove.
  * @param GuildMember - The guild member object to modify roles for.
+ * @param IsLeaveOfAbsence - Whether the user is on leave of absence.
  * @param IsNoticeActive - Whether to add (true) or remove (false) the role.
  * @returns A promise that resolves when the role operation completes, or resolves immediately if GuildMember is invalid.
  */
 async function HandleSingleUserRoleAssignment(
   NoticeActiveRole: string,
   GuildMember: GuildMember,
+  IsLeaveOfAbsence: boolean,
   IsNoticeActive: boolean
 ) {
   if (!GuildMember) return Promise.resolve();
+  const NTText = IsLeaveOfAbsence ? "leave of absence" : "reduced activity";
   return IsNoticeActive
-    ? GuildMember.roles.add(NoticeActiveRole, "Staff member is on leave of absence.")
-    : GuildMember.roles.remove(NoticeActiveRole, "Staff member is not on leave anymore.");
+    ? GuildMember.roles.add(NoticeActiveRole, `Staff member is on ${NTText}.`)
+    : GuildMember.roles.remove(NoticeActiveRole, `Staff member is not on ${NTText} anymore.`);
 }
