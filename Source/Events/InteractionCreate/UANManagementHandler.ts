@@ -23,6 +23,7 @@ import { UserHasPermsV2 } from "@Utilities/Database/UserHasPermissions.js";
 import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
 import { ErrorEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { UserActivityNoticeMgmtCustomIdRegex } from "@Resources/RegularExpressions.js";
 
 import HandleUserActivityNoticeRoleAssignment from "@Utilities/Other/HandleUANRoleAssignment.js";
 import LeaveOfAbsenceModel from "@Models/UserActivityNotice.js";
@@ -64,7 +65,7 @@ export default async function UANManagementHandlerWrapper(
   if (
     !Interaction.isButton() ||
     !Interaction.inCachedGuild() ||
-    !Interaction.customId.match(/^(?:loa|ra)-(?:ext-)?(?:app|den|inf)[\w-]*:/)
+    !Interaction.customId.match(UserActivityNoticeMgmtCustomIdRegex)
   ) {
     return;
   }
