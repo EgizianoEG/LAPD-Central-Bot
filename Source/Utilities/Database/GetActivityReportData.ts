@@ -109,8 +109,12 @@ export default async function GetActivityReportData(
           ? Member.roles.cache.hasAny(...ShiftType.access_roles)
           : true;
 
-      return HasStaffMgmtRoles && HasShiftTypeRoles;
+      return HasStaffMgmtRoles && HasShiftTypeRoles && !Member.user.bot;
     });
+  } else {
+    Opts.members = Opts.members.filter(
+      (Member) => Member.roles.cache.hasAny(...GuildStaffMgmtRoles) && !Member.user.bot
+    );
   }
 
   const RetrieveDate = new Date();

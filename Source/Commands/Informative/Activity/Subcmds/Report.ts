@@ -31,7 +31,7 @@ const HumanizeDuration = DHumanize.humanizer({
 // ---------------------------------------------------------------------------------------
 async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
   const InputQuotaDuration = CmdInteraction.options.getString("time-requirement", false);
-  const EphemeralResponse = CmdInteraction.options.getBoolean("ephemeral", false) ?? false;
+  const EphemeralResponse = CmdInteraction.options.getBoolean("private", false) ?? false;
   const InputShiftType = CmdInteraction.options.getString("shift-type", false);
   const IMNicknames = CmdInteraction.options.getBoolean("include-nicknames", false);
   const InputSince = CmdInteraction.options.getString("since", true);
@@ -152,7 +152,7 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
   return CmdInteraction.editReply({
     components: [ShowReportButton],
     embeds: [RespEmbed],
-  });
+  }).catch(() => null);
 }
 
 // ---------------------------------------------------------------------------------------
