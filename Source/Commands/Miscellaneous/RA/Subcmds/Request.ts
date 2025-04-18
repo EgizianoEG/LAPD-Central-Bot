@@ -3,7 +3,7 @@ import { ReducedActivityEventLogger } from "@Utilities/Classes/UANEventLogger.js
 import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import {
   HandleDurationValidation,
-  HasRecentlyDeniedCancelledUAN,
+  HasRecentlyEndedDeniedCancelledUAN,
 } from "@Cmds/Miscellaneous/LOA/Subcmds/Request.js";
 
 import UserActivityNoticeModel from "@Models/UserActivityNotice.js";
@@ -44,7 +44,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const RequestDuration = Interaction.options.getString("duration", true);
   const DurationParsed = Math.round(ParseDuration(RequestDuration, "millisecond") ?? 0);
   if (await HandleDurationValidation(Interaction, "ReducedActivity", DurationParsed)) return;
-  if (await HasRecentlyDeniedCancelledUAN(Interaction, "ReducedActivity")) return;
+  if (await HasRecentlyEndedDeniedCancelledUAN(Interaction, "ReducedActivity")) return;
 
   const PendingRA = await UserActivityNoticeModel.create({
     type: "ReducedActivity",

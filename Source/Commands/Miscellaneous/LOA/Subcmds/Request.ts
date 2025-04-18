@@ -77,23 +77,20 @@ export function HandleDurationValidation(
  * The function uses the `UserActivityNoticeModel` to query the database for the user's most recent LOA/RA request
  * and determines the appropriate response based on the status and timestamps of the request.
  */
-export async function HasRecentlyDeniedCancelledUAN(
+export async function HasRecentlyEndedDeniedCancelledUAN(
   Interaction: SlashCommandInteraction<"cached">,
   ContextModule: UserActivityNotice.NoticeType
 ) {
   const NTShortened = ContextModule === "LeaveOfAbsence" ? "LOA" : "RA";
-  const MostRecentUANotice =
-    await UserActivityNoticeModel.aggregate<UserActivityNotice.ActivityNoticeHydratedDocument>([
-      {
-        $match: {
-          user: Interaction.user.id,
-          guild: Interaction.guildId,
-          status: { $in: ["Approved", "Denied", "Cancelled"] },
-        },
-      },
-      { $sort: { request_date: -1 } },
-      { $limit: 1 },
-    ]).then((Results) => Results[0]);
+  const MostRecentUANotice = await UserActivityNoticeModel.find(
+    {
+      user: Interaction.user.id,
+      guild: Interaction.guildId,
+      status: { $in: ["Approved", "Denied", "Cancelled"] },
+    },
+    null,
+    { sort: { request_date: -1 }, limit: 1 }
+  ).then((Results) => Results[0]);
 
   if (!MostRecentUANotice) return false;
   if (
@@ -164,7 +161,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const RequestDuration = Interaction.options.getString("duration", true);
   const DurationParsed = Math.round(ParseDuration(RequestDuration, "millisecond") ?? 0);
   if (await HandleDurationValidation(Interaction, "LeaveOfAbsence", DurationParsed)) return;
-  if (await HasRecentlyDeniedCancelledUAN(Interaction, "LeaveOfAbsence")) return;
+  if (await HasRecentlyEndedDeniedCancelledUAN(Interaction, "LeaveOfAbsence")) return;
 
   const PendingLeave = await UserActivityNoticeModel.create({
     type: "LeaveOfAbsence",

@@ -168,25 +168,28 @@ async function HandleNoticeReviewValidation(
       );
     }
 
-    const Tasks: Promise<any>[] = [
-      Interaction.deferred || Interaction.replied
-        ? Interaction.editReply({ embeds: [ReplyEmbed] })
-        : Interaction.reply({ embeds: [ReplyEmbed], flags: MessageFlags.Ephemeral }),
-    ];
-
+    const Tasks: Promise<any>[] = [];
     if (UpdatedReqEmbed) {
+      await Interaction.deferUpdate().catch(() => null);
       Tasks.push(
+        Interaction.followUp({ embeds: [ReplyEmbed] }),
         InitialInteraction.editReply({
           embeds: [UpdatedReqEmbed],
           message: RequestDocument?.request_msg?.split(":")[1],
           components: GetDisabledMessageComponents(InitialInteraction),
         })
       );
+    } else {
+      await Interaction.deferUpdate().catch(() => null);
+      Tasks.push(
+        Interaction.followUp({ embeds: [ReplyEmbed], flags: MessageFlags.Ephemeral }),
+        InitialInteraction.editReply({
+          components: GetDisabledMessageComponents(InitialInteraction),
+        })
+      );
     }
 
-    return Promise.all(Tasks)
-      .catch(() => true)
-      .then(() => true);
+    return Promise.all(Tasks).then(() => true);
   }
 
   return false;
