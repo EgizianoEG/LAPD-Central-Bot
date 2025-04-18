@@ -51,6 +51,12 @@ const FunctionMap = {
 // ---------------------------------------------------------------------------------------
 // Functions:
 // ----------
+/**
+ * Handles all User Activity Notice management button interactions.
+ * @param _ - Discord client instance (unused parameter).
+ * @param Interaction - The Discord interaction to process.
+ * @returns A Promise that resolves when the interaction handling is complete, or undefined if the interaction doesn't match criteria.
+ */
 export default async function UANManagementHandlerWrapper(
   _: DiscordClient,
   Interaction: BaseInteraction
@@ -83,13 +89,14 @@ export default async function UANManagementHandlerWrapper(
 }
 
 /**
- * Handles the UAN management buttons on sent/pending requests, i.e., approving, denying, and reviewing UANs by a management staff member.
+ * Processes User Activity Notice management actions from button interactions.
  * Button custom id format: <type>-<action>:<requester_id>:<request_id/notice_id>
  * - Types: `loa` for Leave of Absence or `ra` for Reduced Activity
  * - Actions: `approve`, `deny`, `info`, `ext-approve`, `ext-deny` (ext actions only for LOA)
- * - The `request_id` is the unique Id of the UAN request, which is stored in the database.
- * @param Interaction Button interaction
- * @returns Promise
+ * - The `request_id` is the unique ID of the UAN request stored in the database.
+ *
+ * @param Interaction - The button interaction to process.
+ * @returns A Promise that resolves when the management action is completed.
  */
 async function UANManagementHandler(Interaction: ButtonInteraction<"cached">) {
   const [Action, , NoticeId] = Interaction.customId.split(":");
@@ -99,9 +106,9 @@ async function UANManagementHandler(Interaction: ButtonInteraction<"cached">) {
 }
 
 /**
- * Handles unauthorized UAN management.
- * @param Interaction - The button interaction.
- * @returns A boolean indicating whether the action was authorized or not.
+ * Validates if the user has management permissions to perform UAN management actions.
+ * @param Interaction - The button interaction to validate permissions for.
+ * @returns A Promise resolving to true if user is unauthorized (action blocked), false otherwise.
  */
 async function HandleUnauthorizedManagement(Interaction: ButtonInteraction<"cached">) {
   const IsActionAuthorized = await UserHasPermsV2(Interaction.user.id, Interaction.guildId, {
@@ -119,11 +126,11 @@ async function HandleUnauthorizedManagement(Interaction: ButtonInteraction<"cach
 }
 
 /**
- * Validates approval or denial of a user activity notice request before proceeding.
- * @param Interaction
- * @param RequestDocument
- * @param InitialInteraction
- * @returns
+ * Validates whether a notice can still be reviewed or has already been processed.
+ * @param Interaction - The current interaction being processed.
+ * @param RequestDocument - The notice document to validate.
+ * @param InitialInteraction - The original button interaction that started the process.
+ * @returns A Promise resolving to true if validation failed (action blocked), false if review can proceed.
  */
 async function HandleNoticeReviewValidation(
   Interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">,
@@ -186,9 +193,10 @@ async function HandleNoticeReviewValidation(
 }
 
 /**
- * Handles "Additional Information" button. Shows the UAN stats and shift stats of the requester.
- * @param Interaction
- * @param NoticeDocument
+ * Displays additional information about the requester, including their UAN history and shift statistics.
+ * @param Interaction - The button interaction requesting additional information.
+ * @param NoticeDocument - The notice document for which to display information.
+ * @returns A Promise that resolves after sending the information response.
  */
 async function HandleNoticeAddInfo(
   Interaction: ButtonInteraction<"cached">,
@@ -246,8 +254,9 @@ async function HandleNoticeAddInfo(
 }
 
 /**
- * Handles approval of a user activity notice, whether LOA or RA.
- * @param Interaction - The button interaction.
+ * Processes the approval of a User Activity Notice (LOA or RA).
+ * Shows a modal for reviewer notes, updates the document, and assigns appropriate roles.
+ * @param Interaction - The button interaction for approval.
  * @param NoticeDocument - The notice document to be approved.
  * @returns A Promise resolving after the approval process is completed.
  */
@@ -299,8 +308,9 @@ async function HandleUANApproval(
 }
 
 /**
- * Handles denial of a user activity notice, whether LOA or RA.
- * @param Interaction - The button interaction.
+ * Processes the denial of a User Activity Notice (LOA or RA).
+ * Shows a modal for required rejection notes and updates the document status.
+ * @param Interaction - The button interaction for denial.
  * @param NoticeDocument - The notice document to be denied.
  * @returns A Promise resolving after the denial process is completed.
  */
@@ -345,6 +355,13 @@ async function HandleUANDenial(
   ]);
 }
 
+/**
+ * Handles the approval of a Leave of Absence extension request.
+ * Collects optional reviewer notes and updates the extension status.
+ * @param Interaction - The button interaction for extension approval.
+ * @param LeaveDocument - The LOA document with pending extension request.
+ * @returns A Promise resolving after the extension approval process is completed.
+ */
 async function HandleExtApproval(
   Interaction: ButtonInteraction<"cached">,
   LeaveDocument: HNoticeDocument
@@ -389,6 +406,13 @@ async function HandleExtApproval(
   ]);
 }
 
+/**
+ * Handles the denial of a Leave of Absence extension request.
+ * Collects mandatory rejection notes and updates the extension status.
+ * @param Interaction - The button interaction for extension denial.
+ * @param LeaveDocument - The LOA document with pending extension request.
+ * @returns A Promise resolving after the extension denial process is completed.
+ */
 async function HandleExtDenial(
   Interaction: ButtonInteraction<"cached">,
   LeaveDocument: HNoticeDocument
@@ -433,6 +457,14 @@ async function HandleExtDenial(
   ]);
 }
 
+/**
+ * Creates a modal for collecting reviewer notes during the approval/denial process.
+ * @param Interaction - The button interaction that triggered the review.
+ * @param ReviewOutcome - The type of review being performed.
+ * @param NotesRequired - Whether notes are mandatory. Defaults to false.
+ * @param IsLOA - Whether this is for a Leave of Absence (true) or Reduced Activity (false).
+ * @returns A configured modal for collecting reviewer notes.
+ */
 function GetNotesModal(
   Interaction: ButtonInteraction<"cached">,
   ReviewOutcome: "Approval" | "Denial" | "Extension Approval" | "Extension Denial",
@@ -466,6 +498,12 @@ function GetNotesModal(
   return Modal;
 }
 
+/**
+ * Creates disabled versions of all message components from the original interaction.
+ * Used to disable buttons after an action has been taken.
+ * @param Interaction - The interaction containing components to disable.
+ * @returns An array of action rows with disabled components.
+ */
 function GetDisabledMessageComponents(
   Interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">
 ) {

@@ -60,6 +60,7 @@ export function HandleDurationValidation(
  * Checks if a user has recently had a Denied or Cancelled user activity notice,
  * or if a previous LOA/RA has recently ended, and responds with an appropriate error message if so.
  * @param Interaction - The interaction object containing details about the command invocation.
+ * @param ContextModule - The context module for the user activity notice (either "LeaveOfAbsence" or "ReducedActivity").
  * @returns A promise that resolves to `false` if no recent Denied/Cancelled LOA/RA or recently ended LOA/RA is found,
  *          or `true` if an error message is sent due to a recent Denied/Cancelled notice or recently ended one.
  *

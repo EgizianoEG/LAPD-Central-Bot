@@ -3,13 +3,12 @@ import { Guild, GuildMember } from "discord.js";
 import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
 
 /**
- * Handles shift role(s) assignment based on the current leave status of a user.
- * @param UserId - The user(s) to assign leave role to.
- * @param Guild - The guild the user is in.
- * @param IsOnLeave - Whether the user is on leave or not.
- * @param TypeOfNotice - The type of notice (LeaveOfAbsence or ReducedActivity).
- * @param IsNoticeActive - Whether the notice is active or not.
- * @returns A promise that resolves when the role assignment is complete.
+ * Assigns or removes activity notice roles (Leave of Absence or Reduced Activity) for guild members.
+ * @param UserId - The Discord user ID(s) to update roles for (can be a single string or an array of strings).
+ * @param Guild - The Discord guild (server) where the role changes will occur.
+ * @param TypeOfNotice - The type of activity notice ("LeaveOfAbsence" or "ReducedActivity").
+ * @param IsNoticeActive - Whether to add (true) or remove (false) the corresponding role.
+ * @returns A promise that resolves when all role assignments are complete, or undefined if no action was taken.
  */
 export default async function HandleUserActivityNoticeRoleAssignment(
   UserId: string | string[],
@@ -39,6 +38,13 @@ export default async function HandleUserActivityNoticeRoleAssignment(
   }
 }
 
+/**
+ * Handles role assignment/removal for a single guild member.
+ * @param NoticeActiveRole - The Discord role ID to add or remove.
+ * @param GuildMember - The guild member object to modify roles for.
+ * @param IsNoticeActive - Whether to add (true) or remove (false) the role.
+ * @returns A promise that resolves when the role operation completes, or resolves immediately if GuildMember is invalid.
+ */
 async function HandleSingleUserRoleAssignment(
   NoticeActiveRole: string,
   GuildMember: GuildMember,
