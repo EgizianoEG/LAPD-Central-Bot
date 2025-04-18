@@ -377,7 +377,7 @@ export class BaseUserActivityNoticeLogger {
             value: Dedent(`
               **Approver**: ${userMention(Interaction.user.id)}
               **Notes:**
-              ${ApprovedRequest.reviewer_notes || "`N/A`"}
+              ${ApprovedRequest.reviewer_notes || "*N/A*"}
             `),
           }
         );
@@ -474,7 +474,7 @@ export class BaseUserActivityNoticeLogger {
             value: Dedent(`
               **Denier**: ${userMention(Interaction.user.id)}
               **Notes:**
-              ${DeniedRequest.reviewer_notes || "`N/A`"}
+              ${DeniedRequest.reviewer_notes || "*N/A*"}
             `),
           }
         );
@@ -670,7 +670,7 @@ export class BaseUserActivityNoticeLogger {
               value: Dedent(`
                 **Approver**: ${userMention(NoticeDocument.reviewed_by!.id)}
                 **Notes:**
-                ${NoticeDocument.reviewer_notes || "`N/A`"}
+                ${NoticeDocument.reviewer_notes || "*N/A*"}
               `),
             }
           );
@@ -765,7 +765,7 @@ export class BaseUserActivityNoticeLogger {
           value: Dedent(`
             **Approver:** ${userMention(NoticeDocument.reviewed_by!.id)}
             **Notes:**
-            ${NoticeDocument.reviewer_notes || "`N/A`"}
+            ${NoticeDocument.reviewer_notes || "*N/A*"}
           `),
         });
       } else {
@@ -774,10 +774,10 @@ export class BaseUserActivityNoticeLogger {
           name: "Management Staff",
           value: Dedent(`
             **Approver:** ${userMention(NoticeDocument.reviewed_by!.id)}
-            **Approver Notes:** ${NoticeDocument.reviewer_notes || "`N/A`"}
+            **Approver Notes:** ${NoticeDocument.reviewer_notes || "*N/A*"}
 
             **Ended By:** ${userMention(Interaction.user.id)}
-            **End Reason:** ${NoticeDocument.early_end_reason || "`N/A`"}
+            **End Reason:** ${NoticeDocument.early_end_reason || "*N/A*"}
           `),
         });
       }
@@ -963,7 +963,7 @@ export class LeaveOfAbsenceEventLogger extends BaseUserActivityNoticeLogger {
             value: Dedent(`
               **Approver**: ${userMention(Interaction.user.id)}
               **Notes:**
-              ${CreatedLOA.reviewer_notes || "`N/A`"}
+              ${CreatedLOA.reviewer_notes || "*N/A*"}
             `),
           }
         );
@@ -1025,7 +1025,7 @@ export class LeaveOfAbsenceEventLogger extends BaseUserActivityNoticeLogger {
             **Leave Started:** ${FormatTime(NoticeDocument.review_date, "F")}
             **Leave Ends On:** after extension, ${FormatTime(NoticeDocument.end_date, "D")}
             **Extension Duration:** ${NoticeDocument.extended_duration_hr}
-            **Extension Reason:** ${NoticeDocument.extension_request.reason || "`N/A`"}
+            **Extension Reason:** ${NoticeDocument.extension_request.reason || "*N/A*"}
           `),
         })
         .addFields({
@@ -1034,7 +1034,7 @@ export class LeaveOfAbsenceEventLogger extends BaseUserActivityNoticeLogger {
           value: Dedent(`
               **Extended By**: ${userMention(NoticeDocument.extension_request.reviewed_by!.id)}
               **Notes:**
-              ${NoticeDocument.extension_request.reviewer_notes || "`N/A`"}
+              ${NoticeDocument.extension_request.reviewer_notes || "*N/A*"}
             `),
         });
 
@@ -1108,7 +1108,7 @@ export class LeaveOfAbsenceEventLogger extends BaseUserActivityNoticeLogger {
             value: Dedent(`
               **Approver**: ${userMention(NoticeDocument.extension_request.reviewed_by!.id)}
               **Notes:**
-              ${NoticeDocument.extension_request.reviewer_notes || "`N/A`"}
+              ${NoticeDocument.extension_request.reviewer_notes || "*N/A*"}
             `),
           }
         );
@@ -1217,7 +1217,7 @@ export class LeaveOfAbsenceEventLogger extends BaseUserActivityNoticeLogger {
             value: Dedent(`
               **Denier**: ${userMention(NoticeDocument.extension_request.reviewed_by!.id)}
               **Notes:**
-              ${NoticeDocument.extension_request.reviewer_notes || "`N/A`"}
+              ${NoticeDocument.extension_request.reviewer_notes || "*N/A*"}
             `),
           }
         );
