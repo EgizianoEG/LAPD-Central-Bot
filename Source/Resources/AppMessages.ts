@@ -575,13 +575,13 @@ export const ErrorMessages = {
   },
 
   LOAPreviouslyCancelled: {
-    Title: "LOA Previously Cancelled",
+    Title: "A Notice Previously Cancelled",
     Description:
       "You cannot request a leave of absence while there was a previous notice that was cancelled less than 1 hour ago.",
   },
 
   LOARecentlyEnded: {
-    Title: "LOA Recently Ended",
+    Title: "A Notice Recently Ended",
     Description:
       "You cannot request a new leave of absence while there was a previous notice that was ended or terminated less than 1 hour ago.",
   },
@@ -766,6 +766,12 @@ export const ErrorMessages = {
     Title: "Notice Previously Cancelled",
     Description:
       "You cannot request reduced activity while there is a previous notice that was cancelled less than 1 hour ago.",
+  },
+
+  RARecentlyEnded: {
+    Title: "Notice Recently Ended",
+    Description:
+      "You cannot request a new leave of absence while there was a previous notice that was ended or terminated less than 1 hour ago.",
   },
 
   NoPendingRAToCancel: {

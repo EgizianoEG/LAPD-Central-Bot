@@ -1,100 +1,19 @@
-import {
-  SlashCommandSubcommandBuilder,
-  ModalSubmitInteraction,
-  time as FormatTime,
-  MessageFlags,
-} from "discord.js";
-
+import { SlashCommandSubcommandBuilder, time as FormatTime, MessageFlags } from "discord.js";
 import { ReducedActivityEventLogger } from "@Utilities/Classes/UANEventLogger.js";
 import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import { UserActivityNotice } from "@Typings/Utilities/Database.js";
-import { differenceInHours } from "date-fns";
-import { milliseconds } from "date-fns/milliseconds";
+import {
+  HandleDurationValidation,
+  HasRecentlyDeniedCancelledUAN,
+} from "@Cmds/Miscellaneous/LOA/Subcmds/Request.js";
 
 import UserActivityNoticeModel from "@Models/UserActivityNotice.js";
 import MentionCmdByName from "@Utilities/Other/MentionCmd.js";
 import ParseDuration from "parse-duration";
-
-const MaxDuration = milliseconds({ months: 1 });
-const MinimumDuration = milliseconds({ days: 1 });
 const RAEventLogger = new ReducedActivityEventLogger();
 
 // ---------------------------------------------------------------------------------------
-// Functions:
-// ----------
-/**
- * Validate the duration of the RA.
- * @param Interaction
- * @param DurationParsed
- * @returns A boolean indicating if the duration wasn't valid (true, the interaction was handled) or was (false).
- */
-export function HandleDurationValidation(
-  Interaction: SlashCommandInteraction<"cached"> | ModalSubmitInteraction<"cached">,
-  DurationParsed?: number
-) {
-  if (!DurationParsed) {
-    return new ErrorEmbed()
-      .useErrTemplate("UnknownDurationExp")
-      .replyToInteract(Interaction, true)
-      .then(() => true);
-  } else if (DurationParsed > MaxDuration) {
-    return new ErrorEmbed()
-      .useErrTemplate("RADurationTooLong")
-      .replyToInteract(Interaction, true)
-      .then(() => true);
-  } else if (DurationParsed < MinimumDuration) {
-    return new ErrorEmbed()
-      .useErrTemplate("RADurationTooShort")
-      .replyToInteract(Interaction, true)
-      .then(() => true);
-  }
-  return false;
-}
-
-/**
- * Checks if the requester has recently denied or cancelled an RA and handles the interaction accordingly.
- * @param Interaction - The interaction received from the user.
- * @returns A boolean indicating if the interaction was handled (true) or not (false).
- */
-async function HasRecentlyDeniedCancelledRA(Interaction: SlashCommandInteraction<"cached">) {
-  const PreviousDCNoticeRequest =
-    await UserActivityNoticeModel.aggregate<UserActivityNotice.ActivityNoticeHydratedDocument>([
-      {
-        $match: {
-          user: Interaction.user.id,
-          guild: Interaction.guildId,
-          status: { $in: ["Denied", "Cancelled"] },
-        },
-      },
-      { $sort: { request_date: -1 } },
-      { $limit: 1 },
-    ]).then((Results) => Results[0]);
-
-  if (!PreviousDCNoticeRequest) return false;
-  if (
-    PreviousDCNoticeRequest.status === "Denied" &&
-    differenceInHours(Interaction.createdAt, PreviousDCNoticeRequest.request_date) < 3
-  ) {
-    return new ErrorEmbed()
-      .useErrTemplate("RAPreviouslyDenied")
-      .replyToInteract(Interaction, true)
-      .then(() => true);
-  } else if (
-    PreviousDCNoticeRequest.status === "Cancelled" &&
-    differenceInHours(
-      Interaction.createdAt,
-      PreviousDCNoticeRequest.review_date || PreviousDCNoticeRequest.request_date
-    ) < 1
-  ) {
-    return new ErrorEmbed()
-      .useErrTemplate("RAPreviouslyCancelled")
-      .replyToInteract(Interaction, true)
-      .then(() => true);
-  }
-
-  return false;
-}
-
+// Command Handling:
+// -----------------
 async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   await Interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const ActiveOrPendingNotice = await UserActivityNoticeModel.findOne(
@@ -124,8 +43,8 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const RequestReason = Interaction.options.getString("reason", true);
   const RequestDuration = Interaction.options.getString("duration", true);
   const DurationParsed = Math.round(ParseDuration(RequestDuration, "millisecond") ?? 0);
-  if (await HandleDurationValidation(Interaction, DurationParsed)) return;
-  if (await HasRecentlyDeniedCancelledRA(Interaction)) return;
+  if (await HandleDurationValidation(Interaction, "ReducedActivity", DurationParsed)) return;
+  if (await HasRecentlyDeniedCancelledUAN(Interaction, "ReducedActivity")) return;
 
   const PendingRA = await UserActivityNoticeModel.create({
     type: "ReducedActivity",
@@ -157,7 +76,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
 }
 
 // ---------------------------------------------------------------------------------------
-// Command structure:
+// Command Structure:
 // ------------------
 const CommandObject = {
   callback: Callback,

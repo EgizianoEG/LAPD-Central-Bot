@@ -473,7 +473,7 @@ async function HandleLeaveStart(
   const LeaveDuration = ModalSubmission.fields.getTextInputValue("duration");
   const DurationParsed = Math.round(ParseDuration(LeaveDuration, "millisecond") ?? 0);
   const IsManageableInput = ModalSubmission.fields.getTextInputValue("manageable");
-  if (await HandleDurationValidation(ModalSubmission, DurationParsed)) return;
+  if (await HandleDurationValidation(ModalSubmission, "LeaveOfAbsence", DurationParsed)) return;
 
   ActiveOrPendingLOA = await GetActiveOrPendingLOA(
     TargetMemberId,
