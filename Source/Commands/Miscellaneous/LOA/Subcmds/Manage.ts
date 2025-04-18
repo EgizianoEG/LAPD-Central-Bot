@@ -63,9 +63,11 @@ type PromptInteractType =
  */
 export function ValidateExtendedDuration(
   Interaction: ModalSubmitInteraction<"cached">,
-  ActiveLOA: LOADocument,
+  ActiveLOA?: LOADocument | null,
   DurationParsed?: number
 ) {
+  if (!ActiveLOA) return false;
+
   const TotalLOADuration = ActiveLOA.duration + (ActiveLOA.extension_request?.duration ?? 0);
   if (!DurationParsed) {
     return new ErrorEmbed()
@@ -302,7 +304,7 @@ async function HandleLeaveExtend(
       const SubmissionHandled = ValidateExtendedDuration(Submission, ActiveLeave, ParsedDuration);
 
       if (SubmissionHandled) return;
-      if (!ActiveLeave.is_active) {
+      if (!ActiveLeave?.is_active) {
         return Promise.all([
           new ErrorEmbed().useErrTemplate("LOANotActive").replyToInteract(Submission, true),
           Callback(Submission, MainPromptMsgId),
@@ -428,7 +430,7 @@ async function HandleLeaveEarlyEnd(
   }
 
   ActiveLeave = await ActiveLeave.getUpToDate();
-  if (!ActiveLeave.is_active) {
+  if (!ActiveLeave?.is_active) {
     return Promise.allSettled([
       Callback(ButtonInteract, MainPromptMsgId),
       CompCollector.stop("Updated"),
@@ -472,7 +474,7 @@ async function HandlePendingLeaveCancellation(
   CompCollector: InteractionCollector<ButtonInteraction<"cached">>,
   MainPromptMsgId: string
 ) {
-  const PendingLeave = await LeaveOfAbsenceModel.findOne({
+  let PendingLeave = await LeaveOfAbsenceModel.findOne({
     guild: Interaction.guildId,
     user: Interaction.user.id,
     status: "Pending",
@@ -525,7 +527,9 @@ async function HandlePendingLeaveCancellation(
   }
 
   await ButtonInteract.deferUpdate();
-  if (await HandleLeaveReviewValidation(ButtonInteract, await PendingLeave.getUpToDate())) {
+  PendingLeave = await PendingLeave.getUpToDate();
+
+  if ((await HandleLeaveReviewValidation(ButtonInteract, PendingLeave)) || !PendingLeave) {
     CompCollector.stop("Updated");
     return Callback(ButtonInteract, MainPromptMsgId);
   }
@@ -608,14 +612,17 @@ async function HandlePendingExtensionCancellation(
 
   ActiveLeave = await ActiveLeave.getUpToDate();
   await ButtonInteract.deferUpdate();
-  if (await HandleLeaveReviewValidation(ButtonInteract, ActiveLeave)) {
+  if (
+    (await HandleLeaveReviewValidation(ButtonInteract, ActiveLeave)) ||
+    !ActiveLeave?.extension_request
+  ) {
     return ConfirmationMsg.delete()
       .catch(() => Interaction.deleteReply())
       .catch(() => null);
   }
 
-  ActiveLeave.extension_request!.status = "Cancelled";
-  ActiveLeave.extension_request!.review_date = ButtonInteract.createdAt;
+  ActiveLeave.extension_request.status = "Cancelled";
+  ActiveLeave.extension_request.review_date = ButtonInteract.createdAt;
   await ActiveLeave.save();
 
   const SuccessCancellationEmbed = new EmbedBuilder()

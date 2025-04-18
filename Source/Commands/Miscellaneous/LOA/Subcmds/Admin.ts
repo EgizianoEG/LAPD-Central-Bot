@@ -538,15 +538,16 @@ async function HandleLeaveExtend(
     end_date: { $gt: ButtonInteract.createdAt },
   });
 
-  if (!ActiveLeave) {
+  const HandleNonActiveLeave = async () => {
     return PromiseAllThenTrue([
       Callback(InitialCmdInteract),
       new ErrorEmbed()
         .useErrTemplate("NoActiveLOAOrExistingExtension")
         .replyToInteract(ButtonInteract, true),
     ]);
-  }
+  };
 
+  if (!ActiveLeave) return HandleNonActiveLeave();
   const ExtensionOptsModal = new ModalBuilder()
     .setTitle("Leave of Absence Extension")
     .setCustomId(`loa-admin-ext:${ButtonInteract.user.id}:${RandomString(4)}`)
@@ -588,6 +589,7 @@ async function HandleLeaveExtend(
   else Submission.deferReply({ flags: MessageFlags.Ephemeral });
 
   ActiveLeave = await ActiveLeave.getUpToDate();
+  if (!ActiveLeave?.is_active) return HandleNonActiveLeave();
   if (ActiveLeave.extension_request) {
     return PromiseAllThenTrue([
       Callback(InitialCmdInteract),

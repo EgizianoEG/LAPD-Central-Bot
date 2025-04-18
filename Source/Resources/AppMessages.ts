@@ -771,12 +771,17 @@ export const ErrorMessages = {
   RARecentlyEnded: {
     Title: "Notice Recently Ended",
     Description:
-      "You cannot request a new leave of absence while there was a previous notice that was ended or terminated less than 1 hour ago.",
+      "You cannot request a new reduced activity while there was a previous notice that was ended or terminated less than 1 hour ago.",
   },
 
   NoPendingRAToCancel: {
     Title: "No Pending Request",
     Description: "You don't have any pending reduced activity request to cancel at the moment.",
+  },
+
+  RANotActive: {
+    Title: "No Active Leave",
+    Description: "There is no active reduced activity to modify or take action on at the moment.",
   },
 
   OnlyLeaveExtensionsPossible: {

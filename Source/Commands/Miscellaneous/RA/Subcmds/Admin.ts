@@ -21,6 +21,7 @@ import { HandleLeaveReviewValidation } from "@Cmds/Miscellaneous/LOA/Subcmds/Adm
 import { ReducedActivityEventLogger } from "@Utilities/Classes/UANEventLogger.js";
 import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { Embeds, Emojis } from "@Config/Shared.js";
+import { RandomString } from "@Utilities/Strings/Random.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import GetUANData from "@Utilities/Database/GetUANData.js";
@@ -156,7 +157,9 @@ function GetNotesModal(
 ) {
   return new ModalBuilder()
     .setTitle(`Reduced Activity ${ActionType}`)
-    .setCustomId(`ra-admin-notes:${Interaction.user.id}:${ActionType.toLowerCase()}`)
+    .setCustomId(
+      `ra-admin-notes:${Interaction.user.id}:${ActionType.toLowerCase()}-${RandomString(4)}`
+    )
     .setComponents(
       new ActionRowBuilder<TextInputBuilder>().setComponents(
         new TextInputBuilder()
@@ -186,7 +189,7 @@ async function HandleApprovalOrDenial(
   if (!NotesSubmission) return false;
   await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
 
-  const RefreshedRA = await ActiveOrPendingRA.getUpToDate(false);
+  const RefreshedRA = await ActiveOrPendingRA.getUpToDate();
   if (!RefreshedRA || (await HandleLeaveReviewValidation(NotesSubmission, RefreshedRA))) {
     return true;
   }
@@ -232,16 +235,17 @@ async function HandleEarlyTermination(
   }).catch(() => null);
 
   if (!NotesSubmission) return false;
-  await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
-
-  const RefreshedActiveRA = await ActiveRA.getUpToDate(false);
-  if (
-    !RefreshedActiveRA ||
-    (await HandleLeaveReviewValidation(NotesSubmission, RefreshedActiveRA))
-  ) {
-    return true;
+  const RefreshedActiveRA = await ActiveRA.getUpToDate();
+  if (!RefreshedActiveRA || !RefreshedActiveRA.is_active) {
+    return NotesSubmission.reply({
+      flags: MessageFlags.Ephemeral,
+      embeds: [new ErrorEmbed().useErrTemplate("RANotActive")],
+    })
+      .then(() => true)
+      .catch(() => true);
   }
 
+  await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
   const ReplyEmbed = new EmbedBuilder()
     .setColor(Embeds.Colors.Success)
     .setTitle("Reduced Activity Terminated")

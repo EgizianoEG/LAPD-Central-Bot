@@ -278,9 +278,14 @@ async function HandleUANApproval(
 
   if (!NotesSubmission) return;
   const UpdatedDocument = await NoticeDocument.getUpToDate();
-  if (await HandleNoticeReviewValidation(NotesSubmission, UpdatedDocument, Interaction)) return;
-  await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
+  if (
+    (await HandleNoticeReviewValidation(NotesSubmission, UpdatedDocument, Interaction)) ||
+    !UpdatedDocument
+  ) {
+    return;
+  }
 
+  await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
   const ReplyEmbed = new EmbedBuilder()
     .setColor(Embeds.Colors.Success)
     .setTitle(`${NoticeType} Approved`)
@@ -332,9 +337,14 @@ async function HandleUANDenial(
 
   if (!NotesSubmission) return;
   const UpdatedDocument = await NoticeDocument.getUpToDate();
-  if (await HandleNoticeReviewValidation(NotesSubmission, UpdatedDocument, Interaction)) return;
-  await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
+  if (
+    (await HandleNoticeReviewValidation(NotesSubmission, UpdatedDocument, Interaction)) ||
+    !UpdatedDocument
+  ) {
+    return;
+  }
 
+  await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
   const ReplyEmbed = new EmbedBuilder()
     .setColor(Embeds.Colors.Success)
     .setTitle(`${NoticeType} Denied`)
@@ -382,9 +392,14 @@ async function HandleExtApproval(
 
   if (!NotesSubmission) return;
   const UpdatedDocument = await LeaveDocument.getUpToDate();
-  if (await HandleNoticeReviewValidation(NotesSubmission, UpdatedDocument, Interaction)) return;
-  await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
+  if (
+    (await HandleNoticeReviewValidation(NotesSubmission, UpdatedDocument, Interaction)) ||
+    !UpdatedDocument
+  ) {
+    return;
+  }
 
+  await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
   const ReplyEmbed = new EmbedBuilder()
     .setColor(Embeds.Colors.Success)
     .setTitle("Leave Extension Approved")
@@ -433,9 +448,14 @@ async function HandleExtDenial(
 
   if (!NotesSubmission) return;
   const UpdatedDocument = await LeaveDocument.getUpToDate();
-  if (await HandleNoticeReviewValidation(NotesSubmission, UpdatedDocument, Interaction)) return;
-  await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
+  if (
+    (await HandleNoticeReviewValidation(NotesSubmission, UpdatedDocument, Interaction)) ||
+    !UpdatedDocument
+  ) {
+    return;
+  }
 
+  await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
   const ReplyEmbed = new EmbedBuilder()
     .setColor(Embeds.Colors.Success)
     .setTitle("Leave Extension Denied")

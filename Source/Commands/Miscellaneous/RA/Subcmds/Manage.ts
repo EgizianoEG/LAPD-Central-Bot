@@ -176,7 +176,7 @@ async function HandlePendingCancellation(
     await ButtonInteract.deferUpdate();
   }
 
-  const ExistingRA = await ActiveOrPendingRA.getUpToDate(false);
+  const ExistingRA = await ActiveOrPendingRA.getUpToDate();
   if (!ExistingRA || ExistingRA.status !== "Pending") {
     return Promise.all([
       ButtonInteract.editReply({
