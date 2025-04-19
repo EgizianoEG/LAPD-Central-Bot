@@ -1,5 +1,6 @@
 import type { IncidentTypes, IncidentStatusesFlattened } from "@Resources/IncidentConstants.ts";
 import type { Types, HydratedDocument, Model } from "mongoose";
+import type { EyeColors, HairColors } from "@Resources/ERLCPDColors.ts";
 import type { ShiftFlags } from "@Models/Shift.ts";
 import type { Overwrite } from "utility-types";
 import type ERLCAgeGroups from "@Resources/ERLCAgeGroups.ts";

@@ -485,7 +485,7 @@ async function OnModalSubmission(
     issued_on: CmdInteract.createdAt,
     type: PCitationData.fine_amount ? "Fine" : "Warning",
     dow: WeekDayToNum(DateInfo!.groups!.dow),
-    ampm: TimeInfo!.groups!.day_period as any,
+    ampm: TimeInfo!.groups!.day_period as "AM" | "PM",
     num: CitationNumber,
     vehicle: PCitationData.vehicle,
     fine_amount: PCitationData.fine_amount,
@@ -568,7 +568,7 @@ async function OnModalSubmission(
   const ButtonResponse = await ConfirmationMsg.awaitMessageComponent({
     filter: (BI) => BI.user.id === CmdInteract.user.id,
     componentType: ComponentType.Button,
-    time: 8 * 60_000,
+    time: 10 * 60_000,
   }).catch((Err) => HandleActionCollectorExceptions(Err, DisablePrompt));
 
   try {
