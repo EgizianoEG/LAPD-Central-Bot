@@ -6,7 +6,7 @@ import ProfileModel from "@Models/GuildProfile.js";
 import DHumanize from "humanize-duration";
 import AppError from "@Utilities/Classes/AppError.js";
 
-const HumanizeDuration = DHumanize.humanizer({
+const DurationFormatter = DHumanize.humanizer({
   conjunction: " and ",
   largest: 4,
   round: true,
@@ -102,14 +102,18 @@ export default async function GetActivityReportData(
     const ShiftType = GuildShiftTypes.find((ST) => ST.name === Opts.shift_type);
     if (!ShiftType) throw new AppError({ template: "NonexistentShiftTypeUsage", showable: true });
 
-    Opts.members = Opts.members.filter(
-      (Member) =>
-        Member.roles.cache.hasAny(...ShiftType.access_roles) &&
-        Member.roles.cache.hasAny(...GuildStaffMgmtRoles)
-    );
+    Opts.members = Opts.members.filter((Member) => {
+      const HasStaffMgmtRoles = Member.roles.cache.hasAny(...GuildStaffMgmtRoles);
+      const HasShiftTypeRoles =
+        Opts.shift_type && Opts.shift_type.toLowerCase() !== "default"
+          ? Member.roles.cache.hasAny(...ShiftType.access_roles)
+          : true;
+
+      return HasStaffMgmtRoles && HasShiftTypeRoles && !Member.user.bot;
+    });
   } else {
-    Opts.members = Opts.members.filter((Member) =>
-      Member.roles.cache.hasAny(...GuildStaffMgmtRoles)
+    Opts.members = Opts.members.filter(
+      (Member) => Member.roles.cache.hasAny(...GuildStaffMgmtRoles) && !Member.user.bot
     );
   }
 
@@ -126,33 +130,56 @@ export default async function GetActivityReportData(
   }
 
   const ReportStatistics: AggregateResults.ActivityReportStatistics<string> = {
-    total_time: HumanizeDuration(RecordsBaseData.reduce((Acc, Curr) => Acc + Curr.total_time, 0)),
+    total_time: DurationFormatter(RecordsBaseData.reduce((Acc, Curr) => Acc + Curr.total_time, 0)),
     total_shifts: RecordsBaseData.reduce((Acc, Curr) => Acc + Curr.total_shifts, 0),
   };
 
   const ProcessedMemberIds = new Set<string>();
+  const MembersById = new Map(Opts.members.map((Member) => [Member.id, Member]));
   const Records = RecordsBaseData.map((Record, Index) => {
-    const Member = Opts.members.find((U) => U.id === Record.id);
-    let LeaveActive = false;
-    let LeaveNote: string | null = null;
+    const Member = MembersById.get(Record.id);
+    const RecentUAN = Record.recent_activity_notice;
+    const TypeAbbr = RecentUAN?.type === "LeaveOfAbsence" ? "leave" : "ra";
+    const NoticeTypeDesc =
+      RecentUAN?.type === "LeaveOfAbsence" ? "Leave of absence" : "Reduced activity";
+
+    let IsLeaveActive = false;
+    const NoticeNotes: { leave: string | null; ra: string | null } = {
+      leave: null,
+      ra: null,
+    };
 
     if (Member) ProcessedMemberIds.add(Member.user.id);
     else return null;
 
     // Consider adding leave of absence comments/notes if it has ended, started, or requested recently.
-    if (Record.recent_loa?.status === "Approved" && Record.recent_loa.reviewed_by) {
+    if (RecentUAN?.status === "Approved" && RecentUAN.reviewed_by) {
       if (
-        Record.recent_loa.review_date !== null &&
-        Record.recent_loa.early_end_date === null &&
-        isAfter(Record.recent_loa.end_date, RetrieveDate)
+        RecentUAN.review_date !== null &&
+        RecentUAN.early_end_date === null &&
+        isAfter(RecentUAN.end_date, RetrieveDate)
       ) {
-        LeaveActive = true;
+        IsLeaveActive = RecentUAN.type === "LeaveOfAbsence";
         const StartCurrentDatesDifferenceInDays =
-          differenceInHours(RetrieveDate, Record.recent_loa.review_date) / 24;
+          differenceInHours(RetrieveDate, RecentUAN.review_date) / 24;
+
+        if (!Record.quota_met && Opts.quota_duration) {
+          const ScaledQuota =
+            RecentUAN.type === "ReducedActivity"
+              ? (RecentUAN.quota_scale || 1) * Opts.quota_duration
+              : Opts.quota_duration;
+
+          Record.quota_met = Record.total_time >= ScaledQuota;
+        }
 
         if (StartCurrentDatesDifferenceInDays <= 2.5) {
+          const NewQuotaDeclaration =
+            RecentUAN.type === "ReducedActivity"
+              ? `\nQuota Reduction: ~${Math.round((1 - (RecentUAN.quota_scale || 0)) * 100)}%`
+              : "";
+
           const RelativeDuration = DHumanize(
-            RetrieveDate.getTime() - Record.recent_loa.review_date.getTime(),
+            RetrieveDate.getTime() - RecentUAN.review_date.getTime(),
             {
               conjunction: " and ",
               largest: 2,
@@ -160,29 +187,30 @@ export default async function GetActivityReportData(
             }
           );
 
-          LeaveNote = `Leave of absence started around ${RelativeDuration} ago.\nApproved by: @${Record.recent_loa.reviewed_by.username}`;
+          NoticeNotes[TypeAbbr] =
+            `${NoticeTypeDesc} started around ${RelativeDuration} ago. ${NewQuotaDeclaration}\nApproved by: @${RecentUAN.reviewed_by.username}`;
         }
       } else {
-        const LeaveEndDate = Record.recent_loa.early_end_date || Record.recent_loa.end_date;
-        const EndCurrentDatesDifferenceInDays = differenceInHours(RetrieveDate, LeaveEndDate) / 24;
+        const NoticeEndDate = RecentUAN.early_end_date || RecentUAN.end_date;
+        const EndCurrentDatesDifferenceInDays = differenceInHours(RetrieveDate, NoticeEndDate) / 24;
 
         if (EndCurrentDatesDifferenceInDays <= 2.5) {
-          const RelativeDuration = DHumanize(RetrieveDate.getTime() - LeaveEndDate.getTime(), {
+          const RelativeDuration = DHumanize(RetrieveDate.getTime() - NoticeEndDate.getTime(), {
             conjunction: " and ",
             largest: 2,
             round: true,
           });
 
-          LeaveNote = `Leave of absence ended around ${RelativeDuration} ago.`;
+          NoticeNotes[TypeAbbr] = `${NoticeTypeDesc} ended around ${RelativeDuration} ago.`;
         }
       }
-    } else if (Record.recent_loa?.status === "Pending" && Record.recent_loa.review_date === null) {
+    } else if (RecentUAN?.status === "Pending" && RecentUAN.review_date === null) {
       const RequestCurrentDatesDifferenceInDays =
-        differenceInHours(RetrieveDate, Record.recent_loa.request_date) / 24;
+        differenceInHours(RetrieveDate, RecentUAN.request_date) / 24;
 
       if (RequestCurrentDatesDifferenceInDays <= 3) {
         const RelativeDuration = DHumanize(
-          RetrieveDate.getTime() - Record.recent_loa.request_date.getTime(),
+          RetrieveDate.getTime() - RecentUAN.request_date.getTime(),
           {
             conjunction: " and ",
             largest: 2,
@@ -190,7 +218,8 @@ export default async function GetActivityReportData(
           }
         );
 
-        LeaveNote = `An unapproved leave request was submitted around ${RelativeDuration} ago.`;
+        NoticeNotes[TypeAbbr] =
+          `An unapproved ${NoticeTypeDesc.toLowerCase()} request was submitted around ${RelativeDuration} ago.`;
       }
     }
 
@@ -203,13 +232,19 @@ export default async function GetActivityReportData(
           },
         },
         { userEnteredValue: { stringValue: HighestHoistedRoleName(Member, ShiftStatusRoles) } },
-        { userEnteredValue: { stringValue: HumanizeDuration(Record.total_time) } },
+        { userEnteredValue: { stringValue: DurationFormatter(Record.total_time) } },
         { userEnteredValue: { numberValue: Record.arrests } },
         { userEnteredValue: { numberValue: Record.arrests_assisted } },
         { userEnteredValue: { numberValue: Record.citations } },
         { userEnteredValue: { numberValue: Record.incidents } },
-        { userEnteredValue: { stringValue: Record.quota_met ? "Yes" : "No" } },
-        { userEnteredValue: { stringValue: LeaveActive ? "Yes" : "No" }, note: LeaveNote },
+        {
+          userEnteredValue: { stringValue: Record.quota_met ? "Yes" : "No" },
+          note: NoticeNotes.ra,
+        },
+        {
+          userEnteredValue: { stringValue: IsLeaveActive ? "Yes" : "No" },
+          note: NoticeNotes.leave,
+        },
       ],
     };
   }).filter((R) => R !== null);
@@ -223,7 +258,7 @@ export default async function GetActivityReportData(
           { userEnteredValue: { numberValue: Records.length + 1 } },
           { userEnteredValue: { stringValue: FormatName(Member, Opts.include_member_nicknames) } },
           { userEnteredValue: { stringValue: HighestHoistedRoleName(Member, ShiftStatusRoles) } },
-          { userEnteredValue: { stringValue: HumanizeDuration(0) } },
+          { userEnteredValue: { stringValue: DurationFormatter(0) } },
           { userEnteredValue: { numberValue: 0 } },
           { userEnteredValue: { numberValue: 0 } },
           { userEnteredValue: { numberValue: 0 } },
@@ -237,7 +272,7 @@ export default async function GetActivityReportData(
   return {
     statistics: ReportStatistics,
     records: Records,
-    quota: Opts.quota_duration ? HumanizeDuration(Opts.quota_duration) : "None",
+    quota: Opts.quota_duration ? DurationFormatter(Opts.quota_duration) : "None",
   };
 }
 
@@ -295,7 +330,7 @@ function CreateActivityReportAggregationPipeline(
     {
       $match: {
         guild: Opts.guild.id,
-        user: { $in: Opts.members.map((U) => U.id) },
+        ...(Opts.members.size > 0 && { user: { $in: Opts.members.map((U) => U.id) } }),
       },
     },
     {
@@ -340,8 +375,8 @@ function CreateActivityReportAggregationPipeline(
     },
     {
       $lookup: {
-        as: "loas",
-        from: "leaves",
+        as: "activity_notices",
+        from: "activity_notices",
         let: { guild: "$guild", user: "$user" },
         pipeline: [
           {
@@ -365,9 +400,11 @@ function CreateActivityReportAggregationPipeline(
           },
           {
             $project: {
+              type: 1,
+              quota_scale: 1,
               reviewed_by: 1,
               early_end_date: 1,
-              extension_req: 1,
+              extension_request: 1,
               request_date: 1,
               review_date: 1,
               end_date: 1,
@@ -475,8 +512,8 @@ function CreateActivityReportAggregationPipeline(
     },
     {
       $set: {
-        recent_loa: { $first: "$loas" },
         total_shifts: { $size: "$shifts" },
+        recent_activity_notice: { $first: "$activity_notices" },
         total_on_duty_mod: { $sum: "$shifts.durations.on_duty_mod" },
         total_duration: {
           $sum: {
@@ -532,7 +569,7 @@ function CreateActivityReportAggregationPipeline(
         total_time: 1,
         total_shifts: 1,
         arrests_assisted: 1,
-        recent_loa: 1,
+        recent_activity_notice: 1,
         citations: 1,
         incidents: 1,
         arrests: 1,

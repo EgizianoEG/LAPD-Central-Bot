@@ -2,6 +2,7 @@ import AppLogger from "@Utilities/Classes/AppLogger.js";
 import { IsValidDiscordId } from "@Utilities/Other/Validators.js";
 import { differenceInMilliseconds } from "date-fns";
 import { InfoEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { UserActivityNoticeMgmtCustomIdRegex } from "@Resources/RegularExpressions.js";
 import {
   MessageFlags,
   ComponentType,
@@ -10,7 +11,7 @@ import {
   createComponentBuilder,
 } from "discord.js";
 
-const UnauthorizedUsageIgnoredCompsWithCustomIds: RegExp[] = [/(?:loa|leave).+:\d+:\w+/i];
+const UnauthorizedUsageIgnoredCompsWithCustomIds: RegExp[] = [UserActivityNoticeMgmtCustomIdRegex];
 
 /**
  * For handling & responding to any component that have been abandoned activated.

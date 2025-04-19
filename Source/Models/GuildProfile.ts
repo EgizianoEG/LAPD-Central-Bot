@@ -36,13 +36,13 @@ const ProfileSchema = new Schema<
     },
   },
 
-  loas: {
+  activity_notices: {
     required: true,
     default: [],
     type: [
       {
         type: String,
-        ref: "LeaveOfAbsence",
+        ref: "ActivityNotice",
       },
     ],
   },

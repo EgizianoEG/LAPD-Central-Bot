@@ -513,24 +513,27 @@ export const ErrorMessages = {
     `),
   },
 
-  LOAAlreadyExists: {
-    Title: "LOA Already Exists",
-    Description: "You cannot request a leave of absence while you have an active or pending one.",
+  /**
+   * @template {string} NoticeType
+   */
+  UANoticeAlreadyExists: {
+    Title: "Notice Already Exists",
+    Description: "You cannot request a %s while you have an active or pending activity notice.",
   },
 
   LOAAlreadyExistsManagement: {
-    Title: "LOA Already Exists",
+    Title: "Notice Already Exists",
     Description: "You cannot place a new leave on person who already has an active or pending one.",
   },
 
   LOADurationTooLong: {
-    Title: "LOA Duration Too Long",
+    Title: "Duration Too Long",
     Description:
       "The leave duration you have entered is too long. Kindly specify a duration of at most 90 days (3 months).",
   },
 
   LOADurationTooShort: {
-    Title: "LOA Duration Too Short",
+    Title: "Duration Too Short",
     Description:
       "The length of the leave you have entered is too short. Kindly specify a duration of at least 1 day long.",
   },
@@ -566,21 +569,21 @@ export const ErrorMessages = {
   },
 
   LOAPreviouslyDenied: {
-    Title: "LOA Previously Denied",
+    Title: "Notice Previously Denied",
     Description:
-      "You cannot request a leave of absence while the previous one was denied less than 3 hours ago.",
+      "You cannot request a leave of absence while there was a previous notice that was denied less than 3 hours ago.",
   },
 
   LOAPreviouslyCancelled: {
-    Title: "LOA Previously Cancelled",
+    Title: "A Notice Previously Cancelled",
     Description:
-      "You cannot request a leave of absence while the previous one was cancelled less than 1 hour ago.",
+      "You cannot request a leave of absence while there was a previous notice that was cancelled less than 1 hour ago.",
   },
 
   LOARecentlyEnded: {
-    Title: "LOA Recently Ended",
+    Title: "A Notice Recently Ended",
     Description:
-      "You cannot request a new leave of absence while the previous one was ended or terminated less than 1 hour ago.",
+      "You cannot request a new leave of absence while there was a previous notice that was ended or terminated less than 1 hour ago.",
   },
 
   LOAAlreadyEnded: {
@@ -594,7 +597,7 @@ export const ErrorMessages = {
   },
 
   NoPendingLOAToCancel: {
-    Title: "No Pending LOA",
+    Title: "No Pending Request",
     Description: "You don't have any pending leave of absence to cancel at the moment.",
   },
 
@@ -616,10 +619,10 @@ export const ErrorMessages = {
       "You cannot extend this leave of absence further more. Only one extension is allowed per leave, regardless of whether it was approved, denied, or cancelled.",
   },
 
-  LOAUnauthorizedManagement: {
-    Title: "Unauthorized Leave Management",
+  UANUnauthorizedManagement: {
+    Title: "Unauthorized Management",
     Description:
-      "You are not authorized to take action or view information on this leave of absence unless you are a management or administrator member.",
+      "You are not authorized to take action or view information on this activity notice unless you are a management or administrator member.",
   },
 
   LOAModuleDisabled: {
@@ -638,6 +641,12 @@ export const ErrorMessages = {
     Title: "Module Disabled",
     Description:
       "The shift management module is currently disabled. You cannot initiate any of duty commands without it being enabled.",
+  },
+
+  ReducedActivityModuleDisabled: {
+    Title: "Module Disabled",
+    Description:
+      "The reduced activity module is currently disabled. You cannot request, manage, or administrate reduced activity notices without it being enabled.",
   },
 
   SANoShiftsToModify: {
@@ -734,6 +743,52 @@ export const ErrorMessages = {
     Title: "Staff Restriction",
     Description: "This action can only be performed on members identified as staff.",
   },
+
+  RADurationTooLong: {
+    Title: "Duration Too Long",
+    Description:
+      "The reduced activity duration you have entered is too long. Kindly specify a duration of at most 30 days (1 month).",
+  },
+
+  RADurationTooShort: {
+    Title: "Duration Too Short",
+    Description:
+      "The length of the reduced activity you have entered is too short. Kindly specify a duration of at least 1 day long.",
+  },
+
+  RAPreviouslyDenied: {
+    Title: "Notice Previously Denied",
+    Description:
+      "You cannot request reduced activity while there is a previous notice that was denied less than 3 hours ago.",
+  },
+
+  RAPreviouslyCancelled: {
+    Title: "Notice Previously Cancelled",
+    Description:
+      "You cannot request reduced activity while there is a previous notice that was cancelled less than 1 hour ago.",
+  },
+
+  RARecentlyEnded: {
+    Title: "Notice Recently Ended",
+    Description:
+      "You cannot request a new reduced activity while there was a previous notice that was ended or terminated less than 1 hour ago.",
+  },
+
+  NoPendingRAToCancel: {
+    Title: "No Pending Request",
+    Description: "You don't have any pending reduced activity request to cancel at the moment.",
+  },
+
+  RANotActive: {
+    Title: "No Active Leave",
+    Description: "There is no active reduced activity to modify or take action on at the moment.",
+  },
+
+  OnlyLeaveExtensionsPossible: {
+    Title: "Restricted Extensions",
+    Description:
+      "Extension requests are only available for leave of absence, not reduced activity.",
+  },
 };
 
 export const InfoMessages = {
@@ -813,14 +868,20 @@ export const InfoMessages = {
     Description: "There were no shifts found that could be wiped for the specified user.",
   },
 
-  NoLOAsWithActiveStatus: {
-    Title: "No Leaves of Absence",
-    Description: "There are currently no active leave of absence to display.",
+  /**
+   * @template {string} - The type of user activity notice record (e.g., "leave of absence", "reduced activity".)
+   */
+  NoUANsWithActiveStatus: {
+    Title: "No Records",
+    Description: "There are currently no active %s records to display.",
   },
 
-  NoLOAsWithSpecifiedStatus: {
-    Title: "No Leaves of Absences",
-    Description: "There are currently no LOAs with the specified status to display.",
+  /**
+   * @template {string} - The type of user activity notice record (e.g., "leave of absence", "reduced activity".)
+   */
+  NoUANsWithSpecifiedStatus: {
+    Title: "No Records",
+    Description: "There are currently no %s records with the specified status to display.",
   },
 
   /**
