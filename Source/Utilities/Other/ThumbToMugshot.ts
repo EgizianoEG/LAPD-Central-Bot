@@ -16,11 +16,15 @@ export interface GetBookingMugshotOptions {
   user_gender?: "Male" | "Female" | "M" | "F";
   /** Optional booking date; defaults to current date */
   booking_date?: Date;
+  /** Person's height in inches (e.g. 5'10" = 70 inches) or as a string (e.g. "5'10") */
+  height?: number | string;
+  /** Percentage from top where the head is located (0-100). Default is 15%. Used for height positioning if somehow a worn hat's height is known a bit. */
+  head_position?: number;
 }
 
 /**
  * Returns a mugshot image (JPEG) with 180x180 dimensions.
- * @param Options - Just options.
+ * @param Options - Just options for more accurate control.
  * @returns A JPEG Buffer or an ImgBB direct image URL.
  */
 export default async function GetBookingMugshot<AsURL extends boolean | undefined = undefined>(
@@ -39,12 +43,19 @@ export default async function GetBookingMugshot<AsURL extends boolean | undefine
       Options.user_gender = "Male";
     }
 
-    const FallbackImg = Embeds.Thumbs[`Avatar${Options.user_gender}`];
+    const FallbackImg = Embeds.Thumbs[`RobloxAvatar${Options.user_gender}`];
     return loadImage(FallbackImg);
   });
 
-  // Draw the background height board
-  ImgCTX.drawImage(CreateHeightBackgroundCanvas(), 0, 0);
+  // Calculate height positioning
+  const PersonHeight = Options.height ? ParseHeight(Options.height) : 70;
+  const HeadPosition = Options.head_position || 15;
+
+  // Calculate board offset based on height
+  const BoardOffset = CalculateBoardOffset(PersonHeight, HeadPosition);
+
+  // Draw the background with calculated offset
+  ImgCTX.drawImage(CreateHeightBackgroundCanvas(BoardOffset), 0, 0);
 
   // Create a separate canvas for the thumbnail with shadow
   const ThumbCanvas = createCanvas(ImgHeight, ImgHeight);
@@ -61,10 +72,10 @@ export default async function GetBookingMugshot<AsURL extends boolean | undefine
   ImgCTX.drawImage(ThumbCanvas, 0, 0);
 
   // Create information box for department, date and booking number
-  const InfoBoxX = RelX(2.5);
-  const InfoBoxY = RelY(2.5);
-  const InfoBoxWidth = RelX(60);
-  const InfoBoxHeight = RelY(10);
+  const InfoBoxX = RelX(2.5); // 2.5% from left
+  const InfoBoxY = RelY(2.5); // 2.5% from top
+  const InfoBoxWidth = RelX(60); // 60% of canvas width
+  const InfoBoxHeight = RelY(10); // 10% of canvas height
 
   ImgCTX.fillStyle = "rgba(235, 235, 235, 0.85)";
   ImgCTX.fillRect(InfoBoxX, InfoBoxY, InfoBoxWidth, InfoBoxHeight);
@@ -81,7 +92,7 @@ export default async function GetBookingMugshot<AsURL extends boolean | undefine
   // Add date and booking number on the same line
   const BookingDate = Options.booking_date || new Date();
   const DateStr = format(BookingDate, "MM/dd/yyyy");
-  ImgCTX.font = RelFont(3); // 3% of canvas size
+  ImgCTX.font = RelFont(3);
   ImgCTX.fillText(`DATE: ${DateStr}`, InfoBoxX + RelX(1), InfoBoxY + RelY(8));
 
   // Add booking number on the same line as date, but right-aligned
@@ -108,9 +119,15 @@ export default async function GetBookingMugshot<AsURL extends boolean | undefine
 
 /**
  * Returns a canvas for the background of the mugshot.
+ * @param YOffset Vertical offset to apply to the board (positive moves board down).
  * @returns The background canvas.
  */
-function CreateHeightBackgroundCanvas() {
+function CreateHeightBackgroundCanvas(YOffset: number = 0) {
+  // Don't use cached canvas if we have a custom offset
+  if (YOffset !== 0 && BgCanvas) {
+    BgCanvas = null;
+  }
+
   if (BgCanvas) return BgCanvas;
   BgCanvas = createCanvas(ImgWidth, ImgHeight);
   const BgCTX = BgCanvas.getContext("2d");
@@ -119,29 +136,42 @@ function CreateHeightBackgroundCanvas() {
   BgCTX.fillStyle = "#EBEBEB";
   BgCTX.fillRect(0, 0, ImgWidth, ImgHeight);
 
-  const MinHeightInches = 48; // 4 feet
-  const MaxHeightInches = 74; // 6'1"
-  const TotalInchesInRange = MaxHeightInches - MinHeightInches;
+  const VisibleMinInches = 48; // 4 feet
+  const VisibleMaxInches = 74; // 6'1"
+
+  // Extended range to account for offsets
+  const ExtendedMinInches = VisibleMinInches - 12; // 1 foot lower
+  const ExtendedMaxInches = VisibleMaxInches + 12; // 1 foot higher
+  const TotalInchesInRange = VisibleMaxInches - VisibleMinInches;
   const PixelsPerInch = ImgHeight / TotalInchesInRange;
 
-  // Draw alternating background colors
-  for (let Foot = 4; Foot <= 6; Foot++) {
-    const InchesFromBottom = Foot * 12 - MinHeightInches;
-    if (InchesFromBottom < 0) continue;
+  BgCTX.save();
+  BgCTX.translate(0, YOffset);
 
-    const InchesInView = Math.min(12, MaxHeightInches - Foot * 12);
-    if (InchesInView <= 0) continue;
+  for (
+    let Foot = Math.floor(ExtendedMinInches / 12);
+    Foot <= Math.ceil(ExtendedMaxInches / 12);
+    Foot++
+  ) {
+    const FootStartInch = Foot * 12;
+    const FootEndInch = (Foot + 1) * 12;
 
-    const startY = ImgHeight - InchesFromBottom * PixelsPerInch;
-    const height = InchesInView * PixelsPerInch;
+    const VisibleStart = Math.max(FootStartInch, VisibleMinInches);
+    const VisibleEnd = Math.min(FootEndInch, VisibleMaxInches);
+    if (VisibleEnd <= VisibleStart) continue;
 
+    const VisibleStartPos = ImgHeight - (VisibleStart - VisibleMinInches) * PixelsPerInch;
+    const VisibleEndPos = ImgHeight - (VisibleEnd - VisibleMinInches) * PixelsPerInch;
+    const Height = VisibleStartPos - VisibleEndPos;
+
+    // Draw background stripes
     BgCTX.fillStyle = Foot % 2 === 0 ? "#DEDEDE" : "#EBEBEB";
-    BgCTX.fillRect(0, startY - height, ImgWidth, height);
+    BgCTX.fillRect(0, VisibleEndPos, ImgWidth, Height);
   }
 
-  // Draw the inch markers for the entire range
-  for (let AbsoluteInch = MinHeightInches; AbsoluteInch <= MaxHeightInches; AbsoluteInch++) {
-    const y = ImgHeight - (AbsoluteInch - MinHeightInches) * PixelsPerInch;
+  for (let AbsoluteInch = ExtendedMinInches; AbsoluteInch <= ExtendedMaxInches; AbsoluteInch++) {
+    if (AbsoluteInch < VisibleMinInches - 12 || AbsoluteInch > VisibleMaxInches + 12) continue;
+    const Y = ImgHeight - (AbsoluteInch - VisibleMinInches) * PixelsPerInch;
     const IsFoot = AbsoluteInch % 12 === 0;
     const IsQuarterFoot = AbsoluteInch % 3 === 0; // Every 3 inches
     const LineEndX = IsFoot
@@ -154,8 +184,8 @@ function CreateHeightBackgroundCanvas() {
     BgCTX.strokeStyle = "#252525";
 
     BgCTX.beginPath();
-    BgCTX.moveTo(0, y);
-    BgCTX.lineTo(LineEndX, y);
+    BgCTX.moveTo(0, Y);
+    BgCTX.lineTo(LineEndX, Y);
     BgCTX.stroke();
 
     const Feet = Math.floor(AbsoluteInch / 12);
@@ -165,39 +195,117 @@ function CreateHeightBackgroundCanvas() {
       BgCTX.fillStyle = "#000000";
       BgCTX.font = RelBoldFont(3.5);
       BgCTX.textAlign = "right";
-      BgCTX.fillText(`${Feet}'0"`, ImgWidth - RelX(2.5), y - RelY(1));
+      BgCTX.fillText(`${Feet}'0"`, ImgWidth - RelX(2.5), Y - RelY(1));
     } else if (IsQuarterFoot) {
       BgCTX.fillStyle = "#000000";
       BgCTX.font = RelFont(3);
       BgCTX.textAlign = "right";
-      BgCTX.fillText(`${Feet}'${Inches}"`, ImgWidth - RelX(2.5), y - RelY(0.75));
+      BgCTX.fillText(`${Feet}'${Inches}"`, ImgWidth - RelX(2.5), Y - RelY(0.75));
     }
   }
 
+  BgCTX.restore();
   return BgCanvas;
 }
 
 // ---------------------------------------------------------------------------------------
-// Helper functions for relative positioning:
-// ------------------------------------------
-function RelX(x: number): number {
-  return (x / 100) * ImgWidth;
+// Helper Functions:
+// -----------------
+/**
+ * Convert a percentage of canvas width to actual pixels.
+ * @param X Percentage value (0-100).
+ * @returns Pixel value.
+ */
+function RelX(X: number): number {
+  return (X / 100) * ImgWidth;
 }
 
-function RelY(y: number): number {
-  return (y / 100) * ImgHeight;
+/**
+ * Convert a percentage of canvas height to actual pixels.
+ * @param Y Percentage value (0-100).
+ * @returns Pixel value.
+ */
+function RelY(Y: number): number {
+  return (Y / 100) * ImgHeight;
 }
 
-function RelSize(size: number): number {
-  return (size / 100) * Math.min(ImgWidth, ImgHeight);
+/**
+ * Convert a percentage to a size value based on the smaller canvas dimension.
+ * @param Size Percentage value (0-100).
+ * @returns Size in pixels.
+ */
+function RelSize(Size: number): number {
+  return (Size / 100) * Math.min(ImgWidth, ImgHeight);
 }
 
-function RelFont(size: number): string {
-  const FontSize = Math.max(8, Math.floor(RelSize(size)));
+/**
+ * Create a font string with the given relative size.
+ * @param Size Percentage value (0-100).
+ * @returns Font string.
+ */
+function RelFont(Size: number): string {
+  const FontSize = Math.max(8, Math.floor(RelSize(Size)));
   return `${FontSize}px Arial`;
 }
 
-function RelBoldFont(size: number): string {
-  const FontSize = Math.max(8, Math.floor(RelSize(size)));
+/**
+ * Create a bold font string with the given relative size.
+ * @param Size Percentage value (0-100).
+ * @returns Bold font string.
+ */
+function RelBoldFont(Size: number): string {
+  const FontSize = Math.max(8, Math.floor(RelSize(Size)));
   return `bold ${FontSize}px Arial`;
+}
+
+/**
+ * Parse a height string like "5'10" or "5ft 10in" into inches number.
+ * @param HeightStr Height string.
+ * @returns Total height in inches. If the format is unrecognized, defaults to 70 inches (5'10").
+ */
+function ParseHeight(HeightStr: string | number): number {
+  if (typeof HeightStr === "number") return HeightStr;
+
+  // Extract feet and inches using regex:
+  const FeetInchesMatch = HeightStr.match(/(\d+)'(\d+)/);
+  if (FeetInchesMatch) {
+    return parseInt(FeetInchesMatch[1]) * 12 + parseInt(FeetInchesMatch[2]);
+  }
+
+  // Try ft/in format:
+  const FtInMatch = HeightStr.match(/(\d+)(?:\s*ft|\s*feet)(?:\s+|-)(\d+)(?:\s*in|\s*inches)?/i);
+  if (FtInMatch) {
+    return parseInt(FtInMatch[1]) * 12 + parseInt(FtInMatch[2]);
+  }
+
+  // Try cm format and convert to inches:
+  const CmMatch = HeightStr.match(/(\d+)(?:\s*cm|\s*centimeters)/i);
+  if (CmMatch) {
+    return Math.round(parseInt(CmMatch[1]) / 2.54);
+  }
+
+  return 70;
+}
+
+/**
+ * Calculate the vertical offset needed for the height board.
+ * @param PersonHeight Height in inches.
+ * @param HeadPosition Percentage from top where head should align.
+ * @returns Offset in pixels to apply to the background board.
+ */
+function CalculateBoardOffset(PersonHeight: number, HeadPosition: number): number {
+  // Constants for the board - these will be recalculated based on height
+  const DefaultMinHeightInches = 48; // 4 feet
+  const DefaultMaxHeightInches = 74; // 6'1"
+
+  const MinHeightInches = Math.min(DefaultMinHeightInches, PersonHeight - 6);
+  const MaxHeightInches = Math.max(DefaultMaxHeightInches, PersonHeight + 6);
+  const TotalInchesInRange = MaxHeightInches - MinHeightInches;
+  const PixelsPerInch = ImgHeight / TotalInchesInRange;
+
+  const HeightFromBottom = PersonHeight - MinHeightInches;
+  const HeightPosition = ImgHeight - HeightFromBottom * PixelsPerInch;
+
+  const DesiredHeadY = (HeadPosition / 100) * ImgHeight;
+  return DesiredHeadY - HeightPosition;
 }

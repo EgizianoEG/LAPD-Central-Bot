@@ -307,6 +307,7 @@ async function OnChargesModalSubmission(
   const BookingNumber = parseInt(RandomString(4, /\d/, ExistingBookingNums));
   const BookingMugshotURL = await GetBookingMugshot<true>({
     return_url: true,
+    height: CmdOptions.Height,
     user_thumb_url: ThumbUrl,
     booking_num: BookingNumber,
     user_gender: CmdOptions.Gender,
