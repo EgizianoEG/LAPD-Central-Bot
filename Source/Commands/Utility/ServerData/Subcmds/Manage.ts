@@ -27,13 +27,16 @@ import { Emojis } from "@Config/Shared.js";
 import { isAfter } from "date-fns";
 import { GetErrorId } from "@Utilities/Strings/Random.js";
 import { UserActivityNotice, Shifts } from "@Typings/Utilities/Database.js";
-import { BaseUserActivityNoticeLogger } from "@Utilities/Classes/UANEventLogger.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed, WarnEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import {
+  LeaveOfAbsenceEventLogger,
+  ReducedActivityEventLogger,
+} from "@Utilities/Classes/UANEventLogger.js";
 
 import Dedent from "dedent";
+import UANModel from "@Models/UserActivityNotice.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import ShiftModel from "@Models/Shift.js";
-import LeaveModel from "@Models/UserActivityNotice.js";
 import * as Chrono from "chrono-node";
 
 import HumanizeDuration from "humanize-duration";
@@ -45,9 +48,16 @@ import HandleActionCollectorExceptions from "@Utilities/Other/HandleCompCollecto
 // File Constants, Types, & Enums:
 // -------------------------------
 const FileLabel = "Commands:Utility:ServerDataManage";
-const BaseUANLogger = new BaseUserActivityNoticeLogger(false);
 const ListFormatter = new Intl.ListFormat("en");
 const BaseEmbedColor = "#5F9EA0";
+const RADataLogger = new ReducedActivityEventLogger();
+const LeaveDataLogger = new LeaveOfAbsenceEventLogger();
+
+const GetUANShortenedName = (IsLOA: boolean) => (IsLOA ? "Leave" : "RA");
+const GetUANShortenedWEName = (IsLOA: boolean) => (IsLOA ? "Leave" : "Reduced Activity");
+const GetUANDataActionPrefix = (IsLOA: boolean) => (IsLOA ? "ld" : "rad");
+const GetUANNoticeTitle = (IsLOA: boolean, TitleCase?: boolean) =>
+  IsLOA ? `Leave of ${TitleCase ? "A" : "a"}bsence` : `Reduced ${TitleCase ? "A" : "a"}ctivity`;
 
 type DataDeletionWithDateType = "Before" | "After";
 type StringSelectOrButtonInteract<Cached extends CacheType = CacheType> =
@@ -57,6 +67,7 @@ type StringSelectOrButtonInteract<Cached extends CacheType = CacheType> =
 enum DataCategories {
   ShiftData = "sd",
   LeaveData = "ld",
+  RAData = "rad",
 }
 
 enum ShiftDataActions {
@@ -68,11 +79,19 @@ enum ShiftDataActions {
 }
 
 enum LeaveDataActions {
-  WipeAll = "ld-wa",
-  DeletePast = "ld-dpast",
-  DeletePending = "ld-dpen",
-  DeleteBefore = "ld-db",
-  DeleteAfter = "ld-da",
+  WipeAll = `${DataCategories.LeaveData}-wa`,
+  DeletePast = `${DataCategories.LeaveData}-dpast`,
+  DeletePending = `${DataCategories.LeaveData}-dpen`,
+  DeleteBefore = `${DataCategories.LeaveData}-db`,
+  DeleteAfter = `${DataCategories.LeaveData}-da`,
+}
+
+enum RADataActions {
+  WipeAll = `${DataCategories.RAData}-wa`,
+  DeletePast = `${DataCategories.RAData}-dpast`,
+  DeletePending = `${DataCategories.RAData}-dpen`,
+  DeleteBefore = `${DataCategories.RAData}-db`,
+  DeleteAfter = `${DataCategories.RAData}-da`,
 }
 
 // ---------------------------------------------------------------------------------------
@@ -81,7 +100,7 @@ enum LeaveDataActions {
 function GetDataCategoriesDropdownMenu(Interaction: SlashCommandInteraction<"cached">) {
   return new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(
     new StringSelectMenuBuilder()
-      .setCustomId(`server-data-manage:${Interaction.user.id}:${Interaction.guildId}`)
+      .setCustomId(`server-data-manage:${Interaction.user.id}`)
       .setPlaceholder("Select a category...")
       .setMinValues(1)
       .setMaxValues(1)
@@ -93,7 +112,11 @@ function GetDataCategoriesDropdownMenu(Interaction: SlashCommandInteraction<"cac
         new StringSelectMenuOptionBuilder()
           .setLabel("Leave of Absence Data Management")
           .setDescription("Manage the logged leave of absence records and related data.")
-          .setValue(DataCategories.LeaveData)
+          .setValue(DataCategories.LeaveData),
+        new StringSelectMenuOptionBuilder()
+          .setLabel("Reduced Activity Data Management")
+          .setDescription("Manage the logged reduced activity records and related data.")
+          .setValue(DataCategories.RAData)
       )
   );
 }
@@ -104,64 +127,58 @@ function GetShiftDataManagementComponents(Interaction: StringSelectOrButtonInter
       new ButtonBuilder()
         .setLabel("Wipe All Shift Records")
         .setStyle(ButtonStyle.Danger)
-        .setCustomId(
-          `sdm-${ShiftDataActions.WipeAll}:${Interaction.user.id}:${Interaction.guildId}`
-        ),
+        .setCustomId(`sdm-${ShiftDataActions.WipeAll}:${Interaction.user.id}`),
       new ButtonBuilder()
         .setLabel("Delete Records of Type")
         .setStyle(ButtonStyle.Danger)
-        .setCustomId(
-          `sdm-${ShiftDataActions.DeleteOfType}:${Interaction.user.id}:${Interaction.guildId}`
-        ),
+        .setCustomId(`sdm-${ShiftDataActions.DeleteOfType}:${Interaction.user.id}`),
       new ButtonBuilder()
         .setLabel("Delete Past Shifts")
         .setStyle(ButtonStyle.Danger)
-        .setCustomId(
-          `sdm-${ShiftDataActions.DeletePast}:${Interaction.user.id}:${Interaction.guildId}`
-        )
+        .setCustomId(`sdm-${ShiftDataActions.DeletePast}:${Interaction.user.id}`)
     ),
     new ActionRowBuilder<ButtonBuilder>().setComponents(
       new ButtonBuilder()
         .setLabel("Delete Records Before Date")
         .setStyle(ButtonStyle.Danger)
-        .setCustomId(
-          `sdm-${ShiftDataActions.DeleteBefore}:${Interaction.user.id}:${Interaction.guildId}`
-        ),
+        .setCustomId(`sdm-${ShiftDataActions.DeleteBefore}:${Interaction.user.id}`),
       new ButtonBuilder()
         .setLabel("Delete Records After Date")
         .setStyle(ButtonStyle.Danger)
-        .setCustomId(
-          `sdm-${ShiftDataActions.DeleteAfter}:${Interaction.user.id}:${Interaction.guildId}`
-        ),
+        .setCustomId(`sdm-${ShiftDataActions.DeleteAfter}:${Interaction.user.id}`),
       new ButtonBuilder()
         .setLabel("Back")
         .setEmoji(Emojis.WhiteBack)
         .setStyle(ButtonStyle.Secondary)
-        .setCustomId(`sdm-back:${Interaction.user.id}:${Interaction.guildId}`)
+        .setCustomId(`sdm-back:${Interaction.user.id}`)
     ),
   ];
 }
 
-function GetLeaveManagementComponenets(Interaction: StringSelectOrButtonInteract<"cached">) {
+function GetUANManagementComponents(
+  Interaction: StringSelectOrButtonInteract<"cached">,
+  IsLOA: boolean
+) {
+  const ActionPrefix = `sdm-${GetUANDataActionPrefix(IsLOA)}`;
+  const Actions = IsLOA ? LeaveDataActions : RADataActions;
+
   return [
     new ActionRowBuilder<ButtonBuilder>().setComponents(
       new ButtonBuilder()
-        .setLabel("Wipe All Leave Records")
+        .setLabel(`Wipe All ${GetUANShortenedWEName(IsLOA)} Records`)
         .setStyle(ButtonStyle.Danger)
-        .setCustomId(
-          `sdm-${LeaveDataActions.WipeAll}:${Interaction.user.id}:${Interaction.guildId}`
-        ),
+        .setCustomId(`${ActionPrefix}-${Actions.WipeAll.split("-").pop()}:${Interaction.user.id}`),
       new ButtonBuilder()
         .setLabel("Delete Pending Requests")
         .setStyle(ButtonStyle.Danger)
         .setCustomId(
-          `sdm-${LeaveDataActions.DeletePending}:${Interaction.user.id}:${Interaction.guildId}`
+          `${ActionPrefix}-${Actions.DeletePending.split("-").pop()}:${Interaction.user.id}`
         ),
       new ButtonBuilder()
         .setLabel("Delete Past Records")
         .setStyle(ButtonStyle.Danger)
         .setCustomId(
-          `sdm-${LeaveDataActions.DeletePast}:${Interaction.user.id}:${Interaction.guildId}`
+          `${ActionPrefix}-${Actions.DeletePast.split("-").pop()}:${Interaction.user.id}`
         )
     ),
     new ActionRowBuilder<ButtonBuilder>().setComponents(
@@ -170,20 +187,20 @@ function GetLeaveManagementComponenets(Interaction: StringSelectOrButtonInteract
         .setStyle(ButtonStyle.Danger)
         .setDisabled(true)
         .setCustomId(
-          `sdm-${LeaveDataActions.DeleteBefore}:${Interaction.user.id}:${Interaction.guildId}`
+          `${ActionPrefix}-${Actions.DeleteBefore.split("-").pop()}:${Interaction.user.id}`
         ),
       new ButtonBuilder()
         .setLabel("Delete Records After Date")
         .setStyle(ButtonStyle.Danger)
         .setDisabled(true)
         .setCustomId(
-          `sdm-${LeaveDataActions.DeleteAfter}:${Interaction.user.id}:${Interaction.guildId}`
+          `${ActionPrefix}-${Actions.DeleteAfter.split("-").pop()}:${Interaction.user.id}`
         ),
       new ButtonBuilder()
         .setLabel("Back")
         .setEmoji(Emojis.WhiteBack)
         .setStyle(ButtonStyle.Secondary)
-        .setCustomId(`sdm-back:${Interaction.user.id}:${Interaction.guildId}`)
+        .setCustomId(`sdm-back:${Interaction.user.id}`)
     ),
   ];
 }
@@ -196,11 +213,11 @@ function GetDeleteConfirmationComponents(
     new ButtonBuilder()
       .setLabel("Confirm and Delete")
       .setStyle(ButtonStyle.Danger)
-      .setCustomId(`${TopicID}-confirm:${Interaction.user.id}:${Interaction.guildId}`),
+      .setCustomId(`${TopicID}-confirm:${Interaction.user.id}`),
     new ButtonBuilder()
       .setLabel("Cancel Deletion")
       .setStyle(ButtonStyle.Secondary)
-      .setCustomId(`${TopicID}-cancel:${Interaction.user.id}:${Interaction.guildId}`)
+      .setCustomId(`${TopicID}-cancel:${Interaction.user.id}`)
   );
 }
 
@@ -228,24 +245,25 @@ function GetShiftManagementEmbed() {
     );
 }
 
-function GetLeaveManagementEmbed() {
+function GetUANManagementEmbed(NoticeIsLOA: boolean) {
+  const LeaveOrRA = NoticeIsLOA ? "leave" : "reduced activity";
   return new EmbedBuilder()
     .setColor(BaseEmbedColor)
-    .setTitle("Leave of Absence Data Management")
+    .setTitle(`${GetUANNoticeTitle(NoticeIsLOA, true)} Data Management`)
     .setDescription(
       Dedent(`
-        Leave of absence data consists of a set of records, each of which was created upon a staff member's request using the ${MentionCmdByName("loa request")} slash command. \
+        ${GetUANNoticeTitle(NoticeIsLOA)} data consists of a set of records, each of which was created upon a staff member's request using the ${MentionCmdByName(`${NoticeIsLOA ? "loa" : "ra"} request`)} slash command. \
         This panel provides the ability to delete a set of records based on status or time frame. Use the buttons below to take action on a specific set of records.
 
         **Options Described:**
-        - **Wipe All Leave Records**
-          Delete *all* leave records, including active, pending, finished, and cancelled ones.
-        - **Delete Pending Requests**
-          Delete pending leave requests that have not yet been reviewed, approved, or denied by management.
+        - **Wipe All Records**
+          Delete *all* ${LeaveOrRA} records, including active, pending, finished, and cancelled ones.
+        - **Delete Pending Notices**
+          Delete pending requests that have not yet been reviewed, approved, or denied by management.
         - **Delete Past Records**
-          This option will delete only leave records that are no longer active and not in a pending state. Only finished and cancelled leaves will be affected.
+          This option will delete only ${LeaveOrRA} records that are no longer active and not in a pending state. Only finished and cancelled ones will be affected.
         - **Delete Records Before/Since Date** (Currently Disabled)
-          Delete past, finished, and cancelled leave records based on a specific date, before or after it. The end date (first), review date, or request date is being utilized for this action. Please take into considration that these two options are not accurate at the moment and may result into unexpected deletion of wanted records.
+          Delete past, finished, and cancelled ${LeaveOrRA} records based on a specific date, before or after it. The end date (first), review date, or request date is being utilized for this action. Please take into considration that these two options are not accurate at the moment and may result into unexpected deletion of wanted records.
         
         -# This panel will automatically deactivate after 10 minutes of inactivity.
       `)
@@ -254,12 +272,12 @@ function GetLeaveManagementEmbed() {
 
 function GetComparisonDateInputModal(
   Interaction: ButtonInteraction<"cached">,
-  TargetData: "Shift" | "Leave",
+  TargetData: "Shift" | "Leave" | "RA",
   CDType: DataDeletionWithDateType
 ) {
   const Modal = new ModalBuilder()
     .setTitle(`Delete ${TargetData} Records ${CDType} Date`)
-    .setCustomId(`sdm-dab-input:${Interaction.user.id}:${Interaction.guildId}`)
+    .setCustomId(`sdm-dab-input:${Interaction.user.id}`)
     .setComponents(
       new ActionRowBuilder<TextInputBuilder>().setComponents(
         new TextInputBuilder()
@@ -288,14 +306,14 @@ function GetComparisonDateInputModal(
           .setMaxLength(62)
       )
     );
-  } else if (TargetData === "Leave") {
+  } else if (TargetData === "Leave" || TargetData === "RA") {
     Modal.addComponents(
       new ActionRowBuilder<TextInputBuilder>().setComponents(
         new TextInputBuilder()
-          .setCustomId("leave_status")
-          .setLabel("Leave Status")
+          .setCustomId(`${TargetData.toLowerCase()}_status`)
+          .setLabel(`${TargetData} Status`)
           .setPlaceholder(
-            "The leave status to delete records of (Optional), e.g. 'Pending' or 'Ended'."
+            "The notice status to delete records of (Optional), e.g. 'Pending' or 'Ended'."
           )
           .setStyle(TextInputStyle.Short)
           .setRequired(false)
@@ -417,9 +435,7 @@ function GetSDConfirmationPromptEmbed(Opts: {
 function GetShiftTypeInputModal(Interaction: ButtonInteraction<"cached">) {
   return new ModalBuilder()
     .setTitle("Delete Records by Shift Type")
-    .setCustomId(
-      `sdm-${ShiftDataActions.DeleteOfType}-input:${Interaction.user.id}:${Interaction.guildId}`
-    )
+    .setCustomId(`sdm-${ShiftDataActions.DeleteOfType}-input:${Interaction.user.id}`)
     .setComponents(
       new ActionRowBuilder<TextInputBuilder>().setComponents(
         new TextInputBuilder()
@@ -879,16 +895,18 @@ async function HandleShiftRecordsManagement(
 }
 
 // ---------------------------------------------------------------------------------------
-// Leave Data Mgmt. Helpers:
-// -------------------------
-function GetLDConfirmationPromptEmbed(Opts: {
-  LeaveRecordsCount: number;
+// UAN Data Mgmt. Helpers:
+// ------------------------
+function GetUANConfirmationPromptEmbed(Opts: {
+  NoticeRecordsCount: number;
   RecordsStatus?: string;
   AfterDate?: Date | null;
   BeforeDate?: Date | null;
+  IsLOA: boolean;
 }) {
-  const { LeaveRecordsCount, RecordsStatus, AfterDate, BeforeDate } = Opts;
-  const LeaveStatusText = RecordsStatus || "all";
+  const { NoticeRecordsCount, RecordsStatus, AfterDate, BeforeDate, IsLOA } = Opts;
+  const NoticeStatusText = RecordsStatus || "all";
+  const NoticeType = GetUANNoticeTitle(IsLOA).toLowerCase();
   const RecordedBeforeAfterText = BeforeDate
     ? ` recorded before ${FormatTime(BeforeDate, "D")}`
     : AfterDate
@@ -900,8 +918,8 @@ function GetLDConfirmationPromptEmbed(Opts: {
     .setTitle("Confirmation Required")
     .setDescription(
       Dedent(`
-        **Are you certain you want to delete ${LeaveStatusText} leave records${RecordedBeforeAfterText}?**
-        This will permanently erase \`${LeaveRecordsCount}\` leave of absence records.
+        **Are you certain you want to delete ${NoticeStatusText} ${NoticeType} records${RecordedBeforeAfterText}?**
+        This will permanently erase \`${NoticeRecordsCount}\` ${GetUANNoticeTitle(IsLOA).toLowerCase()} records.
 
         -# **Note:** This action is ***irreversible***, and data deleted cannot be restored after confirmation. By confirming, you accept full responsibility for this action.
         -# This prompt will automatically cancel after five minutes of inactivity.
@@ -909,17 +927,18 @@ function GetLDConfirmationPromptEmbed(Opts: {
     );
 }
 
-async function HandleNoLeavesToTakeActionOn(
+async function HandleNoNoticesToTakeActionOn(
   RecInteract: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">,
   RecordsCount: number,
-  InPastForm: boolean = true
+  InPastForm: boolean = true,
+  IsLOA: boolean = true
 ) {
   if (RecordsCount === 0) {
     return new InfoEmbed()
       .setThumbnail(null)
-      .setTitle("No Leave Records Found")
+      .setTitle(`No ${GetUANShortenedName(IsLOA)} Records Found`)
       .setDescription(
-        `There ${InPastForm ? "were" : "are"} no records of leave notices to delete or take action on.`
+        `There ${InPastForm ? "were" : "are"} no records of ${GetUANShortenedWEName(IsLOA).toLowerCase()} notices to delete or take action on.`
       )
       .replyToInteract(RecInteract, true, false)
       .then(() => true);
@@ -928,59 +947,85 @@ async function HandleNoLeavesToTakeActionOn(
   return false;
 }
 
-async function HandleLeaveDataWipeAllConfirm(ConfirmInteract: ButtonInteraction<"cached">) {
+async function HandleUANDataWipeAllConfirm(
+  ConfirmInteract: ButtonInteraction<"cached">,
+  IsLOA: boolean
+) {
+  const Logger = IsLOA ? LeaveDataLogger : RADataLogger;
   await ConfirmInteract.update({
-    embeds: [new InfoEmbed().useInfoTemplate("LRWipeAllInProgress")],
+    embeds: [new InfoEmbed().useInfoTemplate("UANWipeAllInProgress", GetUANShortenedName(IsLOA))],
     components: [],
   });
 
-  const DeleteResponse = await LeaveModel.deleteMany({ guild: ConfirmInteract.guildId }).exec();
-  if (await HandleNoLeavesToTakeActionOn(ConfirmInteract, DeleteResponse.deletedCount, true)) {
+  const NoticeType = IsLOA ? "LeaveOfAbsence" : "ReducedActivity";
+  const DeleteResponse = await UANModel.deleteMany({
+    guild: ConfirmInteract.guildId,
+    type: NoticeType,
+  }).exec();
+
+  if (
+    await HandleNoNoticesToTakeActionOn(ConfirmInteract, DeleteResponse.deletedCount, true, IsLOA)
+  ) {
     return;
   }
 
   return Promise.all([
-    BaseUANLogger.LogUserActivityNoticesWipe(ConfirmInteract, DeleteResponse),
+    Logger.LogUserActivityNoticesWipe(ConfirmInteract, DeleteResponse),
     ConfirmInteract.editReply({
       components: [],
       embeds: [
         new SuccessEmbed()
           .setThumbnail(null)
           .setDescription(
-            "Successfully deleted **`%d`** recorded notices.",
-            DeleteResponse.deletedCount
+            "Successfully deleted **`%d`** %s notices.",
+            DeleteResponse.deletedCount,
+            GetUANShortenedWEName(IsLOA).toLowerCase()
           ),
       ],
     }),
   ]);
 }
 
-async function HandleLeaveDataWipeAll(BtnInteract: ButtonInteraction<"cached">) {
-  const LeaveRecordsCount = await LeaveModel.countDocuments({ guild: BtnInteract.guildId }).exec();
-  if ((await HandleNoLeavesToTakeActionOn(BtnInteract, LeaveRecordsCount, false)) === true) return;
+async function HandleUANDataWipeAll(BtnInteract: ButtonInteraction<"cached">, IsLOA: boolean) {
+  const NoticeType = IsLOA ? "LeaveOfAbsence" : "ReducedActivity";
+  const NoticeRecordsCount = await UANModel.countDocuments({
+    guild: BtnInteract.guildId,
+    type: NoticeType,
+  }).exec();
 
-  const ConfirmationEmbed = GetLDConfirmationPromptEmbed({ LeaveRecordsCount });
-  const ConfirmationComponents = GetDeleteConfirmationComponents(
-    BtnInteract,
-    `sdm-${LeaveDataActions.WipeAll}`
-  );
+  if ((await HandleNoNoticesToTakeActionOn(BtnInteract, NoticeRecordsCount, false, IsLOA)) === true)
+    return;
+
+  const ConfirmationEmbed = GetUANConfirmationPromptEmbed({
+    NoticeRecordsCount,
+    IsLOA,
+  });
+
+  const ActionType = IsLOA ? LeaveDataActions.WipeAll : RADataActions.WipeAll;
+  const ConfirmationComponents = GetDeleteConfirmationComponents(BtnInteract, `sdm-${ActionType}`);
 
   const RespMessage = await SendReplyAndFetchMessage(BtnInteract, {
     embeds: [ConfirmationEmbed],
     components: [ConfirmationComponents],
   });
 
-  return AwaitDeleteConfirmation(BtnInteract, RespMessage, HandleLeaveDataWipeAllConfirm);
+  return AwaitDeleteConfirmation(BtnInteract, RespMessage, HandleUANDataWipeAllConfirm, IsLOA);
 }
 
-async function HandleLeaveDataDeletePastConfirm(ConfirmInteract: ButtonInteraction<"cached">) {
+async function HandleUANDataDeletePastConfirm(
+  ConfirmInteract: ButtonInteraction<"cached">,
+  IsLOA: boolean
+) {
+  const Logger = IsLOA ? LeaveDataLogger : RADataLogger;
   await ConfirmInteract.update({
-    embeds: [new InfoEmbed().useInfoTemplate("LRDeletionInProgress")],
+    embeds: [new InfoEmbed().useInfoTemplate("UANDeletionInProgress", GetUANShortenedName(IsLOA))],
     components: [],
   });
 
-  const DeleteResponse = await LeaveModel.deleteMany({
+  const NoticeType = IsLOA ? "LeaveOfAbsence" : "ReducedActivity";
+  const DeleteResponse = await UANModel.deleteMany({
     guild: ConfirmInteract.guildId,
+    type: NoticeType,
     $or: [
       { status: { $in: ["Cancelled", "Denied"] } },
       { status: "Approved", early_end_date: { $lte: ConfirmInteract.createdAt } },
@@ -988,15 +1033,17 @@ async function HandleLeaveDataDeletePastConfirm(ConfirmInteract: ButtonInteracti
     ],
   }).exec();
 
-  if (await HandleNoLeavesToTakeActionOn(ConfirmInteract, DeleteResponse.deletedCount, true)) {
+  if (
+    await HandleNoNoticesToTakeActionOn(ConfirmInteract, DeleteResponse.deletedCount, true, IsLOA)
+  ) {
     return;
   }
 
   return Promise.all([
-    BaseUANLogger.LogUserActivityNoticesWipe(
+    Logger.LogUserActivityNoticesWipe(
       ConfirmInteract,
       DeleteResponse,
-      "Past Notices (Finished, Cancelled, Denied)"
+      `Past ${GetUANNoticeTitle(IsLOA, true)} Notices (Finished, Cancelled, Denied)`
     ),
     ConfirmInteract.editReply({
       components: [],
@@ -1012,9 +1059,11 @@ async function HandleLeaveDataDeletePastConfirm(ConfirmInteract: ButtonInteracti
   ]);
 }
 
-async function HandleLeaveDataDeletePast(BtnInteract: ButtonInteraction<"cached">) {
-  const LeaveRecordsCount = await LeaveModel.countDocuments({
+async function HandleUANDataDeletePast(BtnInteract: ButtonInteraction<"cached">, IsLOA: boolean) {
+  const NoticeType = IsLOA ? "LeaveOfAbsence" : "ReducedActivity";
+  const NoticeRecordsCount = await UANModel.countDocuments({
     guild: BtnInteract.guildId,
+    type: NoticeType,
     $or: [
       { status: { $in: ["Cancelled", "Denied"] } },
       { status: "Approved", early_end_date: { $lte: BtnInteract.createdAt } },
@@ -1022,43 +1071,56 @@ async function HandleLeaveDataDeletePast(BtnInteract: ButtonInteraction<"cached"
     ],
   }).exec();
 
-  if ((await HandleNoLeavesToTakeActionOn(BtnInteract, LeaveRecordsCount, false)) === true) return;
-  const ConfirmationEmbed = GetLDConfirmationPromptEmbed({
-    LeaveRecordsCount,
+  if ((await HandleNoNoticesToTakeActionOn(BtnInteract, NoticeRecordsCount, false, IsLOA)) === true)
+    return;
+
+  const ConfirmationEmbed = GetUANConfirmationPromptEmbed({
+    NoticeRecordsCount,
     RecordsStatus: "past",
+    IsLOA,
   });
 
-  const ConfirmationComponents = GetDeleteConfirmationComponents(
-    BtnInteract,
-    `sdm-${LeaveDataActions.DeletePast}`
-  );
+  const actionType = IsLOA ? LeaveDataActions.DeletePast : RADataActions.DeletePast;
+  const ConfirmationComponents = GetDeleteConfirmationComponents(BtnInteract, `sdm-${actionType}`);
 
   const RespMessage = await SendReplyAndFetchMessage(BtnInteract, {
     embeds: [ConfirmationEmbed],
     components: [ConfirmationComponents],
   });
 
-  return AwaitDeleteConfirmation(BtnInteract, RespMessage, HandleLeaveDataDeletePastConfirm);
+  return AwaitDeleteConfirmation(BtnInteract, RespMessage, HandleUANDataDeletePastConfirm, IsLOA);
 }
 
-async function HandleLeaveDataDeletePendingConfirm(ConfirmInteract: ButtonInteraction<"cached">) {
+async function HandleUANDataDeletePendingConfirm(
+  ConfirmInteract: ButtonInteraction<"cached">,
+  IsLOA: boolean
+) {
+  const Logger = IsLOA ? LeaveDataLogger : RADataLogger;
   await ConfirmInteract.update({
-    embeds: [new InfoEmbed().useInfoTemplate("LRDeletionInProgress")],
+    embeds: [new InfoEmbed().useInfoTemplate("UANDeletionInProgress", GetUANShortenedName(IsLOA))],
     components: [],
   });
 
-  const DeleteResponse = await LeaveModel.deleteMany({
+  const NoticeType = IsLOA ? "LeaveOfAbsence" : "ReducedActivity";
+  const DeleteResponse = await UANModel.deleteMany({
     guild: ConfirmInteract.guildId,
+    type: NoticeType,
     status: "Pending",
     review_date: null,
   }).exec();
 
-  if (await HandleNoLeavesToTakeActionOn(ConfirmInteract, DeleteResponse.deletedCount, true)) {
+  if (
+    await HandleNoNoticesToTakeActionOn(ConfirmInteract, DeleteResponse.deletedCount, true, IsLOA)
+  ) {
     return;
   }
 
   return Promise.all([
-    BaseUANLogger.LogUserActivityNoticesWipe(ConfirmInteract, DeleteResponse, "Pending Requests"),
+    Logger.LogUserActivityNoticesWipe(
+      ConfirmInteract,
+      DeleteResponse,
+      `Pending ${GetUANNoticeTitle(IsLOA, true)} Requests`
+    ),
     ConfirmInteract.editReply({
       components: [],
       embeds: [
@@ -1073,45 +1135,60 @@ async function HandleLeaveDataDeletePendingConfirm(ConfirmInteract: ButtonIntera
   ]);
 }
 
-async function HandleLeaveDataDeletePending(BtnInteract: ButtonInteraction<"cached">) {
-  const LeaveRecordsCount = await LeaveModel.countDocuments({
+async function HandleUANDataDeletePending(
+  BtnInteract: ButtonInteraction<"cached">,
+  IsLOA: boolean
+) {
+  const NoticeType = IsLOA ? "LeaveOfAbsence" : "ReducedActivity";
+  const NoticeRecordsCount = await UANModel.countDocuments({
     guild: BtnInteract.guildId,
+    type: NoticeType,
     status: "Pending",
     review_date: null,
   }).exec();
 
-  if ((await HandleNoLeavesToTakeActionOn(BtnInteract, LeaveRecordsCount, false)) === true) return;
-  const ConfirmationEmbed = GetLDConfirmationPromptEmbed({
-    LeaveRecordsCount,
+  if ((await HandleNoNoticesToTakeActionOn(BtnInteract, NoticeRecordsCount, false, IsLOA)) === true)
+    return;
+
+  const ConfirmationEmbed = GetUANConfirmationPromptEmbed({
+    NoticeRecordsCount,
     RecordsStatus: "pending",
+    IsLOA,
   });
 
-  const ConfirmationComponents = GetDeleteConfirmationComponents(
-    BtnInteract,
-    `sdm-${LeaveDataActions.DeletePending}`
-  );
+  const ActionType = IsLOA ? LeaveDataActions.DeletePending : RADataActions.DeletePending;
+  const ConfirmationComponents = GetDeleteConfirmationComponents(BtnInteract, `sdm-${ActionType}`);
 
   const RespMessage = await SendReplyAndFetchMessage(BtnInteract, {
     embeds: [ConfirmationEmbed],
     components: [ConfirmationComponents],
   });
 
-  return AwaitDeleteConfirmation(BtnInteract, RespMessage, HandleLeaveDataDeletePendingConfirm);
+  return AwaitDeleteConfirmation(
+    BtnInteract,
+    RespMessage,
+    HandleUANDataDeletePendingConfirm,
+    IsLOA
+  );
 }
 
-async function HandleLeaveDataDeleteWithDateConfirm(
+async function HandleUANDataDeleteWithDateConfirm(
   ConfirmInteract: ButtonInteraction<"cached">,
   ComparisonDate: Date,
   ComparisonType: DataDeletionWithDateType,
-  QueryFilter: Mongoose.FilterQuery<UserActivityNotice.UserActivityNoticeDocument>
+  QueryFilter: Mongoose.FilterQuery<UserActivityNotice.UserActivityNoticeDocument>,
+  IsLOA: boolean
 ) {
+  const Logger = IsLOA ? LeaveDataLogger : RADataLogger;
   await ConfirmInteract.update({
-    embeds: [new InfoEmbed().useInfoTemplate("LRDeletionInProgress")],
+    embeds: [new InfoEmbed().useInfoTemplate("UANDeletionInProgress", GetUANShortenedName(IsLOA))],
     components: [],
   });
 
-  const DeleteResponse = await LeaveModel.deleteMany(QueryFilter).exec();
-  if (await HandleNoLeavesToTakeActionOn(ConfirmInteract, DeleteResponse.deletedCount, true)) {
+  const DeleteResponse = await UANModel.deleteMany(QueryFilter).exec();
+  if (
+    await HandleNoNoticesToTakeActionOn(ConfirmInteract, DeleteResponse.deletedCount, true, IsLOA)
+  ) {
     return;
   }
 
@@ -1122,37 +1199,48 @@ async function HandleLeaveDataDeleteWithDateConfirm(
   });
 
   return Promise.all([
-    BaseUANLogger.LogUserActivityNoticesWipe(ConfirmInteract, DeleteResponse, "N/A"),
+    Logger.LogUserActivityNoticesWipe(ConfirmInteract, DeleteResponse, "N/A"),
     ConfirmInteract.editReply({
       components: [],
       embeds: [
         new SuccessEmbed()
           .setThumbnail(null)
-          .setDescription("Successfully deleted **`%d`** records.", DeleteResponse.deletedCount),
+          .setDescription(
+            "Successfully deleted **`%d`** %s records.",
+            DeleteResponse.deletedCount,
+            GetUANShortenedWEName(IsLOA).toLowerCase()
+          ),
       ],
     }),
   ]);
 }
 
-async function HandleLeaveDataDeleteBeforeOrAfterDate(
+async function HandleUANDataDeleteBeforeOrAfterDate(
   BtnInteract: ButtonInteraction<"cached">,
-  ComparisonType: DataDeletionWithDateType
+  ComparisonType: DataDeletionWithDateType,
+  IsLOA: boolean
 ) {
-  const ComparisonDateModal = GetComparisonDateInputModal(BtnInteract, "Leave", ComparisonType);
+  const ComparisonDateModal = GetComparisonDateInputModal(
+    BtnInteract,
+    IsLOA ? "Leave" : "RA",
+    ComparisonType
+  );
   const ModalSubmission = await ShowModalAndAwaitSubmission(ComparisonDateModal, BtnInteract).catch(
     () => null
   );
 
+  const NoticeStatuses: string[] = [];
   const InputDate = ModalSubmission?.fields.getTextInputValue("comp_date").trim();
   const ParsedDate = InputDate ? Chrono.parseDate(InputDate, ModalSubmission?.createdAt) : null;
-  const InputLeaveStatus = ModalSubmission?.fields.getTextInputValue("leave_status").trim();
-  const LeaveStatuses: string[] = [];
+  const InputNoticeStatus = ModalSubmission?.fields
+    .getTextInputValue(IsLOA ? "leave_status" : "ra_status")
+    ?.trim();
 
   if (!ModalSubmission) return;
-  if (InputLeaveStatus?.includes(",")) {
-    LeaveStatuses.push(...InputLeaveStatus.split(",").map((Status) => Status.trim()));
-  } else if (InputLeaveStatus) {
-    LeaveStatuses.push(InputLeaveStatus);
+  if (InputNoticeStatus?.includes(",")) {
+    NoticeStatuses.push(...InputNoticeStatus.split(",").map((Status) => Status.trim()));
+  } else if (InputNoticeStatus) {
+    NoticeStatuses.push(InputNoticeStatus);
   }
 
   if (InputDate && !ParsedDate) {
@@ -1165,12 +1253,14 @@ async function HandleLeaveDataDeleteBeforeOrAfterDate(
       .replyToInteract(ModalSubmission, true, false);
   }
 
+  const NoticeType = IsLOA ? "LeaveOfAbsence" : "ReducedActivity";
   const MatchFilter: Mongoose.FilterQuery<UserActivityNotice.UserActivityNoticeDocument> = {
     guild: BtnInteract.guildId,
+    type: NoticeType,
   };
 
-  if (LeaveStatuses.length === 1) {
-    if (/^(?:Finished|Ended|Over)$/i.exec(LeaveStatuses[0])) {
+  if (NoticeStatuses.length === 1) {
+    if (/^(?:Finished|Ended|Over)$/i.exec(NoticeStatuses[0])) {
       Object.assign(MatchFilter, {
         status: "Approved",
         $or: [
@@ -1181,16 +1271,16 @@ async function HandleLeaveDataDeleteBeforeOrAfterDate(
           { end_date: ComparisonType === "Before" ? { $lte: ParsedDate } : { $gte: ParsedDate } },
         ],
       });
-    } else if (/^Pending$/i.exec(LeaveStatuses[0])) {
+    } else if (/^Pending$/i.exec(NoticeStatuses[0])) {
       Object.assign(MatchFilter, {
         status: "Pending",
         request_date: ComparisonType === "Before" ? { $lte: ParsedDate } : { $gte: ParsedDate },
       });
     }
-  } else if (LeaveStatuses.length > 1) {
+  } else if (NoticeStatuses.length > 1) {
     Object.assign(MatchFilter, {
       status: {
-        $in: LeaveStatuses.map((Status) => {
+        $in: NoticeStatuses.map((Status) => {
           const Trimmed = Status.trim();
           return Trimmed.charAt(0).toUpperCase() + Trimmed.slice(1).toLowerCase();
         }).map((Status) => (Status.match(/^(?:Finished|Ended|Over)$/i) ? "Approved" : Status)),
@@ -1221,22 +1311,30 @@ async function HandleLeaveDataDeleteBeforeOrAfterDate(
     });
   }
 
-  const LeaveRecordsCount = await LeaveModel.countDocuments(MatchFilter);
-  if ((await HandleNoLeavesToTakeActionOn(BtnInteract, LeaveRecordsCount, false)) === true) {
+  const NoticeRecordsCount = await UANModel.countDocuments(MatchFilter);
+  if (
+    (await HandleNoNoticesToTakeActionOn(BtnInteract, NoticeRecordsCount, false, IsLOA)) === true
+  ) {
     return;
   }
 
-  const ConfirmationEmbed = GetLDConfirmationPromptEmbed({
-    LeaveRecordsCount,
-    RecordsStatus: LeaveStatuses.length ? ListFormatter.format(LeaveStatuses) : undefined,
+  const ConfirmationEmbed = GetUANConfirmationPromptEmbed({
+    NoticeRecordsCount,
+    RecordsStatus: NoticeStatuses.length ? ListFormatter.format(NoticeStatuses) : undefined,
     AfterDate: ComparisonType === "After" ? ParsedDate : null,
     BeforeDate: ComparisonType === "Before" ? ParsedDate : null,
+    IsLOA,
   });
 
-  const ConfirmationComponents = GetDeleteConfirmationComponents(
-    BtnInteract,
-    `sdm-${LeaveDataActions["Delete" + ComparisonType]}`
-  );
+  const ActionType = IsLOA
+    ? ComparisonType === "Before"
+      ? LeaveDataActions.DeleteBefore
+      : LeaveDataActions.DeleteAfter
+    : ComparisonType === "Before"
+      ? RADataActions.DeleteBefore
+      : RADataActions.DeleteAfter;
+
+  const ConfirmationComponents = GetDeleteConfirmationComponents(BtnInteract, `sdm-${ActionType}`);
 
   const RespMessage = await SendReplyAndFetchMessage(ModalSubmission, {
     embeds: [ConfirmationEmbed],
@@ -1246,19 +1344,21 @@ async function HandleLeaveDataDeleteBeforeOrAfterDate(
   return AwaitDeleteConfirmation(
     BtnInteract,
     RespMessage,
-    HandleLeaveDataDeleteWithDateConfirm,
+    HandleUANDataDeleteWithDateConfirm,
     ParsedDate,
     ComparisonType,
-    MatchFilter
+    MatchFilter,
+    IsLOA
   );
 }
 
-async function HandleLeaveRecordsManagement(
+async function HandleUserActivityNoticeRecordsManagement(
   SMenuInteract: StringSelectMenuInteraction<"cached">,
-  CmdInteraction: SlashCommandInteraction<"cached">
+  CmdInteraction: SlashCommandInteraction<"cached">,
+  IsLeaveManagement: boolean
 ) {
-  const MsgEmbed = GetLeaveManagementEmbed();
-  const ManagementComps = GetLeaveManagementComponenets(SMenuInteract);
+  const MsgEmbed = GetUANManagementEmbed(IsLeaveManagement);
+  const ManagementComps = GetUANManagementComponents(SMenuInteract, IsLeaveManagement);
   const EdittedMessage = await SMenuInteract.update({
     embeds: [MsgEmbed],
     components: ManagementComps,
@@ -1270,20 +1370,21 @@ async function HandleLeaveRecordsManagement(
     time: 10 * 60 * 1000,
   });
 
-  CompActionCollector.on("collect", async function OnLDMBtnInteract(BtnInteract) {
+  CompActionCollector.on("collect", async function OnUANBtnInteract(BtnInteract) {
     try {
+      const ActionPrefix = GetUANDataActionPrefix(IsLeaveManagement);
       if (BtnInteract.customId.startsWith("sdm-back")) {
         CompActionCollector.stop("BackToMain");
-      } else if (BtnInteract.customId.includes(LeaveDataActions.WipeAll)) {
-        await HandleLeaveDataWipeAll(BtnInteract);
-      } else if (BtnInteract.customId.includes(LeaveDataActions.DeletePast)) {
-        await HandleLeaveDataDeletePast(BtnInteract);
-      } else if (BtnInteract.customId.includes(LeaveDataActions.DeletePending)) {
-        await HandleLeaveDataDeletePending(BtnInteract);
-      } else if (BtnInteract.customId.includes(LeaveDataActions.DeleteBefore)) {
-        await HandleLeaveDataDeleteBeforeOrAfterDate(BtnInteract, "Before");
-      } else if (BtnInteract.customId.includes(LeaveDataActions.DeleteAfter)) {
-        await HandleLeaveDataDeleteBeforeOrAfterDate(BtnInteract, "After");
+      } else if (BtnInteract.customId.includes(`${ActionPrefix}-wa`)) {
+        await HandleUANDataWipeAll(BtnInteract, IsLeaveManagement);
+      } else if (BtnInteract.customId.includes(`${ActionPrefix}-dpast`)) {
+        await HandleUANDataDeletePast(BtnInteract, IsLeaveManagement);
+      } else if (BtnInteract.customId.includes(`${ActionPrefix}-dpen`)) {
+        await HandleUANDataDeletePending(BtnInteract, IsLeaveManagement);
+      } else if (BtnInteract.customId.includes(`${ActionPrefix}-db`)) {
+        await HandleUANDataDeleteBeforeOrAfterDate(BtnInteract, "Before", IsLeaveManagement);
+      } else if (BtnInteract.customId.includes(`${ActionPrefix}-da`)) {
+        await HandleUANDataDeleteBeforeOrAfterDate(BtnInteract, "After", IsLeaveManagement);
       }
 
       if (!BtnInteract.deferred && !BtnInteract.replied) {
@@ -1293,7 +1394,7 @@ async function HandleLeaveRecordsManagement(
       const ErrorId = GetErrorId();
       AppLogger.error({
         label: FileLabel,
-        message: "Failed to handle shift data management button interaction;",
+        message: `Failed to handle ${IsLeaveManagement ? "leave" : "reduced activity"} data management button interaction;`,
         error_id: ErrorId,
         stack: Err.stack,
       });
@@ -1306,7 +1407,7 @@ async function HandleLeaveRecordsManagement(
     }
   });
 
-  CompActionCollector.on("end", async function OnLDMEnd(_, EndReason) {
+  CompActionCollector.on("end", async function OnUANEnd(_, EndReason) {
     if (EndReason.match(/^\w+Delete/)) return;
     if (EndReason === "BackToMain") {
       return Callback(CmdInteraction);
@@ -1341,7 +1442,9 @@ async function HandleInitialRespActions(
       if (SelectedDataTopic === DataCategories.ShiftData) {
         return HandleShiftRecordsManagement(TopicSelectInteract, CmdInteract);
       } else if (SelectedDataTopic === DataCategories.LeaveData) {
-        return HandleLeaveRecordsManagement(TopicSelectInteract, CmdInteract);
+        return HandleUserActivityNoticeRecordsManagement(TopicSelectInteract, CmdInteract, true);
+      } else if (SelectedDataTopic === DataCategories.RAData) {
+        return HandleUserActivityNoticeRecordsManagement(TopicSelectInteract, CmdInteract, false);
       }
     })
     .catch((Err) => HandleActionCollectorExceptions(Err, SMenuDisabler));

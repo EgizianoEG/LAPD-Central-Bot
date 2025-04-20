@@ -905,19 +905,23 @@ export const InfoMessages = {
     Description: "Hang tight! This process might take a few seconds to complete.",
   },
 
-  LRWipeAllInProgress: {
+  /**
+   * @template {string} - The type of user activity notice record (e.g., "Leave" or "RA".)
+   */
+  UANWipeAllInProgress: {
     Thumb: null,
-    Title: `${Emojis.LoadingBlue}\u{2000}Wiping Leave Records...`,
-    Description: "Hang tight! This process might take a few seconds to complete.",
+    Title: `${Emojis.LoadingBlue}\u{2000}Wiping %s Records...`,
+    Description: "Hang tight! This process might take a few moments to complete.",
   },
 
   /**
-   * Leave records deletion in progress
+   * UAN records deletion in progress
+   * @template {string} - The type of user activity notice record (e.g., "Leave" or "Reduced Activity".)
    */
-  LRDeletionInProgress: {
+  UANDeletionInProgress: {
     Thumb: null,
-    Title: `${Emojis.LoadingBlue}\u{2000}Deleting Leave Records...`,
-    Description: "Please wait, this process might take a few seconds to complete.",
+    Title: `${Emojis.LoadingBlue}\u{2000}Deleting %s Records...`,
+    Description: "Please wait, this process might take a few moments to complete.",
   },
 
   CreatingActivityReport: {
