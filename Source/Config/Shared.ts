@@ -41,16 +41,17 @@ const SharedData = {
       AvatarMale: "https://i.ibb.co/m0fyKh1/Male-Avatar-Placeholder.png",
       AvatarFemale: "https://i.ibb.co/Lr37RGx/Female-Avatar-Placeholder.png",
 
+      RobloxAvatarMale: "https://i.ibb.co/LzrzMwr2/Roblox-Thumb-Male-Unknown.png",
+      RobloxAvatarFemale: "https://i.ibb.co/pB1wLmhY/Roblox-Thumb-Female-Unknown.png",
+
       UnknownImage: "https://placehold.co/254x254/F7F8F9/202428/png?text=%3F",
       Transparent: "https://i.ibb.co/qFtywJK/Transparent.png",
     },
   },
 
-  // Attribution;
-  // Some of the following emojis are made or distributed by:
-  // - Flaticon (https://www.flaticon.com)
-  // - Iconfinder (https://www.iconfinder.com)
-  // - Icons8 (https://icons8.com)
+  // Attribution & Credits;
+  // Some of these icons are from the following sources: Flaticon, Iconfinder, Iconscout, and Icons8
+  // Some other icons have been modified or created from scratch.
   Emojis: {
     Online: "<:Online:1185771482656297010>",
     Offline: "<:Offline:1185771486460526714>",

@@ -119,6 +119,8 @@ async function Autocomplete(Interaction: AutocompleteInteraction) {
 // ------------------
 const CommandObject: SlashCommandObject<any> = {
   options: { cooldown: 10, user_perms: { staff: true } },
+  callback: Callback,
+  autocomplete: Autocomplete,
   data: new SlashCommandBuilder()
     .setName("log")
     .setDescription("Logs a particular information into the database.")
@@ -127,9 +129,6 @@ const CommandObject: SlashCommandObject<any> = {
     .addSubcommand(Subcommands[1].data)
     .addSubcommand(Subcommands[2].data)
     .addSubcommand(Subcommands[3].data),
-
-  callback: Callback,
-  autocomplete: Autocomplete,
 };
 
 // ---------------------------------------------------------------------------------------

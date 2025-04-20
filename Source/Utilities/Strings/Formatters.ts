@@ -533,6 +533,16 @@ export function AddTrafficViolationCodes(
       continue;
     }
 
+    // Misdemeanor reckless driving.
+    if (AddStatutesRegexes.RecklessDriving.test(Violation)) {
+      ModifiedViolations[i] = {
+        violation: AddVehCode("23103", Violation),
+        correctable: false,
+        type: "M",
+      };
+      continue;
+    }
+
     ModifiedViolations[i] = Violation;
   }
 

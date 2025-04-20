@@ -10,6 +10,7 @@ import {
 import { CitationImgDimensions } from "./GetFilledCitation.js";
 import { SendGuildMessages } from "@Utilities/Other/GuildMessages.js";
 import { GuildCitations } from "@Typings/Utilities/Database.js";
+import { FormatUsername } from "@Utilities/Strings/Formatters.js";
 import { APIResponses } from "@Typings/Utilities/Roblox.js";
 
 import Dedent from "dedent";
@@ -19,7 +20,6 @@ import UploadToImgBB from "./ImgBBUpload.js";
 import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
 import GetPlaceholderImgURL from "./GetPlaceholderImg.js";
 import IncrementActiveShiftEvent from "@Utilities/Database/IncrementActiveShiftEvent.js";
-import { FormatUsername } from "@Utilities/Strings/Formatters.js";
 
 /**
  * Creates a traffic citation record on a specific guild.
