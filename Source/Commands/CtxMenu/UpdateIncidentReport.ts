@@ -50,6 +50,7 @@ import IncidentModel from "@Models/Incident.js";
 import GetIncidentRecord from "@Utilities/Database/GetIncidentRecord.js";
 import GetIncidentReportEmbeds from "@Utilities/Other/GetIncidentReportEmbeds.js";
 import { FormatSortRDInputNames } from "@Utilities/Strings/Formatters.js";
+import { Emojis } from "@Config/Shared.js";
 
 const ListFormatter = new Intl.ListFormat("en");
 const NoneProvidedPlaceholder = "`[None Provided]`";
@@ -93,25 +94,30 @@ function GetIncidentEditOptionsMenu() {
         {
           label: "Update Status",
           value: IncidentEditOptionIds.Status,
+          emoji: Emojis.StatusChange,
           description: "Change the incident status.",
         },
         {
           label: "Set Involved Officers",
+          emoji: Emojis.PoliceHat,
           value: IncidentEditOptionIds.Officers,
           description: "Add or remove involved officers in the incident.",
         },
         {
           label: "Set Suspects",
           value: IncidentEditOptionIds.Suspects,
+          emoji: Emojis.Fingerprint,
           description: "Add or remove incident suspects.",
         },
         {
           label: "Set Witnesses",
           value: IncidentEditOptionIds.Witnesses,
+          emoji: Emojis.Eyewitness,
           description: "Add or remove incident witnesses.",
         },
         {
           label: "Set Notes",
+          emoji: Emojis.Notes,
           value: IncidentEditOptionIds.Notes,
           description: "Add or update incident notes.",
         },

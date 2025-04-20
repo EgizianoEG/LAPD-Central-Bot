@@ -57,6 +57,12 @@ const SharedData = {
     Offline: "<:Offline:1185771486460526714>",
     Idle: "<:Idle:1185771485185445918>",
 
+    Notes: "<:Notes:1363577814594621492>",
+    PoliceHat: "<:PoliceHat:1363577816033263728>",
+    Eyewitness: "<:Eyewitness:1363577811360813146>",
+    Fingerprint: "<:Fingerprint:1363577813063565604>",
+    StatusChange: "<:Status:1363577818226626902>",
+
     Warning: "<:Warn:1186171864343654513>",
     FileEdit: "<:FileEdit:1185790827809738803>",
     FileDelete: "<:FileDelete:1185785834058813480>",
