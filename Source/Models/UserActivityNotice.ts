@@ -1,25 +1,19 @@
-import {
-  isAfter,
-  isBefore,
-  milliseconds,
-  addMilliseconds,
-  differenceInMilliseconds,
-} from "date-fns";
+import { isAfter, milliseconds, addMilliseconds, differenceInMilliseconds } from "date-fns";
 
-import { LeaveOfAbsence } from "@Typings/Utilities/Database.js";
+import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { Schema, model } from "mongoose";
 import DHumanize from "humanize-duration";
 
-type LeaveDocument = LeaveOfAbsence.LeaveOfAbsenceHydratedDocument;
+type NoticeDocument = UserActivityNotice.ActivityNoticeHydratedDocument;
 const DurationHumanize = DHumanize.humanizer({
   conjunction: " and ",
   largest: 4,
   round: true,
 });
 
-const LeaveOfAbsenceSchema = new Schema<
-  LeaveOfAbsence.LeaveOfAbsenceDocument,
-  LeaveOfAbsence.LeaveModel
+const ActivityNoticeSchema = new Schema<
+  UserActivityNotice.UserActivityNoticeDocument,
+  UserActivityNotice.NoticeModel
 >({
   user: {
     type: String,
@@ -35,6 +29,24 @@ const LeaveOfAbsenceSchema = new Schema<
     match: /^\d{15,22}$/,
     index: true,
     required: true,
+  },
+
+  type: {
+    type: String,
+    index: true,
+    required: true,
+    enum: ["LeaveOfAbsence", "ReducedActivity"],
+  },
+
+  quota_scale: {
+    type: Number,
+    required: false,
+    default: null,
+    set: (n: number | null) => (n === null ? null : n.toFixed(2)),
+    validate: [
+      (n: number | null) => n === null || (n >= 0.2 && n <= 0.75),
+      "Quota reduction must be between 0.2 and 0.75. Value received: {VALUE}.",
+    ],
   },
 
   reason: {
@@ -58,15 +70,15 @@ const LeaveOfAbsenceSchema = new Schema<
     default() {
       return addMilliseconds(
         this.review_date || this.request_date,
-        this.duration + (this.extension_req?.duration || 0)
+        this.duration + (this.extension_request?.duration || 0)
       );
     },
 
     validate: [
-      function (this: LeaveDocument, end_date: Date) {
+      function (this: NoticeDocument, end_date: Date) {
         return isAfter(end_date, this.review_date || this.request_date);
       },
-      "The end date must be after the review and request dates of a leave of absence. Value received: {VALUE}.",
+      "The end date must be after the review and request dates of an activity notice. Value received: {VALUE}.",
     ],
   },
 
@@ -75,11 +87,17 @@ const LeaveOfAbsenceSchema = new Schema<
     default: null,
     required: false,
     validate: [
-      function (this: LeaveDocument, date: Date) {
+      function (this: NoticeDocument, date: Date) {
         return date === null ? true : isAfter(date, this.review_date || this.request_date);
       },
-      "The early end date must be after the review and request date of a LOA. Value received: {VALUE}.",
+      "The early end date must be after the review and request date of a notice. Value received: {VALUE}.",
     ],
+  },
+
+  early_end_reason: {
+    type: String,
+    required: false,
+    default: null,
   },
 
   duration: {
@@ -99,7 +117,7 @@ const LeaveOfAbsenceSchema = new Schema<
     ],
   },
 
-  extension_req: {
+  extension_request: {
     required: false,
     default: null,
     _id: false,
@@ -210,7 +228,7 @@ const LeaveOfAbsenceSchema = new Schema<
     },
   },
 
-  end_handled: {
+  end_processed: {
     type: Boolean,
     default: false,
     required: true,
@@ -228,13 +246,13 @@ const LeaveOfAbsenceSchema = new Schema<
     default: "Pending",
     enum: ["Pending", "Approved", "Denied", "Cancelled"],
     validate: [
-      function (this: LeaveDocument, s: string) {
+      function (this: NoticeDocument, s: string) {
         if (this.review_date) {
           return s !== "Pending";
         }
         return true;
       },
-      "Invalid status. Once a LOA has been reviewed, it cannot be on pending status.",
+      "Invalid status. Once an activity notice has been reviewed, it cannot be on pending status.",
     ],
   },
 });
@@ -242,31 +260,16 @@ const LeaveOfAbsenceSchema = new Schema<
 // ---------------------------------------------------------------------------------------
 // Helpers Definitions:
 // --------------------
-LeaveOfAbsenceSchema.set("optimisticConcurrency", true);
-LeaveOfAbsenceSchema.virtual("is_over").get(function (this: LeaveDocument) {
-  return (
-    this.status === "Approved" &&
-    isBefore(
-      this.early_end_date ||
-        new Date(
-          addMilliseconds(
-            addMilliseconds(
-              this.review_date || this.request_date,
-              this.extension_req?.duration || 0
-            ),
-            this.duration
-          )
-        ),
-      new Date()
-    )
-  );
-});
-
-LeaveOfAbsenceSchema.virtual("is_approved").get(function (this: LeaveDocument) {
+ActivityNoticeSchema.set("optimisticConcurrency", true);
+ActivityNoticeSchema.virtual("is_approved").get(function (this: NoticeDocument) {
   return this.review_date && this.status === "Approved";
 });
 
-LeaveOfAbsenceSchema.virtual("is_active").get(function (this: LeaveDocument) {
+ActivityNoticeSchema.virtual("is_pending").get(function (this: NoticeDocument) {
+  return this.status === "Pending" && !this.review_date;
+});
+
+ActivityNoticeSchema.virtual("is_active").get(function (this: NoticeDocument) {
   return (
     this.review_date &&
     this.status === "Approved" &&
@@ -275,44 +278,71 @@ LeaveOfAbsenceSchema.virtual("is_active").get(function (this: LeaveDocument) {
   );
 });
 
-LeaveOfAbsenceSchema.virtual("duration_hr").get(function (this: LeaveDocument) {
+ActivityNoticeSchema.virtual("quota_reduction").get(function (this: NoticeDocument) {
+  return `${Math.round((this.quota_scale || 0) * 100)}%`;
+});
+
+ActivityNoticeSchema.virtual("duration_hr").get(function (this: NoticeDocument) {
   const MainPlusExt =
-    this.duration + (this.extension_req?.status === "Approved" ? this.extension_req.duration : 0);
+    this.duration +
+    (this.extension_request?.status === "Approved" ? this.extension_request.duration : 0);
   return this.early_end_date && this.review_date
     ? DurationHumanize(differenceInMilliseconds(this.early_end_date, this.review_date))
     : DurationHumanize(MainPlusExt);
 });
 
-LeaveOfAbsenceSchema.virtual("original_duration_hr").get(function (this: LeaveDocument) {
+ActivityNoticeSchema.virtual("original_duration_hr").get(function (this: NoticeDocument) {
   return DurationHumanize(this.duration);
 });
 
-LeaveOfAbsenceSchema.virtual("extended_duration_hr").get(function (this: LeaveDocument) {
-  if (this.extension_req) {
-    return DurationHumanize(this.extension_req.duration);
+ActivityNoticeSchema.virtual("extended_duration_hr").get(function (this: NoticeDocument) {
+  if (this.extension_request) {
+    return DurationHumanize(this.extension_request.duration);
   }
   return DurationHumanize(0);
 });
 
-LeaveOfAbsenceSchema.pre("validate", function PreLeaveValidate() {
+ActivityNoticeSchema.pre("validate", function PreLeaveValidate() {
   if (this.status === "Pending" || this.status === "Cancelled") return;
 
   this.end_date = addMilliseconds(
     this.review_date || this.request_date,
-    this.duration + (this.extension_req?.status === "Approved" ? this.extension_req.duration : 0)
+    this.duration +
+      (this.extension_request?.status === "Approved" ? this.extension_request.duration : 0)
   );
 });
 
-LeaveOfAbsenceSchema.methods.getUpToDate = async function (this: LeaveDocument) {
-  return (this.constructor as LeaveOfAbsence.LeaveModel)
+ActivityNoticeSchema.methods.is_over = function (this: NoticeDocument, now: Date = new Date()) {
+  return (
+    this.is_approved &&
+    !this.is_active &&
+    isAfter(
+      addMilliseconds(now, 250),
+      this.early_end_date ||
+        addMilliseconds(
+          addMilliseconds(
+            this.review_date || this.request_date,
+            this.extension_request?.duration || 0
+          ),
+          this.duration
+        )
+    )
+  );
+};
+
+ActivityNoticeSchema.methods.getUpToDate = async function (
+  this: NoticeDocument,
+  old_fallback: boolean = false
+) {
+  return (this.constructor as UserActivityNotice.NoticeModel)
     .findById(this._id)
     .exec()
-    .then((Doc) => Doc || this);
+    .then((Doc) => Doc || (old_fallback ? this : null));
 };
 
 // ---------------------------------------------------------------------------------------
-export default model<LeaveOfAbsence.LeaveOfAbsenceDocument, LeaveOfAbsence.LeaveModel>(
-  "LeaveOfAbsence",
-  LeaveOfAbsenceSchema,
-  "leaves"
+export default model<UserActivityNotice.UserActivityNoticeDocument, UserActivityNotice.NoticeModel>(
+  "ActivityNotice",
+  ActivityNoticeSchema,
+  "activity_notices"
 );

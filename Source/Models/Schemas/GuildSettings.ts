@@ -62,6 +62,13 @@ const GuildSettings = new Schema({
 
       shift_types: [ShiftTypeSchema],
 
+      default_quota: {
+        type: Number,
+        required: true,
+        default: 0,
+        min: 0,
+      },
+
       role_assignment: {
         _id: false,
         default: {},
@@ -95,6 +102,7 @@ const GuildSettings = new Schema({
   duty_activities: {
     _id: false,
     default: {},
+    required: true,
     type: {
       enabled: {
         type: Boolean,
@@ -149,6 +157,7 @@ const GuildSettings = new Schema({
   leave_notices: {
     _id: false,
     default: {},
+    required: true,
     type: {
       enabled: {
         type: Boolean,
@@ -171,6 +180,40 @@ const GuildSettings = new Schema({
       },
 
       leave_role: {
+        type: String,
+        default: null,
+        required: false,
+        match: SnowflakeIDValidationN1,
+      },
+    },
+  },
+
+  reduced_activity: {
+    _id: false,
+    default: {},
+    required: true,
+    type: {
+      enabled: {
+        type: Boolean,
+        default: false,
+        required: true,
+      },
+
+      requests_channel: {
+        type: String,
+        default: null,
+        required: false,
+        match: SnowflakeIDValidationN1,
+      },
+
+      log_channel: {
+        type: String,
+        default: null,
+        required: false,
+        match: SnowflakeIDValidationN1,
+      },
+
+      ra_role: {
         type: String,
         default: null,
         required: false,

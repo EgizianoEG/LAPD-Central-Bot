@@ -26,15 +26,16 @@ import {
 import { Emojis } from "@Config/Shared.js";
 import { isAfter } from "date-fns";
 import { GetErrorId } from "@Utilities/Strings/Random.js";
-import { LeaveOfAbsence, Shifts } from "@Typings/Utilities/Database.js";
+import { UserActivityNotice, Shifts } from "@Typings/Utilities/Database.js";
+import { BaseUserActivityNoticeLogger } from "@Utilities/Classes/UANEventLogger.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed, WarnEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import Dedent from "dedent";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import ShiftModel from "@Models/Shift.js";
-import LeaveModel from "@Models/LeaveOfAbsence.js";
+import LeaveModel from "@Models/UserActivityNotice.js";
 import * as Chrono from "chrono-node";
-import LOAEventLogger from "@Utilities/Classes/LOAEventLogger.js";
+
 import HumanizeDuration from "humanize-duration";
 import MentionCmdByName from "@Utilities/Other/MentionCmd.js";
 import ShiftActionLogger from "@Utilities/Classes/ShiftActionLogger.js";
@@ -44,6 +45,7 @@ import HandleActionCollectorExceptions from "@Utilities/Other/HandleCompCollecto
 // File Constants, Types, & Enums:
 // -------------------------------
 const FileLabel = "Commands:Utility:ServerDataManage";
+const BaseUANLogger = new BaseUserActivityNoticeLogger(false);
 const ListFormatter = new Intl.ListFormat("en");
 const BaseEmbedColor = "#5F9EA0";
 
@@ -938,7 +940,7 @@ async function HandleLeaveDataWipeAllConfirm(ConfirmInteract: ButtonInteraction<
   }
 
   return Promise.all([
-    LOAEventLogger.LogLOAsWipe(ConfirmInteract, DeleteResponse),
+    BaseUANLogger.LogUserActivityNoticesWipe(ConfirmInteract, DeleteResponse),
     ConfirmInteract.editReply({
       components: [],
       embeds: [
@@ -991,7 +993,7 @@ async function HandleLeaveDataDeletePastConfirm(ConfirmInteract: ButtonInteracti
   }
 
   return Promise.all([
-    LOAEventLogger.LogLOAsWipe(
+    BaseUANLogger.LogUserActivityNoticesWipe(
       ConfirmInteract,
       DeleteResponse,
       "Past Notices (Finished, Cancelled, Denied)"
@@ -1056,7 +1058,7 @@ async function HandleLeaveDataDeletePendingConfirm(ConfirmInteract: ButtonIntera
   }
 
   return Promise.all([
-    LOAEventLogger.LogLOAsWipe(ConfirmInteract, DeleteResponse, "Pending Requests"),
+    BaseUANLogger.LogUserActivityNoticesWipe(ConfirmInteract, DeleteResponse, "Pending Requests"),
     ConfirmInteract.editReply({
       components: [],
       embeds: [
@@ -1101,7 +1103,7 @@ async function HandleLeaveDataDeleteWithDateConfirm(
   ConfirmInteract: ButtonInteraction<"cached">,
   ComparisonDate: Date,
   ComparisonType: DataDeletionWithDateType,
-  QueryFilter: Mongoose.FilterQuery<LeaveOfAbsence.LeaveOfAbsenceDocument>
+  QueryFilter: Mongoose.FilterQuery<UserActivityNotice.UserActivityNoticeDocument>
 ) {
   await ConfirmInteract.update({
     embeds: [new InfoEmbed().useInfoTemplate("LRDeletionInProgress")],
@@ -1120,7 +1122,7 @@ async function HandleLeaveDataDeleteWithDateConfirm(
   });
 
   return Promise.all([
-    LOAEventLogger.LogLOAsWipe(ConfirmInteract, DeleteResponse, "N/A"),
+    BaseUANLogger.LogUserActivityNoticesWipe(ConfirmInteract, DeleteResponse, "N/A"),
     ConfirmInteract.editReply({
       components: [],
       embeds: [
@@ -1163,7 +1165,7 @@ async function HandleLeaveDataDeleteBeforeOrAfterDate(
       .replyToInteract(ModalSubmission, true, false);
   }
 
-  const MatchFilter: Mongoose.FilterQuery<LeaveOfAbsence.LeaveOfAbsenceDocument> = {
+  const MatchFilter: Mongoose.FilterQuery<UserActivityNotice.UserActivityNoticeDocument> = {
     guild: BtnInteract.guildId,
   };
 

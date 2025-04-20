@@ -1,4 +1,4 @@
-import LeaveOfAbsenceModel from "@Models/LeaveOfAbsence.js";
+import UserActivityNoticeModel from "@Models/UserActivityNotice.js";
 import GuildProfileModel from "@Models/GuildProfile.js";
 import MemberRolesModel from "@Models/MemberRoles.js";
 import ShiftModel from "@Models/Shift.js";
@@ -13,9 +13,9 @@ export default async function DeleteAssociatedGuildData(GuildIDs: string | strin
   GuildIDs = Array.isArray(GuildIDs) ? GuildIDs : [GuildIDs];
   const QueryFilter = { guild: { $in: GuildIDs } };
   return Promise.all([
-    ShiftModel.deleteMany(QueryFilter),
-    LeaveOfAbsenceModel.deleteMany(QueryFilter),
+    UserActivityNoticeModel.deleteMany(QueryFilter),
     GuildProfileModel.deleteMany(QueryFilter),
     MemberRolesModel.deleteMany(QueryFilter),
+    ShiftModel.deleteMany(QueryFilter),
   ]);
 }

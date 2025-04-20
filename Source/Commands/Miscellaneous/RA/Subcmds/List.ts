@@ -5,14 +5,14 @@ import UANListCmdCallback from "@Utilities/Other/UANsListCmdCallback.js";
 // ------------------
 const CommandObject = {
   callback: async (Interaction: SlashCommandInteraction<"cached">) =>
-    UANListCmdCallback(Interaction, "LeaveOfAbsence"),
+    UANListCmdCallback(Interaction, "ReducedActivity"),
   data: new SlashCommandSubcommandBuilder()
     .setName("list")
-    .setDescription("Displays the server's leave of absence records with a specified status.")
+    .setDescription("Lists reduced activity records.")
     .addStringOption((Option) =>
       Option.setName("status")
         .setDescription(
-          "The status of the LOA records to be displayed, either active or pending; defaults to “Active.”"
+          "The status of the RA records to be displayed, either active or pending; defaults to active."
         )
         .setChoices({ name: "Active", value: "Active" }, { name: "Pending", value: "Pending" })
         .setRequired(false)

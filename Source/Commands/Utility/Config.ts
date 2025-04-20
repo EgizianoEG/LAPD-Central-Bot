@@ -1,4 +1,5 @@
 /* eslint-disable sonarjs/no-duplicate-string */
+/* eslint-disable sonarjs/use-type-alias */
 import {
   Message,
   ButtonStyle,
@@ -35,7 +36,9 @@ import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmb
 
 import HandleActionCollectorExceptions from "@Utilities/Other/HandleCompCollectorExceptions.js";
 import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
+import ParseDuration from "parse-duration";
 import GuildModel from "@Models/Guild.js";
+import DHumanize from "humanize-duration";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import Dedent from "dedent";
 
@@ -44,6 +47,11 @@ const ListFormatter = new Intl.ListFormat("en");
 const MillisInDay = milliseconds({ days: 1 });
 const BaseEmbedColor = "#5f9ea0";
 const FileLabel = "Commands:Utility:Config";
+const FormatDuration = DHumanize.humanizer({
+  conjunction: " and ",
+  largest: 3,
+  round: true,
+});
 
 type GuildSettings = NonNullable<Awaited<ReturnType<typeof GetGuildSettings>>>;
 enum ConfigTopics {
@@ -53,6 +61,7 @@ enum ConfigTopics {
   LeaveConfiguration = "app-config-loa",
   DutyActConfiguration = "app-config-da",
   AdditionalConfiguration = "app-config-ac",
+  ReducedActivityConfiguration = "app-config-ra",
 }
 
 /**
@@ -90,8 +99,16 @@ const CTAIds = {
   },
 
   [ConfigTopics.AdditionalConfiguration]: {
+    ServerDefaultShiftQuota: `${ConfigTopics.AdditionalConfiguration}-darq`,
     DActivitiesDeletionInterval: `${ConfigTopics.AdditionalConfiguration}-dadi`,
     UserTextInputFilteringEnabled: `${ConfigTopics.AdditionalConfiguration}-utfe`,
+  },
+
+  [ConfigTopics.ReducedActivityConfiguration]: {
+    ModuleEnabled: `${ConfigTopics.ReducedActivityConfiguration}-me`,
+    RequestsChannel: `${ConfigTopics.ReducedActivityConfiguration}-rc`,
+    LogChannel: `${ConfigTopics.ReducedActivityConfiguration}-lc`,
+    RARole: `${ConfigTopics.ReducedActivityConfiguration}-rar`,
   },
 };
 
@@ -150,6 +167,10 @@ function GetConfigTopicsDropdownMenu(CmdInteract: SlashCommandInteraction<"cache
           .setLabel("Leave of Absence Module Configuration")
           .setDescription("Set on-leave role, requests channel, and more.")
           .setValue(ConfigTopics.LeaveConfiguration),
+        new StringSelectMenuOptionBuilder()
+          .setLabel("Reduced Activity Module Configuration")
+          .setDescription("Set reduced activity role, requests channel, and more.")
+          .setValue(ConfigTopics.ReducedActivityConfiguration),
         new StringSelectMenuOptionBuilder()
           .setLabel("Duty Activities Module Configuration")
           .setDescription("Set arrest, citation, and incident log channels and more.")
@@ -498,13 +519,95 @@ function GetAdditionalConfigComponents(
       )
   );
 
+  const SetDefaultShiftQuotaAR = new ActionRowBuilder<ButtonBuilder>().setComponents(
+    new ButtonBuilder()
+      .setLabel("Set Default Shift Quota")
+      .setStyle(ButtonStyle.Secondary)
+      .setCustomId(
+        `${CTAIds[ConfigTopics.AdditionalConfiguration].ServerDefaultShiftQuota}:${CmdInteract.user.id}`
+      )
+  );
+
   LogDelIntervalSMAR.components[0].options.forEach((Option) => {
     if (Option.data.value === `${SetIntervalInDays}d`) {
       Option.setDefault(true);
     }
   });
 
-  return [LogDelIntervalSMAR, IncidentLogChannelAR, UTIFilteringEnabledAR] as const;
+  return [
+    LogDelIntervalSMAR,
+    IncidentLogChannelAR,
+    UTIFilteringEnabledAR,
+    SetDefaultShiftQuotaAR,
+  ] as const;
+}
+
+function GetReducedActivityModuleConfigComponents(
+  CmdInteract: SlashCommandInteraction<"cached">,
+  ReducedActivityConfig: GuildSettings["reduced_activity"]
+) {
+  const ModuleEnabledAR = new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(
+    new StringSelectMenuBuilder()
+      .setPlaceholder("Module Enabled/Disabled")
+      .setMinValues(1)
+      .setMaxValues(1)
+      .setCustomId(
+        `${CTAIds[ConfigTopics.ReducedActivityConfiguration].ModuleEnabled}:${CmdInteract.user.id}`
+      )
+      .setOptions(
+        new StringSelectMenuOptionBuilder()
+          .setLabel("Enabled")
+          .setValue("true")
+          .setDescription("Allow the usage of reduced activity commands.")
+          .setDefault(ReducedActivityConfig.enabled),
+        new StringSelectMenuOptionBuilder()
+          .setLabel("Disabled")
+          .setValue("false")
+          .setDescription("Prevent the usage of reduced activity commands.")
+          .setDefault(!ReducedActivityConfig.enabled)
+      )
+  );
+
+  const RARoleAR = new ActionRowBuilder<RoleSelectMenuBuilder>().setComponents(
+    new RoleSelectMenuBuilder()
+      .setCustomId(
+        `${CTAIds[ConfigTopics.ReducedActivityConfiguration].RARole}:${CmdInteract.user.id}`
+      )
+      .setDefaultRoles(ReducedActivityConfig.ra_role ? [ReducedActivityConfig.ra_role] : [])
+      .setPlaceholder("Reduced Activity Role")
+      .setMinValues(0)
+      .setMaxValues(1)
+  );
+
+  const RequestsChannelAR = new ActionRowBuilder<ChannelSelectMenuBuilder>().setComponents(
+    new ChannelSelectMenuBuilder()
+      .setMinValues(0)
+      .setMaxValues(1)
+      .setPlaceholder("Requests Channel")
+      .setChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+      .setCustomId(
+        `${CTAIds[ConfigTopics.ReducedActivityConfiguration].RequestsChannel}:${CmdInteract.user.id}`
+      )
+      .setDefaultChannels(
+        ReducedActivityConfig.requests_channel ? [ReducedActivityConfig.requests_channel] : []
+      )
+  );
+
+  const LogChannelAR = new ActionRowBuilder<ChannelSelectMenuBuilder>().setComponents(
+    new ChannelSelectMenuBuilder()
+      .setMinValues(0)
+      .setMaxValues(1)
+      .setPlaceholder("Log Channel")
+      .setChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+      .setCustomId(
+        `${CTAIds[ConfigTopics.ReducedActivityConfiguration].LogChannel}:${CmdInteract.user.id}`
+      )
+      .setDefaultChannels(
+        ReducedActivityConfig.log_channel ? [ReducedActivityConfig.log_channel] : []
+      )
+  );
+
+  return [ModuleEnabledAR, RARoleAR, RequestsChannelAR, LogChannelAR] as const;
 }
 
 function GetShowConfigurationsPageComponents(CmdInteract: SlashCommandInteraction<"cached">) {
@@ -566,13 +669,13 @@ function GetLeaveModuleConfigExplanationEmbed() {
     .setDescription(
       Dedent(`
         1. **Module Enabled**
-          Whether to allow the usage of leave of absence commands or not, with certain exceptions included.
-        2. **On Leave Role**
+          Whether to allow the usage of leave of absence commands or not.
+        2. **Leave Status Role**
           The role that will be assigned to members when their leave of absence starts, and will be removed when their leave ends.
         3. **Leave Requests Channel**
           The channel used to send leave requests submitted by members. Setting this channel is optional, but if not set, management \
           staff will need to use the \`loa admin\` command to review members' pending requests.
-        4. **Leave Logs Channel**
+        4. **Activity Log Channel**
           A separate channel used to log various activities in the leave of absence module, including leave approvals, denials, cancellations, and terminations.
       `)
         .replace(/\.\s{2,}(\w)/g, ". $1")
@@ -620,6 +723,24 @@ function GetAdditionalConfigExplanationEmbed() {
       `)
         .replace(/\.\s{2,}(\w)/g, ". $1")
         .replace(/(\w)\s{2,}(\w)/g, "$1 $2")
+    );
+}
+
+function GetReducedActivityModuleConfigExplanationEmbed() {
+  return new EmbedBuilder()
+    .setColor(BaseEmbedColor)
+    .setTitle("Reduced Activity Module Configuration")
+    .setDescription(
+      Dedent(`
+        1. **Module Status**
+          Controls whether reduced activity features are available.
+        2. **RA Status Role**
+          This role will be automatically applied when reduced activity begins and removed when it concludes.
+        3. **Request Submission Channel**
+          Designated channel for member reduced activity notices. If not configured, staff must process requests via the \`ra admin\` command.
+        4. **Activity Log Channel**
+          Records all reduced activity transactions including approvals, rejections, cancellations, and early terminations.
+      `)
     );
 }
 
@@ -711,6 +832,45 @@ async function HandleOutsideLogChannelBtnInteracts(
   } else {
     return CurrLogChannel;
   }
+}
+
+async function HandleDefaultShiftQuotaBtnInteract(
+  BtnInteract: ButtonInteraction<"cached">,
+  CurrentQuota: number
+): Promise<number> {
+  const InputModal = new ModalBuilder()
+    .setTitle("Default Shift Quota Duration")
+    .setCustomId(CTAIds[ConfigTopics.AdditionalConfiguration].ServerDefaultShiftQuota)
+    .setComponents(
+      new ActionRowBuilder<ModalActionRowComponentBuilder>().setComponents(
+        new TextInputBuilder()
+          .setLabel("Default Quota")
+          .setPlaceholder("ex., 2h, 30m (Keep blank for none)")
+          .setCustomId("default_quota")
+          .setStyle(TextInputStyle.Short)
+          .setRequired(false)
+          .setMinLength(2)
+          .setMaxLength(20)
+      )
+    );
+
+  if (CurrentQuota) {
+    const FormattedDuration = FormatDuration(CurrentQuota);
+    InputModal.components[0].components[0].setValue(FormattedDuration);
+  }
+
+  await BtnInteract.showModal(InputModal);
+  const ModalSubmission = await BtnInteract.awaitModalSubmit({
+    filter: (MS) => InputModal.data.custom_id === MS.customId,
+    time: 8 * 60 * 1000,
+  }).catch(() => null);
+
+  if (!ModalSubmission) return CurrentQuota;
+  else ModalSubmission.deferUpdate().catch(() => null);
+
+  const InputDuration = ModalSubmission.fields.getTextInputValue("default_quota").trim();
+  const ParsedDuration = ParseDuration(InputDuration, "millisecond");
+  return Math.round(ParsedDuration ?? 0);
 }
 
 async function HandleBasicConfigPageInteracts(
@@ -841,6 +1001,7 @@ async function HandleAdditionalConfigPageInteracts(
 ) {
   let LogDeletionInterval = CurrConfiguration.duty_activities.log_deletion_interval;
   let IncidentLogChannel = CurrConfiguration.duty_activities.log_channels.incidents;
+  let DefaultShiftQuota = CurrConfiguration.shift_management.default_quota;
   let UTIFEnabled = CurrConfiguration.utif_enabled;
 
   const BCCompActionCollector = AddConfigPrompt.createMessageComponentCollector<
@@ -854,6 +1015,7 @@ async function HandleAdditionalConfigPageInteracts(
     if (
       CurrConfiguration.duty_activities.log_deletion_interval === LogDeletionInterval &&
       CurrConfiguration.duty_activities.log_channels.incidents === IncidentLogChannel &&
+      CurrConfiguration.shift_management.default_quota === DefaultShiftQuota &&
       CurrConfiguration.utif_enabled === UTIFEnabled
     ) {
       return new InfoEmbed()
@@ -870,6 +1032,7 @@ async function HandleAdditionalConfigPageInteracts(
         $set: {
           "settings.duty_activities.log_deletion_interval": LogDeletionInterval,
           "settings.duty_activities.log_channels.incidents": IncidentLogChannel,
+          "settings.shift_management.default_quota": DefaultShiftQuota,
           "settings.utif_enabled": UTIFEnabled,
         },
       },
@@ -885,6 +1048,7 @@ async function HandleAdditionalConfigPageInteracts(
     ).then((GuildDoc) => GuildDoc?.settings);
 
     if (CurrConfiguration) {
+      const DefaultQuota = CurrConfiguration.shift_management.default_quota;
       const LDIFormatted = GetHumanReadableLogDeletionInterval(
         CurrConfiguration.duty_activities.log_deletion_interval
       );
@@ -899,6 +1063,7 @@ async function HandleAdditionalConfigPageInteracts(
         - **Log Deletion Interval:** ${LDIFormatted}
         - **Incidents Log Channel:** ${ILSetChannel}
         - **Input Filtering Enabled:** ${CurrConfiguration.utif_enabled ? "Yes" : "No"}
+        - **Server Default Shift Quota:** ${DefaultQuota ? FormatDuration(DefaultQuota) : "None"}
       `);
 
       return new SuccessEmbed().setDescription(FormattedDesc).replyToInteract(ButtonInteract);
@@ -916,6 +1081,15 @@ async function HandleAdditionalConfigPageInteracts(
           BCCompActionCollector.stop("Back");
           await RecInteract.deferUpdate();
           return Callback(CmdInteract);
+        } else if (
+          RecInteract.customId.startsWith(
+            CTAIds[ConfigTopics.AdditionalConfiguration].ServerDefaultShiftQuota
+          )
+        ) {
+          DefaultShiftQuota = await HandleDefaultShiftQuotaBtnInteract(
+            RecInteract,
+            DefaultShiftQuota
+          );
         }
       } else {
         if (
@@ -1452,6 +1626,151 @@ async function HandleDutyActivitiesConfigPageInteracts(
   });
 }
 
+async function HandleReducedActivityConfigPageInteracts(
+  CmdInteract: SlashCommandInteraction<"cached">,
+  ConfigPrompt: Message<true> | InteractionResponse<true>,
+  RACurrConfiguration: GuildSettings["reduced_activity"]
+) {
+  let ModuleEnabled = RACurrConfiguration.enabled;
+  let RARole = RACurrConfiguration.ra_role;
+  let LogChannel = RACurrConfiguration.log_channel;
+  let RequestsChannel = RACurrConfiguration.requests_channel;
+
+  const RACompActionCollector = ConfigPrompt.createMessageComponentCollector<
+    | ComponentType.Button
+    | ComponentType.ChannelSelect
+    | ComponentType.StringSelect
+    | ComponentType.RoleSelect
+  >({
+    filter: (Interact) => Interact.user.id === CmdInteract.user.id,
+    time: 10 * 60 * 1000,
+  });
+
+  const HandleSettingsSave = async (ButtonInteract: ButtonInteraction<"cached">) => {
+    if (
+      RACurrConfiguration.enabled === ModuleEnabled &&
+      RACurrConfiguration.ra_role === RARole &&
+      RACurrConfiguration.log_channel === LogChannel &&
+      RACurrConfiguration.requests_channel === RequestsChannel
+    ) {
+      return new InfoEmbed()
+        .useInfoTemplate("ConfigTopicNoChangesMade", "reduced activity")
+        .replyToInteract(ButtonInteract, true);
+    }
+
+    if (!ButtonInteract.deferred)
+      await ButtonInteract.deferReply({ flags: MessageFlags.Ephemeral });
+
+    RACurrConfiguration = await GuildModel.findByIdAndUpdate(
+      CmdInteract.guildId,
+      {
+        $set: {
+          "settings.reduced_activity.enabled": ModuleEnabled,
+          "settings.reduced_activity.ra_role": RARole,
+          "settings.reduced_activity.log_channel": LogChannel,
+          "settings.reduced_activity.requests_channel": RequestsChannel,
+        },
+      },
+      {
+        new: true,
+        upsert: true,
+        strict: true,
+        runValidators: true,
+        projection: {
+          settings: 1,
+        },
+      }
+    ).then((GuildDoc) => GuildDoc?.settings.reduced_activity);
+
+    if (RACurrConfiguration) {
+      const SetRARole = RACurrConfiguration.ra_role
+        ? roleMention(RACurrConfiguration.ra_role)
+        : "`None`";
+      const SetLogChannel = RACurrConfiguration.log_channel
+        ? channelMention(RACurrConfiguration.log_channel)
+        : "`None`";
+      const SetRequestsChannel = RACurrConfiguration.requests_channel
+        ? channelMention(RACurrConfiguration.requests_channel)
+        : "`None`";
+
+      const FormattedDesc = Dedent(`
+        Successfully set/updated the app's reduced activity module configuration.
+        Current Configuration:
+        - **Module Enabled:** ${RACurrConfiguration.enabled ? "Yes" : "No"}
+        - **Reduced Activity Role:** ${SetRARole}
+        - **Requests Channel:** ${SetRequestsChannel}
+        - **Log Channel:** ${SetLogChannel}
+      `);
+
+      return new SuccessEmbed().setDescription(FormattedDesc).replyToInteract(ButtonInteract);
+    } else {
+      return new ErrorEmbed().useErrTemplate("AppError").replyToInteract(ButtonInteract);
+    }
+  };
+
+  RACompActionCollector.on("collect", async (RecInteract) => {
+    const ActionId = RecInteract.customId;
+    try {
+      if (!RecInteract.isButton()) RecInteract.deferUpdate().catch(() => null);
+      if (
+        RecInteract.isButton() &&
+        ActionId.startsWith(`${ConfigTopics.ReducedActivityConfiguration}-cfm`)
+      ) {
+        await HandleSettingsSave(RecInteract);
+      } else if (
+        RecInteract.isButton() &&
+        ActionId.startsWith(`${ConfigTopics.ReducedActivityConfiguration}-bck`)
+      ) {
+        RACompActionCollector.stop("Back");
+        await RecInteract.deferUpdate();
+        return Callback(CmdInteract);
+      } else if (
+        RecInteract.isStringSelectMenu() &&
+        ActionId.startsWith(CTAIds[ConfigTopics.ReducedActivityConfiguration].ModuleEnabled)
+      ) {
+        ModuleEnabled = RecInteract.values[0] === "true";
+      } else if (RecInteract.isChannelSelectMenu()) {
+        if (ActionId.startsWith(CTAIds[ConfigTopics.ReducedActivityConfiguration].LogChannel)) {
+          LogChannel = RecInteract.values[0] || null;
+        } else if (
+          ActionId.startsWith(CTAIds[ConfigTopics.ReducedActivityConfiguration].RequestsChannel)
+        ) {
+          RequestsChannel = RecInteract.values[0] || null;
+        }
+      } else if (
+        RecInteract.isRoleSelectMenu() &&
+        ActionId.startsWith(CTAIds[ConfigTopics.ReducedActivityConfiguration].RARole)
+      ) {
+        RARole = RecInteract.values[0] || null;
+      }
+    } catch (Err: any) {
+      const ErrorId = GetErrorId();
+      new ErrorEmbed()
+        .useErrTemplate("AppError")
+        .setErrorId(ErrorId)
+        .replyToInteract(RecInteract, true);
+
+      AppLogger.error({
+        message: "Failed to handle component interactions for reduced activity configuration;",
+        error_id: ErrorId,
+        label: FileLabel,
+        stack: Err.stack,
+      });
+    }
+  });
+
+  RACompActionCollector.on("end", async (Collected, EndReason) => {
+    if (EndReason.includes("time") || EndReason.includes("idle")) {
+      const LastInteract = Collected.last() || CmdInteract;
+      if (!(await ConfigPrompt.fetch(true).catch(() => null))) return;
+      return new InfoEmbed()
+        .useInfoTemplate("TimedOutConfigPrompt")
+        .setTitle("Timed Out - Reduced Activity Module Configuration")
+        .replyToInteract(LastInteract);
+    }
+  });
+}
+
 async function HandleConfigShowPageInteracts(
   CmdInteract: SlashCommandInteraction<"cached">,
   ConfigPrompt: Message<true> | InteractionResponse<true>
@@ -1625,6 +1944,40 @@ async function HandleLeaveModuleSelection(
   }
 }
 
+async function HandleReducedActivityModuleSelection(
+  SelectInteract: StringSelectMenuInteraction<"cached">,
+  CmdInteract: SlashCommandInteraction<"cached">
+) {
+  const GuildConfig = await GetGuildSettings(CmdInteract.guildId);
+
+  if (GuildConfig) {
+    const ExplanationEmbed = GetReducedActivityModuleConfigExplanationEmbed();
+    const ModulePageComps = GetReducedActivityModuleConfigComponents(
+      CmdInteract,
+      GuildConfig.reduced_activity
+    );
+    const ConfirmBackBtns = GetConfigTopicConfirmAndBackBtns(
+      CmdInteract,
+      ConfigTopics.ReducedActivityConfiguration
+    );
+
+    const ConfigPrompt = await SelectInteract.update({
+      components: [...ModulePageComps, ConfirmBackBtns],
+      embeds: [ExplanationEmbed],
+    });
+
+    return HandleReducedActivityConfigPageInteracts(
+      CmdInteract,
+      ConfigPrompt,
+      GuildConfig.reduced_activity
+    );
+  } else {
+    return new ErrorEmbed()
+      .useErrTemplate("GuildConfigNotFound")
+      .replyToInteract(SelectInteract, true);
+  }
+}
+
 async function HandleConfigShowSelection(
   SelectInteract: StringSelectMenuInteraction<"cached">,
   CmdInteract: SlashCommandInteraction<"cached">
@@ -1699,6 +2052,13 @@ async function HandleConfigShowSelection(
     **Leave Log Channel:** ${GuildSettings.leave_notices.log_channel ? channelMention(GuildSettings.leave_notices.log_channel) : "None"}
   `);
 
+  const ReducedActivityModuleFieldDesc = Dedent(`
+    >>> **Module Enabled:** ${GuildSettings.reduced_activity.enabled ? "Yes" : "No"}
+    **Reduced Activity Role:** ${GuildSettings.reduced_activity.ra_role ? roleMention(GuildSettings.reduced_activity.ra_role) : "None"}
+    **Requests Channel:** ${GuildSettings.reduced_activity.requests_channel ? channelMention(GuildSettings.reduced_activity.requests_channel) : "None"}
+    **Log Channel:** ${GuildSettings.reduced_activity.log_channel ? channelMention(GuildSettings.reduced_activity.log_channel) : "None"}
+  `);
+
   const ResponseEmbed = new EmbedBuilder()
     .setTitle("Current App Configuration")
     .setFooter({ text: "Showing configuration as of" })
@@ -1716,6 +2076,10 @@ async function HandleConfigShowSelection(
       {
         name: "**Leave Notices Module**",
         value: LeaveNoticesModuleFieldDesc,
+      },
+      {
+        name: "**Reduced Activity Module**",
+        value: ReducedActivityModuleFieldDesc,
       },
       {
         name: "**Duty Activities Module**",
@@ -1763,6 +2127,8 @@ async function HandleInitialRespActions(
         return HandleLeaveModuleSelection(TopicSelectInteract, CmdInteract);
       } else if (SelectedConfigTopic === ConfigTopics.AdditionalConfiguration) {
         return HandleAdditionalConfigSelection(TopicSelectInteract, CmdInteract);
+      } else if (SelectedConfigTopic === ConfigTopics.ReducedActivityConfiguration) {
+        return HandleReducedActivityModuleSelection(TopicSelectInteract, CmdInteract);
       } else {
         return new ErrorEmbed()
           .useErrTemplate("UnknownConfigTopic")
