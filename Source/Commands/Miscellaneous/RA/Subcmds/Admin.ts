@@ -21,13 +21,14 @@ import { HandleLeaveReviewValidation } from "@Cmds/Miscellaneous/LOA/Subcmds/Adm
 import { ReducedActivityEventLogger } from "@Utilities/Classes/UANEventLogger.js";
 import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { Embeds, Emojis } from "@Config/Shared.js";
-import { RandomString } from "@Utilities/Strings/Random.js";
+import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import HandleUserActivityNoticeRoleAssignment from "@Utilities/Other/HandleUANRoleAssignment.js";
 import GetDiscordAPITime from "@Utilities/Other/GetDiscordAPITime.js";
 import GetUANData from "@Utilities/Database/GetUANData.js";
 import Dedent from "dedent";
+import AppLogger from "@Utilities/Classes/AppLogger.js";
 
 const PreviousRALimit = 5;
 const RAEventLogger = new ReducedActivityEventLogger();
@@ -84,16 +85,9 @@ function GetAdminPromptEmbed(
   NoticesData: Awaited<ReturnType<typeof GetUANData>>
 ) {
   const ActiveOrPendingRA = NoticesData.active_notice || NoticesData.pending_notice;
-  const PreviousRAsFormatted = NoticesData.notice_history
-    .filter((RA) => {
-      return (
-        RA.status === "Approved" && (RA.early_end_date ?? RA.end_date) <= Interaction.createdAt
-      );
-    })
-    .sort((a, b) => b.end_date.getTime() - a.end_date.getTime())
-    .map((RA) => {
-      return `${FormatTime(RA.review_date!, "D")} — ${FormatTime(RA.early_end_date ?? RA.end_date, "D")}`;
-    });
+  const PreviousRAsFormatted = NoticesData.completed_notices.map((RA) => {
+    return `${FormatTime(RA.review_date!, "D")} — ${FormatTime(RA.early_end_date ?? RA.end_date, "D")}`;
+  });
 
   const PromptEmbed = new EmbedBuilder()
     .setTitle("Reduced Activity Administration")
@@ -265,9 +259,9 @@ async function HandleEarlyTermination(
   RefreshedActiveRA.end_processed = true;
   RefreshedActiveRA.early_end_date = NotesSubmission.createdAt;
   RefreshedActiveRA.early_end_reason = ReviewerNotes;
+  await RefreshedActiveRA.save();
 
   await Promise.all([
-    RefreshedActiveRA.save(),
     RAEventLogger.LogEarlyUANEnd(NotesSubmission, RefreshedActiveRA, "Management"),
     NotesSubmission.editReply({ embeds: [ReplyEmbed] }),
     HandleUserActivityNoticeRoleAssignment(
@@ -322,26 +316,41 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   CompCollector.on("collect", async (ButtonInteract) => {
     let UpdateActionCompleted: boolean = false;
 
-    if (ButtonInteract.customId.includes(AdminActions.RAApprove)) {
-      UpdateActionCompleted = await HandleApprovalOrDenial(
-        ButtonInteract,
-        ActiveOrPendingRA,
-        "Approval"
-      );
-    } else if (ButtonInteract.customId.includes(AdminActions.RADeny)) {
-      UpdateActionCompleted = await HandleApprovalOrDenial(
-        ButtonInteract,
-        ActiveOrPendingRA,
-        "Denial"
-      );
-    } else if (ButtonInteract.customId.includes(AdminActions.RAEnd)) {
-      UpdateActionCompleted = await HandleEarlyTermination(ButtonInteract, ActiveOrPendingRA);
-    } else {
-      ButtonInteract.deferUpdate().catch(() => null);
-    }
+    try {
+      if (ButtonInteract.customId.includes(AdminActions.RAApprove)) {
+        UpdateActionCompleted = await HandleApprovalOrDenial(
+          ButtonInteract,
+          ActiveOrPendingRA,
+          "Approval"
+        );
+      } else if (ButtonInteract.customId.includes(AdminActions.RADeny)) {
+        UpdateActionCompleted = await HandleApprovalOrDenial(
+          ButtonInteract,
+          ActiveOrPendingRA,
+          "Denial"
+        );
+      } else if (ButtonInteract.customId.includes(AdminActions.RAEnd)) {
+        UpdateActionCompleted = await HandleEarlyTermination(ButtonInteract, ActiveOrPendingRA);
+      } else {
+        ButtonInteract.deferUpdate().catch(() => null);
+      }
 
-    if (UpdateActionCompleted) {
-      CompCollector.stop("CmdReinstated");
+      if (UpdateActionCompleted) {
+        CompCollector.stop("CmdReinstated");
+      }
+    } catch (Err: any) {
+      const ErrorId = GetErrorId();
+      AppLogger.error({
+        message: "An error occurred while handling LOA admin button interaction;",
+        label: "Commands:Miscellaneous:RA:Subcmds:Admin",
+        error_id: ErrorId,
+        stack: Err.stack,
+      });
+
+      return new ErrorEmbed()
+        .useErrTemplate("AppError")
+        .setErrorId(ErrorId)
+        .replyToInteract(ButtonInteract, true, true, "followUp");
     }
   });
 
