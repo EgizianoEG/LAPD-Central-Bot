@@ -1,10 +1,4 @@
-import {
-  isAfter,
-  isBefore,
-  milliseconds,
-  addMilliseconds,
-  differenceInMilliseconds,
-} from "date-fns";
+import { isAfter, milliseconds, addMilliseconds, differenceInMilliseconds } from "date-fns";
 
 import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { Schema, model } from "mongoose";
@@ -267,23 +261,6 @@ const ActivityNoticeSchema = new Schema<
 // Helpers Definitions:
 // --------------------
 ActivityNoticeSchema.set("optimisticConcurrency", true);
-ActivityNoticeSchema.virtual("is_over").get(function (this: NoticeDocument) {
-  return (
-    this.status === "Approved" &&
-    isBefore(
-      this.early_end_date ||
-        addMilliseconds(
-          addMilliseconds(
-            this.review_date || this.request_date,
-            this.extension_request?.duration || 0
-          ),
-          this.duration
-        ),
-      new Date()
-    )
-  );
-});
-
 ActivityNoticeSchema.virtual("is_approved").get(function (this: NoticeDocument) {
   return this.review_date && this.status === "Approved";
 });
@@ -334,6 +311,24 @@ ActivityNoticeSchema.pre("validate", function PreLeaveValidate() {
       (this.extension_request?.status === "Approved" ? this.extension_request.duration : 0)
   );
 });
+
+ActivityNoticeSchema.methods.is_over = function (this: NoticeDocument, now: Date = new Date()) {
+  return (
+    this.is_approved &&
+    !this.is_active &&
+    isAfter(
+      addMilliseconds(now, 250),
+      this.early_end_date ||
+        addMilliseconds(
+          addMilliseconds(
+            this.review_date || this.request_date,
+            this.extension_request?.duration || 0
+          ),
+          this.duration
+        )
+    )
+  );
+};
 
 ActivityNoticeSchema.methods.getUpToDate = async function (
   this: NoticeDocument,

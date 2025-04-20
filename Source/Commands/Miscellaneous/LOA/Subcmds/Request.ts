@@ -113,7 +113,7 @@ export async function HasRecentlyEndedDeniedCancelledUAN(
       .replyToInteract(Interaction, true)
       .then(() => true);
   } else if (
-    MostRecentUANotice.is_over &&
+    MostRecentUANotice.is_over() &&
     differenceInHours(
       Interaction.createdAt,
       MostRecentUANotice.early_end_date || MostRecentUANotice.end_date

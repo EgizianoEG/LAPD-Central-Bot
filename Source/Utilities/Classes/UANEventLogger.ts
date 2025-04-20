@@ -614,7 +614,7 @@ export class BaseUserActivityNoticeLogger {
    * @returns A Promise resolving after the log is completed.
    */
   async LogActivityNoticeEnd(Client: DiscordClient, NoticeDocument: UserActivityNoticeDoc) {
-    if (!NoticeDocument.is_approved || !NoticeDocument.is_over) {
+    if (!NoticeDocument.is_approved || !NoticeDocument.is_over()) {
       return;
     }
 

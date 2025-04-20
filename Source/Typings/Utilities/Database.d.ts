@@ -509,6 +509,14 @@ export namespace UserActivityNotice {
 
   interface DocumentMethods {
     /**
+     * Indicates whether the activity notice has ended.
+     * This is determined based on the current date, the `end_date`, and the `status` fields.
+     * @param [now=new Date()] - The current date to check against. Defaults to the current date.
+     * @alternative `is_over` virtual.
+     */
+    is_over(now: Date = new Date()): boolean;
+
+    /**
      * Fetches the latest version of the activity notice document from the database.
      * This ensures that the document reflects the most up-to-date state.
      * @param [old_fallback=false] - If `true`, returns the old document if the latest version is not found. Defaults to `false`.
@@ -537,13 +545,6 @@ export namespace UserActivityNotice {
      * This is determined based on the `status` field being set to `"Pending"` and the absence of a `review_date`.
      */
     is_pending: boolean;
-
-    /**
-     * @virtual - Not stored in the database.
-     * Indicates whether the activity notice has ended.
-     * This is determined based on the current date, the `end_date`, and the `status` fields.
-     */
-    is_over: boolean;
 
     /**
      * @virtual - Not stored in the database.
