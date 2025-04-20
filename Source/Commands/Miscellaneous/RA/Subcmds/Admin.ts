@@ -21,6 +21,7 @@ import { HandleLeaveReviewValidation } from "@Cmds/Miscellaneous/LOA/Subcmds/Adm
 import { ReducedActivityEventLogger } from "@Utilities/Classes/UANEventLogger.js";
 import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
 import { UserActivityNotice } from "@Typings/Utilities/Database.js";
+import { addMilliseconds } from "date-fns";
 import { Embeds, Emojis } from "@Config/Shared.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
@@ -111,7 +112,7 @@ function GetAdminPromptEmbed(
       value: Dedent(`
         **Requested:** ${FormatTime(ActiveOrPendingRA.request_date, "R")}
         **Starts On:** *once approved.*
-        **Ends On:** around ${FormatTime(new Date(ActiveOrPendingRA.request_date.getTime() + ActiveOrPendingRA.duration), "D")}
+        **Ends On:** around ${FormatTime(addMilliseconds(Interaction.createdAt, ActiveOrPendingRA.duration), "D")}
         **Quota Reduction:** ~${ActiveOrPendingRA.quota_reduction}
         **Reason:** ${ActiveOrPendingRA.reason}
       `),
