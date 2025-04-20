@@ -6,7 +6,7 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction) 
     .setColor(Embeds.Colors.Info)
     .setTitle("Help and Information")
     .setDescription(
-      "For more information and assistance with LAPD Central, please visit our [documentation site](https://lapd-central-bot.gitbook.io/documentation)."
+      "For more information and assistance with LAPD Central, please visit our [documentation site](https://lapd-central-app.gitbook.io/documentation)."
     );
 
   return Interaction.reply({
