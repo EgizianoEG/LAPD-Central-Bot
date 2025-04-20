@@ -417,6 +417,12 @@ export const ErrorMessages = {
       "There was no save found with the provided identifier for the selected user/member.",
   },
 
+  NoAssignableRolesToLoad: {
+    Title: "No Assignable Roles",
+    Description:
+      "No roles could be assigned from the save. They may be managed, admin-only, or above the bot's highest role.",
+  },
+
   /**
    * Roles save not found for a selected member
    */

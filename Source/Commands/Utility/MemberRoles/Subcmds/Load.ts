@@ -1,9 +1,17 @@
 // Dependencies:
 // -------------
 
-import { Colors, channelLink, EmbedBuilder, SlashCommandSubcommandBuilder } from "discord.js";
-import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import {
+  Role,
+  Colors,
+  channelLink,
+  EmbedBuilder,
+  PermissionFlagsBits,
+  SlashCommandSubcommandBuilder,
+} from "discord.js";
+
 import { Emojis } from "@Config/Shared.js";
+import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import MSRolesModel from "@Models/MemberRoles.js";
 import Dedent from "dedent";
 
@@ -19,13 +27,9 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
     return new ErrorEmbed()
       .useErrTemplate("MemberNotFound")
       .replyToInteract(CmdInteraction, true, false);
-  } else if (Save && Save.member !== SelectedMember.id) {
+  } else if (!Save || (Save && Save.member !== SelectedMember.id)) {
     return new ErrorEmbed()
       .useErrTemplate("RolesSaveNotFoundFSM")
-      .replyToInteract(CmdInteraction, true, false);
-  } else if (!Save) {
-    return new ErrorEmbed()
-      .useErrTemplate("RolesSaveNotFoundFD")
       .replyToInteract(CmdInteraction, true, false);
   }
 
@@ -40,26 +44,37 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
     ],
   });
 
+  const AssignerIsAdmin = CmdInteraction.member.permissions.has(PermissionFlagsBits.Administrator);
   const CurrentRoles = SelectedMember.roles.cache;
-  const FilteredRoles = Save.roles.filter((Role) => {
-    return (
-      CmdInteraction.guild.roles.comparePositions(
-        CmdInteraction.guild.members.me!.roles.highest,
-        Role.role_id
-      ) >= 0
-    );
-  });
+  const GuildRoles = CmdInteraction.guild.roles;
+  const FilteredRoles = Save.roles
+    .map((Role) => GuildRoles.cache.get(Role.role_id))
+    .filter((Role): Role is Role => {
+      if (!Role || Role.managed) return false;
+      if (Role.permissions.has(PermissionFlagsBits.Administrator) && !AssignerIsAdmin) {
+        return false;
+      }
+
+      return GuildRoles.comparePositions(CmdInteraction.guild.members.me!.roles.highest, Role) >= 0;
+    });
+
+  if (FilteredRoles.length === 0) {
+    return new ErrorEmbed()
+      .useErrTemplate("NoAssignableRolesToLoad")
+      .replyToInteract(CmdInteraction, true, false);
+  }
 
   const RolesAfter = (
     await SelectedMember.roles.add(
-      FilteredRoles.map((Role) => Role.role_id),
-      `Loading role backup: ${Save.id}; initiated by @${CmdInteraction.user.username}`
+      FilteredRoles,
+      `Loaded role backup: ${Save.id}; initiated by @${CmdInteraction.user.username}`
     )
   ).roles.cache;
 
-  const AssignedRoles = RolesAfter.size - CurrentRoles.size;
+  const AssignedRoles = Math.max(RolesAfter.size - CurrentRoles.size, 0);
   const UnassignedRoles = Save.roles.filter((Role) => {
-    return !RolesAfter.has(Role.role_id);
+    const GuildRole = GuildRoles.cache.get(Role.role_id);
+    return GuildRole && !RolesAfter.has(Role.role_id);
   }).length;
 
   const RespEmbedDesc = Dedent(`
