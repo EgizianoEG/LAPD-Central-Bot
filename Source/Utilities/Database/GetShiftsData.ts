@@ -4,6 +4,7 @@ import type { Shifts } from "@Typings/Utilities/Database.js";
 import type { FilterQuery } from "mongoose";
 import DHumanize from "humanize-duration";
 import ShiftModel from "@Models/Shift.js";
+import Guild from "@Models/Guild.js";
 
 export type UserMainShiftsData = {
   shift_count: number;
@@ -13,6 +14,9 @@ export type UserMainShiftsData = {
   total_citations: number;
   avg_onduty: number;
   avg_onbreak: number;
+
+  /** An indicator of whether the user has met their server set default shift quota or not. Null if this setting was not set. */
+  quota_met: boolean | null;
 
   /** The shift type with the highest total on-duty time. **/
   frequent_shift_type: string;
@@ -48,6 +52,16 @@ export default async function GetMainShiftsData(
 ) {
   QueryFilter.end_timestamp = { $ne: null };
   QueryFilter.type = QueryFilter.type || { $exists: true };
+
+  const ServerSetShiftQuota = await Guild.findById(
+    QueryFilter.guild,
+    {
+      "settings.shift_management.default_quota": 1,
+    },
+    { lean: true }
+  )
+    .then((Doc) => Doc?.settings.shift_management.default_quota || 0)
+    .catch(() => 0);
 
   return ShiftModel.aggregate([
     { $match: QueryFilter },
@@ -166,6 +180,7 @@ export default async function GetMainShiftsData(
         total_onbreak: 0,
         total_arrests: 0,
         total_citations: 0,
+        quota_met: null,
         avg_onduty: 0,
         avg_onbreak: 0,
         frequent_shift_type: "N/A",
@@ -177,12 +192,19 @@ export default async function GetMainShiftsData(
     }
 
     for (const [Key, Duration] of Object.entries(Resp[0])) {
+      if (Key === "total_onduty" && typeof Duration === "number") {
+        Resp[0].quota_met = ServerSetShiftQuota ? Duration >= ServerSetShiftQuota : null;
+      }
+
       if (Key === "shift_count" || Key.endsWith("s") || typeof Duration !== "number") continue;
       Resp[0][Key] = HumanizeDuration(Duration);
     }
 
     return Resp[0] as unknown as ExpandRecursively<
-      PropertiesToString<UserMainShiftsData, "shift_count" | "total_arrests" | "total_citations">
+      PropertiesToString<
+        UserMainShiftsData,
+        "shift_count" | "total_arrests" | "total_citations" | "quota_met"
+      >
     >;
   });
 }
