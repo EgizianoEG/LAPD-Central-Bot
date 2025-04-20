@@ -25,6 +25,7 @@ import { RandomString } from "@Utilities/Strings/Random.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import HandleUserActivityNoticeRoleAssignment from "@Utilities/Other/HandleUANRoleAssignment.js";
+import GetDiscordAPITime from "@Utilities/Other/GetDiscordAPITime.js";
 import GetUANData from "@Utilities/Database/GetUANData.js";
 import Dedent from "dedent";
 
@@ -295,9 +296,11 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     await Interaction.deferReply();
   }
 
+  const TimeNow = await GetDiscordAPITime();
   const NoticesData = await GetUANData({
     guild_id: Interaction.guildId,
     user_id: TargetUser.id,
+    now: TimeNow,
     type: "ReducedActivity",
   });
 

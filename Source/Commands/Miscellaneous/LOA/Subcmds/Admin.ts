@@ -22,15 +22,16 @@ import {
 
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { Embeds, Emojis } from "@Config/Shared.js";
+import { addMilliseconds } from "date-fns";
 import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
 import { HandleDurationValidation } from "./Request.js";
 import { ValidateExtendedDuration } from "./Manage.js";
 import { LeaveOfAbsenceEventLogger } from "@Utilities/Classes/UANEventLogger.js";
-import { addMilliseconds, compareDesc } from "date-fns";
 
 import HandleUserActivityNoticeRoleAssignment from "@Utilities/Other/HandleUANRoleAssignment.js";
 import UserActivityNoticeModel from "@Models/UserActivityNotice.js";
+import GetDiscordAPITime from "@Utilities/Other/GetDiscordAPITime.js";
 import ParseDuration from "parse-duration";
 import GetLOAsData from "@Utilities/Database/GetUANData.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
@@ -78,9 +79,11 @@ async function GetTargetMember(Interaction: CmdOrButtonInteraction): Promise<Use
     const TargetMemberId = ReplyEmbed?.data.author?.url?.split("/").pop();
     if (!ReplyEmbed || !TargetMemberId) return null;
     return Interaction.client.users.fetch(TargetMemberId).catch(() => null);
-  } else {
+  } else if (Interaction.isCommand()) {
     // The target member is an available option in the command.
     return Interaction.options.getUser("member", true);
+  } else {
+    return null;
   }
 }
 
@@ -106,16 +109,9 @@ function GetPanelEmbed(
       iconURL: TargetMember.displayAvatarURL({ size: 128 }),
     });
 
-  const PreviousLOAsFormatted = LOAData.notice_history
-    .filter((LOA) => {
-      return (
-        LOA.status === "Approved" && (LOA.early_end_date ?? LOA.end_date) <= Interaction.createdAt
-      );
-    })
-    .sort((a, b) => compareDesc(a.early_end_date ?? a.end_date, b.early_end_date ?? b.end_date))
-    .map((LOA) => {
-      return `${FormatTime(LOA.review_date!, "D")} — ${FormatTime(LOA.early_end_date ?? LOA.end_date, "D")}`;
-    });
+  const PreviousLOAsFormatted = LOAData.completed_notices.map((LOA) => {
+    return `${FormatTime(LOA.review_date!, "D")} — ${FormatTime(LOA.early_end_date ?? LOA.end_date, "D")}`;
+  });
 
   if (
     ActiveOrPendingLOA?.reviewed_by &&
@@ -260,10 +256,7 @@ function GetPanelComponents(
   }
 
   // Disable the buttons if there is no leave active.
-  if (
-    !ActiveOrPendingLeave ||
-    (ActiveOrPendingLeave.status === "Approved" && ActiveOrPendingLeave.is_over)
-  ) {
+  if (!ActiveOrPendingLeave || ActiveOrPendingLeave.is_over()) {
     ActionRow.setComponents(
       new ButtonBuilder()
         .setEmoji(Emojis.WhitePlus)
@@ -694,6 +687,7 @@ async function HandleLeaveEnd(
     );
 
   return PromiseAllThenTrue([
+    Callback(ButtonInteract),
     ModalSubmission.editReply({ embeds: [ReplyEmbed] }),
     LOAEventLogger.LogEarlyUANEnd(ModalSubmission, ActiveLeave, "Management"),
     HandleUserActivityNoticeRoleAssignment(
@@ -702,9 +696,7 @@ async function HandleLeaveEnd(
       "LeaveOfAbsence",
       false
     ),
-  ])
-    .then(() => Callback(InitialCmdInteract))
-    .catch(() => null);
+  ]);
 }
 
 async function HandleLeaveApprovalOrDenial(
@@ -832,9 +824,11 @@ async function Callback(Interaction: CmdOrButtonInteraction) {
       .replyToInteract(Interaction, true, true);
   }
 
+  const TimeNow = await GetDiscordAPITime();
   const LOAData = await GetLOAsData({
     guild_id: Interaction.guildId,
     user_id: TargetMember.id,
+    now: TimeNow,
     type: "LeaveOfAbsence",
   });
 
@@ -875,7 +869,7 @@ async function Callback(Interaction: CmdOrButtonInteraction) {
     } catch (Err: any) {
       const ErrorId = GetErrorId();
       AppLogger.error({
-        message: "An error occurred while handling button interaction;",
+        message: "An error occurred while handling LOA admin button interaction;",
         label: FileLabel,
         error_id: ErrorId,
         stack: Err.stack,
@@ -891,17 +885,11 @@ async function Callback(Interaction: CmdOrButtonInteraction) {
 
   CompActionCollector.on("end", async (Collected, EndReason) => {
     if (/\w{1,10}Delete/.test(EndReason) || EndReason === "CmdReinstated") return;
-    try {
-      PanelComps[0].components.forEach((Btn) => Btn.setDisabled(true));
-      const LastInteract = Collected.last() || Interaction;
-      await LastInteract.editReply({ components: PanelComps, message: PromptMessage.id });
-    } catch (Err: any) {
-      AppLogger.error({
-        message: "An error occurred while ending the component collector for LOA admin;",
-        label: FileLabel,
-        stack: Err.stack,
-      });
-    }
+    PanelComps[0].components.forEach((Btn) => Btn.setDisabled(true));
+    const LastInteract = Collected.last() || Interaction;
+    await LastInteract.editReply({ components: PanelComps, message: PromptMessage.id }).catch(
+      () => null
+    );
   });
 }
 

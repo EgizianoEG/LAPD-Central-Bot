@@ -22,7 +22,7 @@ import { Embeds, Emojis } from "@Config/Shared.js";
 import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
 import { LeaveOfAbsenceEventLogger } from "@Utilities/Classes/UANEventLogger.js";
-import { milliseconds, compareDesc, addMilliseconds } from "date-fns";
+import { milliseconds, addMilliseconds } from "date-fns";
 
 import HandleUserActivityNoticeRoleAssignment from "@Utilities/Other/HandleUANRoleAssignment.js";
 import LeaveOfAbsenceModel from "@Models/UserActivityNotice.js";
@@ -151,16 +151,9 @@ async function GetManagementEmbedAndLOA(Interaction: PromptInteractType) {
     .setTitle("Leave of Absence Management")
     .setColor(Embeds.Colors.Info);
 
-  const PreviousLOAsFormatted = LOAData.notice_history
-    .filter((LOA) => {
-      return (
-        LOA.status === "Approved" && (LOA.early_end_date ?? LOA.end_date) <= Interaction.createdAt
-      );
-    })
-    .sort((a, b) => compareDesc(a.early_end_date ?? a.end_date, b.early_end_date ?? b.end_date))
-    .map((LOA) => {
-      return `${FormatTime(LOA.review_date!, "D")} — ${FormatTime(LOA.early_end_date ?? LOA.end_date, "D")}`;
-    });
+  const PreviousLOAsFormatted = LOAData.completed_notices.map((LOA) => {
+    return `${FormatTime(LOA.review_date!, "D")} — ${FormatTime(LOA.early_end_date ?? LOA.end_date, "D")}`;
+  });
 
   if (ActiveOrPendingLOA?.reviewed_by && ActiveOrPendingLOA.is_active) {
     ReplyEmbed.setColor(Embeds.Colors.LOARequestApproved).addFields({
