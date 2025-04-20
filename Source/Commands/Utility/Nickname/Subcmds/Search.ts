@@ -33,13 +33,17 @@ function ToEmbedPages(Members: GuildMember[]) {
 async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const InputRegex = Interaction.options.getString("regex", true);
   const InputRFlag = Interaction.options.getString("flags", false);
+  const RoleFilter = Interaction.options.getRole("in_role", false);
   const ResponseEphemeral = Interaction.options.getBoolean("ephemeral", false) || false;
 
   try {
     const Regex = new RegExp(InputRegex, InputRFlag || undefined);
     const GuildMembers = await Interaction.guild.members.fetch();
     const MembersMatching = GuildMembers.filter((Member) => {
-      return Regex.test(Member.nickname ?? Member.displayName);
+      return (
+        (RoleFilter ? Member.roles.cache.has(RoleFilter.id) : true) &&
+        Regex.test(Member.nickname ?? Member.displayName)
+      );
     }).sort((M1, M2) =>
       (M1.nickname ?? M1.displayName).localeCompare(M2.nickname ?? M2.displayName)
     );
@@ -90,6 +94,11 @@ const CommandObject = {
             return { name: F, value: F };
           })
         )
+    )
+    .addRoleOption((Opt) =>
+      Opt.setName("in_role")
+        .setDescription("Only search members in this role (optional).")
+        .setRequired(false)
     )
     .addBooleanOption((Opt) =>
       Opt.setName("ephemeral")

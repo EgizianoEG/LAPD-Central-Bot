@@ -38,13 +38,17 @@ function GetConfirmationPromptComponents(CmdInteraction: SlashCommandInteraction
 async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const InputRegex = Interaction.options.getString("regex", true);
   const InputRFlag = Interaction.options.getString("flags", false);
+  const RoleFilter = Interaction.options.getRole("filter", false);
   const InputReplacement = Interaction.options.getString("replacement", true);
 
   try {
     const MatchRegex = new RegExp(InputRegex, InputRFlag || undefined);
     const GuildMembers = await Interaction.guild.members.fetch();
     const MembersMatching = GuildMembers.filter((Member) => {
-      return (Member.nickname ?? Member.displayName).match(MatchRegex)?.every((M) => !!M);
+      return (
+        (RoleFilter ? Member.roles.cache.has(RoleFilter.id) : true) &&
+        (Member.nickname ?? Member.displayName).match(MatchRegex)?.every((M) => !!M)
+      );
     });
 
     if (MembersMatching.size === 0) {
@@ -204,6 +208,11 @@ const CommandObject = {
             return { name: F, value: F };
           })
         )
+    )
+    .addRoleOption((Opt) =>
+      Opt.setName("in_role")
+        .setDescription("Only replace members in this role (optional).")
+        .setRequired(false)
     ),
 };
 
