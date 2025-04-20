@@ -928,7 +928,8 @@ async function HandleBasicConfigPageInteracts(
       const SetMgmtRoles = CurrConfiguration.role_perms.management.map((R) => roleMention(R));
       const FormattedDesc = Dedent(`
         Successfully set/updated the app's basic configuration.
-        Current Configuration:
+        
+        **Current Configuration:**
         - **Roblox Auth Required:** ${RobloxAuthorizationRequired ? "Yes" : "No"}
         - **Staff Role(s):**
           > ${SetStaffRoles.length ? ListFormatter.format(SetStaffRoles) : "*None*"}
@@ -1059,7 +1060,8 @@ async function HandleAdditionalConfigPageInteracts(
 
       const FormattedDesc = Dedent(`
         Successfully set/updated the app's additional configuration.
-        Current Configuration:
+        
+        **Current Configuration:**
         - **Log Deletion Interval:** ${LDIFormatted}
         - **Incidents Log Channel:** ${ILSetChannel}
         - **Input Filtering Enabled:** ${CurrConfiguration.utif_enabled ? "Yes" : "No"}
@@ -1216,7 +1218,8 @@ async function HandleShiftConfigPageInteracts(
 
       const FormattedDesc = Dedent(`
         Successfully set/updated the app's shifts configuration.
-        Current Configuration:
+        
+        **Current Configuration:**
         - **Module Enabled:** ${SMCurrConfiguration.enabled ? "Yes" : "No"}
         - **Shift Log Channel:** ${SetLogChannel}
         - **On-Duty Role(s):**
@@ -1358,7 +1361,8 @@ async function HandleLeaveConfigPageInteracts(
 
       const FormattedDesc = Dedent(`
         Successfully set/updated the app's leave notices module configuration.
-        Current Configuration:
+        
+        **Current Configuration:**
         - **Module Enabled:** ${LNCurrConfiguration.enabled ? "Yes" : "No"}
         - **On-Leave Role:** ${SetOnLeaveRole}
         - **Log Channel:** ${SetLogChannel}
@@ -1490,7 +1494,8 @@ async function HandleDutyActivitiesConfigPageInteracts(
 
       const FormattedDesc = Dedent(`
         Successfully set/updated the app's duty activities module configuration.
-        Current Configuration:
+        
+        **Current Configuration:**
         - **Module Enabled:** ${DACurrentConfig.enabled ? "Yes" : "No"}
         - **Arrest Reports Log Channel(s):**
           > ${ARSetChannels.length ? ListFormatter.format(ARSetChannels) : "*None*"}
@@ -1695,7 +1700,8 @@ async function HandleReducedActivityConfigPageInteracts(
 
       const FormattedDesc = Dedent(`
         Successfully set/updated the app's reduced activity module configuration.
-        Current Configuration:
+        
+        **Current Configuration:**
         - **Module Enabled:** ${RACurrConfiguration.enabled ? "Yes" : "No"}
         - **Reduced Activity Role:** ${SetRARole}
         - **Requests Channel:** ${SetRequestsChannel}
