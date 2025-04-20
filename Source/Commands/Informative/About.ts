@@ -6,7 +6,7 @@ import { IsValidDiscordId } from "@Utilities/Other/Validators.js";
 
 const ListFormatter = new Intl.ListFormat("en");
 const AppAuthorId = "560396280497438731";
-const RepoURL = "https://github.com/EgizianoEG/LAPD-Central-Bot";
+const RepoURL = "https://github.com/EgizianoEG/LAPD-Central-App";
 // ---------------------------------------------------------------------------------------
 
 /**
