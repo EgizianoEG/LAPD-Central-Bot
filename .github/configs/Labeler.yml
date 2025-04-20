@@ -1,2 +1,18 @@
-🛠️ - Source Change: Source/*
-# 📖 - Documentation: Docs/**/*
+🛠️ - Source Change:
+  - all:
+    - changed-files:
+      - any-glob-to-any-file: 'Source/**/*.{ts|js}'
+      - all-globs-to-all-files: '!Source/Typings/**/*'
+      - all-globs-to-all-files: '!**/*.test.{js,ts}'
+      - all-globs-to-all-files: '!**/*.spec.{js,ts}'
+
+✨ - Enhancement:
+  - head-branch: ['^feature', 'feature/', '^feat', 'feat/']
+
+🔧 - Fix:
+  - head-branch: ['^bugfix', 'bugfix/', '^fix', 'fix/']
+
+📖 - Documentation:
+  - changed-files:
+    - any-glob-to-any-file: ['**/*.md', '**/*.mdx', 'docs/**/*']
+  - head-branch: ['^docs', 'docs', 'documentation']

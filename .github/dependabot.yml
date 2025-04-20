@@ -11,7 +11,7 @@ updates:
     schedule:
       interval: "weekly"
     labels:
-      - "🧩 - Dependencies"
+      - "📦 - Dependencies"
     ignore:
       - dependency-name: "@types/*"
       - dependency-name: "*"
