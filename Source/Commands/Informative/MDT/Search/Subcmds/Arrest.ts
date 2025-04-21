@@ -36,7 +36,7 @@ const CommandObject = {
       Option.setName("booking-num")
         .setDescription("The booking number of the arrest.")
         .setMaxValue(999999)
-        .setMinValue(1000)
+        .setMinValue(100)
         .setRequired(true)
         .setAutocomplete(true)
     ),

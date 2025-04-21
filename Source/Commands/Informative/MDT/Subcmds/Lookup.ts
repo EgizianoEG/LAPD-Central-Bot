@@ -82,7 +82,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
       inline: true,
       name: "Recent Arrest",
       value: Dedent(`
-        - **Booking:** [\`${RecentArr._id}\`](${channelLink(Interaction.channelId)})
+        - **Booking:** [\`${RecentArr.booking_num.toString().padStart(4, "0")}\`](${channelLink(Interaction.channelId)})
         - **Made On:** ${time(RecentArr.made_on, "R")}
         - **Mugshot:** [See Here ⎋](${RecentArr.arrestee.mugshot_url})
         - **Arresting Officer:** ${userMention(RecentArr.arresting_officer.discord_id)}

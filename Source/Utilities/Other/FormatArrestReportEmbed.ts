@@ -28,7 +28,7 @@ export default async function GetFormattedArrestReportEmbed(
   const ReportDescription = Dedent(`
     Arrest report submitted by: ${userMention(ArrestInfo.arresting_officer.discord_id)}
     Arrest assisting officers: ${FAsstOfficers}
-    Booking number: \`${ArrestInfo.booking_num}\`
+    Booking number: \`${ArrestInfo.booking_num.toString().padStart(4, "0")}\`
   `);
 
   return new EmbedBuilder()

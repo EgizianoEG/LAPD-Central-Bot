@@ -57,7 +57,7 @@ async function Autocomplete(Interaction: AutocompleteInteraction<"cached">): Pro
 }
 
 // ---------------------------------------------------------------------------------------
-// Command structure:
+// Command Structure:
 // ------------------
 const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
   autocomplete: Autocomplete,
@@ -69,7 +69,7 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
 
   data: new SlashCommandBuilder()
     .setName("mdt")
-    .setDescription("MDT commands.")
+    .setDescription("Mobile data terminal commands.")
     .setContexts(InteractionContextType.Guild)
     .addSubcommand(Subcommands[0].data)
     .addSubcommandGroup(SearchSubcmdGroup.data),

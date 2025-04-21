@@ -30,6 +30,7 @@ export interface GetBookingMugshotOptions {
 export default async function GetBookingMugshot<AsURL extends boolean | undefined = undefined>(
   Options: GetBookingMugshotOptions
 ): Promise<AsURL extends true ? string : AsURL extends false ? Buffer : Buffer | string> {
+  const BkgNumPadded = Options.booking_num.toString().padStart(3, "0");
   const ImgCanvas = createCanvas(ImgWidth, ImgHeight);
   const ImgCTX = ImgCanvas.getContext("2d");
   const ThumbImage = await loadImage(Options.user_thumb_url).catch(() => {
@@ -99,18 +100,14 @@ export default async function GetBookingMugshot<AsURL extends boolean | undefine
   ImgCTX.font = RelFont(3);
   ImgCTX.textAlign = "right";
   ImgCTX.fillText(
-    `BOOKING #${Options.booking_num}`,
+    `BOOKING #${BkgNumPadded}`,
     InfoBoxX + InfoBoxWidth - RelX(1),
     InfoBoxY + RelY(8)
   );
 
   const ImgBuffer = ImgCanvas.toBuffer("image/jpeg", 100);
   if (Options.return_url) {
-    const UploadedImgURL = await UploadToImgBB(
-      ImgBuffer,
-      `booking_mugshot_#${Options.booking_num}`
-    );
-
+    const UploadedImgURL = await UploadToImgBB(ImgBuffer, `booking_mugshot_#${BkgNumPadded}`);
     return (UploadedImgURL || Embeds.Thumbs.UnknownImage) as any;
   } else {
     return ImgBuffer as any;
