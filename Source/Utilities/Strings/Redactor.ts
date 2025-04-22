@@ -242,7 +242,6 @@ export function RedactTextByOptions(Input: string, Options: RedactTextFromOption
  * @param Options - The options for filtering the user input.
  * @returns The filtered user input string.
  */
-// eslint-disable-next-line sonarjs/cognitive-complexity
 export async function FilterUserInput(Input: string, Options: FilterUserInputOptions = {}) {
   if (/^\s*$/.test(Input)) return Input;
   if (typeof Options.utif_setting_enabled !== "boolean") {

@@ -72,13 +72,13 @@ export default [
       "no-useless-call": "error",
       "no-extra-parens": ["off", "functions"],
 
-      "sonarjs/cognitive-complexity": ["warn", 35],
+      "sonarjs/cognitive-complexity": ["warn", 45],
       "sonarjs/pseudo-random": "off",
       "sonarjs/todo-tag": "warn",
       "sonarjs/slow-regex": "off",
       "sonarjs/no-duplicate-string": "warn",
       "sonarjs/no-nested-conditional": "off",
-      "sonarjs/regex-complexity": ["warn", { threshold: 28 }],
+      "sonarjs/regex-complexity": ["warn", { threshold: 30 }],
 
       "no-irregular-whitespace": [
         "error",

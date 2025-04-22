@@ -1,4 +1,3 @@
-/* eslint-disable sonarjs/cognitive-complexity */
 import {
   SlashCommandSubcommandBuilder,
   StringSelectMenuOptionBuilder,
