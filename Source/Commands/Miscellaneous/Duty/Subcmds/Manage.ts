@@ -7,7 +7,6 @@ import {
   inlineCode,
   ButtonStyle,
   EmbedBuilder,
-  ComponentType,
   ButtonBuilder,
   MessagePayload,
   ActionRowBuilder,
@@ -17,46 +16,38 @@ import {
   SlashCommandSubcommandBuilder,
 } from "discord.js";
 
-import { GetErrorId } from "@Utilities/Strings/Random.js";
-import { ErrorMessages } from "@Resources/AppMessages.js";
 import { Guilds, Shifts } from "@Typings/Utilities/Database.js";
 import { Embeds, Emojis } from "@Config/Shared.js";
 import { ErrorEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
-import HandleRoleAssignment from "@Utilities/Other/HandleShiftRoleAssignment.js";
 import GetMainShiftsData from "@Utilities/Database/GetShiftsData.js";
-import ShiftActionLogger from "@Utilities/Classes/ShiftActionLogger.js";
 import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
 import GetShiftActive from "@Utilities/Database/GetShiftActive.js";
 import UserHasPerms from "@Utilities/Database/UserHasPermissions.js";
-import ShiftModel from "@Models/Shift.js";
-import AppLogger from "@Utilities/Classes/AppLogger.js";
 import DHumanize from "humanize-duration";
-import AppError from "@Utilities/Classes/AppError.js";
 import Dedent from "dedent";
 
-const FileLabel = "Commands:Miscellaneous:Duty:Manage";
 const HumanizeDuration = DHumanize.humanizer({
   conjunction: " and ",
   largest: 3,
   round: true,
 });
 
-enum RecentShiftAction {
+export enum RecentShiftAction {
   End = "Shift Ended",
   Start = "Shift Started",
   BreakEnd = "Shift Break Ended",
   BreakStart = "Shift Break Started",
 }
 
-enum ShiftMgmtActions {
+export enum ShiftMgmtActions {
   ShiftOn = "dm-start",
   ShiftOff = "dm-end",
   ShiftBreakToggle = "dm-break",
 }
 
 type ShiftDocument = Shifts.HydratedShiftDocument;
-export type ShiftMgmtButtonsActionRow = ActionRowBuilder<
+type ShiftMgmtButtonsActionRow = ActionRowBuilder<
   ButtonBuilder & { data: { custom_id: string } }
 > & {
   /**
@@ -81,21 +72,21 @@ export type ShiftMgmtButtonsActionRow = ActionRowBuilder<
 /**
  * Constructs a set of management buttons (start, break, end).
  * @param Interaction - A cached slash command interaction to get guild and user Ids from.
- * @param [ShiftType="default"] - The type of shift to be managed. Defaults to "default", the application's default shift type.
+ * @param [ShiftType="Default"] - The type of shift to be managed. Defaults to "Default", the application's default shift type.
  * @param [ShiftActive] - The current active shift of the user, if any.
  * @notice
  * The pattern for management button IDs is as follows:
  *   `<ShiftAction>:<UserId>:<TargettedShiftType>[:ShiftId]`.
  *   - `<ShiftAction>`: The action to be performed (e.g., `shift-on`, `shift-off`, etc.)
  *   - `<UserId>`: The ID of the user who triggered the action.
- *   - `<TargettedShiftType>`: The type of shift being targeted (e.g., `default`, `break`, etc.)
+ *   - `<TargettedShiftType>`: The type of shift being targeted (e.g., `day`, `night`, etc.)
  *   - `[TargettedShiftId]`: The ID of the shift being targeted, if applicable. Optional as sometimes there is no shift to take action on in the first place.
  *
  * @returns A row of buttons for managing shifts.
  */
 export function GetShiftManagementButtons(
   Interaction: SlashCommandInteraction<"cached"> | ButtonInteraction<"cached">,
-  ShiftType: string | null = "default",
+  ShiftType: string | null = "Default",
   ShiftActive?: Shifts.HydratedShiftDocument | null
 ) {
   const ActionRow = new ActionRowBuilder().addComponents(
@@ -149,8 +140,8 @@ export function GetShiftManagementButtons(
  * @param CmdShiftType - The user requested/received shift type.
  * @returns A boolean value. `true` if the user has permission to use the shift type, `false` otherwise.
  */
-async function CheckShiftTypeRestrictions(
-  Interaction: SlashCommandInteraction<"cached">,
+export async function CheckShiftTypeRestrictions(
+  Interaction: SlashCommandInteraction<"cached"> | ButtonInteraction<"cached">,
   GuildShiftTypes:
     | Guilds.ShiftType[]
     | NonNullable<Awaited<ReturnType<typeof GetGuildSettings>>>["shift_management"]["shift_types"],
@@ -299,54 +290,8 @@ async function CmdInteractSafeReplyOrEditReply(
 }
 
 // ---------------------------------------------------------------------------------------
-// Action Handlers:
-// ----------------
-async function HandleShiftStartConfirmation(
-  CmdInteract: SlashCommandInteraction<"cached">,
-  BtnInteract: ButtonInteraction<"cached">,
-  TargetShiftType: string
-) {
-  if (!BtnInteract.deferred) await BtnInteract.deferUpdate();
-  if (!BtnInteract.customId.startsWith(ShiftMgmtActions.ShiftOn)) return;
-  try {
-    const StartedShift = await ShiftModel.startNewShift({
-      type: TargetShiftType,
-      user: BtnInteract.user.id,
-      guild: BtnInteract.guildId,
-      start_timestamp: BtnInteract.createdAt,
-    });
-
-    await Promise.all([
-      Callback(CmdInteract),
-      ShiftActionLogger.LogShiftStart(StartedShift, BtnInteract),
-      HandleRoleAssignment("on-duty", BtnInteract.client, BtnInteract.guild, BtnInteract.user.id),
-    ]);
-  } catch (Err: any) {
-    const ErrorId = GetErrorId();
-    if (Err instanceof AppError && Err.is_showable) {
-      if (Err.title === ErrorMessages.ShiftAlreadyActive.Title) {
-        return Promise.all([
-          Callback(CmdInteract),
-          new ErrorEmbed().useErrClass(Err).replyToInteract(BtnInteract, true, true, "followUp"),
-        ]);
-      }
-
-      new ErrorEmbed()
-        .useErrClass(Err)
-        .setErrorId(ErrorId)
-        .replyToInteract(BtnInteract, true, true, "followUp");
-    }
-
-    AppLogger.error({
-      message: "An error occurred while creating a new shift record;",
-      label: "Commands:Miscellaneous:Duty:Manage",
-      user_id: BtnInteract.user.id,
-      guild_id: BtnInteract.guildId,
-      error_id: ErrorId,
-      stack: Err.stack,
-    });
-  }
-}
+// State Handlers:
+// ---------------
 
 async function HandleNonActiveShift(
   CmdInteract: SlashCommandInteraction<"cached">,
@@ -358,75 +303,10 @@ async function HandleNonActiveShift(
     MgmtPromptEmbed.data.color || Embeds.Colors.ShiftNatural
   );
 
-  const PromptMessage = await CmdInteractSafeReplyOrEditReply(CmdInteract, {
+  return CmdInteractSafeReplyOrEditReply(CmdInteract, {
     embeds: [PromptEmbed],
     components: [MgmtComps],
   });
-
-  if (!PromptMessage) return;
-  try {
-    const RecInteract = await PromptMessage.awaitMessageComponent({
-      filter: (Interact) => Interact.user.id === CmdInteract.user.id,
-      componentType: ComponentType.Button,
-      time: 15 * 60 * 1000,
-    });
-
-    const BtnCustomId = RecInteract.customId;
-    await RecInteract.deferUpdate();
-
-    if (BtnCustomId.startsWith(ShiftMgmtActions.ShiftOn)) {
-      await HandleShiftStartConfirmation(CmdInteract, RecInteract, MgmtShiftType);
-    }
-  } catch (Err: any) {
-    if (Err.message.match(/reason: \w+Delete/)) return;
-    if (Err.message.match(/reason: (?:time|idle)/)) {
-      return PromptMessage.edit({
-        components: [MgmtComps.updateButtons({ start: false, break: false, end: false })],
-      }).catch(() => null);
-    }
-
-    AppLogger.error({
-      message:
-        "An unhandled error occurred while waiting for a duty management button interaction.",
-      label: FileLabel,
-      stack: Err.stack,
-    });
-  }
-}
-
-async function HandleShiftBreakStart(
-  CmdInteract: SlashCommandInteraction<"cached">,
-  ShiftActive: Shifts.HydratedShiftDocument,
-  ButtonInteract: ButtonInteraction<"cached">
-) {
-  const UpdatedShift = await ShiftActive.breakStart(ButtonInteract.createdTimestamp).catch(
-    (Err: any) => {
-      if (Err instanceof AppError && Err.is_showable) {
-        return Err;
-      }
-      throw Err;
-    }
-  );
-
-  if (UpdatedShift instanceof AppError) {
-    return Promise.all([
-      Callback(CmdInteract, RecentShiftAction.BreakStart),
-      new ErrorEmbed()
-        .useErrClass(UpdatedShift)
-        .replyToInteract(ButtonInteract, true, false, "followUp"),
-    ]);
-  }
-
-  return Promise.all([
-    Callback(CmdInteract, RecentShiftAction.BreakStart),
-    ShiftActionLogger.LogShiftBreakStart(UpdatedShift, ButtonInteract),
-    HandleRoleAssignment(
-      "on-break",
-      ButtonInteract.client,
-      ButtonInteract.guild,
-      ButtonInteract.user.id
-    ),
-  ]);
 }
 
 async function HandleOnBreakShift(
@@ -448,86 +328,10 @@ async function HandleOnBreakShift(
     .setTitle(BaseEmbedTitle)
     .setFields({ name: "Current Shift", value: FieldDescription });
 
-  const PromptMessage = await CmdInteractSafeReplyOrEditReply(CmdInteract, {
+  return CmdInteractSafeReplyOrEditReply(CmdInteract, {
     components: [MgmtComps],
     embeds: [PromptEmbed],
   });
-
-  if (!PromptMessage) return;
-  try {
-    const RecInteract = await PromptMessage.awaitMessageComponent({
-      componentType: ComponentType.Button,
-      filter: (Interact) => Interact.user.id === CmdInteract.user.id,
-      time: 15 * 60 * 1000,
-    });
-
-    const BtnCustomId = RecInteract.customId;
-    await RecInteract.deferUpdate();
-
-    if (BtnCustomId.startsWith(ShiftMgmtActions.ShiftBreakToggle)) {
-      const UpdatedShift = await ShiftActive.breakEnd(RecInteract.createdTimestamp);
-      return Promise.allSettled([
-        Callback(CmdInteract, RecentShiftAction.BreakEnd),
-        ShiftActionLogger.LogShiftBreakEnd(UpdatedShift as any, RecInteract),
-        HandleRoleAssignment("on-duty", RecInteract.client, RecInteract.guild, RecInteract.user.id),
-      ]);
-    }
-  } catch (Err: any) {
-    if (Err.message.match(/reason: \w+Delete/)) return;
-    if (Err.message.match(/reason: (?:time|idle)/)) {
-      return PromptMessage.edit({
-        components: [MgmtComps.updateButtons({ start: false, break: false, end: false })],
-      }).catch(() => null);
-    }
-
-    if (Err instanceof AppError && Err.is_showable) {
-      return Promise.allSettled([
-        new ErrorEmbed().useErrClass(Err).replyToInteract(CmdInteract, true, true, "followUp"),
-        Callback(CmdInteract),
-      ]);
-    }
-
-    AppLogger.error({
-      message:
-        "An unhandled error occurred while waiting for a duty management button interaction.",
-      label: FileLabel,
-      stack: Err.stack,
-    });
-  }
-}
-
-async function HandleShiftEnd(
-  CmdInteract: SlashCommandInteraction<"cached">,
-  ShiftActive: Shifts.HydratedShiftDocument,
-  ButtonInteract: ButtonInteraction<"cached">
-) {
-  const UpdatedShift = await ShiftActive.end(ButtonInteract.createdTimestamp).catch((Err: any) => {
-    if (Err instanceof AppError && Err.is_showable) {
-      return Err;
-    }
-    throw Err;
-  });
-
-  if (UpdatedShift instanceof AppError) {
-    const ShiftExists = await ShiftModel.exists({ _id: ShiftActive._id });
-    return Promise.allSettled([
-      Callback(CmdInteract, ShiftExists ? RecentShiftAction.End : undefined),
-      new ErrorEmbed()
-        .useErrClass(UpdatedShift)
-        .replyToInteract(ButtonInteract, true, true, "followUp"),
-    ]);
-  }
-
-  return Promise.allSettled([
-    Callback(CmdInteract, RecentShiftAction.End),
-    ShiftActionLogger.LogShiftEnd(UpdatedShift, ButtonInteract),
-    HandleRoleAssignment(
-      "off-duty",
-      ButtonInteract.client,
-      ButtonInteract.guild,
-      ButtonInteract.user.id
-    ),
-  ]);
 }
 
 async function HandleActiveShift(
@@ -564,56 +368,19 @@ async function HandleActiveShift(
     }
   }
 
-  const PromptMessage = await CmdInteractSafeReplyOrEditReply(CmdInteract, {
-    components: [MgmtButtonComponents.updateButtons({ start: false, break: true, end: true })],
+  return CmdInteractSafeReplyOrEditReply(CmdInteract, {
+    components: [MgmtButtonComponents],
     embeds: [PromptEmbed],
   });
-
-  if (!PromptMessage) return;
-  try {
-    const RecInteract = await PromptMessage.awaitMessageComponent({
-      componentType: ComponentType.Button,
-      filter: (Interact) => Interact.user.id === CmdInteract.user.id,
-      time: 15 * 60 * 1000,
-    });
-
-    const BtnCustomId = RecInteract.customId;
-    await RecInteract.deferUpdate();
-
-    if (BtnCustomId.startsWith(ShiftMgmtActions.ShiftBreakToggle)) {
-      await HandleShiftBreakStart(CmdInteract, ShiftActive, RecInteract);
-    } else if (BtnCustomId.startsWith(ShiftMgmtActions.ShiftOff)) {
-      await HandleShiftEnd(CmdInteract, ShiftActive, RecInteract);
-    }
-  } catch (Err: any) {
-    if (Err.message.match(/reason: \w+Delete/)) return;
-    if (Err.message.match(/reason: (?:time|idle)/)) {
-      return PromptMessage.edit({
-        components: [
-          MgmtButtonComponents.updateButtons({ start: false, break: false, end: false }),
-        ],
-      }).catch(() => null);
-    }
-
-    AppLogger.error({
-      message:
-        "An unhandled error occurred while handling duty management button interactions for active shift.",
-      label: FileLabel,
-      stack: Err.stack,
-    });
-  }
 }
 
 // ---------------------------------------------------------------------------------------
 // Initial Handling:
 // -----------------
-async function Callback(
-  CmdInteract: SlashCommandInteraction<"cached">,
-  RecentAction?: RecentShiftAction
-) {
-  if (!CmdInteract.deferred && !CmdInteract.replied) await CmdInteract.deferReply();
+async function Callback(CmdInteract: SlashCommandInteraction<"cached">) {
   const VerificationDetails = await HandleCommandUsageVerification(CmdInteract);
   if (VerificationDetails.handled === true) return;
+  if (!CmdInteract.deferred && !CmdInteract.replied) await CmdInteract.deferReply();
 
   const TargetShiftType = VerificationDetails.target_shift_type;
   const CmdShiftType = CmdInteract.options.getString("type", false);
@@ -641,94 +408,12 @@ async function Callback(
 
   const BasePromptEmbed = new EmbedBuilder()
     .setColor(Embeds.Colors.ShiftNatural)
-    .setTitle(ShiftActive ? `Shift Management: \`${ShiftActive.type}\` Type` : MgmtEmbedTitle);
-
-  if (RecentAction) {
-    if (RecentAction === RecentShiftAction.End) {
-      BasePromptEmbed.setColor(Embeds.Colors.ShiftOff);
-      BasePromptEmbed.setTitle(RecentAction);
-      BasePromptEmbed.setFooter({ text: `Shift Type: ${TargetShiftType}` });
-
-      const MostRecentFinishedShift = await ShiftModel.findOne({
-        user: CmdInteract.user.id,
-        guild: CmdInteract.guildId,
-        end_timestamp: { $ne: null },
-      }).sort({ end_timestamp: -1 });
-
-      if (MostRecentFinishedShift) {
-        const BreakTimeText =
-          MostRecentFinishedShift.durations.on_break > 500
-            ? `**Break Time:** ${MostRecentFinishedShift.on_break_time}`
-            : "";
-
-        BasePromptEmbed.addFields(
-          {
-            inline: true,
-            name: "Shift Overview",
-            value: Dedent(`
-              >>> **Status:** (${Emojis.Offline}) Off-Duty
-              **Shift Time:** ${MostRecentFinishedShift.on_duty_time}
-              ${BreakTimeText}
-            `),
-          },
-          {
-            inline: true,
-            name: "Shift Activity",
-            value: Dedent(`
-              >>> **Arrests Made:** \`${MostRecentFinishedShift.events.arrests}\`
-              **Citations Issued:** \`${MostRecentFinishedShift.events.citations}\`
-              **Incidents Reported:** \`${MostRecentFinishedShift.events.incidents}\`
-            `),
-          },
-          {
-            inline: false,
-            name: "Statistics Summary",
-            value: MgmtPromptMainDesc,
-          }
-        );
-      }
-    } else if (RecentAction === RecentShiftAction.BreakEnd && ShiftActive?.hasBreaks()) {
-      const EndedBreak = ShiftActive.events.breaks.findLast((v) => v[0] && v[1])!;
-      const BreaksTakenLine =
-        ShiftActive.events.breaks.length > 1
-          ? `**Breaks Taken:** ${ShiftActive.events.breaks.length}\n`
-          : "";
-
-      BasePromptEmbed.setFooter({ text: `Shift Type: ${TargetShiftType}` });
-      BasePromptEmbed.setTitle(RecentAction);
-      BasePromptEmbed.setFields({
-        inline: true,
-        name: "Current Shift",
-        value:
-          `>>> **Status:** (${Emojis.Online}) On Duty\n` +
-          `**Shift Started:** ${FormatTime(ShiftActive.start_timestamp, "R")}\n` +
-          BreaksTakenLine +
-          `**Ended Break Time:** ${EndedBreak[1] ? HumanizeDuration(EndedBreak[1] - EndedBreak[0]) : "N/A"}\n` +
-          `**Total Break Time:** ${ShiftActive.on_break_time}`,
-      });
-    } else if (RecentAction === RecentShiftAction.BreakStart && ShiftActive?.hasBreakActive()) {
-      const StartedBreak = ShiftActive.events.breaks.findLast((v) => !v[1])!;
-      BasePromptEmbed.setFooter({ text: `Shift Type: ${TargetShiftType}` });
-      BasePromptEmbed.setTitle(RecentAction);
-      BasePromptEmbed.setFields({
-        inline: true,
-        name: "Current Shift",
-        value: Dedent(`
-          >>> **Status:** (${Emojis.Idle}) On Break
-          **Shift Started:** ${FormatTime(ShiftActive.start_timestamp, "R")}
-          **Break Started:** ${FormatTime(Math.round(StartedBreak[0] / 1000), "R")}
-          **On-Duty Time:** ${ShiftActive.on_duty_time}
-          ${ShiftActive.events.breaks.length > 1 ? `**Total Break Time:** ${ShiftActive.on_break_time}` : ""}
-        `),
-      });
-    }
-  } else {
-    BasePromptEmbed.setFields({
+    .setTitle(ShiftActive ? `Shift Management: \`${ShiftActive.type}\` Type` : MgmtEmbedTitle)
+    .setFields({
       inline: true,
       name: "Statistics Summary",
       value: MgmtPromptMainDesc,
     });
-  }
 
   if (!ShiftActive) {
     return HandleNonActiveShift(CmdInteract, BasePromptEmbed, TargetShiftType);
@@ -740,7 +425,7 @@ async function Callback(
 }
 
 // ---------------------------------------------------------------------------------------
-// Command structure:
+// Command Structure:
 // ------------------
 const CommandObject = {
   callback: Callback,
