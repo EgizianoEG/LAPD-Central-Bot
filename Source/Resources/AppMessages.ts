@@ -795,6 +795,38 @@ export const ErrorMessages = {
     Description:
       "Extension requests are only available for leave of absence, not reduced activity.",
   },
+
+  /** Duty Shift Management - Embed Not Found  */
+  DSMEmbedNotFound: {
+    Title: "Missing Management Embed",
+    Description:
+      "This shift management prompt is either damaged or missing the management embed. Kindly re-execute the command again.",
+  },
+
+  /** Duty Shift Management - Continuation */
+  DSMContinueNoShiftTypeFound: {
+    Title: "Shift Type Unavailable",
+    Description:
+      "The shift type you have initially specified does not exist anymore and cannot be used. Kindly initiate another management process with a different shift type.",
+  },
+
+  DSMContinueExpired: {
+    Title: "Session Expired",
+    Description:
+      "This shift management session has timed out. Please restart the process by executing the command again.",
+  },
+
+  DSMInconsistentShiftActionShiftEnded: {
+    Title: "Inconsistent Shift Action",
+    Description:
+      "The shift you are trying to take action on has already ended, voided, or deleted and no further modifications can be made.",
+  },
+
+  DSMStateChangedExternally: {
+    Title: "Shift State Changed",
+    Description:
+      "The shift state has been modified elsewhere since this prompt was displayed. The prompt has been updated to reflect the current state.",
+  },
 };
 
 export const InfoMessages = {
