@@ -50,20 +50,23 @@ async function HandleSingleUserRoleAssignment(
   CurrentStatus: "on-duty" | "on-break" | "off-duty"
 ) {
   if (!GuildMember) return Promise.resolve();
+
+  const CurrentRoles = GuildMember.roles.cache
+    .filter((Role) => ![...RASettings.on_duty, ...RASettings.on_break].includes(Role.id))
+    .map((Role) => Role.id);
+
+  const RolesToSet = [...CurrentRoles];
+  let Reason = "";
+
   if (CurrentStatus === "on-duty") {
-    return Promise.all([
-      GuildMember.roles.remove(RASettings.on_break, "Member is no longer on break."),
-      GuildMember.roles.add(RASettings.on_duty, "Member is on an active shift and on duty."),
-    ]);
+    RolesToSet.push(...RASettings.on_duty);
+    Reason = "Member is on an active shift and on duty.";
   } else if (CurrentStatus === "on-break") {
-    return Promise.all([
-      GuildMember.roles.remove(RASettings.on_duty, "Member is currently taking a shift break."),
-      GuildMember.roles.add(RASettings.on_break, "Member has started a shift break."),
-    ]);
+    RolesToSet.push(...RASettings.on_break);
+    Reason = "Member has started a shift break.";
   } else {
-    return GuildMember.roles.remove(
-      [...RASettings.on_duty, ...RASettings.on_break],
-      "Member is now off duty and no longer on shift."
-    );
+    Reason = "Member is now off duty and no longer on shift.";
   }
+
+  return GuildMember.roles.set(RolesToSet, Reason);
 }

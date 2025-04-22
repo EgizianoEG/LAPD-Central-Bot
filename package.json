@@ -67,6 +67,7 @@
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.23.0",
     "@faker-js/faker": "^9.6.0",
+    "@stylistic/eslint-plugin-js": "^4.2.0",
     "@types/convert-units": "^2.3.9",
     "@types/express": "^5.0.0",
     "@types/humanize-duration": "^3.27.4",

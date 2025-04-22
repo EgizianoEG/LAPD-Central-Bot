@@ -1,6 +1,8 @@
 import { FlatCompat } from "@eslint/eslintrc";
 import { fileURLToPath } from "node:url";
 import typescriptEslint from "@typescript-eslint/eslint-plugin";
+import stylisticJs from "@stylistic/eslint-plugin-js";
+
 import tsParser from "@typescript-eslint/parser";
 import sonarjs from "eslint-plugin-sonarjs";
 import globals from "globals";
@@ -34,6 +36,7 @@ export default [
   {
     plugins: {
       "@typescript-eslint": typescriptEslint,
+      "@stylistic/js": stylisticJs,
     },
   },
 
@@ -69,13 +72,13 @@ export default [
       "no-useless-call": "error",
       "no-extra-parens": ["off", "functions"],
 
-      "sonarjs/cognitive-complexity": ["warn", 35],
+      "sonarjs/cognitive-complexity": ["warn", 45],
       "sonarjs/pseudo-random": "off",
       "sonarjs/todo-tag": "warn",
       "sonarjs/slow-regex": "off",
       "sonarjs/no-duplicate-string": "warn",
       "sonarjs/no-nested-conditional": "off",
-      "sonarjs/regex-complexity": ["warn", { threshold: 28 }],
+      "sonarjs/regex-complexity": ["warn", { threshold: 30 }],
 
       "no-irregular-whitespace": [
         "error",
@@ -107,12 +110,12 @@ export default [
         },
       ],
 
-      indent: [
+      "@stylistic/js/indent": [
         "error",
         2,
         {
           SwitchCase: 1,
-          ignoredNodes: ["ConditionalExpression"],
+          ignoredNodes: ["ConditionalExpression *"],
         },
       ],
     },
