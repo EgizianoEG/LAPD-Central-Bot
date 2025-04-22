@@ -118,11 +118,9 @@ async function ShiftManagementHandler(
         });
 
   if (await HandleInvalidShiftAction(Interaction, ShiftAction, TargetShift)) return;
-  const CurrentShiftType = ActiveShift?.type ?? TargetShiftType;
-
   switch (ShiftAction) {
     case ShiftMgmtActions.ShiftOn:
-      return HandleShiftOnAction(Interaction, CurrentShiftType, PromptMessageId);
+      return HandleShiftOnAction(Interaction, TargetShiftType, PromptMessageId);
     case ShiftMgmtActions.ShiftOff:
       return HandleShiftOffAction(Interaction, ActiveShift!, PromptMessageId);
     case ShiftMgmtActions.ShiftBreakToggle:
@@ -391,11 +389,26 @@ async function HandleInvalidShiftAction(
     [ShiftMgmtActions.ShiftOff, ShiftMgmtActions.ShiftBreakToggle].includes(ShiftAction) &&
     (!TargetShift || TargetShift.end_timestamp !== null)
   ) {
-    await DisablePromptComponents(Interaction, TargetShift?.type);
-    return new ErrorEmbed()
-      .useErrTemplate("DSMInconsistentShiftActionShiftEnded")
-      .replyToInteract(Interaction, true, true, "followUp")
-      .then(() => true);
+    if (TargetShift) {
+      await UpdateManagementPrompt(
+        Interaction,
+        TargetShift.type,
+        Interaction.message.id,
+        TargetShift,
+        RecentShiftAction.End
+      );
+
+      return new ErrorEmbed()
+        .useErrTemplate("DSMStateChangedExternally")
+        .replyToInteract(Interaction, true, true, "followUp")
+        .then(() => true);
+    } else {
+      await DisablePromptComponents(Interaction);
+      return new ErrorEmbed()
+        .useErrTemplate("DSMInconsistentShiftActionShiftEnded")
+        .replyToInteract(Interaction, true, true, "followUp")
+        .then(() => true);
+    }
   }
 
   return false;
@@ -546,8 +559,10 @@ async function UpdateManagementPrompt(
         }
       }
     }
-  } else {
-    PromptEmbed.setFields({
+  }
+
+  if (!PreviousAction || PreviousAction === RecentShiftAction.Start) {
+    PromptEmbed.addFields({
       inline: true,
       name: "Statistics Summary",
       value: MgmtPromptMainDesc,
