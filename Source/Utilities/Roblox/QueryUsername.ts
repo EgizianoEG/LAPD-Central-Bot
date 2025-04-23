@@ -1,5 +1,9 @@
+import { RobloxQueryUsernameResultsCache } from "@Utilities/Other/Cache.js";
 import { IsValidRobloxUsername } from "../Other/Validators.js";
 import { ClassicUsersApi } from "openblox/classic";
+type RobloxQueryUsernameResults = Awaited<
+  ReturnType<(typeof ClassicUsersApi)["userSearch"]>
+>["data"];
 
 /**
  * Queries Roblox for users matching the provided username keyword.
@@ -11,5 +15,10 @@ import { ClassicUsersApi } from "openblox/classic";
  */
 export default async function QueryUsername(Typed: string, Limit: 10 | 25 | 50 | 100 = 10) {
   if (!IsValidRobloxUsername(Typed)) return [];
-  return ClassicUsersApi.userSearch({ keyword: Typed, limit: Limit }).then((Res) => Res.data);
+  const CachedResults = RobloxQueryUsernameResultsCache.get<RobloxQueryUsernameResults>(Typed);
+  if (CachedResults) return CachedResults;
+  return ClassicUsersApi.userSearch({ keyword: Typed, limit: Limit }).then((Res) => {
+    RobloxQueryUsernameResultsCache.set(Typed, Res.data);
+    return Res.data;
+  });
 }

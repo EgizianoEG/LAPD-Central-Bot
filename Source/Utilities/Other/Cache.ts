@@ -33,8 +33,8 @@ export const IncidentAutocompletionCache = new NodeCache({
 
 export const CitationAutocompletionCache = new NodeCache({
   stdTTL: 10,
-  useClones: false,
   checkperiod: 5,
+  useClones: false,
   deleteOnExpire: true,
 });
 
@@ -42,5 +42,12 @@ export const BookingAutocompletionCache = new NodeCache({
   stdTTL: 10,
   useClones: false,
   checkperiod: 5,
+  deleteOnExpire: true,
+});
+
+export const RobloxQueryUsernameResultsCache = new NodeCache({
+  stdTTL: 8,
+  checkperiod: 4,
+  useClones: false,
   deleteOnExpire: true,
 });
