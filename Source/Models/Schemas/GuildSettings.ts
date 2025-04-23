@@ -29,7 +29,7 @@ const GuildSettings = new Schema({
 
   utif_enabled: {
     type: Boolean,
-    default: false,
+    default: true,
     required: true,
   },
 
