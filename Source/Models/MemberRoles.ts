@@ -107,4 +107,5 @@ const MemberRoles = new Schema(
   }
 );
 
-export default model("Saved_Role", MemberRoles);
+const MemberRolesModel = model("Saved_Role", MemberRoles);
+export default MemberRolesModel;

@@ -258,8 +258,8 @@ const ActivityNoticeSchema = new Schema<
 });
 
 // ---------------------------------------------------------------------------------------
-// Helpers Definitions:
-// --------------------
+// Helper Definitions:
+// -------------------
 ActivityNoticeSchema.set("optimisticConcurrency", true);
 ActivityNoticeSchema.virtual("is_approved").get(function (this: NoticeDocument) {
   return this.review_date && this.status === "Approved";
@@ -341,8 +341,9 @@ ActivityNoticeSchema.methods.getUpToDate = async function (
 };
 
 // ---------------------------------------------------------------------------------------
-export default model<UserActivityNotice.UserActivityNoticeDocument, UserActivityNotice.NoticeModel>(
-  "ActivityNotice",
-  ActivityNoticeSchema,
-  "activity_notices"
-);
+const UserActivityNoticeModel = model<
+  UserActivityNotice.UserActivityNoticeDocument,
+  UserActivityNotice.NoticeModel
+>("ActivityNotice", ActivityNoticeSchema, "activity_notices");
+
+export default UserActivityNoticeModel;

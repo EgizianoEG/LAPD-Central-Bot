@@ -172,5 +172,6 @@ for (const [MethodName, MethodFunc] of Object.entries(ShiftInstFuncs)) {
   ShiftSchema.method(MethodName, MethodFunc);
 }
 
-export default model<Shifts.ShiftDocument, Shifts.ShiftModel>("Shift", ShiftSchema);
+const ShiftModel = model<Shifts.ShiftDocument, Shifts.ShiftModel>("Shift", ShiftSchema);
+export default ShiftModel;
 export { ShiftFlags };

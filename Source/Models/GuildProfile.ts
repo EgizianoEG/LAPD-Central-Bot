@@ -72,8 +72,10 @@ ProfileSchema.pre(
   PreDelete
 );
 
-export default model<GuildProfiles.ProfileDocument, GuildProfiles.ProfileModelType>(
+const ProfileModel = model<GuildProfiles.ProfileDocument, GuildProfiles.ProfileModelType>(
   "GuildProfile",
   ProfileSchema,
   "profiles"
 );
+
+export default ProfileModel;
