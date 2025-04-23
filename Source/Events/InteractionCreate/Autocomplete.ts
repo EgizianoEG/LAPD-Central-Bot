@@ -36,9 +36,9 @@ export default async function AutocompletionHandler(
     }
   } catch (Err: any) {
     AppLogger.error({
+      message: `An error occurred while handling autocompletion for command '${FullCmdName}', field '${FieldName}'.`,
       label: "Events:InteractionCreate:AutoComplete",
       stack: Err.stack,
-      message: Err.message,
       details: { ...Err },
     });
   }
