@@ -21,12 +21,12 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
   const SelectedMember = CmdInteraction.options.getMember("member");
   const BackupReason = CmdInteraction.options.getString("reason");
 
-  if (!SelectedMember) {
+  if (SelectedMember) {
+    await CmdInteraction.deferReply({ flags: MessageFlags.Ephemeral });
+  } else {
     return new ErrorEmbed()
       .useErrTemplate("MemberNotFound")
       .replyToInteract(CmdInteraction, true, false);
-  } else {
-    await CmdInteraction.deferReply({ flags: MessageFlags.Ephemeral });
   }
 
   const IsBot = SelectedMember.user.bot;

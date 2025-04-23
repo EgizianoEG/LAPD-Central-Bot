@@ -400,12 +400,15 @@ export const ErrorMessages = {
       "The currently active shift does not match the shift you requested to void. You might want to contact a management person for assistance.",
   },
 
-  /**
-   * Roles save not found for deletion
-   */
-  RolesSaveNotFoundFD: {
+  InvalidRolesSaveId: {
+    Title: "Malformed ID",
+    Description:
+      "The backup ID you entered doesn't look right. Please check that it's a 24-character hexadecimal text (only numbers 0-9 and letters a-f).",
+  },
+
+  RolesSaveNotFound: {
     Title: "Save Not Found",
-    Description: "There was no save found with the provided identifier to delete.",
+    Description: "There was no save found with the provided identifier to take action on.",
   },
 
   /**
@@ -413,8 +416,7 @@ export const ErrorMessages = {
    */
   RolesSaveNotFoundFSM: {
     Title: "Save Not Found",
-    Description:
-      "There was no save found with the provided identifier for the selected user/member.",
+    Description: "There was no save found with the provided identifier for the selected member.",
   },
 
   NoAssignableRolesToLoad: {

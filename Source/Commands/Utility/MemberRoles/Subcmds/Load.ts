@@ -10,6 +10,7 @@ import {
   SlashCommandSubcommandBuilder,
 } from "discord.js";
 
+import { Types } from "mongoose";
 import { Emojis } from "@Config/Shared.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import MSRolesModel from "@Models/MemberRoles.js";
@@ -21,11 +22,16 @@ import Dedent from "dedent";
 async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
   const SelectedMember = CmdInteraction.options.getMember("member");
   const SaveId = CmdInteraction.options.getString("save", true);
-  const Save = await MSRolesModel.findById(SaveId);
+  const IsValidSaveId = Types.ObjectId.isValid(SaveId);
+  const Save = IsValidSaveId ? await MSRolesModel.findById(SaveId) : null;
 
   if (!SelectedMember) {
     return new ErrorEmbed()
       .useErrTemplate("MemberNotFound")
+      .replyToInteract(CmdInteraction, true, false);
+  } else if (!IsValidSaveId) {
+    return new ErrorEmbed()
+      .useErrTemplate("InvalidRolesSaveId")
       .replyToInteract(CmdInteraction, true, false);
   } else if (!Save || (Save && Save.member !== SelectedMember.id)) {
     return new ErrorEmbed()
