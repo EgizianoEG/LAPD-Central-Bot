@@ -59,6 +59,9 @@ const GetUANNoticeTitle = (IsLOA: boolean, TitleCase?: boolean) =>
   IsLOA ? `Leave of ${TitleCase ? "A" : "a"}bsence` : `Reduced ${TitleCase ? "A" : "a"}ctivity`;
 
 type DataDeletionWithDateType = "Before" | "After";
+type CmdOrStringSelectInteract<Cached extends CacheType = CacheType> =
+  | SlashCommandInteraction<Cached>
+  | StringSelectMenuInteraction<Cached>;
 type StringSelectOrButtonInteract<Cached extends CacheType = CacheType> =
   | StringSelectMenuInteraction<Cached>
   | ButtonInteraction<Cached>;
@@ -96,7 +99,7 @@ enum RADataActions {
 // ---------------------------------------------------------------------------------------
 // General Helpers:
 // ----------------
-function GetDataCategoriesDropdownMenu(Interaction: SlashCommandInteraction<"cached">) {
+function GetDataCategoriesDropdownMenu(Interaction: CmdOrStringSelectInteract<"cached">) {
   return new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(
     new StringSelectMenuBuilder()
       .setCustomId(`server-data-manage:${Interaction.user.id}`)
@@ -184,14 +187,14 @@ function GetUANManagementComponents(
       new ButtonBuilder()
         .setLabel("Delete Records Before Date")
         .setStyle(ButtonStyle.Danger)
-        .setDisabled(true)
+        .setDisabled(false)
         .setCustomId(
           `${ActionPrefix}-${Actions.DeleteBefore.split("-").pop()}:${Interaction.user.id}`
         ),
       new ButtonBuilder()
         .setLabel("Delete Records After Date")
         .setStyle(ButtonStyle.Danger)
-        .setDisabled(true)
+        .setDisabled(false)
         .setCustomId(
           `${ActionPrefix}-${Actions.DeleteAfter.split("-").pop()}:${Interaction.user.id}`
         ),
@@ -261,8 +264,8 @@ function GetUANManagementEmbed(NoticeIsLOA: boolean) {
           Delete pending requests that have not yet been reviewed, approved, or denied by management.
         - **Delete Past Records**
           This option will delete only ${LeaveOrRA} records that are no longer active and not in a pending state. Only finished and cancelled ones will be affected.
-        - **Delete Records Before/Since Date** (Currently Disabled)
-          Delete past, finished, and cancelled ${LeaveOrRA} records based on a specific date, before or after it. The end date (first), review date, or request date is being utilized for this action. Please take into considration that these two options are not accurate at the moment and may result into unexpected deletion of wanted records.
+        - **Delete Records Before/Since Date**
+          Delete past, finished, and cancelled ${LeaveOrRA} records based on a specific date, before or after it. The end date (first), review date, or request date for pending requests is being utilized for this action. Please take into considration that these two options are not accurate at the moment and may result into unexpected deletion of wanted records.
         
         -# This panel will automatically deactivate after 10 minutes of inactivity.
       `)
@@ -826,7 +829,7 @@ async function HandleShiftDataDeleteBeforeOrAfterDate(
 
 async function HandleShiftRecordsManagement(
   SMenuInteract: StringSelectMenuInteraction<"cached">,
-  CmdInteraction: SlashCommandInteraction<"cached">
+  CmdInteraction: CmdOrStringSelectInteract<"cached">
 ) {
   const MsgEmbed = GetShiftManagementEmbed();
   const ManagementComps = GetShiftDataManagementComponents(SMenuInteract);
@@ -917,7 +920,7 @@ function GetUANConfirmationPromptEmbed(Opts: {
     .setTitle("Confirmation Required")
     .setDescription(
       Dedent(`
-        **Are you certain you want to delete ${NoticeStatusText} ${NoticeType} records${RecordedBeforeAfterText}?**
+        **Are you certain you want to delete '${NoticeStatusText.toLowerCase()}' ${NoticeType} records${RecordedBeforeAfterText}?**
         This will permanently erase \`${NoticeRecordsCount}\` ${GetUANNoticeTitle(IsLOA).toLowerCase()} records.
 
         -# **Note:** This action is ***irreversible***, and data deleted cannot be restored after confirmation. By confirming, you accept full responsibility for this action.
@@ -930,7 +933,8 @@ async function HandleNoNoticesToTakeActionOn(
   RecInteract: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">,
   RecordsCount: number,
   InPastForm: boolean = true,
-  IsLOA: boolean = true
+  IsLOA: boolean = true,
+  RecReplyMethod?: "reply" | "editReply" | "update" | "followUp"
 ) {
   if (RecordsCount === 0) {
     return new InfoEmbed()
@@ -939,7 +943,7 @@ async function HandleNoNoticesToTakeActionOn(
       .setDescription(
         `There ${InPastForm ? "were" : "are"} no records of ${GetUANShortenedWEName(IsLOA).toLowerCase()} notices to delete or take action on.`
       )
-      .replyToInteract(RecInteract, true, false)
+      .replyToInteract(RecInteract, true, false, RecReplyMethod)
       .then(() => true);
   }
 
@@ -1176,7 +1180,8 @@ async function HandleUANDataDeleteWithDateConfirm(
   ComparisonDate: Date,
   ComparisonType: DataDeletionWithDateType,
   QueryFilter: Mongoose.FilterQuery<UserActivityNotice.UserActivityNoticeDocument>,
-  IsLOA: boolean
+  IsLOA: boolean,
+  NoticeStatuses: string[] = []
 ) {
   const Logger = IsLOA ? LeaveDataLogger : RADataLogger;
   await ConfirmInteract.update({
@@ -1198,7 +1203,11 @@ async function HandleUANDataDeleteWithDateConfirm(
   });
 
   return Promise.all([
-    Logger.LogUserActivityNoticesWipe(ConfirmInteract, DeleteResponse, "N/A"),
+    Logger.LogUserActivityNoticesWipe(
+      ConfirmInteract,
+      DeleteResponse,
+      NoticeStatuses.length ? ListFormatter.format(NoticeStatuses) : "N/A"
+    ),
     ConfirmInteract.editReply({
       components: [],
       embeds: [
@@ -1239,7 +1248,7 @@ async function HandleUANDataDeleteBeforeOrAfterDate(
   if (InputNoticeStatus?.includes(",")) {
     NoticeStatuses.push(...InputNoticeStatus.split(",").map((Status) => Status.trim()));
   } else if (InputNoticeStatus) {
-    NoticeStatuses.push(InputNoticeStatus);
+    NoticeStatuses.push(InputNoticeStatus.trim());
   }
 
   if (InputDate && !ParsedDate) {
@@ -1270,9 +1279,9 @@ async function HandleUANDataDeleteBeforeOrAfterDate(
           { end_date: ComparisonType === "Before" ? { $lte: ParsedDate } : { $gte: ParsedDate } },
         ],
       });
-    } else if (/^Pending$/i.exec(NoticeStatuses[0])) {
+    } else if (/^(?:Pending|Cancell?ed)$/i.exec(NoticeStatuses[0])) {
       Object.assign(MatchFilter, {
-        status: "Pending",
+        status: NoticeStatuses[0].toLowerCase() === "pending" ? "Pending" : "Cancelled",
         request_date: ComparisonType === "Before" ? { $lte: ParsedDate } : { $gte: ParsedDate },
       });
     }
@@ -1280,8 +1289,7 @@ async function HandleUANDataDeleteBeforeOrAfterDate(
     Object.assign(MatchFilter, {
       status: {
         $in: NoticeStatuses.map((Status) => {
-          const Trimmed = Status.trim();
-          return Trimmed.charAt(0).toUpperCase() + Trimmed.slice(1).toLowerCase();
+          return Status.charAt(0).toUpperCase() + Status.slice(1).toLowerCase();
         }).map((Status) => (Status.match(/^(?:Finished|Ended|Over)$/i) ? "Approved" : Status)),
       },
       $or: [
@@ -1311,8 +1319,16 @@ async function HandleUANDataDeleteBeforeOrAfterDate(
   }
 
   const NoticeRecordsCount = await UANModel.countDocuments(MatchFilter);
+  await ModalSubmission.deferUpdate();
+
   if (
-    (await HandleNoNoticesToTakeActionOn(BtnInteract, NoticeRecordsCount, false, IsLOA)) === true
+    (await HandleNoNoticesToTakeActionOn(
+      BtnInteract,
+      NoticeRecordsCount,
+      false,
+      IsLOA,
+      "followUp"
+    )) === true
   ) {
     return;
   }
@@ -1334,8 +1350,7 @@ async function HandleUANDataDeleteBeforeOrAfterDate(
       : RADataActions.DeleteAfter;
 
   const ConfirmationComponents = GetDeleteConfirmationComponents(BtnInteract, `sdm-${ActionType}`);
-
-  const RespMessage = await SendReplyAndFetchMessage(ModalSubmission, {
+  const RespMessage = await ModalSubmission.followUp({
     embeds: [ConfirmationEmbed],
     components: [ConfirmationComponents],
   });
@@ -1347,13 +1362,14 @@ async function HandleUANDataDeleteBeforeOrAfterDate(
     ParsedDate,
     ComparisonType,
     MatchFilter,
-    IsLOA
+    IsLOA,
+    NoticeStatuses
   );
 }
 
 async function HandleUserActivityNoticeRecordsManagement(
   SMenuInteract: StringSelectMenuInteraction<"cached">,
-  CmdInteraction: SlashCommandInteraction<"cached">,
+  CmdInteraction: CmdOrStringSelectInteract<"cached">,
   IsLeaveManagement: boolean
 ) {
   const MsgEmbed = GetUANManagementEmbed(IsLeaveManagement);
@@ -1366,7 +1382,8 @@ async function HandleUserActivityNoticeRecordsManagement(
   const CompActionCollector = EdittedMessage.createMessageComponentCollector({
     componentType: ComponentType.Button,
     filter: (Interact) => Interact.user.id === SMenuInteract.user.id,
-    time: 10 * 60 * 1000,
+    time: 12 * 60 * 1000,
+    idle: 10 * 60 * 1000,
   });
 
   CompActionCollector.on("collect", async function OnUANBtnInteract(BtnInteract) {
@@ -1406,16 +1423,16 @@ async function HandleUserActivityNoticeRecordsManagement(
     }
   });
 
-  CompActionCollector.on("end", async function OnUANEnd(_, EndReason) {
+  CompActionCollector.on("end", async function OnUANEnd(Collected, EndReason) {
     if (EndReason.match(/^\w+Delete/)) return;
     if (EndReason === "BackToMain") {
       return Callback(CmdInteraction);
-    } else if (EndReason.includes("time")) {
+    } else if (EndReason.includes("time") || EndReason.includes("idle")) {
       ManagementComps.forEach((ActionRow) =>
         ActionRow.components.forEach((Button) => Button.setDisabled(true))
       );
 
-      return SMenuInteract.update({
+      return SMenuInteract.editReply({
         components: ManagementComps,
       });
     }
@@ -1426,7 +1443,7 @@ async function HandleUserActivityNoticeRecordsManagement(
 // Initial Handlers:
 // -----------------
 async function HandleInitialRespActions(
-  CmdInteract: SlashCommandInteraction<"cached">,
+  CmdInteract: CmdOrStringSelectInteract<"cached">,
   CmdRespMsg: Message<true> | InteractionResponse<true>,
   SMenuDisabler: () => Promise<any>
 ) {
@@ -1449,18 +1466,23 @@ async function HandleInitialRespActions(
     .catch((Err) => HandleActionCollectorExceptions(Err, SMenuDisabler));
 }
 
-async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
+async function Callback(CmdInteraction: CmdOrStringSelectInteract<"cached">) {
   const CmdRespEmbed = new EmbedBuilder()
     .setColor(BaseEmbedColor)
     .setTitle("Server Data Management")
     .setDescription("**Please select a data category from the drop-down list below to continue.**");
 
   const CTopicsMenu = GetDataCategoriesDropdownMenu(CmdInteraction);
-  const ReplyMethod = CmdInteraction.replied || CmdInteraction.deferred ? "editReply" : "reply";
-  const CmdRespMsg = await CmdInteraction[ReplyMethod]({
-    embeds: [CmdRespEmbed],
-    components: [CTopicsMenu],
-  });
+  const CmdRespMsg =
+    CmdInteraction.replied || CmdInteraction.deferred
+      ? await CmdInteraction.editReply({
+          embeds: [CmdRespEmbed],
+          components: [CTopicsMenu],
+        })
+      : await CmdInteraction.reply({
+          embeds: [CmdRespEmbed],
+          components: [CTopicsMenu],
+        });
 
   const PromptDisabler = () => {
     CTopicsMenu.components[0].setDisabled(true);
