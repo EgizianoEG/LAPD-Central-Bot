@@ -1,6 +1,9 @@
 import UserActivityNoticeModel from "@Models/UserActivityNotice.js";
 import GuildProfileModel from "@Models/GuildProfile.js";
 import MemberRolesModel from "@Models/MemberRoles.js";
+import CitationModel from "@Models/Citation.js";
+import IncidentModel from "@Models/Incident.js";
+import ArrestModel from "@Models/Arrest.js";
 import ShiftModel from "@Models/Shift.js";
 
 /**
@@ -17,5 +20,8 @@ export default async function DeleteAssociatedGuildData(GuildIDs: string | strin
     GuildProfileModel.deleteMany(QueryFilter),
     MemberRolesModel.deleteMany(QueryFilter),
     ShiftModel.deleteMany(QueryFilter),
+    ArrestModel.deleteMany(QueryFilter),
+    CitationModel.deleteMany(QueryFilter),
+    IncidentModel.deleteMany(QueryFilter),
   ]);
 }
