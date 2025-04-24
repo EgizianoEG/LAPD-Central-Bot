@@ -81,7 +81,7 @@ export namespace Guilds {
       default_quota: number;
 
       /** Self-explanatory. */
-      shift_types: Types.DocumentArray<Guilds.ShiftType>[];
+      shift_types: Guilds.ShiftType[];
 
       /** The roles that will be assigned to members when they start a shift or start a break while on shift. Maximum of two role IDs per shift state. */
       role_assignment: {

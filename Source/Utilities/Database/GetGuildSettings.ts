@@ -1,5 +1,7 @@
 import { GuildSettingsCache } from "@Utilities/Other/Cache.js";
+import { Guilds } from "@Typings/Utilities/Database.js";
 import GuildModel from "@Models/Guild.js";
+type HydratedGuildSettings = Mongoose.HydratedSingleSubdocument<Guilds.GuildSettings>;
 
 /**
  * Retrieves the settings for a specific guild from the database.
@@ -9,14 +11,17 @@ import GuildModel from "@Models/Guild.js";
  * @param {boolean} [UseCache=true] - Determines whether to first check the cache for the guild's settings. Defaults to `true`.
  * @returns A promise that resolves to the guild's settings if found, or `null` if the guild does not exist.
  */
-export default async function GetGuildSettings(
+export default async function GetGuildSettings<ReturnLeaned extends boolean | undefined = true>(
   GuildId: string,
-  Lean: boolean = true,
+  Lean?: ReturnLeaned,
   UseCache: boolean = true
-) {
+): Promise<ReturnLeaned extends true ? HydratedGuildSettings | null : Guilds.GuildSettings | null> {
   if (UseCache) {
-    const CachedSettings = GuildSettingsCache.get(GuildId);
-    if (CachedSettings) return CachedSettings;
+    const CachedSettings = GuildSettingsCache.get<HydratedGuildSettings | Guilds.GuildSettings>(
+      `${GuildId}:${Lean}`
+    );
+
+    if (CachedSettings) return CachedSettings as any;
   }
 
   return GuildModel.findById(GuildId)
@@ -24,7 +29,7 @@ export default async function GetGuildSettings(
     .lean(Lean)
     .then((GuildData) => {
       if (!GuildData) return null;
-      GuildSettingsCache.set(GuildId, GuildData.settings);
+      GuildSettingsCache.set(`${GuildId}:${Lean}`, GuildData.settings);
       return GuildData.settings;
-    });
+    }) as any;
 }
