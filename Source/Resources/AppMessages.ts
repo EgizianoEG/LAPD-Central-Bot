@@ -521,6 +521,47 @@ export const ErrorMessages = {
     `),
   },
 
+  NicknameReplacementAlreadyInProgress: {
+    Title: "Replacement Cooldown",
+    Description:
+      "There's a 5-minute waiting period between nickname replacements. " +
+      "One is either in progress or recently completed - please try again later.",
+  },
+
+  NicknameReplaceNoEligibleMembers: {
+    Title: "No Eligible Members",
+    Description:
+      "There are no members on the server the application has permission to modify nicknames for. " +
+      "Make sure that the application has a role above the members you want to modify.",
+  },
+
+  NicknameReplaceHigherRoleFilterProvided: {
+    Title: "Invalid Role Filter",
+    Description:
+      "The role provided for filtering is higher than the highest role the application has permission to modify nicknames for. " +
+      "Make sure that the application has a role above the members you want to modify their nicknames.",
+  },
+
+  NicknameReplaceFilteredReplacement: {
+    Title: "Invalid Replacement Detected",
+    Description:
+      "The replacement string provided contains invalid or disallowed content. " +
+      "Please ensure that your replacement string adheres to the application's ToS and the server's content policies.",
+  },
+
+  NicknameReplaceMissingManageNicknames: {
+    Title: "Missing Permission",
+    Description:
+      "The application no longer has the `Manage Nicknames` permission required to modify nicknames since this command was executed. " +
+      "Please ensure the necessary permission is granted and try again.",
+  },
+
+  NicknameReplaceNoReplacementsMade: {
+    Title: "No Replacements Made",
+    Description:
+      "The application couldn't replace any nicknames that matched the provided criteria. This could be due to factors such as role position or insufficient permissions.",
+  },
+
   /**
    * @template {string} NoticeType
    */

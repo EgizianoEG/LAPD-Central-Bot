@@ -1,5 +1,7 @@
 import {
   SlashCommandSubcommandBuilder,
+  PermissionFlagsBits,
+  ButtonInteraction,
   ActionRowBuilder,
   ButtonBuilder,
   ComponentType,
@@ -7,176 +9,492 @@ import {
   ButtonStyle,
   userMention,
   channelLink,
+  GuildMember,
+  Collection,
+  Message,
   Colors,
 } from "discord.js";
 
-import { Emojis } from "@Config/Shared.js";
-import { ErrorEmbed, InfoEmbed, SuccessEmbed, WarnEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import HandleActionCollectorExceptions from "@Utilities/Other/HandleCompCollectorExceptions.js";
-import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
 import Dedent from "dedent";
+import AppLogger from "@Utilities/Classes/AppLogger.js";
+import DHumanize from "humanize-duration";
+import { Emojis } from "@Config/Shared.js";
+import { GetErrorId } from "@Utilities/Strings/Random.js";
+import { FilterUserInput } from "@Utilities/Strings/Redactor.js";
+import { OngoingServerMemberNicknamesReplaceCache } from "@Utilities/Other/Cache.js";
+import { ErrorEmbed, InfoEmbed, SuccessEmbed, WarnEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+
 const RegexFlags = ["i", "g", "gi"];
+const HumanizeDuration = DHumanize.humanizer({
+  conjunction: " and ",
+  largest: 3,
+  round: true,
+});
 
 // ---------------------------------------------------------------------------------------
-// Functions:
-// ----------
-function GetConfirmationPromptComponents(CmdInteraction: SlashCommandInteraction<"cached">) {
-  return [
-    new ActionRowBuilder<ButtonBuilder>().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`confirm-nickname-replace:${CmdInteraction.user.id}:${CmdInteraction.guildId}`)
-        .setLabel("Confirm and Replace All")
-        .setStyle(ButtonStyle.Danger),
-      new ButtonBuilder()
-        .setCustomId(`cancel-nickname-replace:${CmdInteraction.user.id}:${CmdInteraction.guildId}`)
-        .setLabel("Cancel Replacement")
-        .setStyle(ButtonStyle.Secondary)
-    ),
-  ];
+// Helpers & Handlers:
+// -------------------
+function GetConfirmationPromptActionRow(CmdInteraction: SlashCommandInteraction<"cached">) {
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`nr-confirm:${CmdInteraction.user.id}`)
+      .setLabel("Confirm and Replace All")
+      .setStyle(ButtonStyle.Danger),
+    new ButtonBuilder()
+      .setCustomId(`nr-cancel:${CmdInteraction.user.id}`)
+      .setLabel("Cancel Replacement")
+      .setStyle(ButtonStyle.Secondary)
+  );
 }
 
-async function Callback(Interaction: SlashCommandInteraction<"cached">) {
-  const InputRegex = Interaction.options.getString("regex", true);
-  const InputRFlag = Interaction.options.getString("flags", false);
-  const RoleFilter = Interaction.options.getRole("filter", false);
-  const InputReplacement = Interaction.options.getString("replacement", true);
+function NicknameReplaceMapper(Member: GuildMember, MatchRegex: RegExp, InputReplacement: string) {
+  return {
+    member: Member,
+    original: Member.nickname ?? Member.displayName,
+    replaced: (Member.nickname ?? Member.displayName).replace(MatchRegex, InputReplacement),
+  };
+}
 
+async function IsReplacementSafeToApply(
+  CmdInteract: SlashCommandInteraction<"cached">,
+  SampleReplacements: { member: GuildMember; original: string; replaced: string }[]
+) {
+  const [FilteredOriginal, FilteredReplacements] = await Promise.all([
+    Promise.all(
+      SampleReplacements.map((Rep) =>
+        FilterUserInput(Rep.original, {
+          filter_links_emails: true,
+          guild_instance: CmdInteract.guild,
+        })
+      )
+    ),
+    Promise.all(
+      SampleReplacements.map((Rep) =>
+        FilterUserInput(Rep.replaced, {
+          filter_links_emails: true,
+          guild_instance: CmdInteract.guild,
+        })
+      )
+    ),
+  ]);
+
+  for (let i = 0; i < SampleReplacements.length; i++) {
+    if (
+      SampleReplacements[i].replaced !== FilteredReplacements[i] &&
+      FilteredOriginal[i] === SampleReplacements[i].original
+    ) {
+      return new ErrorEmbed()
+        .useErrTemplate("NicknameReplaceFilteredReplacement")
+        .replyToInteract(CmdInteract, true)
+        .then(() => false);
+    }
+  }
+
+  return true;
+}
+
+async function HandleReplacementCancellation(ButtonInteract: ButtonInteraction<"cached">) {
+  if (ButtonInteract.customId.includes("cancel")) {
+    return ButtonInteract.update({
+      components: [],
+      embeds: [
+        new InfoEmbed()
+          .setTitle("Replacement Cancelled")
+          .setDescription("The nickname replacement process was cancelled at your request."),
+      ],
+    });
+  }
+}
+
+/**
+ * Processes batched nickname replacements for a list of members, updating their nicknames
+ * in batches and providing progress updates via a button interaction.
+ *
+ * @param ButtonInteract - The button interaction used to send progress updates.
+ * @param Replacements - An array of objects containing the members and their respective
+ *                       replacement nicknames, as returned by `NicknameReplaceMapper`.
+ * @param BatchSize - The number of members to process in each batch. Defaults to 50.
+ * @returns A promise that resolves to an object containing the total number of successful
+ *          replacements (`TotalReplaced`) and the total number of failures (`TotalFailed`).
+ *
+ * @remarks
+ * - The function splits the replacements into batches of the specified size and processes
+ *   each batch sequentially.
+ * - Progress updates are sent to the user via the provided button interaction every 3 seconds
+ *   or after each batch is completed.
+ * - A short delay is introduced between processing batches to avoid rate limits.
+ * - If an error occurs while setting a member's nickname, it is counted as a failure, and
+ *   the function continues processing the remaining members.
+ */
+async function ProcessBatchedReplacements(
+  ButtonInteract: ButtonInteraction<"cached">,
+  Replacements: ReturnType<typeof NicknameReplaceMapper>[],
+  BatchSize = 50
+): Promise<{ TotalReplaced: number; TotalFailed: number }> {
+  const TotalMembers = Replacements.length;
+  let ProcessedCount = 0;
+  let TotalReplaced = 0;
+  let TotalFailed = 0;
+  let LastUpdateTime = Date.now();
+
+  const Batches: (typeof Replacements)[] = [];
+  for (let i = 0; i < TotalMembers; i += BatchSize) {
+    Batches.push(Replacements.slice(i, i + BatchSize));
+  }
+
+  await UpdateProgressMessage(ButtonInteract, 0, TotalMembers, 0);
+  for (let BatchIndex = 0; BatchIndex < Batches.length; BatchIndex++) {
+    const CurrentBatch = Batches[BatchIndex];
+    const BatchResults = await Promise.allSettled(
+      CurrentBatch.map(async ({ member, replaced }) => {
+        try {
+          await member.setNickname(
+            replaced,
+            `Automated nickname replacement; executed by @${ButtonInteract.user.username}`
+          );
+          return true;
+        } catch {
+          return false;
+        }
+      })
+    );
+
+    const BatchSuccesses = BatchResults.filter(
+      (Result) => Result.status === "fulfilled" && Result.value === true
+    ).length;
+
+    TotalReplaced += BatchSuccesses;
+    TotalFailed += CurrentBatch.length - BatchSuccesses;
+    ProcessedCount += CurrentBatch.length;
+
+    const CurrentTime = Date.now();
+    if (CurrentTime - LastUpdateTime > 3 * 1000 || BatchIndex === Batches.length - 1) {
+      await UpdateProgressMessage(
+        ButtonInteract,
+        ProcessedCount,
+        TotalMembers,
+        TotalReplaced,
+        BatchIndex + 1,
+        Batches.length
+      );
+      LastUpdateTime = CurrentTime;
+    }
+
+    if (BatchIndex < Batches.length - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+  }
+
+  return { TotalReplaced, TotalFailed };
+}
+
+/**
+ * Updates the progress message for a nickname replacement operation.
+ * @param ButtonInteract - The button interaction object, cached for the current session.
+ * @param ProcessedCount - The number of nicknames that have been processed so far.
+ * @param TotalCount - The total number of nicknames to be processed.
+ * @param SuccessCount - The number of nicknames successfully replaced.
+ * @param CurrentBatch - (Optional) The current batch number being processed, if batching is used.
+ * @param TotalBatches - (Optional) The total number of batches, if batching is used.
+ * @returns A promise that resolves when the progress message has been updated.
+ */
+async function UpdateProgressMessage(
+  ButtonInteract: ButtonInteraction<"cached">,
+  ProcessedCount: number,
+  TotalCount: number,
+  SuccessCount: number,
+  CurrentBatch?: number,
+  TotalBatches?: number
+): Promise<void> {
+  const PercentComplete = Math.round((ProcessedCount / TotalCount) * 100);
+  const ProgressBarSegments = 20;
+  const FilledSegments = Math.floor((ProcessedCount / TotalCount) * ProgressBarSegments);
+  const EmptySegments = ProgressBarSegments - FilledSegments;
+  const ProgressBar = `[${"■".repeat(FilledSegments)}${"□".repeat(EmptySegments)}]`;
+  const BatchInfo =
+    CurrentBatch && TotalBatches ? `\nProcessing batch ${CurrentBatch}/${TotalBatches}` : "";
+
+  const ProgressEmbed = new EmbedBuilder()
+    .setColor(Colors.DarkGrey)
+    .setTitle(`${Emojis.LoadingGrey}\u{2000}Replacing Nicknames`)
+    .setDescription(
+      Dedent(`
+        **Progress: ${PercentComplete}% complete**
+        ${ProgressBar} \`${ProcessedCount}/${TotalCount}\`
+        
+        Successfully replaced: \`${SuccessCount}\`
+        Failed replacements: \`${ProcessedCount - SuccessCount}\`${BatchInfo}
+        
+        Kindly wait. Matching nicknames are currently being modified, which may take some time.
+      `)
+    );
+
+  await ButtonInteract.editReply({
+    embeds: [ProgressEmbed],
+    components: [],
+  }).catch(() => null);
+}
+
+/**
+ * Handles the confirmation and execution of nickname replacements for eligible members in a Discord guild.
+ *
+ * @param ButtonInteract - The button interaction that triggered the nickname replacement process.
+ * @param MatchingMembers - A collection of guild members whose nicknames match the specified regex.
+ * @param EligibleMembers - A collection of guild members eligible for nickname replacement based on permissions and hierarchy.
+ * @param MatchRegex - The regular expression used to identify matching nicknames.
+ * @param ReplacementExp - The replacement expression to apply to matching nicknames.
+ * @returns A promise that resolves to `true` if the process completes successfully, or `false` if it fails or is aborted.
+ * @remarks
+ * - Ensures that no other nickname replacement process is ongoing for the guild.
+ * - Verifies that the bot has the `ManageNicknames` permission.
+ * - Processes nickname replacements in batches, with the batch size determined dynamically based on the total number of replacements.
+ * - Provides feedback to the user through interaction updates and embeds.
+ * - Automatically clears the ongoing process cache for the guild after 5 minutes.
+ */
+async function HandleReplacementConfirmation(
+  ButtonInteract: ButtonInteraction<"cached">,
+  MatchingMembers: Collection<string, GuildMember>,
+  EligibleMembers: Collection<string, GuildMember>,
+  MatchRegex: RegExp,
+  ReplacementExp: string
+): Promise<boolean> {
+  const AppMember = await ButtonInteract.guild.members.fetchMe();
+  if (OngoingServerMemberNicknamesReplaceCache.has(ButtonInteract.guildId)) {
+    return new ErrorEmbed()
+      .useErrTemplate("NicknameReplacementAlreadyInProgress")
+      .replyToInteract(ButtonInteract, true)
+      .then(() => false);
+  } else if (!AppMember.permissions.has(PermissionFlagsBits.ManageNicknames, true)) {
+    return new ErrorEmbed()
+      .useErrTemplate("NicknameReplaceMissingManageNicknames")
+      .replyToInteract(ButtonInteract, true)
+      .then(() => false);
+  }
+
+  OngoingServerMemberNicknamesReplaceCache.set(ButtonInteract.guildId, true);
+  const Replacements = EligibleMembers.filter(
+    (Member) => AppMember.roles.highest.comparePositionTo(Member.roles.highest) > 0
+  ).map((Member) => NicknameReplaceMapper(Member, MatchRegex, ReplacementExp));
+
+  await ButtonInteract.update({
+    components: [],
+    embeds: [
+      new EmbedBuilder()
+        .setColor(Colors.DarkGrey)
+        .setTitle(`${Emojis.LoadingGrey}\u{2000}Replacing Nicknames`)
+        .setDescription("Preparing to process nickname changes. This will begin momentarily."),
+    ],
+  });
+
+  let FinalRespEmbed: EmbedBuilder;
+  const BatchSize = Replacements.length > 500 ? 50 : Replacements.length > 200 ? 25 : 15;
+  const { TotalReplaced, TotalFailed } = await ProcessBatchedReplacements(
+    ButtonInteract,
+    Replacements,
+    BatchSize
+  );
+
+  setTimeout(
+    () => {
+      OngoingServerMemberNicknamesReplaceCache.del(ButtonInteract.guildId);
+    },
+    5 * 60 * 1000
+  );
+
+  if (TotalReplaced === 0) {
+    FinalRespEmbed = new ErrorEmbed().useErrTemplate("NicknameReplaceNoReplacementsMade");
+  } else {
+    FinalRespEmbed = new SuccessEmbed().setTitle("Success").setDescription(
+      Dedent(`
+          **Process completed successfully.**
+          **Here is a summary of the results:**
+          > - Members Matched: \`${MatchingMembers.size}\`
+          > - Members Eligible: \`${EligibleMembers.size}\`
+          > - Nicknames Replaced: \`${TotalReplaced}\`
+          > - Nicknames Failed: \`${TotalFailed}\`
+          
+          The process took approximately ${HumanizeDuration(Date.now() - ButtonInteract.createdTimestamp)}.
+        `)
+    );
+  }
+
+  await ButtonInteract.editReply({
+    embeds: [FinalRespEmbed],
+    components: [],
+  }).catch(() => null);
+
+  return true;
+}
+
+async function HandlePromptInteractions(
+  CmdInteract: SlashCommandInteraction<"cached">,
+  PromptMessage: Message<true>,
+  MatchingMembers: Collection<string, GuildMember>,
+  EligibleMembers: Collection<string, GuildMember>,
+  MatchRegex: RegExp,
+  ReplacementExp: string
+): Promise<void> {
+  const ComponentCollector = PromptMessage.createMessageComponentCollector({
+    filter: (BI) => BI.user.id === CmdInteract.user.id,
+    componentType: ComponentType.Button,
+    idle: 5 * 60 * 1000,
+    time: 8 * 60 * 1000,
+  });
+
+  ComponentCollector.on("collect", async (ButtonInteract) => {
+    const CustomId = ButtonInteract.customId;
+
+    try {
+      if (CustomId.includes("cancel")) {
+        ComponentCollector.stop("Cancelled");
+        await HandleReplacementCancellation(ButtonInteract);
+      } else if (CustomId.includes("confirm")) {
+        const ProcessCompleted = await HandleReplacementConfirmation(
+          ButtonInteract,
+          MatchingMembers,
+          EligibleMembers,
+          MatchRegex,
+          ReplacementExp
+        );
+
+        if (ProcessCompleted) {
+          ComponentCollector.stop("Completed");
+        }
+      } else {
+        return ButtonInteract.deferUpdate();
+      }
+    } catch (Err: any) {
+      const ErrorId = GetErrorId();
+      if (!ButtonInteract.replied) {
+        await new ErrorEmbed()
+          .useErrTemplate("AppError")
+          .setErrorId(ErrorId)
+          .replyToInteract(ButtonInteract, true);
+      }
+
+      AppLogger.error({
+        message: "Something went wrong while handling prompt interaction; ",
+        label: "Commands:Utility:Nickname:Replace",
+        stack: Err.stack,
+      });
+    }
+  });
+
+  ComponentCollector.on("end", async (Collected, Reason) => {
+    if (["Cancelled", "Completed"].includes(Reason) || Reason.match(/^\w+Delete/)) {
+      return;
+    }
+
+    const LastInteract = Collected.last() ?? CmdInteract;
+    const ActionRow = GetConfirmationPromptActionRow(CmdInteract);
+    ActionRow.components.forEach((Button) => Button.setDisabled(true));
+    LastInteract.editReply({
+      components: [ActionRow],
+    }).catch(() => null);
+  });
+}
+
+// ---------------------------------------------------------------------------------------
+// Initial Handling:
+// -----------------
+async function Callback(CmdInteract: SlashCommandInteraction<"cached">) {
+  const InputRegex = CmdInteract.options.getString("regex", true);
+  const InputRFlag = CmdInteract.options.getString("flags", false);
+  const RoleFilter = CmdInteract.options.getRole("role_filter", false);
+  const InputReplacement = CmdInteract.options.getString("replacement", true);
+  const AppMember = await CmdInteract.guild.members.fetchMe();
+
+  if (RoleFilter && RoleFilter.comparePositionTo(AppMember.roles.highest) >= 0) {
+    return new ErrorEmbed()
+      .useErrTemplate("NicknameReplaceHigherRoleFilterProvided")
+      .replyToInteract(CmdInteract, true);
+  }
+
+  await CmdInteract.deferReply();
   try {
-    const MatchRegex = new RegExp(InputRegex, InputRFlag || undefined);
-    const GuildMembers = await Interaction.guild.members.fetch();
+    const MatchRegex = new RegExp(InputRegex, InputRFlag ?? undefined);
+    const GuildMembers = await CmdInteract.guild.members.fetch();
     const MembersMatching = GuildMembers.filter((Member) => {
       return (
+        !Member.user.bot &&
         (RoleFilter ? Member.roles.cache.has(RoleFilter.id) : true) &&
-        (Member.nickname ?? Member.displayName).match(MatchRegex)?.every((M) => !!M)
+        MatchRegex.test(Member.nickname ?? Member.displayName)
       );
+    });
+
+    const EligibleMembers = MembersMatching.filter((Member) => {
+      return AppMember.roles.highest.comparePositionTo(Member.roles.highest) > 0;
     });
 
     if (MembersMatching.size === 0) {
       return new InfoEmbed()
         .useInfoTemplate("NicknameRegexNoMatchingMembers")
-        .replyToInteract(Interaction, true);
+        .replyToInteract(CmdInteract, true);
     }
 
-    const Replacements = MembersMatching.map((Member) => {
-      return {
-        member: Member,
-        original: Member.nickname ?? Member.displayName,
-        replaced: (Member.nickname ?? Member.displayName).replace(MatchRegex, InputReplacement),
-      };
-    });
+    if (EligibleMembers.size === 0) {
+      return new ErrorEmbed()
+        .useErrTemplate("NicknameReplaceNoEligibleMembers")
+        .replyToInteract(CmdInteract, true);
+    }
 
-    const ReplacementSample = Replacements.slice(0, 4)
-      .map((Rep) => `${userMention(Rep.member.id)}: \`${Rep.original}\` → \`${Rep.replaced}\``)
-      .join(`\n${" ".repeat(12)}- `);
+    const SampleReplacements = EligibleMembers.random(4).map((Member) =>
+      NicknameReplaceMapper(Member, MatchRegex, InputReplacement)
+    );
 
+    if (!(await IsReplacementSafeToApply(CmdInteract, SampleReplacements))) {
+      return;
+    }
+
+    const FormattedSampleReplacementList = SampleReplacements.map(
+      (Rep) => `${userMention(Rep.member.id)}: \`${Rep.original}\` → \`${Rep.replaced}\``
+    ).join(`\n${" ".repeat(12)}- `);
+
+    const Plural = MembersMatching.size > 1 ? "s" : "";
     const ConfirmationEmbed = new WarnEmbed()
       .setTitle("Confirmation Required")
       .setFooter({
-        text: "This will be automatically cancelled after five minutes of no response.",
+        text: "This prompt will be automatically cancelled after five minutes of no response.",
       })
       .setDescription(
         Dedent(`
-          **Are you certain you want to replace all \
-          [${MembersMatching.size}](${channelLink(Interaction.channelId)}) \
-          nicknames matching the regex \`${InputRegex}\` with \`${InputReplacement}\`?**
+          **Are you certain you want to replace ${MembersMatching.size === 1 ? "this" : "these"} \
+          [${MembersMatching.size}](${channelLink(CmdInteract.channelId)}) \
+          nickname${Plural} matching the regex \`${InputRegex}\` with \`${InputReplacement}\`?**
           
           **Please keep in mind that:**
           - This action will not affect users with a role position higher than the application's highest role.
-          - This is an irreversible action that will replace any nicknames that match this regex, as demonstrated by the examples below:
-            - ${ReplacementSample}
+          - This is an irreversible action that will replace any nicknames that match this regex, as demonstrated by the example${Plural} below:
+            - ${FormattedSampleReplacementList}
         `)
       );
 
-    const ConfirmationPrompt = await Interaction.reply({
+    const ConfirmationPrompt = await CmdInteract.editReply({
       embeds: [ConfirmationEmbed],
-      components: GetConfirmationPromptComponents(Interaction),
-      withResponse: true,
+      components: [GetConfirmationPromptActionRow(CmdInteract)],
     });
 
-    const ButtonInteract = await ConfirmationPrompt.resource
-      ?.message!.awaitMessageComponent({
-        filter: (BI) => HandleCollectorFiltering(Interaction, BI),
-        componentType: ComponentType.Button,
-        time: 5 * 60 * 1000,
-      })
-      .catch((Err) => HandleActionCollectorExceptions(Err, ConfirmationPrompt));
-
-    if (ButtonInteract?.customId.includes("confirm")) {
-      let FinalRespEmbed: EmbedBuilder;
-      let TotalReplaced = 0;
-      let TotalFailed = 0;
-
-      await ButtonInteract.update({
-        components: [],
-        embeds: [
-          new EmbedBuilder()
-            .setColor(Colors.DarkGrey)
-            .setTitle(`${Emojis.LoadingGrey}\u{2000}Replacing Nicknames`)
-            .setDescription(
-              "Kindly wait. Matching nicknames are currently being modified, which may take some time."
-            ),
-        ],
-      });
-
-      await Promise.allSettled(
-        Replacements.map(async ({ member, replaced }) => {
-          try {
-            await member.setNickname(
-              replaced,
-              `Automated Nickname Replacement - Executed By @${ButtonInteract.user.username}`
-            );
-            return TotalReplaced++;
-          } catch {
-            return TotalFailed++;
-          }
-        })
-      );
-
-      if (TotalReplaced === 0) {
-        FinalRespEmbed = new ErrorEmbed()
-          .setTitle("Replacement Failed")
-          .setDescription(
-            "The application couldn't replace any nicknames that matched the provided criteria. This could be due to factors such as role position or insufficient permissions."
-          );
-      } else {
-        FinalRespEmbed = new SuccessEmbed()
-          .setTitle("Success")
-          .setDescription(
-            `Successfully replaced and modified ${TotalReplaced} out of ${MembersMatching.size} matching nicknames.`
-          );
-      }
-
-      return ButtonInteract.editReply({
-        embeds: [FinalRespEmbed],
-        components: [],
-      });
-    }
-
-    if (ButtonInteract?.customId.includes("cancel")) {
-      return ButtonInteract.update({
-        components: [],
-        embeds: [
-          new InfoEmbed()
-            .setTitle("Replacement Cancelled")
-            .setDescription("The nickname replacement process was cancelled."),
-        ],
-      });
-    }
+    await HandlePromptInteractions(
+      CmdInteract,
+      ConfirmationPrompt,
+      MembersMatching,
+      EligibleMembers,
+      MatchRegex,
+      InputReplacement
+    );
   } catch (Err) {
     if (Err instanceof SyntaxError) {
       return new ErrorEmbed()
         .useErrTemplate("InvalidRegexSyntax")
-        .replyToInteract(Interaction, true);
+        .replyToInteract(CmdInteract, true);
     }
 
-    return new ErrorEmbed()
-      .setDescription("Seems like an error occurred while doing nickname replacement for members.")
-      .replyToInteract(Interaction, true);
+    throw Err;
   }
 }
 
 // ---------------------------------------------------------------------------------------
-// Command structure:
+// Command Structure:
 // ------------------
 const CommandObject = {
   callback: Callback,
@@ -187,7 +505,7 @@ const CommandObject = {
     )
     .addStringOption((Opt) =>
       Opt.setName("regex")
-        .setDescription("The regex to match nicknames with.")
+        .setDescription("The regular expression to match nicknames with.")
         .setMinLength(2)
         .setMaxLength(35)
         .setRequired(true)
@@ -204,14 +522,14 @@ const CommandObject = {
         .setDescription("The regex flag(s) to use.")
         .setRequired(false)
         .setChoices(
-          ...RegexFlags.map((F) => {
-            return { name: F, value: F };
+          ...RegexFlags.map((RegexFlag) => {
+            return { name: RegexFlag, value: RegexFlag };
           })
         )
     )
     .addRoleOption((Opt) =>
-      Opt.setName("in_role")
-        .setDescription("Only replace members in this role (optional).")
+      Opt.setName("role_filter")
+        .setDescription("Only replace nicknames of members in this role (optional).")
         .setRequired(false)
     ),
 };
