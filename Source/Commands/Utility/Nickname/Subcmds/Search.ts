@@ -30,17 +30,18 @@ function ToEmbedPages(Members: GuildMember[]) {
   return Embeds;
 }
 
-async function Callback(Interaction: SlashCommandInteraction<"cached">) {
-  const InputRegex = Interaction.options.getString("regex", true);
-  const InputRFlag = Interaction.options.getString("flags", false);
-  const RoleFilter = Interaction.options.getRole("in_role", false);
-  const ResponseEphemeral = Interaction.options.getBoolean("ephemeral", false) || false;
+async function Callback(CmdInteract: SlashCommandInteraction<"cached">) {
+  const InputRegex = CmdInteract.options.getString("regex", true);
+  const InputRFlag = CmdInteract.options.getString("flags", false);
+  const RoleFilter = CmdInteract.options.getRole("role_filter", false);
+  const ResponseEphemeral = CmdInteract.options.getBoolean("ephemeral", false) || false;
 
   try {
-    const Regex = new RegExp(InputRegex, InputRFlag || undefined);
-    const GuildMembers = await Interaction.guild.members.fetch();
+    const Regex = new RegExp(InputRegex, InputRFlag ?? undefined);
+    const GuildMembers = await CmdInteract.guild.members.fetch();
     const MembersMatching = GuildMembers.filter((Member) => {
       return (
+        !Member.user.bot &&
         (RoleFilter ? Member.roles.cache.has(RoleFilter.id) : true) &&
         Regex.test(Member.nickname ?? Member.displayName)
       );
@@ -52,19 +53,27 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     if (EmbedPages.length) {
       return HandleEmbedPagination(
         EmbedPages,
-        Interaction,
+        CmdInteract,
         "Commands:Utility:Nickname:Search",
         ResponseEphemeral
       );
     } else {
       return new InfoEmbed()
         .useInfoTemplate("NicknameRegexNoMatchingMembers")
-        .replyToInteract(Interaction, true);
+        .replyToInteract(CmdInteract, true);
     }
-  } catch {
+  } catch (Err) {
+    if (Err instanceof SyntaxError) {
+      return new ErrorEmbed()
+        .useErrTemplate("InvalidRegexSyntax")
+        .replyToInteract(CmdInteract, true);
+    }
+
     return new ErrorEmbed()
-      .setDescription("Seems like an error occurred while searching for members.")
-      .replyToInteract(Interaction, true);
+      .setDescription(
+        "Seems like an unexpected error occurred while searching for members. Please try again later."
+      )
+      .replyToInteract(CmdInteract, true);
   }
 }
 
@@ -96,7 +105,7 @@ const CommandObject = {
         )
     )
     .addRoleOption((Opt) =>
-      Opt.setName("in_role")
+      Opt.setName("role_filter")
         .setDescription("Only search members in this role (optional).")
         .setRequired(false)
     )
