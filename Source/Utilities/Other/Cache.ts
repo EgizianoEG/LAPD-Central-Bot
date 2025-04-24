@@ -51,3 +51,11 @@ export const RobloxQueryUsernameResultsCache = new NodeCache({
   useClones: false,
   deleteOnExpire: true,
 });
+
+export const GuildSettingsCache = new NodeCache({
+  stdTTL: 5,
+  checkperiod: 2,
+  useClones: false,
+  deleteOnExpire: true,
+});
+
