@@ -172,11 +172,7 @@ async function HandleShiftTimeModExceptions(
     label: FileLabel,
     message: "Failed to modify shift time;",
     shift: ShiftDoc.toObject({ getters: true }),
-    interact: Interact,
     stack: Err.stack,
-    details: {
-      ...Err,
-    },
   });
 }
 
@@ -1142,8 +1138,6 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
       AppLogger.error({
         message: "An error occurred while responding to a button interaction;",
         label: FileLabel,
-        user_id: Interaction.user.id,
-        guild_id: Interaction.guildId,
         stack: Err.stack,
       });
 
@@ -1178,8 +1172,6 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
       AppLogger.error({
         message: "An error occurred while ending the component collector;",
         label: FileLabel,
-        user_id: Interaction.user.id,
-        guild_id: Interaction.guildId,
         stack: Err.stack,
       });
     }
