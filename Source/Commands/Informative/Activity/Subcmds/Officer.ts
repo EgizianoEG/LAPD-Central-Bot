@@ -71,10 +71,15 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     user: OfficerSelected,
   });
 
-  const [TargetRUserInfo, TargetRUserThumb, FieldActivityData, ShiftsData] = await Promise.all([
+  const [TargetRUserInfo, FieldActivityData, TargetRUserThumb, ShiftsData] = await Promise.all([
     LinkedRobloxUserId === 0 ? null : GetUserInfo(LinkedRobloxUserId),
-    GetUserThumbnail(LinkedRobloxUserId, "352x352", "png", "bust"),
     GetStaffFieldActivity(OfficerSelected, SinceDate),
+    GetUserThumbnail({
+      UserIds: LinkedRobloxUserId,
+      Size: "420x420",
+      Format: "png",
+      CropType: "bust",
+    }),
     GetMainShiftsData({
       user: OfficerSelected.id,
       guild: Interaction.guildId,

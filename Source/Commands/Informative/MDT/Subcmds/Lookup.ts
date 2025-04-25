@@ -38,7 +38,12 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   const [RobloxUserInfo, UserRecords, RobloxThumbnail] = await Promise.all([
     GetUserInfo(RobloxUserId),
     GetUserRecords(Interaction.guildId, RobloxUserId, ExactUsername),
-    GetUserThumbnail(RobloxUserId, "352x352", "png", "headshot"),
+    GetUserThumbnail({
+      UserIds: RobloxUserId,
+      Size: "352x352",
+      Format: "png",
+      CropType: "headshot",
+    }),
   ]);
 
   const FormattedUsername = FormatUsername(RobloxUserInfo, false, true);

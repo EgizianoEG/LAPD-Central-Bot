@@ -277,7 +277,14 @@ async function OnChargesModalSubmission(
   await ModalInteraction.deferReply({ flags: MessageFlags.Ephemeral });
   const [ArresteeId] = await GetIdByUsername(CmdOptions.Arrestee, true);
   const ARUserInfo = await GetUserInfo(ArresteeId);
-  const ThumbUrl = await GetUserThumbnail(ArresteeId, "420x420", "png", "headshot");
+  const ThumbUrl = await GetUserThumbnail({
+    UserIds: ArresteeId,
+    Size: "420x420",
+    Format: "png",
+    CropType: "headshot",
+    IsManCharacter: CmdOptions.Gender === "Male",
+  });
+
   const ExistingBookingNums = (await GetAllBookingNums(CmdInteract.guildId)).map((Num) => Num.num);
   const UTIFEnabled = await GetGuildSettings(CmdInteract.guildId).then(
     (Doc) => Doc?.utif_enabled ?? false
