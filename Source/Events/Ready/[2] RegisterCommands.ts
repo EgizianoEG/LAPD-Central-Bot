@@ -4,7 +4,6 @@ import {
   ApplicationCommandManager,
   ContextMenuCommandBuilder,
   SlashCommandBuilder,
-  Collection,
 } from "discord.js";
 
 import GetDeployedCommands from "@Utilities/Other/GetAppCmds.js";
@@ -61,7 +60,7 @@ export default async function RegisterCommands(Client: DiscordClient): Promise<v
       await RegisterGuildCommands(Client, TestingGuild, GuildOnlyCommands);
     }
 
-    if (GlobalCommands.length > 0 && AppCommands && !(AppCommands instanceof Collection)) {
+    if (GlobalCommands.length > 0) {
       await RegisterGlobalCommands(Client, AppCommands, GlobalCommands);
     }
 
