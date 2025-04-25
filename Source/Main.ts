@@ -32,24 +32,32 @@ App.modalListeners = new Collection();
 App.buttonListeners = new Collection();
 
 (async function RunApplication() {
-  const DirPath = Path.join(GetDirName(import.meta.url), "Handlers");
-  const Files = GetFiles(DirPath);
+  const HandlersDirectoryPath = Path.join(GetDirName(import.meta.url), "Handlers");
+  const HandlerPaths = GetFiles(HandlersDirectoryPath);
 
-  for (const File of Files) {
-    await import(File).then((Module) => {
-      if (typeof Module.default === "function") {
-        return Module.default(App);
-      }
-      return null;
-    });
-  }
+  await Promise.all(
+    HandlerPaths.map((File) =>
+      import(File).then((Module) => {
+        if (typeof Module.default === "function") {
+          AppLogger.debug({
+            message: "Loading and executing handler: %s",
+            label: "Main.ts",
+            splat: [Chalk.grey.bold(Path.basename(File))],
+          });
+
+          return Module.default(App);
+        }
+        return null;
+      })
+    )
+  );
 
   await App.login(DiscordSecrets.AppToken)
     .then(() => {
-      if (!App.user) throw new Error("`App.user` is not accessible.");
+      if (!App.user) throw new Error("Unexpected error: 'App.user' is not accessible.");
       AppLogger.info({
         label: "Main.ts",
-        message: "%s bot is online.",
+        message: "%s application is online.",
         splat: [Chalk.cyanBright.bold(App.user.username)],
       });
     })
