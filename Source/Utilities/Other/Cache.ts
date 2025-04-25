@@ -46,8 +46,8 @@ export const BookingAutocompletionCache = new NodeCache({
 });
 
 export const RobloxQueryUsernameResultsCache = new NodeCache({
-  stdTTL: 8,
-  checkperiod: 4,
+  stdTTL: 30,
+  checkperiod: 10,
   useClones: false,
   deleteOnExpire: true,
 });

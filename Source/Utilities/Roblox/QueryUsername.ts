@@ -1,9 +1,6 @@
 import { RobloxQueryUsernameResultsCache } from "@Utilities/Other/Cache.js";
 import { IsValidRobloxUsername } from "../Other/Validators.js";
-import { ClassicUsersApi } from "openblox/classic";
-type RobloxQueryUsernameResults = Awaited<
-  ReturnType<(typeof ClassicUsersApi)["userSearch"]>
->["data"];
+import NobloxJs from "noblox.js";
 
 /**
  * Queries Roblox for users matching the provided username keyword.
@@ -15,10 +12,12 @@ type RobloxQueryUsernameResults = Awaited<
  */
 export default async function QueryUsername(Typed: string, Limit: 10 | 25 | 50 | 100 = 10) {
   if (!IsValidRobloxUsername(Typed)) return [];
-  const CachedResults = RobloxQueryUsernameResultsCache.get<RobloxQueryUsernameResults>(Typed);
+  const CachedResults =
+    RobloxQueryUsernameResultsCache.get<Awaited<ReturnType<typeof NobloxJs.searchUsers>>>(Typed);
   if (CachedResults) return CachedResults;
-  return ClassicUsersApi.userSearch({ keyword: Typed, limit: Limit }).then((Res) => {
-    RobloxQueryUsernameResultsCache.set(Typed, Res.data);
-    return Res.data;
+
+  return NobloxJs.searchUsers(Typed, Limit, undefined as any).then((Res) => {
+    RobloxQueryUsernameResultsCache.set(Typed, Res);
+    return Res;
   });
 }
