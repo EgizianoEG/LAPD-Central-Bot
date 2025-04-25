@@ -51,12 +51,11 @@ export default async function GetBookingMugshot<AsURL extends boolean | undefine
   // Calculate height positioning
   const PersonHeight = Options.height ? ParseHeight(Options.height) : 70;
   const HeadPosition = Options.head_position || 15;
-
-  // Calculate board offset based on height
   const BoardOffset = CalculateBoardOffset(PersonHeight, HeadPosition);
 
-  // Draw the background with calculated offset
-  ImgCTX.drawImage(CreateHeightBackgroundCanvas(BoardOffset), 0, 0);
+  // Draw the background with calculated offset (draw a slice of the board)
+  const BoardCanvas = CreateHeightBackgroundCanvas();
+  ImgCTX.drawImage(BoardCanvas, 0, BoardOffset, ImgWidth, ImgHeight, 0, 0, ImgWidth, ImgHeight);
 
   // Create a separate canvas for the thumbnail with shadow
   const ThumbCanvas = createCanvas(ImgHeight, ImgHeight);
@@ -115,67 +114,45 @@ export default async function GetBookingMugshot<AsURL extends boolean | undefine
 }
 
 /**
- * Returns a canvas for the background of the mugshot.
- * @param YOffset Vertical offset to apply to the board (positive moves board down).
- * @returns The background canvas.
+ * Returns a canvas for the full background board (1'0" to 7'11").
+ * @returns The full background canvas.
  */
-function CreateHeightBackgroundCanvas(YOffset: number = 0) {
-  // Don't use cached canvas if we have a custom offset
-  if (YOffset !== 0 && BgCanvas) {
-    BgCanvas = null;
-  }
-
+function CreateHeightBackgroundCanvas() {
   if (BgCanvas) return BgCanvas;
-  BgCanvas = createCanvas(ImgWidth, ImgHeight);
+  BgCanvas = createCanvas(ImgWidth, ImgHeight * 4);
   const BgCTX = BgCanvas.getContext("2d");
-
-  // Base color first
   BgCTX.fillStyle = "#EBEBEB";
-  BgCTX.fillRect(0, 0, ImgWidth, ImgHeight);
+  BgCTX.fillRect(0, 0, ImgWidth, BgCanvas.height);
 
-  const VisibleMinInches = 48; // 4 feet
-  const VisibleMaxInches = 74; // 6'1"
+  // Fixed board range: 1'0" (12) to 7'11" (95)
+  const BoardMinInches = 12;
+  const BoardMaxInches = 95;
+  const TotalBoardInches = BoardMaxInches - BoardMinInches;
+  const PixelsPerInch = BgCanvas.height / TotalBoardInches;
 
-  // Extended range to account for offsets
-  const ExtendedMinInches = VisibleMinInches - 12; // 1 foot lower
-  const ExtendedMaxInches = VisibleMaxInches + 12; // 1 foot higher
-  const TotalInchesInRange = VisibleMaxInches - VisibleMinInches;
-  const PixelsPerInch = ImgHeight / TotalInchesInRange;
-
-  BgCTX.save();
-  BgCTX.translate(0, YOffset);
-
-  for (
-    let Foot = Math.floor(ExtendedMinInches / 12);
-    Foot <= Math.ceil(ExtendedMaxInches / 12);
-    Foot++
-  ) {
+  // Draw stripes for each foot in the board range
+  for (let Foot = Math.floor(BoardMinInches / 12); Foot <= Math.ceil(BoardMaxInches / 12); Foot++) {
     const FootStartInch = Foot * 12;
     const FootEndInch = (Foot + 1) * 12;
 
-    const VisibleStart = Math.max(FootStartInch, VisibleMinInches);
-    const VisibleEnd = Math.min(FootEndInch, VisibleMaxInches);
+    const VisibleStart = Math.max(FootStartInch, BoardMinInches);
+    const VisibleEnd = Math.min(FootEndInch, BoardMaxInches);
     if (VisibleEnd <= VisibleStart) continue;
 
-    const VisibleStartPos = ImgHeight - (VisibleStart - VisibleMinInches) * PixelsPerInch;
-    const VisibleEndPos = ImgHeight - (VisibleEnd - VisibleMinInches) * PixelsPerInch;
+    const VisibleStartPos = BgCanvas.height - (VisibleStart - BoardMinInches) * PixelsPerInch;
+    const VisibleEndPos = BgCanvas.height - (VisibleEnd - BoardMinInches) * PixelsPerInch;
     const Height = VisibleStartPos - VisibleEndPos;
 
-    // Draw background stripes
     BgCTX.fillStyle = Foot % 2 === 0 ? "#DEDEDE" : "#EBEBEB";
     BgCTX.fillRect(0, VisibleEndPos, ImgWidth, Height);
   }
 
-  for (let AbsoluteInch = ExtendedMinInches; AbsoluteInch <= ExtendedMaxInches; AbsoluteInch++) {
-    if (AbsoluteInch < VisibleMinInches - 12 || AbsoluteInch > VisibleMaxInches + 12) continue;
-    const Y = ImgHeight - (AbsoluteInch - VisibleMinInches) * PixelsPerInch;
+  // Draw inch and foot markers
+  for (let AbsoluteInch = BoardMinInches; AbsoluteInch <= BoardMaxInches; AbsoluteInch++) {
+    const Y = BgCanvas.height - (AbsoluteInch - BoardMinInches) * PixelsPerInch;
     const IsFoot = AbsoluteInch % 12 === 0;
-    const IsQuarterFoot = AbsoluteInch % 3 === 0; // Every 3 inches
-    const LineEndX = IsFoot
-      ? RelX(95) // Foot markers extend to 95% of width
-      : IsQuarterFoot
-        ? RelX(92) // Quarter foot markers (3,6,9 inches) extend to 92%
-        : RelX(90); // Regular inch markers
+    const IsQuarterFoot = AbsoluteInch % 3 === 0;
+    const LineEndX = IsFoot ? RelX(95) : IsQuarterFoot ? RelX(92) : RelX(90);
 
     BgCTX.lineWidth = IsFoot ? RelSize(0.75) : RelSize(0.25);
     BgCTX.strokeStyle = "#252525";
@@ -201,8 +178,38 @@ function CreateHeightBackgroundCanvas(YOffset: number = 0) {
     }
   }
 
-  BgCTX.restore();
   return BgCanvas;
+}
+
+/**
+ * Calculate the source Y offset (in pixels) for the visible window of the board.
+ * @param PersonHeight Height in inches.
+ * @param HeadPosition Percentage from top where head should align.
+ * @returns Source Y offset in pixels for the board image.
+ */
+function CalculateBoardOffset(PersonHeight: number, HeadPosition: number): number {
+  const BoardMinInches = 12; // 1'0"
+  const BoardMaxInches = 95; // 7'11"
+  const TotalBoardInches = BoardMaxInches - BoardMinInches;
+
+  const VisibleRangeInches = 25; // 2'1"
+  const BoardCanvasHeight = ImgHeight * 4;
+  const PixelsPerInch = BoardCanvasHeight / TotalBoardInches;
+
+  let VisibleTopInches = PersonHeight + (HeadPosition / 100) * VisibleRangeInches;
+  let VisibleBottomInches = VisibleTopInches - VisibleRangeInches;
+
+  if (VisibleTopInches > BoardMaxInches) {
+    VisibleTopInches = BoardMaxInches;
+    VisibleBottomInches = BoardMaxInches - VisibleRangeInches;
+  }
+  if (VisibleBottomInches < BoardMinInches) {
+    VisibleTopInches = BoardMinInches + VisibleRangeInches;
+  }
+
+  // The offset is how many pixels from the top of the board canvas to start copying
+  const OffsetInches = BoardMaxInches - VisibleTopInches;
+  return OffsetInches * PixelsPerInch;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -282,27 +289,4 @@ function ParseHeight(HeightStr: string | number): number {
   }
 
   return 70;
-}
-
-/**
- * Calculate the vertical offset needed for the height board.
- * @param PersonHeight Height in inches.
- * @param HeadPosition Percentage from top where head should align.
- * @returns Offset in pixels to apply to the background board.
- */
-function CalculateBoardOffset(PersonHeight: number, HeadPosition: number): number {
-  // Constants for the board - these will be recalculated based on height
-  const DefaultMinHeightInches = 48; // 4 feet
-  const DefaultMaxHeightInches = 74; // 6'1"
-
-  const MinHeightInches = Math.min(DefaultMinHeightInches, PersonHeight - 6);
-  const MaxHeightInches = Math.max(DefaultMaxHeightInches, PersonHeight + 6);
-  const TotalInchesInRange = MaxHeightInches - MinHeightInches;
-  const PixelsPerInch = ImgHeight / TotalInchesInRange;
-
-  const HeightFromBottom = PersonHeight - MinHeightInches;
-  const HeightPosition = ImgHeight - HeightFromBottom * PixelsPerInch;
-
-  const DesiredHeadY = (HeadPosition / 100) * ImgHeight;
-  return DesiredHeadY - HeightPosition;
 }
