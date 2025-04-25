@@ -1,7 +1,9 @@
 <div id="About" align="center">
-    <h1><b>LAPD Central Discord Bot</b></h1>
+    <h1><b>LAPD Central Discord App</b></h1>
     <a href="#" target="_blank" title="Tests & Code Lint Status">
         <img src="https://github.com/EgizianoEG/LAPD-Central-App/actions/workflows/RunTests.yml/badge.svg?branch=main" alt="Status"/></a>
+    <a href="https://www.codefactor.io/repository/github/egizianoeg/lapd-central-app" target="_blank" title="CodeFactor Classification">
+        <img src="https://www.codefactor.io/repository/github/egizianoeg/lapd-central-app/badge" alt="CodeFactor Classification"/></a>
     <a href="https://opensource.org/licenses/MIT" target="_blank" title="License: MIT">
         <img src="https://img.shields.io/github/license/EgizianoEG/LAPD-Central-App?label=License&color=sandybrown" alt="License"/></a>
     <a href="https://github.com/EgizianoEG/LAPD-Central-App/releases/" target="_blank" title="License">
@@ -10,7 +12,7 @@
         <img src="https://uptime.betterstack.com/status-badges/v1/monitor/10ynq.svg" alt="Status"/></a>
     <br>
     <p>
-        A discord bot made with the <a href="https://github.com/discordjs/discord.js">discord.js</a> public library.
+        A discord application made with the <a href="https://github.com/discordjs/discord.js">discord.js</a> public library.
     </p>
 </div>
 
@@ -32,6 +34,6 @@
 <div id="License" align="center">
   <h2><b>License</b></h2>
   <p>
-    This project/bot is licensed under the terms of the <a href="https://github.com/EgizianoEG/LAPD-Central-App/blob/main/LICENSE.md" title="Repository License">MIT license</a>, which allows for free use, distribution, and modification of the code as long as the original copyright and license notice are included.
+    This project/app/bot is licensed under the terms of the <a href="https://github.com/EgizianoEG/LAPD-Central-App/blob/main/LICENSE.md" title="Repository License">MIT license</a>, which allows for free use, distribution, and modification of the code as long as the original copyright and license notice are included.
   </p>
 </div>
