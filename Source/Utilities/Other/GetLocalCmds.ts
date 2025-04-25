@@ -24,10 +24,8 @@ export default async function GetLocalCommands(
       const Commands = GetFiles(CommandCat);
       const CommandGroups = GetFiles(CommandCat, true);
 
-      return Promise.all([
-        ProcessCommandGroups(CommandGroups, Exceptions, LocalCommands),
-        ProcessCommands(Commands, Exceptions, LocalCommands),
-      ]);
+      await ProcessCommandGroups(CommandGroups, Exceptions, LocalCommands);
+      await ProcessCommands(Commands, Exceptions, LocalCommands);
     })
   );
 
@@ -86,7 +84,7 @@ async function TryImportCommand(
   }
 }
 
-async function ImportWithTimeout(CommandPath: string, TimeoutMs: number = 5000) {
+async function ImportWithTimeout(CommandPath: string, TimeoutMs: number = 10_000) {
   return Promise.race([
     import(CommandPath),
     new Promise((_, reject) =>
