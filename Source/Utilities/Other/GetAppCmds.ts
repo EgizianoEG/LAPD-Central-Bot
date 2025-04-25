@@ -10,10 +10,12 @@ import type {
  * @param GuildId - If provided, returns the application commands registered on it; otherwise, returns global registered slash commands
  * @returns
  */
-export default async function <Options extends Snowflake | GuildResolvable | undefined = undefined>(
+export default async function <
+  IdOptions extends Snowflake | GuildResolvable | undefined = undefined,
+>(
   Client: DiscordClient,
-  GuildId?: Options
-): Promise<Options extends string ? GuildApplicationCommandManager : ApplicationCommandManager> {
+  GuildId?: IdOptions
+): Promise<IdOptions extends string ? GuildApplicationCommandManager : ApplicationCommandManager> {
   if (typeof GuildId === "string") {
     const Guild = Client.guilds.cache.get(GuildId);
     await Guild?.commands.fetch();

@@ -19,13 +19,17 @@ export default async function GetLocalCommands(
     true
   );
 
-  for (const CommandCat of CommandCats) {
-    const Commands = GetFiles(CommandCat);
-    const CommandGroups = GetFiles(CommandCat, true);
+  await Promise.all(
+    CommandCats.map(async (CommandCat) => {
+      const Commands = GetFiles(CommandCat);
+      const CommandGroups = GetFiles(CommandCat, true);
 
-    await ProcessCommandGroups(CommandGroups, Exceptions, LocalCommands);
-    await ProcessCommands(Commands, Exceptions, LocalCommands);
-  }
+      return Promise.all([
+        ProcessCommandGroups(CommandGroups, Exceptions, LocalCommands),
+        ProcessCommands(Commands, Exceptions, LocalCommands),
+      ]);
+    })
+  );
 
   return LocalCommands;
 }
@@ -35,17 +39,20 @@ async function ProcessCommandGroups(
   Exceptions: string[],
   LocalCommands: SlashCommandObject[]
 ) {
-  for (const CommandGroup of CommandGroups) {
-    const CmdGroupName = Path.basename(CommandGroup);
-    const CommandPaths = GetFiles(CommandGroup);
+  return Promise.all(
+    CommandGroups.map((CommandGroup) => {
+      const CmdGroupName = Path.basename(CommandGroup);
+      const CommandPaths = GetFiles(CommandGroup);
 
-    for (const CommandPath of CommandPaths) {
-      if (new RegExp(`(?:${CmdGroupName}|Main).[jt]s$`).exec(CommandPath)) {
-        await TryImportCommand(CommandPath, Exceptions, LocalCommands);
-        break;
+      for (const CommandPath of CommandPaths) {
+        if (new RegExp(`(?:${CmdGroupName}|Main).[jt]s$`).exec(CommandPath)) {
+          return TryImportCommand(CommandPath, Exceptions, LocalCommands);
+        }
       }
-    }
-  }
+
+      return Promise.resolve();
+    })
+  );
 }
 
 async function ProcessCommands(
@@ -53,9 +60,9 @@ async function ProcessCommands(
   Exceptions: string[],
   LocalCommands: SlashCommandObject[]
 ) {
-  for (const Command of Commands) {
-    await TryImportCommand(Command, Exceptions, LocalCommands);
-  }
+  return Promise.all(
+    Commands.map((CommandPath) => TryImportCommand(CommandPath, Exceptions, LocalCommands))
+  );
 }
 
 async function TryImportCommand(
@@ -87,7 +94,7 @@ async function ImportWithTimeout(CommandPath: string, TimeoutMs: number = 5000) 
         () =>
           reject(
             new Error(
-              `(Timed Out) Failed to import ${CommandPath} within ${TimeoutMs}ms. Check for circular Imports, correct file paths, or infinite loops.`
+              `(Timed Out) Failed to import ${CommandPath} within ${TimeoutMs}ms. Check for circular imports, correct file paths, or infinite loops.`
             )
           ),
         TimeoutMs
