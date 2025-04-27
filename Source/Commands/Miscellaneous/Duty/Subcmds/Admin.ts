@@ -126,11 +126,11 @@ function GetButtonActionRows(
 
   // Set custom Ids for each button for future usage outside of the main cmd callback function.
   ActionRowOne.components.forEach((Comp) =>
-    Comp.setCustomId(`${Comp.data.custom_id}:${Interaction.user.id}:${Interaction.guildId}`)
+    Comp.setCustomId(`${Comp.data.custom_id}:${Interaction.user.id}`)
   );
 
   ActionRowTwo.components.forEach((Comp) =>
-    Comp.setCustomId(`${Comp.data.custom_id}:${Interaction.user.id}:${Interaction.guildId}`)
+    Comp.setCustomId(`${Comp.data.custom_id}:${Interaction.user.id}`)
   );
 
   return [ActionRowOne, ActionRowTwo];
@@ -142,17 +142,16 @@ function GetTimeModificationModal(
   ShiftDocument: Shifts.HydratedShiftDocument
 ) {
   const TimeModificationModal = new ModalBuilder()
-    .setCustomId(`da-time-mod:${AdminInteract.user.id}:${AdminInteract.guildId}:${RandomString(4)}`)
+    .setCustomId(`da-time-mod:${AdminInteract.user.id}:${RandomString(4)}`)
     .setTitle("Shift Time Modification")
     .setComponents(
       new ActionRowBuilder<TextInputBuilder>().setComponents(
         new TextInputBuilder()
           .setCustomId("da-st-mod-input")
           .setLabel(`Shift Time To ${ActionType}`)
-
           .setStyle(TextInputStyle.Short)
           .setMinLength(2)
-          .setMaxLength(25)
+          .setMaxLength(50)
           .setPlaceholder(
             TimeModPlaceholders[Math.floor(Math.random() * TimeModPlaceholders.length)]
           )
@@ -160,9 +159,12 @@ function GetTimeModificationModal(
     );
 
   if (ActionType === "Set") {
-    TimeModificationModal.components[0].components[0].setValue(
-      HumanizeDuration(ShiftDocument.durations.on_duty)
-    );
+    const PrefilledInput = HumanizeDuration(ShiftDocument.durations.on_duty);
+    if (PrefilledInput.length <= 50) {
+      TimeModificationModal.components[0].components[0].setValue(
+        HumanizeDuration(ShiftDocument.durations.on_duty)
+      );
+    }
   }
 
   return TimeModificationModal;
@@ -231,7 +233,7 @@ async function HandleShiftTimeSet(
     return new ErrorEmbed()
       .useErrTemplate("UnknownDurationExp")
       .replyToInteract(ModalSubmission, true);
-  } else if (RoundedDuration <= 30_000) {
+  } else if (RoundedDuration < 30_000) {
     return new ErrorEmbed()
       .useErrTemplate("ShortTypedDuration")
       .replyToInteract(ModalSubmission, true);
@@ -285,7 +287,7 @@ async function HandleShiftTimeAddSub(
     return new ErrorEmbed()
       .useErrTemplate("UnknownDurationExp")
       .replyToInteract(ModalSubmission, true);
-  } else if (RoundedDuration <= 30_000) {
+  } else if (RoundedDuration < 30_000) {
     return new ErrorEmbed()
       .useErrTemplate("ShortTypedDuration")
       .replyToInteract(ModalSubmission, true);
@@ -314,7 +316,7 @@ async function PromptShiftModification(
   if (Interact.isModalSubmit() && !Interact.deferred) await Interact.deferUpdate();
   const ActionOptions = new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(
     new StringSelectMenuBuilder()
-      .setCustomId("da-modify-actions")
+      .setCustomId(`da-modify-actions:${Interact.user.id}:${ShiftDocument._id}`)
       .setPlaceholder("Select an action")
       .setMinValues(1)
       .setMaxValues(1)
@@ -370,13 +372,28 @@ async function PromptShiftModification(
       await HandleShiftTimeAddSub("Subtract", SMInteract, ShiftDocument);
     }
 
-    // Remove any selected option.
-    return Interact.editReply({ components: [ActionOptions] }).catch(() => null);
+    Interact.editReply({ components: [ActionOptions] }).catch(() => null);
+    const UpdatedDocument = await ShiftDocument.getLatestVersion(true).catch((Err) => {
+      if (Err instanceof AppError && Err.is_showable) {
+        return new ErrorEmbed()
+          .useErrClass(Err)
+          .replyToInteract(SMInteract, true)
+          .finally(() => null);
+      } else {
+        return new ErrorEmbed()
+          .useErrTemplate("AppError")
+          .replyToInteract(SMInteract, true)
+          .finally(() => null);
+      }
+    });
+
+    if (UpdatedDocument) {
+      ShiftDocument = UpdatedDocument as Shifts.HydratedShiftDocument;
+    }
   });
 
   CompCollector.on("end", async (CollectedInteracts, EndReason) => {
     if (EndReason.match(/^\w+Delete/)) return;
-
     try {
       const LastInteract = CollectedInteracts.last() ?? Interact;
       ActionOptions.components.forEach((Comp) => Comp.setDisabled(true));
@@ -426,12 +443,12 @@ async function HandleShiftModifications(
 
   const ButtonsActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
-      .setCustomId(`da-modify-${CurrLastBtn.toLowerCase()}:${TargetUser.id}`)
+      .setCustomId(`da-modify-${CurrLastBtn.toLowerCase()}:${Interaction.user.id}`)
       .setLabel(`Select ${CurrLastBtn} Shift`)
       .setDisabled(false)
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
-      .setCustomId(`da-modify-id:${TargetUser.id}`)
+      .setCustomId(`da-modify-id:${Interaction.user.id}`)
       .setLabel("Select By Shift ID")
       .setDisabled(false)
       .setStyle(ButtonStyle.Secondary)
@@ -494,9 +511,7 @@ async function HandleShiftModifications(
 
     const ShiftIdModal = new ModalBuilder()
       .setTitle("Shift Modification")
-      .setCustomId(
-        `da-modify-id-getter:${ButtonInteract.user.id}:${ButtonInteract.guildId}:${RandomString(4)}`
-      )
+      .setCustomId(`da-modify-id-getter:${ButtonInteract.user.id}:${RandomString(4)}`)
       .addComponents(
         new ActionRowBuilder<TextInputBuilder>().addComponents(
           new TextInputBuilder()
@@ -801,12 +816,12 @@ async function HandleUserShiftsWipe(
   const EDSType = ShiftType ? `the ${ShiftType}` : "all";
   const ButtonAR = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
-      .setCustomId(`da-wipe-confirm:${BInteract.user.id}:${BInteract.guildId}:${TargetUser.id}`)
+      .setCustomId(`da-wipe-confirm:${BInteract.user.id}:${TargetUser.id}`)
       .setEmoji(Emojis.Warning)
       .setLabel("Confirm and Wipe")
       .setStyle(ButtonStyle.Danger),
     new ButtonBuilder()
-      .setCustomId(`da-wipe-cancel:${BInteract.user.id}:${BInteract.guildId}:${TargetUser.id}`)
+      .setCustomId(`da-wipe-cancel:${BInteract.user.id}:${TargetUser.id}`)
       .setLabel("Cancel Shift Wipe")
       .setStyle(ButtonStyle.Secondary)
   );
@@ -969,9 +984,7 @@ async function HandleUserShiftEnd(
 async function HandleUserShiftDelete(BInteract: ButtonInteraction<"cached">, TargetUser: User) {
   const Modal = new ModalBuilder()
     .setTitle("Shift Deletion")
-    .setCustomId(
-      `da-delete-shift:${BInteract.user.id}:${BInteract.guildId}:${TargetUser.id}:${RandomString(4)}`
-    )
+    .setCustomId(`da-delete-shift:${BInteract.user.id}:${TargetUser.id}:${RandomString(4)}`)
     .setComponents(
       new ActionRowBuilder<TextInputBuilder>().setComponents(
         new TextInputBuilder()
@@ -1109,7 +1122,6 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
 
   ActionCollector.on("collect", async (ButtonInteract) => {
     const CustomId = ButtonInteract.customId.split(":")[0];
-
     try {
       switch (CustomId) {
         case "da-list":
@@ -1169,11 +1181,12 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   ActionCollector.on("end", async (Collected, EndReason) => {
     if (EndReason.match(/^\w+Delete/) || EndReason === "ErrorOccurred") return;
     try {
+      const LastInteract = Collected.last() ?? Interaction;
       ButtonActionRows.forEach((ActionRow) =>
         ActionRow.components.forEach((Comp) => Comp.setDisabled(true))
       );
 
-      await Interaction.editReply({ components: ButtonActionRows });
+      await LastInteract.editReply({ message: RespMessage, components: ButtonActionRows });
     } catch (Err: any) {
       if (Err instanceof DiscordAPIError && Err.code === 50_001) {
         return;
