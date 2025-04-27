@@ -53,4 +53,5 @@ const GuildSchema = new Schema({
 GuildSchema.set("_id", false);
 GuildSchema.set("optimisticConcurrency", true);
 
-export default model("Guild", GuildSchema);
+const GuildModel = model("Guild", GuildSchema);
+export default GuildModel;
