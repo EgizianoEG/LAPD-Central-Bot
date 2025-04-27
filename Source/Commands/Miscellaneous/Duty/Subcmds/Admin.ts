@@ -138,9 +138,10 @@ function GetButtonActionRows(
 
 function GetTimeModificationModal(
   ActionType: "Add" | "Subtract" | "Set",
-  AdminInteract: StringSelectMenuInteraction<"cached">
+  AdminInteract: StringSelectMenuInteraction<"cached">,
+  ShiftDocument: Shifts.HydratedShiftDocument
 ) {
-  return new ModalBuilder()
+  const TimeModificationModal = new ModalBuilder()
     .setCustomId(`da-time-mod:${AdminInteract.user.id}:${AdminInteract.guildId}:${RandomString(4)}`)
     .setTitle("Shift Time Modification")
     .setComponents(
@@ -148,6 +149,7 @@ function GetTimeModificationModal(
         new TextInputBuilder()
           .setCustomId("da-st-mod-input")
           .setLabel(`Shift Time To ${ActionType}`)
+
           .setStyle(TextInputStyle.Short)
           .setMinLength(2)
           .setMaxLength(25)
@@ -156,6 +158,14 @@ function GetTimeModificationModal(
           )
       )
     );
+
+  if (ActionType === "Set") {
+    TimeModificationModal.components[0].components[0].setValue(
+      HumanizeDuration(ShiftDocument.durations.on_duty)
+    );
+  }
+
+  return TimeModificationModal;
 }
 
 async function HandleShiftTimeModExceptions(
@@ -205,7 +215,7 @@ async function HandleShiftTimeSet(
   AdminInteract: StringSelectMenuInteraction<"cached">,
   ShiftDocument: Shifts.HydratedShiftDocument
 ) {
-  const TMModal = GetTimeModificationModal("Set", AdminInteract);
+  const TMModal = GetTimeModificationModal("Set", AdminInteract, ShiftDocument);
   await AdminInteract.showModal(TMModal);
   const ModalSubmission = await AdminInteract.awaitModalSubmit({
     filter: (MS) => MS.user.id === AdminInteract.user.id && MS.customId === TMModal.data.custom_id,
@@ -255,7 +265,7 @@ async function HandleShiftTimeAddSub(
   AdminInteract: StringSelectMenuInteraction<"cached">,
   ShiftDocument: Shifts.HydratedShiftDocument
 ) {
-  const TMModal = GetTimeModificationModal(ActionType, AdminInteract);
+  const TMModal = GetTimeModificationModal(ActionType, AdminInteract, ShiftDocument);
   await AdminInteract.showModal(TMModal);
   const ModalSubmission = await AdminInteract.awaitModalSubmit({
     filter: (MS) => MS.user.id === AdminInteract.user.id && MS.customId === TMModal.data.custom_id,
