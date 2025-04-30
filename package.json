@@ -47,7 +47,7 @@
     "date-fns": "^4.0.0",
     "dedent": "^1.5.3",
     "didyoumean2": "^7.0.4",
-    "discord.js": "^14.18.0",
+    "discord.js": "^14.19.2",
     "express": "^5.1.0",
     "ffi-rs": "^1.2.10",
     "googleapis": "^148.0.0",
