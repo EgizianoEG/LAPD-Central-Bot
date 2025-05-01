@@ -1,7 +1,6 @@
 /* eslint-disable sonarjs/no-duplicate-string */
 import {
   ModalSubmitInteraction,
-  createComponentBuilder,
   time as FormatTime,
   ButtonInteraction,
   TextInputBuilder,
@@ -26,6 +25,7 @@ import { ErrorEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js
 import { UserActivityNoticeMgmtCustomIdRegex } from "@Resources/RegularExpressions.js";
 
 import HandleUserActivityNoticeRoleAssignment from "@Utilities/Other/HandleUANRoleAssignment.js";
+import DisableMessageComponents from "@Utilities/Other/DisableMsgComps.js";
 import LeaveOfAbsenceModel from "@Models/UserActivityNotice.js";
 import GetMainShiftsData from "@Utilities/Database/GetShiftsData.js";
 import GetUANsData from "@Utilities/Database/GetUANData.js";
@@ -177,7 +177,9 @@ async function HandleNoticeReviewValidation(
         InitialInteraction.editReply({
           embeds: [UpdatedReqEmbed],
           message: RequestDocument?.request_msg?.split(":")[1],
-          components: GetDisabledMessageComponents(InitialInteraction),
+          components: DisableMessageComponents(
+            InitialInteraction.message!.components.map((Comp) => Comp.toJSON())
+          ),
         })
       );
     } else {
@@ -185,7 +187,9 @@ async function HandleNoticeReviewValidation(
       Tasks.push(
         Interaction.followUp({ embeds: [ReplyEmbed], flags: MessageFlags.Ephemeral }),
         InitialInteraction.editReply({
-          components: GetDisabledMessageComponents(InitialInteraction),
+          components: DisableMessageComponents(
+            InitialInteraction.message!.components.map((Comp) => Comp.toJSON())
+          ),
         })
       );
     }
@@ -520,21 +524,4 @@ function GetNotesModal(
   }
 
   return Modal;
-}
-
-/**
- * Creates disabled versions of all message components from the original interaction.
- * Used to disable buttons after an action has been taken.
- * @param Interaction - The interaction containing components to disable.
- * @returns An array of action rows with disabled components.
- */
-function GetDisabledMessageComponents(
-  Interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">
-) {
-  return Interaction.message?.components.map((AR) => {
-    return ActionRowBuilder.from({
-      // @ts-expect-error; Type conflict.
-      components: AR.components.map((Comp) => createComponentBuilder(Comp.data).setDisabled(true)),
-    });
-  }) as any;
 }

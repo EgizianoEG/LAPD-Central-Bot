@@ -1,11 +1,9 @@
+import DisableMessageComponents from "./DisableMsgComps.js";
 import {
-  MessageComponentInteraction,
-  createComponentBuilder,
-  InteractionResponse,
-  ActionRowBuilder,
-  ComponentType,
-  Message,
   InteractionCallbackResponse,
+  MessageComponentInteraction,
+  InteractionResponse,
+  Message,
 } from "discord.js";
 
 export default async function HandleActionCollectorExceptions(
@@ -23,27 +21,15 @@ export default async function HandleActionCollectorExceptions(
         if (typeof Disabler === "function") {
           await Disabler();
         } else if (Disabler instanceof MessageComponentInteraction && Disabler.message) {
-          const DisabledMsgComponents = Disabler.message.components.map((AR) => {
-            return ActionRowBuilder.from({
-              type: ComponentType.ActionRow,
-              components: AR.components.map((Comp) =>
-                (createComponentBuilder(Comp.data) as any).setDisabled(true)
-              ),
-            });
-          }) as any;
-
-          await Disabler.editReply({ components: DisabledMsgComponents });
+          await Disabler.editReply({
+            components: DisableMessageComponents(
+              Disabler.message.components.map((Comp) => Comp.toJSON())
+            ),
+          });
         } else if (Disabler instanceof Message) {
-          const DisabledMsgComponents = Disabler.components.map((AR) => {
-            return ActionRowBuilder.from({
-              type: ComponentType.ActionRow,
-              components: AR.components.map((Comp) =>
-                (createComponentBuilder(Comp.data) as any).setDisabled(true)
-              ),
-            });
-          }) as any;
-
-          await Disabler.edit({ components: DisabledMsgComponents });
+          await Disabler.edit({
+            components: DisableMessageComponents(Disabler.components.map((Comp) => Comp.toJSON())),
+          });
         } else if (
           Disabler instanceof InteractionResponse ||
           Disabler instanceof InteractionCallbackResponse
@@ -54,16 +40,9 @@ export default async function HandleActionCollectorExceptions(
               : Disabler.resource?.message;
 
           if (!Message) return null;
-          const DisabledMsgComponents = Message.components.map((AR) => {
-            return ActionRowBuilder.from({
-              type: ComponentType.ActionRow,
-              components: AR.components.map((Comp) =>
-                (createComponentBuilder(Comp.data) as any).setDisabled(true)
-              ),
-            });
-          }) as any;
-
-          await Message.edit({ components: DisabledMsgComponents });
+          await Message.edit({
+            components: DisableMessageComponents(Message.components.map((Comp) => Comp.toJSON())),
+          });
         }
       } catch {
         // Ignored.

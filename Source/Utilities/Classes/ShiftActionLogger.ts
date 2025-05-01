@@ -11,9 +11,8 @@ import {
   EmbedBuilder,
   BaseInteraction,
   ImageURLOptions,
-  TextBasedChannel,
+  SendableChannels,
   AttachmentBuilder,
-  GuildBasedChannel,
   time as FormatTime,
 } from "discord.js";
 
@@ -69,7 +68,7 @@ export default class ShiftActionLogger {
    * @param Guild
    * @returns
    */
-  private static async GetLoggingChannel(Guild: Guild) {
+  private static async GetLoggingChannel(Guild: Guild): Promise<SendableChannels | null> {
     const LoggingChannelId = await GuildModel.findById(Guild.id)
       .select("settings.shift_management.log_channel")
       .then((GuildDoc) => {
@@ -80,13 +79,13 @@ export default class ShiftActionLogger {
       });
 
     if (!LoggingChannelId) return null;
-    const ChannelExists = Guild.channels.cache.get(LoggingChannelId);
+    const ChannelExists = await Guild.channels.fetch(LoggingChannelId);
     const AbleToSendMsgs =
-      ChannelExists?.viewable &&
+      ChannelExists?.isSendable() &&
       ChannelExists.isTextBased() &&
-      ChannelExists.permissionsFor(await Guild.members.fetchMe())?.has("SendMessages");
+      ChannelExists.permissionsFor(await Guild.members.fetchMe()).has("SendMessages");
 
-    return AbleToSendMsgs === true ? (ChannelExists as GuildBasedChannel & TextBasedChannel) : null;
+    return AbleToSendMsgs === true ? ChannelExists : null;
   }
 
   /**
@@ -819,7 +818,7 @@ export default class ShiftActionLogger {
       SourceFileURL: string;
       ShiftsOfType: string;
     }
-  ): Promise<DiscordJS.Message<true> | undefined> {
+  ): Promise<DiscordJS.Message<boolean> | undefined> {
     const LoggingChannel = await this.GetLoggingChannel(UserInteract.guild);
     if (!LoggingChannel) return undefined;
 
