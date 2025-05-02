@@ -172,8 +172,6 @@ class BaseExtraContainer extends ContainerBuilder {
         ? new ThumbnailBuilder({
             media: {
               url: accessory,
-              height: 45,
-              width: 45,
             },
           })
         : accessory;
