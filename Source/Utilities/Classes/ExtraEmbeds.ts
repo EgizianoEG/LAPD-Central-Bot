@@ -14,11 +14,8 @@ import {
 
 import { ErrorMessages, InfoMessages } from "@Resources/AppMessages.js";
 import { format as FormatString } from "node:util";
-import { Embeds } from "@Config/Shared.js";
+import { Colors, Thumbs } from "@Config/Shared.js";
 import AppError from "./AppError.js";
-
-const EmbedThumbs = Embeds.Thumbs;
-const EmbedColors = Embeds.Colors;
 const TemplateCheckerRegex = /%[scdjifoO%]/;
 
 class BaseEmbed extends EmbedBuilder {
@@ -111,7 +108,7 @@ class BaseEmbed extends EmbedBuilder {
 export class InfoEmbed extends BaseEmbed {
   constructor(data?: EmbedData) {
     super(data);
-    this.setColor(EmbedColors.Info).setThumbnail(EmbedThumbs.Info);
+    this.setColor(Colors.Info).setThumbnail(Thumbs.Info);
     if (!this.data.description) {
       this.setDescription("[Information]");
     }
@@ -134,7 +131,7 @@ export class InfoEmbed extends BaseEmbed {
 export class WarnEmbed extends BaseEmbed {
   constructor(data?: EmbedData) {
     super(data);
-    this.setColor(EmbedColors.Warning).setThumbnail(EmbedThumbs.Warning);
+    this.setColor(Colors.Warning).setThumbnail(Thumbs.Warning);
     if (!this.data.description) {
       this.setDescription("[Warning]");
     }
@@ -147,7 +144,7 @@ export class WarnEmbed extends BaseEmbed {
 export class ErrorEmbed extends BaseEmbed {
   constructor(data?: EmbedData) {
     super(data);
-    this.setColor(EmbedColors.Error).setThumbnail(EmbedThumbs.Error);
+    this.setColor(Colors.Error).setThumbnail(Thumbs.Error);
     if (!this.data.description) {
       this.setDescription("[Error Occurred]");
     }
@@ -196,7 +193,7 @@ export class ErrorEmbed extends BaseEmbed {
 export class SuccessEmbed extends BaseEmbed {
   constructor(data?: EmbedData) {
     super(data);
-    this.setColor(EmbedColors.Success).setThumbnail(EmbedThumbs.Success);
+    this.setColor(Colors.Success).setThumbnail(Thumbs.Success);
     if (!this.data.description) {
       this.setDescription("[Succeeded]");
     }
@@ -223,7 +220,7 @@ export class SuccessEmbed extends BaseEmbed {
 export class UnauthorizedEmbed extends BaseEmbed {
   constructor(data?: EmbedData) {
     super(data);
-    this.setColor(EmbedColors.Error).setThumbnail(EmbedThumbs.Unauthorized);
+    this.setColor(Colors.Error).setThumbnail(Thumbs.Unauthorized);
     if (!this.data.description) {
       this.setDescription("[Unauthorized Action]");
     }

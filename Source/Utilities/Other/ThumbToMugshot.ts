@@ -1,5 +1,5 @@
 import { type Canvas, createCanvas, loadImage } from "@napi-rs/canvas/index.js";
-import { Embeds } from "@Config/Shared.js";
+import { Thumbs } from "@Config/Shared.js";
 import { format } from "date-fns";
 import UploadToImgBB from "./ImgBBUpload.js";
 
@@ -44,7 +44,7 @@ export default async function GetBookingMugshot<AsURL extends boolean | undefine
       Options.user_gender = "Male";
     }
 
-    const FallbackImg = Embeds.Thumbs[`RobloxAvatar${Options.user_gender}`];
+    const FallbackImg = Thumbs[`RobloxAvatar${Options.user_gender}`];
     return loadImage(FallbackImg);
   });
 
@@ -107,7 +107,7 @@ export default async function GetBookingMugshot<AsURL extends boolean | undefine
   const ImgBuffer = ImgCanvas.toBuffer("image/jpeg", 100);
   if (Options.return_url) {
     const UploadedImgURL = await UploadToImgBB(ImgBuffer, `booking_mugshot_#${BkgNumPadded}`);
-    return (UploadedImgURL || Embeds.Thumbs.UnknownImage) as any;
+    return (UploadedImgURL || Thumbs.UnknownImage) as any;
   } else {
     return ImgBuffer as any;
   }

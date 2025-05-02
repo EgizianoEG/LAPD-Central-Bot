@@ -17,7 +17,7 @@ import {
   ReducedActivityEventLogger,
 } from "@Utilities/Classes/UANEventLogger.js";
 
-import { Embeds } from "@Config/Shared.js";
+import { Colors } from "@Config/Shared.js";
 import { UserHasPermsV2 } from "@Utilities/Database/UserHasPermissions.js";
 import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
@@ -148,7 +148,7 @@ async function HandleNoticeReviewValidation(
   if (!RequestHasToBeReviewed) {
     let UpdatedReqEmbed: EmbedBuilder | null = null;
     const ReplyEmbed = new EmbedBuilder()
-      .setColor(Embeds.Colors.Error)
+      .setColor(Colors.Error)
       .setTitle("Request Modified")
       .setDescription(
         "The request you are taking action on either does not exist or has already been reviewed."
@@ -225,7 +225,7 @@ async function HandleNoticeAddInfo(
   const NoticeType = IsLOA ? "LOA" : "RA";
   const NoticeTypeMid = IsLOA ? "Leave" : "Reduced Activity";
   const ReplyEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.Info)
+    .setColor(Colors.Info)
     .setTitle("Additional Officer Info");
 
   if (UANsData.recent_notice) {
@@ -295,7 +295,7 @@ async function HandleUANApproval(
 
   await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
   const ReplyEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.Success)
+    .setColor(Colors.Success)
     .setTitle(`${NoticeType} Approved`)
     .setDescription(`Successfully approved the ${NoticeType.toLowerCase()} request.`);
 
@@ -354,7 +354,7 @@ async function HandleUANDenial(
 
   await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
   const ReplyEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.Success)
+    .setColor(Colors.Success)
     .setTitle(`${NoticeType} Denied`)
     .setDescription(`Successfully denied the ${NoticeType.toLowerCase()} request.`);
 
@@ -409,7 +409,7 @@ async function HandleExtApproval(
 
   await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
   const ReplyEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.Success)
+    .setColor(Colors.Success)
     .setTitle("Leave Extension Approved")
     .setDescription("Successfully approved the extension request.");
 
@@ -465,7 +465,7 @@ async function HandleExtDenial(
 
   await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
   const ReplyEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.Success)
+    .setColor(Colors.Success)
     .setTitle("Leave Extension Denied")
     .setDescription("Successfully denied the extension request.");
 

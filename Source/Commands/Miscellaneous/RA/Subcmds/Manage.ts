@@ -13,7 +13,7 @@ import {
 
 import { ReducedActivityEventLogger } from "@Utilities/Classes/UANEventLogger.js";
 import { UserActivityNotice } from "@Typings/Utilities/Database.js";
-import { Embeds, Emojis } from "@Config/Shared.js";
+import { Colors, Emojis } from "@Config/Shared.js";
 import { compareDesc } from "date-fns";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
@@ -43,10 +43,10 @@ function GetManagementComponents(RADocument?: RADocument | null) {
 function GetManagementPromptEmbed(ActiveOrPendingRA?: RADocument | null) {
   const PromptEmbed = new EmbedBuilder()
     .setTitle("Reduced Activity Management")
-    .setColor(Embeds.Colors.Info);
+    .setColor(Colors.Info);
 
   if (ActiveOrPendingRA?.status === "Approved") {
-    PromptEmbed.setColor(Embeds.Colors.LOARequestApproved).addFields({
+    PromptEmbed.setColor(Colors.LOARequestApproved).addFields({
       inline: true,
       name: "Active Notice",
       value: Dedent(`
@@ -57,7 +57,7 @@ function GetManagementPromptEmbed(ActiveOrPendingRA?: RADocument | null) {
       `),
     });
   } else if (ActiveOrPendingRA?.status === "Pending") {
-    PromptEmbed.setColor(Embeds.Colors.LOARequestPending).addFields({
+    PromptEmbed.setColor(Colors.LOARequestPending).addFields({
       inline: true,
       name: "Pending Notice",
       value: Dedent(`
@@ -128,7 +128,7 @@ async function HandlePendingCancellation(
   PromptMsgId: string
 ) {
   const ConfirmationEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.Warning)
+    .setColor(Colors.Warning)
     .setTitle("Reduced Activity Cancellation")
     .setDescription(
       Dedent(`
@@ -196,7 +196,7 @@ async function HandlePendingCancellation(
 
   const UpdatedPromptEmbed = GetManagementPromptEmbed(ExistingRA);
   const ReplyEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.Success)
+    .setColor(Colors.Success)
     .setTitle("Request Cancelled")
     .setDescription("Your reduced activity request was successfully cancelled.");
 

@@ -1,5 +1,5 @@
 /* eslint-disable sonarjs/no-duplicate-string */
-import { Embeds, Emojis } from "@Config/Shared.js";
+import { Emojis, Colors } from "@Config/Shared.js";
 import Dedent from "dedent";
 
 /**
@@ -1014,14 +1014,14 @@ export const InfoMessages = {
 
   ProcessingCitationDetails: {
     Thumb: null,
-    Color: Embeds.Colors.Gold,
+    Color: Colors.Gold,
     Title: `${Emojis.LoadingGold}\u{2000}Processing Details...`,
     Description: "Citation details are being processed and validated for submission, please wait.",
   },
 
   LoggingCitationRecord: {
     Thumb: null,
-    Color: Embeds.Colors.Gold,
+    Color: Colors.Gold,
     Title: `${Emojis.LoadingGold}\u{2000}Logging Citation...`,
     Description: "Please wait while your submitted citation is processed and logged.",
   },

@@ -22,7 +22,7 @@ import {
 } from "discord.js";
 
 import { Shifts } from "@Typings/Utilities/Database.js";
-import { Embeds } from "@Config/Shared.js";
+import { Colors } from "@Config/Shared.js";
 import { App as DiscordApp } from "@DiscordApp";
 import GuildModel from "@Models/Guild.js";
 import HDuration from "humanize-duration";
@@ -202,7 +202,7 @@ export default class ShiftActionLogger {
     });
 
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Started")
-      .setColor(Embeds.Colors.ShiftOn)
+      .setColor(Colors.ShiftOn)
       .setFields(
         {
           inline: true,
@@ -260,7 +260,7 @@ export default class ShiftActionLogger {
 
     const BreakStartedRT = FormatTime(Math.round(ShiftDoc.events.breaks[0]![0] / 1000), "R");
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Break Started")
-      .setColor(Embeds.Colors.ShiftBreak)
+      .setColor(Colors.ShiftBreak)
       .setFields(
         {
           inline: true,
@@ -326,7 +326,7 @@ export default class ShiftActionLogger {
     const AllBTEqualsEndedBreak = ShiftDoc.durations.on_break === EndedBreak[1] - EndedBreak[0];
 
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Break Ended")
-      .setColor(Embeds.Colors.ShiftBreak)
+      .setColor(Colors.ShiftBreak)
       .setFields(
         {
           inline: true,
@@ -391,7 +391,7 @@ export default class ShiftActionLogger {
     const OnBreakTime = ShiftDoc.hasBreaks() ? ReadableDuration(ShiftDoc.durations.on_break) : null;
 
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Ended")
-      .setColor(Embeds.Colors.ShiftOff)
+      .setColor(Colors.ShiftOff)
       .addFields(
         {
           inline: false,
@@ -461,7 +461,7 @@ export default class ShiftActionLogger {
     const OnBreakTime = ShiftDoc.hasBreaks() ? ReadableDuration(ShiftDoc.durations.on_break) : null;
 
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Automatically Ended")
-      .setColor(Embeds.Colors.ShiftOff)
+      .setColor(Colors.ShiftOff)
       .addFields(
         {
           inline: true,
@@ -524,7 +524,7 @@ export default class ShiftActionLogger {
     const OnBreakTime = ShiftDoc.hasBreaks() ? ReadableDuration(ShiftDoc.durations.on_break) : null;
 
     const LogEmbed = BaseData.BaseEmbed.setTitle("Shift Voided")
-      .setColor(Embeds.Colors.ShiftVoid)
+      .setColor(Colors.ShiftVoid)
       .addFields(
         {
           inline: true,
@@ -593,7 +593,7 @@ export default class ShiftActionLogger {
   ) {
     const LoggingChannel = await this.GetLoggingChannel(UserInteract.guild);
     const LogEmbed = new EmbedBuilder()
-      .setColor(Embeds.Colors.ShiftOff)
+      .setColor(Colors.ShiftOff)
       .setTitle(TargettedUser ? "Member Shifts Wiped" : "Shifts Wiped")
       .setFooter({ text: `Wiped by: @${UserInteract.user.username}` })
       .setDescription(
@@ -655,7 +655,7 @@ export default class ShiftActionLogger {
     const LoggingChannel = await this.GetLoggingChannel(UserInteract.guild);
     const LogEmbed = new EmbedBuilder()
       .setTimestamp(UserInteract.createdAt)
-      .setColor(Embeds.Colors.ShiftOff)
+      .setColor(Colors.ShiftOff)
       .setTitle("Shifts Ended")
       .setFooter({ text: `Ended by: @${UserInteract.user.username}` })
       .setDescription(
@@ -681,7 +681,7 @@ export default class ShiftActionLogger {
     const LoggingChannel = await this.GetLoggingChannel(UserInteract.guild);
     const LogEmbed = new EmbedBuilder()
       .setTimestamp(UserInteract.createdAt)
-      .setColor(Embeds.Colors.ShiftOff)
+      .setColor(Colors.ShiftOff)
       .setTitle("Member Shift Deleted")
       .setFooter({ text: `Deleted by: @${UserInteract.user.username}` })
       .setDescription(
@@ -712,7 +712,7 @@ export default class ShiftActionLogger {
     const LoggingChannel = await this.GetLoggingChannel(UserInteract.guild);
     const LogEmbed = new EmbedBuilder()
       .setTimestamp(UserInteract.createdAt)
-      .setColor(Embeds.Colors.ShiftVoid)
+      .setColor(Colors.ShiftVoid)
       .setTitle("Shift Modified — Time Set")
       .setFooter({ text: `Set by: @${UserInteract.user.username}` })
       .setDescription(
@@ -744,7 +744,7 @@ export default class ShiftActionLogger {
     const LoggingChannel = await this.GetLoggingChannel(UserInteract.guild);
     const LogEmbed = new EmbedBuilder()
       .setTimestamp(UserInteract.createdAt)
-      .setColor(Embeds.Colors.ShiftOff)
+      .setColor(Colors.ShiftOff)
       .setTitle("Shift Modified — Time Reset")
       .setFooter({ text: `Reset by: @${UserInteract.user.username}` })
       .setDescription(
@@ -792,10 +792,10 @@ export default class ShiftActionLogger {
 
     if (ActionType === "Add") {
       LogEmbed.setTitle("Shift Modified — Time Add");
-      LogEmbed.setColor(Embeds.Colors.ShiftOn);
+      LogEmbed.setColor(Colors.ShiftOn);
     } else {
       LogEmbed.setTitle("Shift Modified — Time Subtract");
-      LogEmbed.setColor(Embeds.Colors.ShiftOff);
+      LogEmbed.setColor(Colors.ShiftOff);
     }
 
     return LoggingChannel?.send({ embeds: [LogEmbed] });
@@ -827,7 +827,7 @@ export default class ShiftActionLogger {
     const LoggingChannel = await this.GetLoggingChannel(UserInteract.guild);
     if (!LoggingChannel) return undefined;
 
-    const AccentColor = resolveColor(Embeds.Colors.ShiftOn);
+    const AccentColor = resolveColor(Colors.ShiftOn);
     const ImportData = new AttachmentBuilder(ImportDetails.SourceFileURL, {
       name: "import_data.txt",
       description: "Shift import source.",

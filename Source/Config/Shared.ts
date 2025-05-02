@@ -1,4 +1,4 @@
-import type { ColorResolvable } from "discord.js";
+import { type ColorResolvable, Colors as DiscordColors } from "discord.js";
 
 const SharedData = {
   Images: {
@@ -9,44 +9,44 @@ const SharedData = {
     FooterDivider: "https://i.ibb.co/6HWMHFS/Horizontal-Divider.png",
   },
 
-  Embeds: {
-    Colors: {
-      Info: "#3498DB",
-      Success: "#28a745",
-      Warning: "#E67E22",
-      Error: "#ED4245",
-      Gold: "#FFBC45",
+  Colors: {
+    Info: "#3498DB",
+    Success: "#28a745",
+    Warning: "#E67E22",
+    Error: "#ED4245",
+    RealGold: "#FFBC45",
 
-      ShiftOn: "#1F9D4B",
-      ShiftOff: "#DB2626",
-      ShiftVoid: "#4E5052",
-      ShiftBreak: "#FE8C2A",
-      ShiftNatural: "#C2D1E6",
+    ShiftOn: "#1F9D4B",
+    ShiftOff: "#DB2626",
+    ShiftVoid: "#4E5052",
+    ShiftBreak: "#FE8C2A",
+    ShiftNatural: "#C2D1E6",
 
-      // Cancelled color is only used in logging messages; leave requests uses LOARequestDenied when cancelled.
-      LOARequestCancelled: "#C2D1E6",
-      LOARequestEnded: "#CA2222",
-      LOARequestDenied: "#CA2222",
-      LOARequestPending: "#F2A265",
-      LOARequestApproved: "#227F46",
-    },
+    // Cancelled color is only used in logging messages; leave requests uses LOARequestDenied when cancelled.
+    LOARequestCancelled: "#C2D1E6",
+    LOARequestEnded: "#CA2222",
+    LOARequestDenied: "#CA2222",
+    LOARequestPending: "#F2A265",
+    LOARequestApproved: "#227F46",
 
-    Thumbs: {
-      Info: "https://i.ibb.co/Fztk9dQ/Info-Icon-48.png",
-      Warning: "https://i.ibb.co/D9ffPMx/Warning-Icon-48.png",
-      Error: "https://i.ibb.co/tqk15t2/Error-Icon-48.png",
-      Success: "https://i.ibb.co/TmYLkf4/Checkmark-Icon-48.png",
-      Unauthorized: "https://i.ibb.co/DYM3Wcq/Blocked-Icon-48.png",
+    ...DiscordColors,
+  },
 
-      AvatarMale: "https://i.ibb.co/m0fyKh1/Male-Avatar-Placeholder.png",
-      AvatarFemale: "https://i.ibb.co/Lr37RGx/Female-Avatar-Placeholder.png",
+  Thumbs: {
+    Info: "https://i.ibb.co/Fztk9dQ/Info-Icon-48.png",
+    Warning: "https://i.ibb.co/D9ffPMx/Warning-Icon-48.png",
+    Error: "https://i.ibb.co/tqk15t2/Error-Icon-48.png",
+    Success: "https://i.ibb.co/TmYLkf4/Checkmark-Icon-48.png",
+    Unauthorized: "https://i.ibb.co/DYM3Wcq/Blocked-Icon-48.png",
 
-      RobloxAvatarMale: "https://i.ibb.co/LzrzMwr2/Roblox-Thumb-Male-Unknown.png",
-      RobloxAvatarFemale: "https://i.ibb.co/pB1wLmhY/Roblox-Thumb-Female-Unknown.png",
+    AvatarMale: "https://i.ibb.co/m0fyKh1/Male-Avatar-Placeholder.png",
+    AvatarFemale: "https://i.ibb.co/Lr37RGx/Female-Avatar-Placeholder.png",
 
-      UnknownImage: "https://placehold.co/254x254/F7F8F9/202428/png?text=%3F",
-      Transparent: "https://i.ibb.co/qFtywJK/Transparent.png",
-    },
+    RobloxAvatarMale: "https://i.ibb.co/LzrzMwr2/Roblox-Thumb-Male-Unknown.png",
+    RobloxAvatarFemale: "https://i.ibb.co/pB1wLmhY/Roblox-Thumb-Female-Unknown.png",
+
+    UnknownImage: "https://placehold.co/254x254/F7F8F9/202428/png?text=%3F",
+    Transparent: "https://i.ibb.co/qFtywJK/Transparent.png",
   },
 
   // Attribution & Credits;
@@ -183,15 +183,14 @@ const SharedData = {
   },
 };
 
-type OrgTypings = Omit<typeof SharedData, "Embeds">;
-interface SharedConfig extends OrgTypings {
-  Embeds: Omit<typeof SharedData.Embeds, "Colors"> & {
-    Colors: Record<keyof typeof SharedData.Embeds.Colors, ColorResolvable>;
-  };
+type ColorsType = Record<keyof typeof SharedData.Colors, ColorResolvable>;
+interface SharedConfig extends Omit<typeof SharedData, "Colors"> {
+  Colors: ColorsType;
 }
 
 export const Icons = SharedData.Icons;
 export const Emojis = SharedData.Emojis;
 export const Images = SharedData.Images;
-export const Embeds = SharedData.Embeds as SharedConfig["Embeds"];
+export const Thumbs = SharedData.Thumbs;
+export const Colors = SharedData.Colors as ColorsType;
 export default SharedData as SharedConfig;

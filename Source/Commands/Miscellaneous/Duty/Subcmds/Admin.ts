@@ -19,14 +19,13 @@ import {
   ButtonStyle,
   channelLink,
   Message,
-  Colors,
   User,
 } from "discord.js";
 
 import { Shifts } from "@Typings/Utilities/Database.js";
 import { RandomString } from "@Utilities/Strings/Random.js";
-import { Embeds, Emojis } from "@Config/Shared.js";
 import { IsValidShiftId } from "@Utilities/Other/Validators.js";
+import { Colors as ExtraColors, Emojis } from "@Config/Shared.js";
 import { SuccessEmbed, InfoEmbed, WarnEmbed, ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
@@ -908,7 +907,7 @@ async function HandleUserShiftEnd(
     `**Average Time:** ${UserShiftsData.avg_onduty}`;
 
   const RespEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.ShiftOff)
+    .setColor(ExtraColors.ShiftOff)
     .setTimestamp(EndedShift.end_timestamp)
     .setTitle("Shift Ended")
     .setFooter({ text: `Shift Type: ${EndedShift.type}` })
@@ -1056,9 +1055,9 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     })
     .setColor(
       ActiveShift?.hasBreakActive()
-        ? Embeds.Colors.ShiftBreak
+        ? ExtraColors.ShiftBreak
         : ActiveShift
-          ? Embeds.Colors.ShiftOn
+          ? ExtraColors.ShiftOn
           : Colors.DarkBlue
     );
 

@@ -8,7 +8,7 @@ import {
 import { TenCodes, ElevenCodes, LiteralCodes } from "@Resources/RadioCodes.js";
 import { PoliceCodeToWords, TitleCase } from "@Utilities/Strings/Converters.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import { Embeds } from "@Config/Shared.js";
+import { Colors } from "@Config/Shared.js";
 import AutocompleteRadioCode from "@Utilities/Autocompletion/RadioCode.js";
 const AllCodes = [...TenCodes, ...ElevenCodes, ...LiteralCodes];
 // ---------------------------------------------------------------------------------------
@@ -26,7 +26,7 @@ async function Callback(Interaction: SlashCommandInteraction) {
   const Title = PoliceCodeToWords(CodeFound.code);
   const ResponseEmbed = new EmbedBuilder()
     .setDescription(CodeFound.description)
-    .setColor(Embeds.Colors.Info)
+    .setColor(Colors.Info)
     .setTitle(Title);
 
   if (CodeFound.title) {

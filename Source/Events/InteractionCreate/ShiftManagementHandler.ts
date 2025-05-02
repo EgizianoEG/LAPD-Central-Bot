@@ -21,7 +21,7 @@ import { Shifts } from "@Typings/Utilities/Database.js";
 import { GetErrorId } from "@Utilities/Strings/Random.js";
 import { secondsInDay } from "date-fns/constants";
 import { ErrorMessages } from "@Resources/AppMessages.js";
-import { Embeds, Emojis } from "@Config/Shared.js";
+import { Colors, Emojis } from "@Config/Shared.js";
 import { differenceInSeconds } from "date-fns";
 import { ErrorEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { DutyManagementBtnCustomIdRegex } from "@Resources/RegularExpressions.js";
@@ -451,13 +451,11 @@ async function UpdateManagementPrompt(
     **Average On-Duty Time:** ${MemberShiftsData.avg_onduty}
   `);
 
-  const PromptEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.ShiftNatural)
-    .setTitle(MgmtEmbedTitle);
+  const PromptEmbed = new EmbedBuilder().setColor(Colors.ShiftNatural).setTitle(MgmtEmbedTitle);
 
   if (PreviousAction) {
     if (PreviousAction === RecentShiftAction.End) {
-      PromptEmbed.setColor(Embeds.Colors.ShiftOff);
+      PromptEmbed.setColor(Colors.ShiftOff);
       PromptEmbed.setTitle(PreviousAction);
       PromptEmbed.setFooter({ text: `Shift Type: ${ShiftType}` });
 
@@ -506,7 +504,7 @@ async function UpdateManagementPrompt(
           ? `**Breaks Taken:** ${ActiveShift.events.breaks.length}\n`
           : "";
 
-      PromptEmbed.setColor(Embeds.Colors.ShiftOn);
+      PromptEmbed.setColor(Colors.ShiftOn);
       PromptEmbed.setFooter({ text: `Shift Type: ${ShiftType}` });
       PromptEmbed.setTitle(PreviousAction);
       PromptEmbed.setFields({
@@ -521,7 +519,7 @@ async function UpdateManagementPrompt(
       });
     } else if (PreviousAction === RecentShiftAction.BreakStart && ActiveShift?.hasBreakActive()) {
       const StartedBreak = ActiveShift.events.breaks.findLast((v) => !v[1])!;
-      PromptEmbed.setColor(Embeds.Colors.ShiftBreak);
+      PromptEmbed.setColor(Colors.ShiftBreak);
       PromptEmbed.setFooter({ text: `Shift Type: ${ShiftType}` });
       PromptEmbed.setTitle(PreviousAction);
       PromptEmbed.setFields({
@@ -536,7 +534,7 @@ async function UpdateManagementPrompt(
         `),
       });
     } else if (ActiveShift) {
-      PromptEmbed.setColor(Embeds.Colors.ShiftOn);
+      PromptEmbed.setColor(Colors.ShiftOn);
       if (!PromptEmbed.data.fields?.find((Field) => Field.name === "Current Shift")) {
         if (ActiveShift.durations.on_break > 500) {
           PromptEmbed.addFields({

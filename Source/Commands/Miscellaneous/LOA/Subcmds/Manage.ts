@@ -17,8 +17,8 @@ import {
   InteractionCollector,
 } from "discord.js";
 
+import { Colors, Emojis } from "@Config/Shared.js";
 import { UserActivityNotice } from "@Typings/Utilities/Database.js";
-import { Embeds, Emojis } from "@Config/Shared.js";
 import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
 import { LeaveOfAbsenceEventLogger } from "@Utilities/Classes/UANEventLogger.js";
@@ -149,14 +149,14 @@ async function GetManagementEmbedAndLOA(Interaction: PromptInteractType) {
   const ActiveOrPendingLOA = LOAData.active_notice ?? LOAData.pending_notice;
   const ReplyEmbed = new EmbedBuilder()
     .setTitle("Leave of Absence Management")
-    .setColor(Embeds.Colors.Info);
+    .setColor(Colors.Info);
 
   const PreviousLOAsFormatted = LOAData.completed_notices.map((LOA) => {
     return `${FormatTime(LOA.review_date!, "D")} — ${FormatTime(LOA.early_end_date ?? LOA.end_date, "D")}`;
   });
 
   if (ActiveOrPendingLOA?.reviewed_by && ActiveOrPendingLOA.is_active) {
-    ReplyEmbed.setColor(Embeds.Colors.LOARequestApproved).addFields({
+    ReplyEmbed.setColor(Colors.LOARequestApproved).addFields({
       inline: true,
       name: "Active Leave" + (ActiveOrPendingLOA.is_manageable === true ? "" : " (Unmanageable)"),
       value: Dedent(`
@@ -168,7 +168,7 @@ async function GetManagementEmbedAndLOA(Interaction: PromptInteractType) {
       `),
     });
   } else if (ActiveOrPendingLOA?.status === "Pending") {
-    ReplyEmbed.setColor(Embeds.Colors.LOARequestPending).addFields({
+    ReplyEmbed.setColor(Colors.LOARequestPending).addFields({
       inline: true,
       name: "Pending Leave",
       value: Dedent(`
@@ -188,7 +188,7 @@ async function GetManagementEmbedAndLOA(Interaction: PromptInteractType) {
   const HasPendingExtension =
     ActiveOrPendingLOA?.is_active && ActiveOrPendingLOA.extension_request?.status === "Pending";
   if (HasPendingExtension) {
-    ReplyEmbed.setColor(Embeds.Colors.LOARequestPending).addFields({
+    ReplyEmbed.setColor(Colors.LOARequestPending).addFields({
       inline: true,
       name: "Pending Extension",
       value: Dedent(`
@@ -323,7 +323,7 @@ async function HandleLeaveExtend(
 
       const RequestMsg = await LOAEventLogger.SendExtensionRequest(Submission, ActiveLeave);
       const ReplyEmbed = new EmbedBuilder()
-        .setColor(Embeds.Colors.Success)
+        .setColor(Colors.Success)
         .setTitle("Leave Extension Requested")
         .setDescription(
           "Successfully submitted leave extension request. You will be notified when the request is approved or denied via a DM notice if possible."
@@ -369,7 +369,7 @@ async function HandleLeaveEarlyEnd(
   }
 
   const ConfirmationEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.Warning)
+    .setColor(Colors.Warning)
     .setTitle("Leave of Absence Early Termination")
     .setDescription(
       Dedent(`
@@ -444,7 +444,7 @@ async function HandleLeaveEarlyEnd(
   await ActiveLeave.save();
 
   const ReplyEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.Success)
+    .setColor(Colors.Success)
     .setTitle("Leave of Absence Terminated")
     .setDescription("Your leave of absence has been successfully terminated at your request.");
 
@@ -482,7 +482,7 @@ async function HandlePendingLeaveCancellation(
   }
 
   const ConfirmationEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.Warning)
+    .setColor(Colors.Warning)
     .setTitle("Leave of Absence Cancellation")
     .setDescription(
       Dedent(`
@@ -532,7 +532,7 @@ async function HandlePendingLeaveCancellation(
   await PendingLeave.save();
 
   const ReplyEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.Success)
+    .setColor(Colors.Success)
     .setTitle("Leave Request Cancelled")
     .setDescription("Your leave request was successfully cancelled at your request.");
 
@@ -566,7 +566,7 @@ async function HandlePendingExtensionCancellation(
   }
 
   const ConfirmationEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.Warning)
+    .setColor(Colors.Warning)
     .setTitle("Extension Cancellation")
     .setDescription(
       Dedent(`
@@ -619,7 +619,7 @@ async function HandlePendingExtensionCancellation(
   await ActiveLeave.save();
 
   const SuccessCancellationEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.Success)
+    .setColor(Colors.Success)
     .setTitle("Extension Request Cancelled")
     .setDescription("Your LOA extension request was successfully cancelled.");
 
