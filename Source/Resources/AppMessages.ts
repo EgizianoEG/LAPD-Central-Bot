@@ -870,6 +870,12 @@ export const ErrorMessages = {
     Description:
       "The shift state has been modified elsewhere since this prompt was displayed. The prompt has been updated to reflect the current state.",
   },
+
+  DutyImportNoEntries: {
+    Title: "No Entries Found",
+    Description:
+      "The duty import file included no valid entries that could be processed. Make sure the entries in the file are formatted correctly, then try again.",
+  },
 };
 
 export const InfoMessages = {

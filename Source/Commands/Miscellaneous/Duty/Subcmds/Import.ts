@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/no-duplicate-string */
 import { ErrorEmbed, InfoEmbed, SuccessEmbed, WarnEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { DutyLeaderboardEntryRegex } from "@Resources/RegularExpressions.js";
 import { HandleShiftTypeValidation } from "@Utilities/Database/ShiftTypeValidators.js";
@@ -20,7 +21,7 @@ import ParseDuration from "parse-duration";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import HDuration from "humanize-duration";
 import AppError from "@Utilities/Classes/AppError.js";
-import Dedent from "dedent";
+import Dedent from "@Utilities/Other/CustomDedent.js";
 
 type LeaderboardEntry = {
   // Common to both formats
@@ -83,10 +84,11 @@ async function AwaitImportConfirmation(
     .setDescription(
       Dedent(` 
         You are about to import time data from a leaderboard file. This will *add* the \
-        imported time data as *a single shift per individual* to existing records.
-        Please confirm that you want to proceed with this action.
+        imported time data as *a single shift per individual* to existing records under \
+        the \`${Interaction.options.getString("shift-type", false) ?? "Default"}\` shift type.
 
-        *This prompt will automatically cancel after five minutes of inactivity.*
+        Please confirm that you want to proceed with this action.
+        -# *This prompt will automatically cancel after five minutes of inactivity.*
       `)
     );
 
@@ -142,7 +144,13 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
       .map((Line) => Line.trim())
       .filter((Line) => Line.length > 0)
       .map((Line) => (Line.match(LineRegex)?.groups as LeaderboardEntry) ?? null)
-      .filter((Entry) => Entry.hr_time && !Entry.hr_time.trim().match(/^0\s*?seconds$/i))
+      .filter(
+        (Entry) =>
+          Entry &&
+          "hr_time" in Entry &&
+          "username" in Entry &&
+          !Entry.hr_time.trim().match(/^0\s*?seconds$/i)
+      )
       .map((Entry) => {
         if (!Entry.duty_ms && Entry.hr_time) {
           Entry.duty_ms = Math.round(ParseDuration(Entry.hr_time, "millisecond") ?? 0);
@@ -151,6 +159,13 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
         }
         return Entry as LeaderboardEntry & { duty_ms: number };
       });
+
+    if (FileEntries.length === 0) {
+      return ConfirmationInteract.editReply({
+        embeds: [new ErrorEmbed().useErrTemplate("DutyImportNoEntries")],
+        components: [],
+      });
+    }
 
     const ResolvedUserIds = await ResolveUsernamesToIds(
       Interaction.guild,
