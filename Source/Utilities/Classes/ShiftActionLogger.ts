@@ -9,11 +9,16 @@ import {
   userMention,
   GuildMember,
   EmbedBuilder,
+  MessageFlags,
+  resolveColor,
+  ComponentType,
   BaseInteraction,
   ImageURLOptions,
   SendableChannels,
   AttachmentBuilder,
   time as FormatTime,
+  SeparatorSpacingSize,
+  APIContainerComponent,
 } from "discord.js";
 
 import { Shifts } from "@Typings/Utilities/Database.js";
@@ -822,29 +827,54 @@ export default class ShiftActionLogger {
     const LoggingChannel = await this.GetLoggingChannel(UserInteract.guild);
     if (!LoggingChannel) return undefined;
 
-    const LogEmbed = new EmbedBuilder()
-      .setColor(Embeds.Colors.ShiftOn)
-      .setTimestamp(UserInteract.createdAt)
-      .setFooter({ text: `Imported by: @${UserInteract.user.username}` })
-      .setTitle("Shift Time Imported")
-      .setDescription(
-        Dedent(`
-          **Staff Count:** ${BluewishText(ImportDetails.UsersTotal, LoggingChannel.id)}
-          **Unresolved Staff:** ${BluewishText(ImportDetails.UnresolvedUsers, LoggingChannel.id)}
-          **Imported Shifts:** ${ImportDetails.ShiftsTotal >= ImportDetails.UsersTotal - ImportDetails.UnresolvedUsers ? BluewishText(ImportDetails.ShiftsTotal, LoggingChannel.id) : "*Unknown*"}
-          **Imported Under Type:** ${inlineCode(ImportDetails.ShiftsOfType)}
-          **Total Time Imported:** ${ReadableDuration(ImportDetails.TotalShiftTime)}
-        `)
-      );
+    const AccentColor = resolveColor(Embeds.Colors.ShiftOn);
+    const ImportData = new AttachmentBuilder(ImportDetails.SourceFileURL, {
+      name: "import_data.txt",
+      description: "Shift import source.",
+    });
+
+    const CompContainerAPIObj: APIContainerComponent = {
+      type: ComponentType.Container,
+      accent_color: AccentColor,
+      components: [
+        {
+          type: ComponentType.TextDisplay,
+          content: "### Shift Time Imported",
+        },
+        {
+          type: ComponentType.TextDisplay,
+          content: Dedent(`
+            **Staff Count:** ${BluewishText(ImportDetails.UsersTotal, LoggingChannel.id)}
+            **Unresolved Staff:** ${BluewishText(ImportDetails.UnresolvedUsers, LoggingChannel.id)}
+            **Imported Shifts:** ${ImportDetails.ShiftsTotal >= ImportDetails.UsersTotal - ImportDetails.UnresolvedUsers ? BluewishText(ImportDetails.ShiftsTotal, LoggingChannel.id) : "*Unknown Count*"}
+            **Imported Under Type:** ${inlineCode(ImportDetails.ShiftsOfType)}
+            **Total Time Imported:** ${ReadableDuration(ImportDetails.TotalShiftTime)}
+          `),
+        },
+        {
+          divider: true,
+          type: ComponentType.Separator,
+          spacing: SeparatorSpacingSize.Small,
+        },
+        {
+          type: ComponentType.TextDisplay,
+          content: `-# Imported by: ${userMention(UserInteract.user.id)}; around ${FormatTime(UserInteract.createdAt, "R")}`,
+        },
+        {
+          type: ComponentType.File,
+          file: {
+            url: `attachment://${ImportData.name}`,
+            content_type: "text/plain",
+          },
+        },
+      ],
+    };
 
     return LoggingChannel.send({
-      embeds: [LogEmbed],
-      files: [
-        new AttachmentBuilder(ImportDetails.SourceFileURL, {
-          name: "import_data.txt",
-          description: "Shift import source.",
-        }),
-      ],
+      allowedMentions: { users: [] },
+      components: [CompContainerAPIObj],
+      files: [ImportData],
+      flags: MessageFlags.IsComponentsV2,
     });
   }
 }
