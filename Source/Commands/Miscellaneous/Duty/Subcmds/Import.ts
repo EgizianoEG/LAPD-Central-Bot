@@ -1,5 +1,4 @@
 /* eslint-disable sonarjs/no-duplicate-string */
-import { ErrorEmbed, InfoEmbed, SuccessEmbed, WarnEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { DutyLeaderboardEntryRegex } from "@Resources/RegularExpressions.js";
 import { HandleShiftTypeValidation } from "@Utilities/Database/ShiftTypeValidators.js";
 import { GetErrorId } from "@Utilities/Strings/Random.js";
@@ -9,10 +8,18 @@ import {
   ActionRowBuilder,
   ComponentType,
   ButtonBuilder,
+  MessageFlags,
   ButtonStyle,
   Attachment,
   Message,
 } from "discord.js";
+
+import {
+  SuccessContainer,
+  ErrorContainer,
+  InfoContainer,
+  WarnContainer,
+} from "@Utilities/Classes/ExtraContainers.js";
 
 import ShiftModel, { ShiftFlags } from "@Models/Shift.js";
 import ResolveUsernamesToIds from "@Utilities/Other/ResolveDiscordUsernames.js";
@@ -53,7 +60,7 @@ async function IsAttachmentExtensionValid(
   DataFile: Attachment
 ): Promise<boolean> {
   if (DataFile.name.endsWith(".txt")) return true;
-  return new ErrorEmbed()
+  return new ErrorContainer()
     .useErrTemplate("AttachmentMustBeTextFile")
     .replyToInteract(Interaction, true)
     .then(() => false);
@@ -78,23 +85,22 @@ async function AwaitImportConfirmation(
     CancelButton,
   ]);
 
-  const PromptEmbed = new WarnEmbed()
-    .setThumbnail(null)
-    .setTitle("Confirmation Required")
+  const PromptContainer = new WarnContainer()
+    .setTitle("Duty Import Confirmation")
+    .setFooter("*This prompt will automatically cancel after five minutes of inactivity.*")
     .setDescription(
-      Dedent(` 
-        You are about to import time data from a leaderboard file. This will *add* the \
+      Dedent(`
+        You are about to import duty time from a leaderboard file. This will *add* the \
         imported time data as *a single shift per individual* to existing records under \
         the \`${Interaction.options.getString("shift-type", false) ?? "Default"}\` shift type.
 
         Please confirm that you want to proceed with this action.
-        -# *This prompt will automatically cancel after five minutes of inactivity.*
       `)
     );
 
   const PromptMessage = await Interaction.reply({
-    embeds: [PromptEmbed],
-    components: [ButtonsRow],
+    flags: MessageFlags.IsComponentsV2,
+    components: [PromptContainer, ButtonsRow],
     withResponse: true,
   }).then((Resp) => Resp.resource!.message! as Message<true>);
 
@@ -105,8 +111,8 @@ async function AwaitImportConfirmation(
   }).catch((Err) => {
     if (Err instanceof Error && Err.message.includes("time")) {
       return Interaction.editReply({
-        embeds: [new InfoEmbed().useInfoTemplate("DutyImportTimedOut")],
-        components: [],
+        flags: MessageFlags.IsComponentsV2,
+        components: [new InfoContainer().useInfoTemplate("DutyImportTimedOut")],
       }).then(() => null);
     }
     return null;
@@ -114,8 +120,7 @@ async function AwaitImportConfirmation(
 
   if (ButtonResponse?.customId.includes("cancel")) {
     return ButtonResponse.update({
-      embeds: [new InfoEmbed().useInfoTemplate("DutyImportCancelled")],
-      components: [],
+      components: [new InfoContainer().useInfoTemplate("DutyImportCancelled")],
     }).then(() => ConfirmationResponse);
   } else if (ButtonResponse?.customId.includes("confirm")) {
     ConfirmationResponse.ConfirmationInteract = ButtonResponse;
@@ -134,8 +139,8 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
 
   if (!ConfirmationInteract) return;
   await ConfirmationInteract.update({
-    embeds: [new InfoEmbed().useInfoTemplate("DutyImportInProgress")],
-    components: [],
+    flags: MessageFlags.IsComponentsV2,
+    components: [new InfoContainer().useInfoTemplate("DutyImportInProgress")],
   });
 
   try {
@@ -162,8 +167,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
 
     if (FileEntries.length === 0) {
       return ConfirmationInteract.editReply({
-        embeds: [new ErrorEmbed().useErrTemplate("DutyImportNoEntries")],
-        components: [],
+        components: [new ErrorContainer().useErrTemplate("DutyImportNoEntries")],
       });
     }
 
@@ -221,7 +225,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
         stack: dbError.stack,
       });
 
-      return new ErrorEmbed()
+      return new ErrorContainer()
         .useErrTemplate("DatabaseError")
         .setErrorId(ErrorId)
         .replyToInteract(ConfirmationInteract, false, false, "editReply");
@@ -229,7 +233,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
 
     return Promise.allSettled([
       ShiftActionLogger.LogShiftTimeImport(ConfirmationInteract, DataParsed),
-      new SuccessEmbed()
+      new SuccessContainer()
         .setThumbnail(null)
         .setTitle("Import Completed")
         .setDescription(
@@ -244,13 +248,12 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     ]);
   } catch (Err: any) {
     const ErrorId = GetErrorId();
-    const ResponseEmbed = new ErrorEmbed().setErrorId(ErrorId);
+    const ResponseContainer = new ErrorContainer().setErrorId(ErrorId);
 
-    if (Err instanceof AppError && Err.is_showable) ResponseEmbed.useErrClass(Err);
-    else ResponseEmbed.useErrTemplate("AppError");
+    if (Err instanceof AppError && Err.is_showable) ResponseContainer.useErrClass(Err);
+    else ResponseContainer.useErrTemplate("AppError");
     await ConfirmationInteract.editReply({
-      embeds: [ResponseEmbed],
-      components: [],
+      components: [ResponseContainer],
     });
 
     AppLogger.error({
