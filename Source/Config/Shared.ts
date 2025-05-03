@@ -71,6 +71,7 @@ const SharedData = {
     LoadingBlue: "<a:DualRingBlue:1294539916759400448>",
     LoadingGold: "<a:DualRingGold:1294539933754855425>",
 
+    GearColored: "<:Gear:1368202985372516554>",
     MediaStop: "<:MediaStop:1220887197398470780>",
     WhitePlus: "<:WhitePlus:1270733376533434471>",
     WhiteCheck: "<:WhiteCheck:1272950397044133999>",

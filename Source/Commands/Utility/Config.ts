@@ -79,7 +79,7 @@ enum ConfigTopics {
 }
 
 /**
- * Configuration Topics Action Ids mapping.
+ * Configuration topics action Ids mapping.
  */
 const CTAIds = {
   [ConfigTopics.BasicConfiguration]: {
@@ -124,8 +124,11 @@ const CTAIds = {
     LogChannel: `${ConfigTopics.ReducedActivityConfiguration}-lc`,
     RARole: `${ConfigTopics.ReducedActivityConfiguration}-rar`,
   },
-};
+} as const;
 
+/**
+ * Configuration topics explanations mapping.
+ */
 const ConfigTopicsExplanations = {
   [ConfigTopics.BasicConfiguration]: {
     Title: "App Basic Configuration",
@@ -292,8 +295,8 @@ function GetHumanReadableLogDeletionInterval(Interval: number) {
 }
 
 // ---------------------------------------------------------------------------------------
-// Embed & Component Getters:
-// --------------------------
+// Component Getters:
+// ------------------
 function GetConfigTopicConfirmAndBackBtns(
   CmdInteract: SlashCommandInteraction<"cached"> | StringSelectMenuInteraction<"cached">,
   ConfigTopicId: ConfigTopics
@@ -775,21 +778,47 @@ function GetReducedActivityModuleConfigComponents(
   return [ModuleEnabledAR, RARoleAR, RequestsChannelAR, LogChannelAR] as const;
 }
 
-function GetShowConfigurationsPageComponents(CmdInteract: SlashCommandInteraction<"cached">) {
-  return [
-    new ActionRowBuilder<ButtonBuilder>().setComponents(
-      new ButtonBuilder()
-        .setLabel("Back to Configration Topics")
-        .setCustomId(`app-config-bck:${CmdInteract.user.id}`)
-        .setStyle(ButtonStyle.Secondary)
-        .setEmoji(Emojis.WhiteBack)
-    ),
-  ];
+function GetShowConfigurationsPageComponents(
+  CmdInteract: SlashCommandInteraction<"cached">,
+  SafePIndex: number,
+  TotalPages: number
+) {
+  const PaginationRow = new ActionRowBuilder<ButtonBuilder>().setComponents(
+    new ButtonBuilder()
+      .setCustomId(`config-show-prev:${CmdInteract.user.id}:${SafePIndex - 1}`)
+      .setLabel("Previous")
+      .setEmoji(Emojis.NavPrev)
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(SafePIndex <= 0),
+
+    new ButtonBuilder()
+      .setCustomId(`config-show-page:${CmdInteract.user.id}`)
+      .setLabel(`Page ${SafePIndex + 1} of ${TotalPages}`)
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(true),
+
+    new ButtonBuilder()
+      .setCustomId(`config-show-next:${CmdInteract.user.id}:${SafePIndex + 1}`)
+      .setLabel("Next")
+      .setEmoji(Emojis.NavNext)
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(SafePIndex >= TotalPages - 1)
+  );
+
+  const BackButtonRow = new ActionRowBuilder<ButtonBuilder>().setComponents(
+    new ButtonBuilder()
+      .setLabel("Back to Configration Topics")
+      .setCustomId(`app-config-bck:${CmdInteract.user.id}`)
+      .setStyle(ButtonStyle.Secondary)
+      .setEmoji(Emojis.WhiteBack)
+  );
+
+  return [PaginationRow, BackButtonRow] as const;
 }
 
 // ---------------------------------------------------------------------------------------
-// Configuration Containers:
-// -------------------------
+// Containers Getters:
+// -------------------
 function GetBasicConfigContainer(
   CmdInteract: SlashCommandInteraction<"cached">,
   GuildSettings: GuildSettings
@@ -1108,6 +1137,91 @@ function GetAdditionalConfigContainer(
         )
         .setButtonAccessory(AdditionalConfigInteractComponents[3].components[0])
     );
+}
+
+// ---------------------------------------------------------------------------------------
+// Config Show Content Getters:
+// ----------------------------
+function GetCSBasicSettingsContent(GuildSettings: GuildSettings): string {
+  const StaffRoles = GuildSettings.role_perms.staff.map((Role) => roleMention(Role));
+  const ManagementRoles = GuildSettings.role_perms.management.map((Role) => roleMention(Role));
+
+  return Dedent(`
+    >>> **Roblox Auth Required:** ${GuildSettings.require_authorization ? "Yes" : "No"}
+    **Staff Roles:**
+    ${StaffRoles.length ? ListFormatter.format(StaffRoles) : "None"}
+    **Management Roles:**
+    ${ManagementRoles.length ? ListFormatter.format(ManagementRoles) : "None"}
+  `);
+}
+
+function GetCSShiftModuleContent(GuildSettings: GuildSettings): string {
+  const SMOnDutyRoles = GuildSettings.shift_management.role_assignment.on_duty.map((Role) =>
+    roleMention(Role)
+  );
+
+  const SMOnBreakRoles = GuildSettings.shift_management.role_assignment.on_break.map((Role) =>
+    roleMention(Role)
+  );
+
+  const ShiftLogChannel = GuildSettings.shift_management.log_channel
+    ? channelMention(GuildSettings.shift_management.log_channel)
+    : "None";
+
+  return Dedent(`
+    >>> **Module Enabled:** ${GuildSettings.shift_management.enabled ? "Yes" : "No"}
+    **Shift Log Channel:** ${ShiftLogChannel}
+    **Role Assignment:**
+    - **On-Duty Role${SMOnDutyRoles.length > 1 ? "s" : ""}:** ${SMOnDutyRoles.length ? "\n" + ListFormatter.format(SMOnDutyRoles) : "None"}
+    - **On-Break Role${SMOnBreakRoles.length > 1 ? "s" : ""}:** ${SMOnBreakRoles.length ? "\n" + ListFormatter.format(SMOnBreakRoles) : "None"}
+  `);
+}
+
+function GetCSLeaveNoticesContent(GuildSettings: GuildSettings): string {
+  return Dedent(`
+    >>> **Module Enabled:** ${GuildSettings.leave_notices.enabled ? "Yes" : "No"}
+    **On-Leave Role:** ${GuildSettings.leave_notices.leave_role ? roleMention(GuildSettings.leave_notices.leave_role) : "None"}
+    **Requests Channel:** ${GuildSettings.leave_notices.requests_channel ? channelMention(GuildSettings.leave_notices.requests_channel) : "None"}
+    **Leave Log Channel:** ${GuildSettings.leave_notices.log_channel ? channelMention(GuildSettings.leave_notices.log_channel) : "None"}
+  `);
+}
+
+function GetCSReducedActivityContent(GuildSettings: GuildSettings): string {
+  return Dedent(`
+    >>> **Module Enabled:** ${GuildSettings.reduced_activity.enabled ? "Yes" : "No"}
+    **Reduced Activity Role:** ${GuildSettings.reduced_activity.ra_role ? roleMention(GuildSettings.reduced_activity.ra_role) : "None"}
+    **Requests Channel:** ${GuildSettings.reduced_activity.requests_channel ? channelMention(GuildSettings.reduced_activity.requests_channel) : "None"}
+    **Log Channel:** ${GuildSettings.reduced_activity.log_channel ? channelMention(GuildSettings.reduced_activity.log_channel) : "None"}
+  `);
+}
+
+function GetCSDutyActivitiesContent(GuildSettings: GuildSettings): string {
+  const IncidentLogChannel = GuildSettings.duty_activities.log_channels.incidents
+    ? channelMention(GuildSettings.duty_activities.log_channels.incidents)
+    : "None";
+
+  const CitationLogChannels = GuildSettings.duty_activities.log_channels.citations.map(
+    (CI) => `<#${CI.match(/:?(\d+)$/)?.[1]}>`
+  );
+
+  const ArrestLogChannels = GuildSettings.duty_activities.log_channels.arrests.map(
+    (CI) => `<#${CI.match(/:?(\d+)$/)?.[1]}>`
+  );
+
+  return Dedent(`
+    >>> **Module Enabled:** ${GuildSettings.duty_activities.enabled ? "Yes" : "No"}
+    **Incident Log Channel:** ${IncidentLogChannel}
+    **Citation Log Channel${CitationLogChannels.length > 1 ? "s" : ""}:** 
+    ${CitationLogChannels.length ? ListFormatter.format(CitationLogChannels) : "*None*"}
+    **Arrest Log Channel${ArrestLogChannels.length > 1 ? "s" : ""}:** 
+    ${ArrestLogChannels.length ? ListFormatter.format(ArrestLogChannels) : "*None*"}
+  `);
+}
+
+function GetCSAdditionalConfigContent(GuildSettings: GuildSettings): string {
+  return Dedent(`
+    >>> **Log Deletion Interval:** ${GetHumanReadableLogDeletionInterval(GuildSettings.duty_activities.log_deletion_interval)}
+  `);
 }
 
 // ---------------------------------------------------------------------------------------
@@ -2145,36 +2259,6 @@ async function HandleReducedActivityConfigPageInteracts(
   });
 }
 
-async function HandleConfigShowPageInteracts(
-  CmdInteract: SlashCommandInteraction<"cached">,
-  ConfigPrompt: Message<true> | InteractionResponse<true>
-) {
-  try {
-    const ReceivedInteraction = await ConfigPrompt.awaitMessageComponent({
-      filter: (Interact) => Interact.user.id === CmdInteract.user.id,
-      componentType: ComponentType.Button,
-      time: 10 * 60 * 1000,
-    });
-
-    if (ReceivedInteraction?.isButton() && ReceivedInteraction.customId.includes("bck")) {
-      await ReceivedInteraction.deferUpdate();
-      return Callback(CmdInteract);
-    }
-  } catch (Err: any) {
-    if (Err.message.match(/reason: \w+Delete/)) return;
-    if (Err.message?.match(/reason: (?:time|idle)/i)) {
-      const PromptMessage =
-        ConfigPrompt instanceof Message ? ConfigPrompt : await ConfigPrompt.fetch();
-
-      const MessageComponents = DisableMessageComponents(
-        PromptMessage.components.map((Comp) => Comp.toJSON())
-      );
-
-      return CmdInteract.editReply({ components: MessageComponents }).catch(() => null);
-    }
-  }
-}
-
 async function HandleBasicConfigSelection(
   SelectInteract: StringSelectMenuInteraction<"cached">,
   CmdInteract: SlashCommandInteraction<"cached">
@@ -2323,8 +2407,9 @@ async function HandleReducedActivityModuleSelection(
 }
 
 async function HandleConfigShowSelection(
-  SelectInteract: StringSelectMenuInteraction<"cached">,
-  CmdInteract: SlashCommandInteraction<"cached">
+  SelectInteract: StringSelectMenuInteraction<"cached"> | ButtonInteraction<"cached">,
+  CmdInteract: SlashCommandInteraction<"cached">,
+  PageIndex: number = 0
 ) {
   const GuildSettings = await GetGuildSettings(CmdInteract.guildId);
   if (!GuildSettings) {
@@ -2333,127 +2418,115 @@ async function HandleConfigShowSelection(
       .replyToInteract(SelectInteract, true);
   }
 
-  const PageComponents = GetShowConfigurationsPageComponents(CmdInteract);
-  const StaffRoles = GuildSettings.role_perms.staff.map((Role) => roleMention(Role));
-  const ManagementRoles = GuildSettings.role_perms.management.map((Role) => roleMention(Role));
-  const BasicSettingsFieldText = Dedent(`
-    >>> **Roblox Auth Required:** ${GuildSettings.require_authorization ? "Yes" : "No"}
-    **Staff Roles:**
-    ${StaffRoles.length ? ListFormatter.format(StaffRoles) : "None"}
-    **Management Roles:**
-    ${ManagementRoles.length ? ListFormatter.format(ManagementRoles) : "None"}
-  `);
+  const ConfigSections = [
+    {
+      Title: "Basic App Configuration",
+      Content: GetCSBasicSettingsContent(GuildSettings),
+    },
+    {
+      Title: "Shift Management Module",
+      Content: GetCSShiftModuleContent(GuildSettings),
+    },
+    {
+      Title: "Leave Notices Module",
+      Content: GetCSLeaveNoticesContent(GuildSettings),
+    },
+    {
+      Title: "Reduced Activity Module",
+      Content: GetCSReducedActivityContent(GuildSettings),
+    },
+    {
+      Title: "Duty Activities Module",
+      Content: GetCSDutyActivitiesContent(GuildSettings),
+    },
+    {
+      Title: "Additional Configuration",
+      Content: GetCSAdditionalConfigContent(GuildSettings),
+    },
+  ];
 
-  const SMOnDutyRoles = GuildSettings.shift_management.role_assignment.on_duty.map((Role) =>
-    roleMention(Role)
-  );
+  const SectionsPerPage = 2;
+  const TotalPages = Math.ceil(ConfigSections.length / SectionsPerPage);
+  const SafePageIndex = Math.min(Math.max(0, PageIndex), TotalPages - 1);
 
-  const SMOnBreakRoles = GuildSettings.shift_management.role_assignment.on_break.map((Role) =>
-    roleMention(Role)
-  );
-
-  const ShiftLogChannel = GuildSettings.shift_management.log_channel
-    ? channelMention(GuildSettings.shift_management.log_channel)
-    : "None";
-
-  const ShiftModuleFieldText = Dedent(`
-    >>> **Module Enabled:** ${GuildSettings.shift_management.enabled ? "Yes" : "No"}
-    **Shift Log Channel:** ${ShiftLogChannel}
-    **Role Assignment:**
-    - **On-Duty Role${SMOnDutyRoles.length > 1 ? "s" : ""}:** ${SMOnDutyRoles.length ? "\n" + ListFormatter.format(SMOnDutyRoles) : "None"}
-    - **On-Break Role${SMOnDutyRoles.length > 1 ? "s" : ""}:** ${SMOnBreakRoles.length ? "\n" + ListFormatter.format(SMOnBreakRoles) : "None"}
-  `);
-
-  const IncidentLogChannel = GuildSettings.duty_activities.log_channels.incidents
-    ? channelMention(GuildSettings.duty_activities.log_channels.incidents)
-    : "None";
-
-  const CitationLogChannels = GuildSettings.duty_activities.log_channels.citations.map(
-    (CI) => `<#${CI.match(/:?(\d+)$/)?.[1]}>`
-  );
-
-  const ArrestLogChannels = GuildSettings.duty_activities.log_channels.arrests.map(
-    (CI) => `<#${CI.match(/:?(\d+)$/)?.[1]}>`
-  );
-
-  const DutyActivitiesModuleFieldDesc = Dedent(`
-    >>> **Module Enabled:** ${GuildSettings.duty_activities.enabled ? "Yes" : "No"}
-    **Incident Log Channel:** ${IncidentLogChannel}
-    **Citation Log Channel${CitationLogChannels.length > 1 ? "s" : ""}:** 
-    ${CitationLogChannels.length ? ListFormatter.format(CitationLogChannels) : "*None*"}
-    **Arrest Log Channel${ArrestLogChannels.length > 1 ? "s" : ""}:** 
-    ${ArrestLogChannels.length ? ListFormatter.format(ArrestLogChannels) : "*None*"}
-  `);
-
-  const AdditionalConfigFieldDesc = Dedent(`
-    >>> **Log Deletion Interval:** ${GetHumanReadableLogDeletionInterval(GuildSettings.duty_activities.log_deletion_interval)}
-  `);
-
-  const LeaveNoticesModuleFieldDesc = Dedent(`
-    >>> **Module Enabled:** ${GuildSettings.leave_notices.enabled ? "Yes" : "No"}
-    **On-Leave Role:** ${GuildSettings.leave_notices.leave_role ? roleMention(GuildSettings.leave_notices.leave_role) : "None"}
-    **Requests Channel:** ${GuildSettings.leave_notices.requests_channel ? channelMention(GuildSettings.leave_notices.requests_channel) : "None"}
-    **Leave Log Channel:** ${GuildSettings.leave_notices.log_channel ? channelMention(GuildSettings.leave_notices.log_channel) : "None"}
-  `);
-
-  const ReducedActivityModuleFieldDesc = Dedent(`
-    >>> **Module Enabled:** ${GuildSettings.reduced_activity.enabled ? "Yes" : "No"}
-    **Reduced Activity Role:** ${GuildSettings.reduced_activity.ra_role ? roleMention(GuildSettings.reduced_activity.ra_role) : "None"}
-    **Requests Channel:** ${GuildSettings.reduced_activity.requests_channel ? channelMention(GuildSettings.reduced_activity.requests_channel) : "None"}
-    **Log Channel:** ${GuildSettings.reduced_activity.log_channel ? channelMention(GuildSettings.reduced_activity.log_channel) : "None"}
-  `);
-
+  const StartIndex = SafePageIndex * SectionsPerPage;
+  const SectionsToShow = ConfigSections.slice(StartIndex, StartIndex + SectionsPerPage);
   const ResponseContainer = new ContainerBuilder()
     .setAccentColor(AccentColor)
     .addTextDisplayComponents(
-      new TextDisplayBuilder({ content: "### :gear: Current App Configuration" })
+      new TextDisplayBuilder({
+        content: `### ${Emojis.GearColored}  Current Configuration`,
+      })
+    );
+
+  SectionsToShow.forEach((Section, Index) => {
+    ResponseContainer.addSeparatorComponents(
+      new SeparatorBuilder({ divider: true, spacing: Index === 0 ? 2 : 1 })
+    );
+    ResponseContainer.addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(`**${Section.Title}**\n${Section.Content}`)
+    );
+  });
+
+  ResponseContainer.addSeparatorComponents(new SeparatorBuilder({ divider: true, spacing: 2 }));
+  ResponseContainer.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(
+      `-# Showing configuration for the app modules as of ${FormatTime(SelectInteract.createdAt, "f")}`
     )
-    .addSeparatorComponents(new SeparatorBuilder({ divider: true }))
-    .addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(`**Basic App Configuration**\n${BasicSettingsFieldText}`)
-    )
-    .addSeparatorComponents(new SeparatorBuilder({ divider: true }))
-    .addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(`**Shift Management Module**\n${ShiftModuleFieldText}`)
-    )
-    .addSeparatorComponents(new SeparatorBuilder({ divider: true }))
-    .addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(
-        `**Leave Notices Module**\n${LeaveNoticesModuleFieldDesc}`
-      )
-    )
-    .addSeparatorComponents(new SeparatorBuilder({ divider: true }))
-    .addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(
-        `**Reduced Activity Module**\n${ReducedActivityModuleFieldDesc}`
-      )
-    )
-    .addSeparatorComponents(new SeparatorBuilder({ divider: true }))
-    .addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(
-        `**Duty Activities Module**\n${DutyActivitiesModuleFieldDesc}`
-      )
-    )
-    .addSeparatorComponents(new SeparatorBuilder({ divider: true }))
-    .addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(
-        `**Additional Configuration**\n${AdditionalConfigFieldDesc}`
-      )
-    )
-    .addSeparatorComponents(new SeparatorBuilder({ divider: true, spacing: 2 }))
-    .addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(
-        `-# Showing configuration for the app modules as of ${FormatTime(SelectInteract.createdAt, "f")}`
-      )
-    )
-    .addActionRowComponents(PageComponents);
+  );
+
+  ResponseContainer.addActionRowComponents(
+    ...GetShowConfigurationsPageComponents(CmdInteract, SafePageIndex, TotalPages)
+  );
 
   const ShowConfigPageMsg = await SelectInteract.update({
     components: [ResponseContainer],
     withResponse: true,
   }).then((Resp) => Resp.resource!.message as Message<true>);
 
-  return HandleConfigShowPageInteracts(CmdInteract, ShowConfigPageMsg);
+  return HandleConfigShowPageInteractsWithPagination(CmdInteract, ShowConfigPageMsg, SafePageIndex);
+}
+
+/**
+ * Handles interactions with the paginated configuration display.
+ */
+async function HandleConfigShowPageInteractsWithPagination(
+  CmdInteract: SlashCommandInteraction<"cached">,
+  ConfigPrompt: Message<true> | InteractionResponse<true>,
+  CurrentPageIndex: number
+) {
+  try {
+    const ReceivedInteraction = await ConfigPrompt.awaitMessageComponent({
+      filter: (Interact) => Interact.user.id === CmdInteract.user.id,
+      componentType: ComponentType.Button,
+      time: 10 * 60 * 1000,
+    });
+
+    if (ReceivedInteraction?.isButton()) {
+      const BtnId = ReceivedInteraction.customId;
+
+      if (BtnId.includes("prev")) {
+        return HandleConfigShowSelection(ReceivedInteraction, CmdInteract, CurrentPageIndex - 1);
+      } else if (BtnId.includes("next")) {
+        return HandleConfigShowSelection(ReceivedInteraction, CmdInteract, CurrentPageIndex + 1);
+      } else if (BtnId.includes("app-config-bck")) {
+        await ReceivedInteraction.deferUpdate();
+        return Callback(CmdInteract);
+      }
+    }
+  } catch (Err: any) {
+    if (Err.message.match(/reason: \w+Delete/)) return;
+    if (Err.message?.match(/reason: (?:time|idle)/i)) {
+      const PromptMessage =
+        ConfigPrompt instanceof Message ? ConfigPrompt : await ConfigPrompt.fetch();
+
+      const MessageComponents = DisableMessageComponents(
+        PromptMessage.components.map((Comp) => Comp.toJSON())
+      );
+
+      return CmdInteract.editReply({ components: MessageComponents }).catch(() => null);
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------------------
@@ -2507,7 +2580,7 @@ async function Callback(CmdInteract: SlashCommandInteraction<"cached">) {
         `)
       )
     )
-    .addSeparatorComponents(new SeparatorBuilder().setDivider().setSpacing(2))
+    .addSeparatorComponents(new SeparatorBuilder().setDivider().setSpacing(1))
     .addActionRowComponents(ConfigTopicsMenu);
 
   const ReplyMethod = CmdInteract.replied || CmdInteract.deferred ? "editReply" : "reply";
