@@ -909,7 +909,11 @@ function GetShiftModuleConfigContainer(
       )
     )
     .addActionRowComponents(ShiftModuleInteractComponents[2])
-    .addActionRowComponents(ShiftModuleInteractComponents[3]);
+    .addActionRowComponents(ShiftModuleInteractComponents[3])
+    .addSeparatorComponents(new SeparatorBuilder().setDivider().setSpacing(2))
+    .addActionRowComponents(
+      GetConfigTopicConfirmAndBackBtns(CmdInteract, ConfigTopics.ShiftConfiguration)
+    );
 }
 
 function GetDutyActivitiesModuleConfigContainer(
@@ -965,7 +969,11 @@ function GetDutyActivitiesModuleConfigContainer(
         `)
       )
     )
-    .addActionRowComponents(DutyActivitiesInteractComponents[3]);
+    .addActionRowComponents(DutyActivitiesInteractComponents[3])
+    .addSeparatorComponents(new SeparatorBuilder().setDivider().setSpacing(2))
+    .addActionRowComponents(
+      GetConfigTopicConfirmAndBackBtns(CmdInteract, ConfigTopics.DutyActConfiguration)
+    );
 }
 
 function GetLeaveModuleConfigContainer(
@@ -1021,7 +1029,11 @@ function GetLeaveModuleConfigContainer(
         `)
       )
     )
-    .addActionRowComponents(LeaveModuleInteractComponents[3]);
+    .addActionRowComponents(LeaveModuleInteractComponents[3])
+    .addSeparatorComponents(new SeparatorBuilder().setDivider().setSpacing(2))
+    .addActionRowComponents(
+      GetConfigTopicConfirmAndBackBtns(CmdInteract, ConfigTopics.LeaveConfiguration)
+    );
 }
 
 function GetReducedActivityModuleConfigContainer(
@@ -1077,7 +1089,11 @@ function GetReducedActivityModuleConfigContainer(
         `)
       )
     )
-    .addActionRowComponents(ReducedActivityInteractComponents[3]);
+    .addActionRowComponents(ReducedActivityInteractComponents[3])
+    .addSeparatorComponents(new SeparatorBuilder().setDivider().setSpacing(2))
+    .addActionRowComponents(
+      GetConfigTopicConfirmAndBackBtns(CmdInteract, ConfigTopics.ReducedActivityConfiguration)
+    );
 }
 
 function GetAdditionalConfigContainer(
@@ -1136,6 +1152,10 @@ function GetAdditionalConfigContainer(
           )
         )
         .setButtonAccessory(AdditionalConfigInteractComponents[3].components[0])
+    )
+    .addSeparatorComponents(new SeparatorBuilder().setDivider().setSpacing(2))
+    .addActionRowComponents(
+      GetConfigTopicConfirmAndBackBtns(CmdInteract, ConfigTopics.AdditionalConfiguration)
     );
 }
 
@@ -2285,13 +2305,8 @@ async function HandleAdditionalConfigSelection(
   const GuildConfig = await GetGuildSettings(CmdInteract.guildId);
   if (GuildConfig) {
     const ModuleContainer = GetAdditionalConfigContainer(CmdInteract, GuildConfig);
-    const ConfirmBackBtns = GetConfigTopicConfirmAndBackBtns(
-      CmdInteract,
-      ConfigTopics.AdditionalConfiguration
-    );
-
     const ConfigPrompt = await SelectInteract.update({
-      components: [ModuleContainer, ConfirmBackBtns],
+      components: [ModuleContainer],
     });
 
     return HandleAdditionalConfigPageInteracts(CmdInteract, ConfigPrompt, GuildConfig);
@@ -2309,13 +2324,8 @@ async function HandleShiftModuleSelection(
   const GuildConfig = await GetGuildSettings(CmdInteract.guildId);
   if (GuildConfig) {
     const ModuleContainer = GetShiftModuleConfigContainer(CmdInteract, GuildConfig);
-    const ConfirmBackBtns = GetConfigTopicConfirmAndBackBtns(
-      CmdInteract,
-      ConfigTopics.ShiftConfiguration
-    );
-
     const ConfigPrompt = await SelectInteract.update({
-      components: [ModuleContainer, ConfirmBackBtns],
+      components: [ModuleContainer],
     });
 
     return HandleShiftConfigPageInteracts(CmdInteract, ConfigPrompt, GuildConfig.shift_management);
@@ -2333,13 +2343,8 @@ async function HandleDutyActivitiesModuleSelection(
   const GuildConfig = await GetGuildSettings(CmdInteract.guildId);
   if (GuildConfig) {
     const ModuleContainer = GetDutyActivitiesModuleConfigContainer(CmdInteract, GuildConfig);
-    const ConfirmBackBtns = GetConfigTopicConfirmAndBackBtns(
-      CmdInteract,
-      ConfigTopics.DutyActConfiguration
-    );
-
     const ConfigPrompt = await SelectInteract.update({
-      components: [ModuleContainer, ConfirmBackBtns],
+      components: [ModuleContainer],
     });
 
     return HandleDutyActivitiesConfigPageInteracts(
@@ -2361,13 +2366,8 @@ async function HandleLeaveModuleSelection(
   const GuildConfig = await GetGuildSettings(CmdInteract.guildId);
   if (GuildConfig) {
     const ModuleContainer = GetLeaveModuleConfigContainer(CmdInteract, GuildConfig);
-    const ConfirmBackBtns = GetConfigTopicConfirmAndBackBtns(
-      CmdInteract,
-      ConfigTopics.LeaveConfiguration
-    );
-
     const ConfigPrompt = await SelectInteract.update({
-      components: [ModuleContainer, ConfirmBackBtns],
+      components: [ModuleContainer],
     });
 
     return HandleLeaveConfigPageInteracts(CmdInteract, ConfigPrompt, GuildConfig.duty_activities);
@@ -2385,13 +2385,8 @@ async function HandleReducedActivityModuleSelection(
   const GuildConfig = await GetGuildSettings(CmdInteract.guildId);
   if (GuildConfig) {
     const ModuleContainer = GetReducedActivityModuleConfigContainer(CmdInteract, GuildConfig);
-    const ConfirmBackBtns = GetConfigTopicConfirmAndBackBtns(
-      CmdInteract,
-      ConfigTopics.ReducedActivityConfiguration
-    );
-
     const ConfigPrompt = await SelectInteract.update({
-      components: [ModuleContainer, ConfirmBackBtns],
+      components: [ModuleContainer],
     });
 
     return HandleReducedActivityConfigPageInteracts(
@@ -2487,9 +2482,6 @@ async function HandleConfigShowSelection(
   return HandleConfigShowPageInteractsWithPagination(CmdInteract, ShowConfigPageMsg, SafePageIndex);
 }
 
-/**
- * Handles interactions with the paginated configuration display.
- */
 async function HandleConfigShowPageInteractsWithPagination(
   CmdInteract: SlashCommandInteraction<"cached">,
   ConfigPrompt: Message<true> | InteractionResponse<true>,
