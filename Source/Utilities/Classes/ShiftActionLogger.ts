@@ -842,6 +842,11 @@ export default class ShiftActionLogger {
           content: "### Shift Time Imported",
         },
         {
+          divider: true,
+          type: ComponentType.Separator,
+          spacing: SeparatorSpacingSize.Small,
+        },
+        {
           type: ComponentType.TextDisplay,
           content: Dedent(`
             **Staff Count:** ${BluewishText(ImportDetails.UsersTotal, LoggingChannel.id)}
