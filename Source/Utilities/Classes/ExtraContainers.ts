@@ -27,7 +27,7 @@ type ThumbnailAccessory =
   | ThumbnailBuilder
   | ((builder: ThumbnailBuilder) => ThumbnailBuilder);
 
-class BaseExtraContainer extends ContainerBuilder {
+export class BaseExtraContainer extends ContainerBuilder {
   protected _title: string | null = null;
   protected _description: string | null = null;
   protected _accentColor: ColorResolvable | null = null;
@@ -59,11 +59,14 @@ class BaseExtraContainer extends ContainerBuilder {
     this.addTextDisplayComponents(
       new TextDisplayBuilder({
         content: this._title ?? "### [Title]",
-      }),
-      new TextDisplayBuilder({
-        content: this._description ?? "[Description]",
       })
-    );
+    )
+      .addSeparatorComponents(new SeparatorBuilder().setDivider())
+      .addTextDisplayComponents(
+        new TextDisplayBuilder({
+          content: this._description ?? "[Description]",
+        })
+      );
   }
 
   /**
@@ -110,8 +113,8 @@ class BaseExtraContainer extends ContainerBuilder {
         (this.components[0].components[1] as TextDisplayBuilder).setContent(this._description) &&
         this
       );
-    } else if (this.components.length > 1 && this.components[1] instanceof TextDisplayBuilder) {
-      return this.components[1].setContent(this._description) && this;
+    } else if (this.components.length > 1 && this.components[2] instanceof TextDisplayBuilder) {
+      return this.components[2].setContent(this._description) && this;
     }
 
     return this;
@@ -125,7 +128,10 @@ class BaseExtraContainer extends ContainerBuilder {
    * @returns The current instance for method chaining.
    */
   public setFooter(footer: string | null): this {
-    if (this.components.length > 2) this.spliceComponents(-1, 2);
+    if (this.components.length && this.components[this.components.length - 1].data.id === 3) {
+      this.spliceComponents(-1, 2);
+    }
+
     if (!footer) {
       this._footer = null;
       return this;
@@ -133,9 +139,10 @@ class BaseExtraContainer extends ContainerBuilder {
 
     this._footer = footer.trim();
     return this.addSeparatorComponents(
-      new SeparatorBuilder({ divider: true })
+      new SeparatorBuilder().setDivider()
     ).addTextDisplayComponents(
       new TextDisplayBuilder({
+        id: 3,
         content: `-# ${this._footer}`,
       })
     );
@@ -161,8 +168,9 @@ class BaseExtraContainer extends ContainerBuilder {
       const Section = this.components[0] as SectionBuilder;
       const TitleDisplay = Section.components[0] as TextDisplayBuilder;
       const DescDisplay = Section.components[1] as TextDisplayBuilder;
+      const Divider = new SeparatorBuilder().setDivider();
 
-      this.spliceComponents(0, 1, TitleDisplay, DescDisplay);
+      this.spliceComponents(0, 1, TitleDisplay, Divider, DescDisplay);
       this._thumbnail = null;
       return this;
     }
@@ -191,15 +199,15 @@ class BaseExtraContainer extends ContainerBuilder {
     }
 
     if (
-      this.components.length >= 2 &&
+      this.components.length >= 3 &&
       this.components[0] instanceof TextDisplayBuilder &&
-      this.components[1] instanceof TextDisplayBuilder
+      this.components[2] instanceof TextDisplayBuilder
     ) {
       this.spliceComponents(
         0,
-        2,
+        3,
         new SectionBuilder()
-          .addTextDisplayComponents(this.components[0], this.components[1])
+          .addTextDisplayComponents(this.components[0], this.components[2])
           .setThumbnailAccessory(Thumb)
       );
 
