@@ -18,8 +18,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     .setLabel("Components V2 Array (JSON format)")
     .setStyle(TextInputStyle.Paragraph)
     .setPlaceholder("Enter your Components V2 array as JSON...")
-    .setRequired(true)
-    .setMaxLength(4000);
+    .setRequired(true);
 
   const ActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(ComponentsInput);
 
@@ -30,10 +29,9 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
 
   await Interaction.showModal(Modal);
 
-  // Set up modal submit collector
   const ModalSubmit = await Interaction.awaitModalSubmit({
     filter: (i) => i.customId === "components_v2_modal" && i.user.id === Interaction.user.id,
-    time: 300000, // 5 minutes timeout
+    time: 300000,
   }).catch(() => null);
 
   if (!ModalSubmit) return;
