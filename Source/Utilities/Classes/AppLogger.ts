@@ -102,8 +102,11 @@ const AppLogger = Winston.createLogger({
 // --------------------------------------------------------------------------------------
 // Cloud Logging on Production:
 // ----------------------------
-if (Other.IsProdEnv && Other.LogTailSourceToken) {
-  const LogTailInst = new Logtail(Other.LogTailSourceToken);
+if (Other.IsProdEnv && Other.LogTailSourceToken && Other.LogTailIngestingHost) {
+  const LogTailInst = new Logtail(Other.LogTailSourceToken, {
+    endpoint: Other.LogTailIngestingHost,
+  });
+
   AppLogger.add(
     new LogtailTransport(LogTailInst, {
       level: LogLevel,
