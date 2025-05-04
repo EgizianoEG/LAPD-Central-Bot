@@ -4,7 +4,7 @@ import { IsValidShiftTypeName } from "@Utilities/Other/Validators.js";
 import { ErrorMessages } from "@Resources/AppMessages.js";
 import { Shifts } from "@Typings/Utilities/Database.js";
 
-import HandlePagePagination from "@Utilities/Other/HandleEmbedPagination.js";
+import HandlePagePagination from "@Utilities/Other/HandlePagePagination.js";
 import DurationHumanize from "humanize-duration";
 import ShiftModel from "@Models/Shift.js";
 import Chunks from "@Utilities/Other/SliceIntoChunks.js";

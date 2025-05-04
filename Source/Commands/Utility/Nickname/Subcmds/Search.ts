@@ -1,6 +1,6 @@
 import { EmbedBuilder, GuildMember, SlashCommandSubcommandBuilder } from "discord.js";
 import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import HandlePagePagination from "@Utilities/Other/HandleEmbedPagination.js";
+import HandlePagePagination from "@Utilities/Other/HandlePagePagination.js";
 
 const ListFormatter = new Intl.ListFormat("en");
 const RegexFlags = ["i", "g", "gi"];

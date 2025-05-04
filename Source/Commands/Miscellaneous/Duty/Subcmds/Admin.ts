@@ -29,7 +29,7 @@ import { Colors, Emojis } from "@Config/Shared.js";
 import { SuccessEmbed, InfoEmbed, WarnEmbed, ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
-import HandlePagePagination from "@Utilities/Other/HandleEmbedPagination.js";
+import HandlePagePagination from "@Utilities/Other/HandlePagePagination.js";
 import HandleRoleAssignment from "@Utilities/Other/HandleShiftRoleAssignment.js";
 import GetMainShiftsData from "@Utilities/Database/GetShiftsData.js";
 import ShiftActionLogger from "@Utilities/Classes/ShiftActionLogger.js";

@@ -1,4 +1,4 @@
-import HandlePagePagination from "@Utilities/Other/HandleEmbedPagination.js";
+import HandlePagePagination from "@Utilities/Other/HandlePagePagination.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import {
   codeBlock,

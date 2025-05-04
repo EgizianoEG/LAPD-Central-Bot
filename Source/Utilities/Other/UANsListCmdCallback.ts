@@ -4,7 +4,7 @@ import { TimestampStylesString, time as FormatTime } from "discord.js";
 
 import Chunks from "@Utilities/Other/SliceIntoChunks.js";
 import LeaveOfAbsenceModel from "@Models/UserActivityNotice.js";
-import HandlePagePagination from "@Utilities/Other/HandleEmbedPagination.js";
+import HandlePagePagination from "@Utilities/Other/HandlePagePagination.js";
 
 /**
  * Handles the User Activity Notice list command, displaying active or pending notices.

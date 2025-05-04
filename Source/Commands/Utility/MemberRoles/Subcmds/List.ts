@@ -15,7 +15,7 @@ import {
 
 import { HydratedDocumentFromSchema } from "mongoose";
 import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import HandlePagePagination from "@Utilities/Other/HandleEmbedPagination.js";
+import HandlePagePagination from "@Utilities/Other/HandlePagePagination.js";
 import MSRolesModel from "@Models/MemberRoles.js";
 import Chunks from "@Utilities/Other/SliceIntoChunks.js";
 import Dedent from "dedent";
