@@ -25,6 +25,7 @@ import {
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import HandleCollectorFiltering from "./HandleCollectorFilter.js";
 import GetPredefinedNavButtons, { type NavButtonsActionRow } from "./GetNavButtons.js";
+import HandleActionCollectorExceptions from "./HandleCompCollectorExceptions.js";
 
 // ---------------------------------------------------------------------------------------
 const Clamp = (Value: number, Min: number, Max: number) => Math.min(Math.max(Value, Min), Max);
@@ -96,14 +97,14 @@ export default async function HandlePagePagination({
   ComponentCollector.on("collect", async (NavInteraction: ButtonInteraction<"cached">) => {
     let NewPageIndex: number = -1;
     if (NavInteraction.customId.includes("current")) {
-      let SPNum: number | null = null;
+      let SPIndex: number | null = null;
       if (Pages.length > 25) {
-        SPNum = await HandleModalPageSelection(Pages, CurrPageIndex, NavInteraction);
+        SPIndex = await HandleModalPageSelection(Pages, CurrPageIndex, NavInteraction);
       } else {
-        SPNum = await HandleSelectMenuPageSelection(Pages, CurrPageIndex, NavInteraction);
+        SPIndex = await HandleSelectMenuPageSelection(Pages, CurrPageIndex, NavInteraction);
       }
 
-      if (SPNum !== null) NewPageIndex = SPNum;
+      if (SPIndex !== null) NewPageIndex = SPIndex;
       else return;
     }
 
@@ -145,10 +146,11 @@ export default async function HandlePagePagination({
       const EditReplyOpts = IsComponentsV2Pagination
         ? {
             components: [Pages[NewPageIndex] as ContainerBuilder],
+            allowedMentions: {},
           }
         : { embeds: [Pages[NewPageIndex] as EmbedBuilder], components: [NavigationButtons] };
 
-      if (NavInteraction.deferred) {
+      if (NavInteraction.deferred || NavInteraction.replied) {
         await NavInteraction.editReply(EditReplyOpts).then(() => {
           CurrPageIndex = NewPageIndex;
         });
@@ -176,13 +178,19 @@ export default async function HandlePagePagination({
     try {
       NavigationButtons.components.forEach((Btn) => Btn.setDisabled(true));
       const LastInteract = Collected.last() || Interact;
-      await LastInteract.editReply({ components: [NavigationButtons] }).catch(
-        async function CatchError() {
-          const UpdatedResponseMsg = await PaginationReply.fetch(true).catch(() => null);
-          if (!UpdatedResponseMsg?.editable) return;
-          return UpdatedResponseMsg.edit({ components: [NavigationButtons] });
-        }
-      );
+      const EditOpts = IsComponentsV2Pagination
+        ? {
+            components: [
+              (Pages[CurrPageIndex] as ContainerBuilder).spliceComponents(-1, 1, NavigationButtons),
+            ],
+          }
+        : { components: [NavigationButtons] };
+
+      await LastInteract.editReply(EditOpts).catch(async function CatchError() {
+        const UpdatedResponseMsg = await PaginationReply.fetch(true).catch(() => null);
+        if (!UpdatedResponseMsg?.editable) return;
+        return UpdatedResponseMsg.edit(EditOpts);
+      });
     } catch (Err: any) {
       AppLogger.error({
         message: "An error occurred while ending the component collector for pagination;",
@@ -200,8 +208,9 @@ export default async function HandlePagePagination({
 async function HandleSelectMenuPageSelection(
   Pages: (EmbedBuilder | ContainerBuilder)[],
   CurrentIndex: number,
-  BtnInteract: ButtonInteraction<"cached">
+  BtnInteract: ButtonInteraction
 ): Promise<number | null> {
+  await BtnInteract.deferUpdate().catch(() => null);
   const PageSelectMenu = GetPageSelectMenu(BtnInteract, Pages.length, CurrentIndex);
   const PromptContainer = new ContainerBuilder()
     .setAccentColor(Colors.Greyple)
@@ -218,31 +227,32 @@ async function HandleSelectMenuPageSelection(
     )
     .addActionRowComponents(PageSelectMenu);
 
-  const PromptResp = await BtnInteract.reply({
+  const PromptMsg = await BtnInteract.followUp({
     flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
     components: [PromptContainer],
+    withResponse: true,
   });
 
-  const MenuSelection = await PromptResp.awaitMessageComponent({
+  const MenuSelection = await PromptMsg.awaitMessageComponent({
     time: 8 * 60 * 1000,
     componentType: ComponentType.StringSelect,
     filter: (IC) =>
       IC.user.id === BtnInteract.user.id &&
       IC.customId === PageSelectMenu.components[0].data.custom_id,
-  }).catch(() => null);
+  }).catch((Err) => HandleActionCollectorExceptions(Err, BtnInteract));
 
   if (!MenuSelection) return null;
   MenuSelection.deferUpdate()
     .then(() => MenuSelection.deleteReply())
     .catch(() => null);
 
-  return Number(MenuSelection.values[0]);
+  return parseInt(MenuSelection.values[0], 10);
 }
 
 async function HandleModalPageSelection(
   Pages: (EmbedBuilder | ContainerBuilder)[],
   CurrentIndex: number,
-  BtnInteract: ButtonInteraction<"cached">
+  BtnInteract: ButtonInteraction
 ): Promise<number | null> {
   const PageSelectModal = GetPageSelectModal(BtnInteract, Pages.length, CurrentIndex);
   BtnInteract.showModal(PageSelectModal);
@@ -255,9 +265,9 @@ async function HandleModalPageSelection(
 
   if (!ModalSubmission) return null;
   const InputPageNum = ModalSubmission.fields.getTextInputValue("page-num");
-  const ParsedNumber = Number(InputPageNum);
+  const ParsedNumber = parseInt(InputPageNum, 10);
 
-  if (!InputPageNum.match(/^\d+$/) || !ParsedNumber || ParsedNumber < 1) {
+  if (isNaN(ParsedNumber) || !InputPageNum.match(/^\d+$/) || ParsedNumber < 1) {
     await new ErrorEmbed()
       .useErrTemplate("InvalidPageNumber")
       .replyToInteract(ModalSubmission, true);
@@ -308,29 +318,31 @@ async function HandleInitialInteractReply(
     return Interact.reply({
       ...ResponseOpts,
       withResponse: true,
+      allowedMentions: {},
+      flags: Flags,
     }).then((Resp) => Resp.resource!.message!);
   } else if (ReplyMethod === "followUp") {
     return Interact.followUp({
       ...ResponseOpts,
+      allowedMentions: {},
       flags: Flags,
     });
   } else {
     return Interact.editReply({
       ...ResponseOpts,
+      allowedMentions: {},
     });
   }
 }
 
 function GetPageSelectMenu(
-  BtnInteract: ButtonInteraction<"cached">,
+  BtnInteract: ButtonInteraction,
   TotalPages: number,
   CurrPageIndex: number
 ) {
   const SelectMenuActionRow = new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(
     new StringSelectMenuBuilder()
-      .setCustomId(
-        `paginate-page-select:${BtnInteract.user.id}:${BtnInteract.guildId}:${RandomString(3)}`
-      )
+      .setCustomId(`paginate-page-select:${BtnInteract.user.id}:${RandomString(3)}`)
       .setPlaceholder("Select a page...")
       .setMinValues(1)
       .setMaxValues(1)
@@ -349,15 +361,13 @@ function GetPageSelectMenu(
 }
 
 function GetPageSelectModal(
-  BtnInteract: ButtonInteraction<"cached">,
+  BtnInteract: ButtonInteraction,
   TotalPages: number,
   CurrPageIndex: number
 ) {
   return new ModalBuilder()
     .setTitle("Page Selection")
-    .setCustomId(
-      `paginate-page-select:${BtnInteract.user.id}:${BtnInteract.guildId}:${RandomString(3)}`
-    )
+    .setCustomId(`paginate-page-select:${BtnInteract.user.id}:${RandomString(3)}`)
     .setComponents(
       new ActionRowBuilder<TextInputBuilder>().setComponents(
         new TextInputBuilder()
@@ -367,7 +377,7 @@ function GetPageSelectModal(
           .setStyle(TextInputStyle.Short)
           .setRequired(true)
           .setMinLength(1)
-          .setMaxLength(TotalPages > 9 ? 2 : 1)
+          .setMaxLength(TotalPages.toString().length)
           .setValue(`${CurrPageIndex + 1}`)
       )
     );
