@@ -1,10 +1,20 @@
 // Dependencies:
 // -------------
 
-import { Colors, EmbedBuilder, SlashCommandSubcommandBuilder, channelLink, time } from "discord.js";
+import {
+  time,
+  Colors,
+  userMention,
+  channelLink,
+  GuildMember,
+  SeparatorBuilder,
+  ContainerBuilder,
+  TextDisplayBuilder,
+  SlashCommandSubcommandBuilder,
+} from "discord.js";
+
 import { HydratedDocumentFromSchema } from "mongoose";
 import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-
 import HandlePagePagination from "@Utilities/Other/HandleEmbedPagination.js";
 import MSRolesModel from "@Models/MemberRoles.js";
 import Chunks from "@Utilities/Other/SliceIntoChunks.js";
@@ -14,22 +24,30 @@ import Dedent from "dedent";
 // Functions:
 // ----------
 /**
- * Returns an array of embed pages containing information about the role backups for a specified user.
+ * Returns an array of container pages containing information about the role backups for a specified user.
  * @param RoleSaves - An array of hydrated documents from the MSRolesModel schema. Each document represents a role save.
  * @param InteractDate - A `Date` that represents the date when the interaction was made. For clarifying when was this data fetched.
- * @param MemberUsername - The username of a target/selected member.
- * @returns an array of EmbedBuilder objects.
+ * @param Member - The target/selected member.
+ * @returns an array of `ContainerBuilder` objects.
  */
 function GetSavePages(
   RoleSaves: HydratedDocumentFromSchema<typeof MSRolesModel.schema>[],
   CmdInteraction: SlashCommandInteraction<"cached">,
-  MemberUsername: string
-) {
-  const EmbedPages: EmbedBuilder[] = [];
+  Member: GuildMember
+): ContainerBuilder[] {
+  const FormattedPages: ContainerBuilder[] = [];
   const SaveChunks = Chunks(RoleSaves, 3);
 
   for (const SaveChunk of SaveChunks) {
     const Data: string[] = [];
+    const DataContainer = new ContainerBuilder()
+      .setAccentColor(Colors.Greyple)
+      .addTextDisplayComponents(
+        new TextDisplayBuilder({
+          content: `### ${userMention(Member.id)}'s Role Backups\n-# Displaying \`${RoleSaves.length}\` backups as of ${time(CmdInteraction.createdAt, "f")}`,
+        })
+      )
+      .addSeparatorComponents(new SeparatorBuilder({ divider: true, spacing: 2 }));
 
     SaveChunk.forEach((Save) => {
       Data.push(
@@ -42,16 +60,17 @@ function GetSavePages(
       );
     });
 
-    EmbedPages.push(
-      new EmbedBuilder()
-        .setTitle(`Role Backups     @${MemberUsername}`)
-        .setDescription(Data.join("\n\n"))
-        .setTimestamp(CmdInteraction.createdAt)
-        .setColor(Colors.Greyple)
-    );
+    Data.forEach((DataItem, Index) => {
+      DataContainer.addTextDisplayComponents(new TextDisplayBuilder({ content: DataItem }));
+      if (Index !== Data.length - 1) {
+        DataContainer.addSeparatorComponents(new SeparatorBuilder({ divider: true }));
+      }
+    });
+
+    FormattedPages.push(DataContainer);
   }
 
-  return EmbedPages;
+  return FormattedPages;
 }
 
 async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
@@ -75,7 +94,7 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
       .replyToInteract(CmdInteraction, true, false);
   } else {
     return HandlePagePagination({
-      pages: GetSavePages(Saves, CmdInteraction, SelectedMember.user.username),
+      pages: GetSavePages(Saves, CmdInteraction, SelectedMember),
       interact: CmdInteraction,
     });
   }
