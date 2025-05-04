@@ -663,7 +663,7 @@ async function RetrieveShiftRecordsAsEmbeds(
           : FormatTime(Math.round(Data.started / 1000), "T");
 
       const AdminFlag = Data.flag === ShiftFlags.Administrative ? " (Manually Added)" : "";
-      const ShiftIdLine = `- **Shift ID:** \`${Data._id}\`${AdminFlag}`;
+      const ShiftIdLine = `**Shift ID:** \`${Data._id}\`${AdminFlag}`;
       if (ShiftType) {
         return Dedent(`
           - ${ShiftIdLine}
