@@ -3,6 +3,7 @@ import {
   InteractionCallbackResponse,
   MessageComponentInteraction,
   InteractionResponse,
+  MessageFlags,
   Message,
 } from "discord.js";
 
@@ -26,7 +27,7 @@ export default async function HandleActionCollectorExceptions(
               Disabler.message.components.map((Comp) => Comp.toJSON())
             ),
           });
-        } else if (Disabler instanceof Message) {
+        } else if (Disabler instanceof Message && !Disabler.flags.has(MessageFlags.Ephemeral)) {
           await Disabler.edit({
             components: DisableMessageComponents(Disabler.components.map((Comp) => Comp.toJSON())),
           });
@@ -39,7 +40,7 @@ export default async function HandleActionCollectorExceptions(
               ? await Disabler.fetch().catch(() => null)
               : Disabler.resource?.message;
 
-          if (!Message) return null;
+          if (!Message || Message.flags.has(MessageFlags.Ephemeral)) return null;
           await Message.edit({
             components: DisableMessageComponents(Message.components.map((Comp) => Comp.toJSON())),
           });
