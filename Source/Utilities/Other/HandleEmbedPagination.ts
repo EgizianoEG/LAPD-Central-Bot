@@ -3,7 +3,10 @@ import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import {
   InteractionReplyOptions,
   StringSelectMenuBuilder,
+  RepliableInteraction,
   ButtonInteraction,
+  ContainerBuilder,
+  ActionRowBuilder,
   DiscordAPIError,
   ComponentType,
   EmbedBuilder,
@@ -12,42 +15,77 @@ import {
   MessageFlags,
   ModalBuilder,
   TextInputStyle,
-  ActionRowBuilder,
   TextInputBuilder,
+  SeparatorBuilder,
+  TextDisplayBuilder,
   MessageFlagsResolvable,
   StringSelectMenuOptionBuilder,
 } from "discord.js";
 
 import AppLogger from "@Utilities/Classes/AppLogger.js";
-import GetPredefinedNavButtons from "./GetNavButtons.js";
 import HandleCollectorFiltering from "./HandleCollectorFilter.js";
-const Clamp = (Value: number, Min: number, Max: number) => Math.min(Math.max(Value, Min), Max);
+import GetPredefinedNavButtons, { type NavButtonsActionRow } from "./GetNavButtons.js";
+
 // ---------------------------------------------------------------------------------------
+const Clamp = (Value: number, Min: number, Max: number) => Math.min(Math.max(Value, Min), Max);
+interface PagePaginationOptions {
+  /**
+   * The embeds to paginate between; e.g. embeds representing pages.
+   * This should be an array of at least one embed or container component.
+   */
+  pages: (EmbedBuilder | ContainerBuilder)[];
+
+  /**
+   * The interaction that triggered the pagination.
+   * Should be repliable either by `followUp`, `reply`, or `editReply`.
+   */
+  interact: RepliableInteraction;
+
+  /**
+   * Whether the pages should be ephemeral (only visible to the one initiated the pagination).
+   * Defaults to `false`.
+   */
+  ephemeral?: boolean;
+
+  /**
+   * The context of which triggered the pagination handling (used for logging errors and such).
+   * e.g. `Commands:Miscellaneous:___:___`.
+   */
+  context?: string;
+
+  /**
+   * The custom footer text to use for the components v2 paginator using components.
+   * Leave empty to only add a separator component at the bottom in the case of components v2 pagination.
+   */
+  cv2_footer?: string;
+}
 
 /**
  * Handles the pagination process for a given embeds array.
- * @param Pages - The embeds to paginate between; i.e. embeds representing pages. This should be an array of at least one embed.
- * @param Interact - The interaction that triggered the pagination. Should be repliable either by `followUp` or `reply`.
- * @param Context - The context of which triggered the pagination handling (used for logging errors and such). e.g. `Commands:Miscellaneous:Duty:Leaderboard`.
- * @param [Ephemeral=false] - Whether the pages should be ephemeral (only visible to the one initiated the pagination). Defaults to `false`.
+ * @param {PagePaginationOptions} options - The options for the pagination handler.
  * @returns This function/handler does not return anything and it handles pagination on its own.
  */
-export default async function HandleEmbedPagination(
-  Pages: EmbedBuilder[],
-  Interact: SlashCommandInteraction | ButtonInteraction,
-  Context?: string,
-  Ephemeral: boolean = false
-): Promise<void> {
+export default async function HandlePagePagination({
+  pages: Pages,
+  interact: Interact,
+  ephemeral: Ephemeral = false,
+  cv2_footer: CV2Footer,
+  context,
+}: PagePaginationOptions): Promise<void> {
   let CurrPageIndex = 0;
+  const IsComponentsV2Pagination = Pages[0] instanceof ContainerBuilder;
   const NavigationButtons = GetPredefinedNavButtons(Interact, Pages.length, true, true);
-  const MsgFlags: MessageFlagsResolvable | undefined = Ephemeral
-    ? MessageFlags.Ephemeral
-    : undefined;
+  let MsgFlags: MessageFlagsResolvable | undefined = Ephemeral ? MessageFlags.Ephemeral : undefined;
+
+  if (IsComponentsV2Pagination) {
+    MsgFlags = MsgFlags ? MsgFlags | MessageFlags.IsComponentsV2 : MessageFlags.IsComponentsV2;
+    AttachComponentsV2Footer(Pages as ContainerBuilder[], CV2Footer);
+    AttachComponentsV2NavButtons(Pages as ContainerBuilder[], NavigationButtons);
+  }
 
   const PaginationReply = await HandleInitialInteractReply(Interact, Pages, MsgFlags);
-
-  // Do not handle pagination if there is only one page received.
   if (Pages.length === 1) return;
+
   const ComponentCollector = PaginationReply.createMessageComponentCollector({
     filter: (Btn) => HandleCollectorFiltering(Interact, Btn),
     componentType: ComponentType.Button,
@@ -99,19 +137,23 @@ export default async function HandleEmbedPagination(
       Pages.length
     );
 
+    if (IsComponentsV2Pagination) {
+      AttachComponentsV2NavButtons(Pages as ContainerBuilder[], NavigationButtons);
+    }
+
     try {
+      const EditReplyOpts = IsComponentsV2Pagination
+        ? {
+            components: [Pages[NewPageIndex] as ContainerBuilder],
+          }
+        : { embeds: [Pages[NewPageIndex] as EmbedBuilder], components: [NavigationButtons] };
+
       if (NavInteraction.deferred) {
-        await NavInteraction.editReply({
-          embeds: [Pages[NewPageIndex]],
-          components: [NavigationButtons],
-        }).then(() => {
+        await NavInteraction.editReply(EditReplyOpts).then(() => {
           CurrPageIndex = NewPageIndex;
         });
       } else {
-        await NavInteraction.update({
-          embeds: [Pages[NewPageIndex]],
-          components: [NavigationButtons],
-        }).then(() => {
+        await NavInteraction.update(EditReplyOpts).then(() => {
           CurrPageIndex = NewPageIndex;
         });
       }
@@ -123,8 +165,8 @@ export default async function HandleEmbedPagination(
       AppLogger.error({
         message: "An error occurred while handling embed pagination;",
         label: "Utilities:Other:HandleEmbedPagination",
-        context: Context,
         stack: Err.stack,
+        context,
       });
     }
   });
@@ -145,8 +187,8 @@ export default async function HandleEmbedPagination(
       AppLogger.error({
         message: "An error occurred while ending the component collector for pagination;",
         label: "Utilities:Other:HandleEmbedPagination",
-        context: Context,
         stack: Err.stack,
+        context,
       });
     }
   });
@@ -156,24 +198,32 @@ export default async function HandleEmbedPagination(
 // Utility:
 // --------
 async function HandleSelectMenuPageSelection(
-  Pages: EmbedBuilder[],
+  Pages: (EmbedBuilder | ContainerBuilder)[],
   CurrentIndex: number,
   BtnInteract: ButtonInteraction<"cached">
 ): Promise<number | null> {
-  await BtnInteract.deferUpdate();
   const PageSelectMenu = GetPageSelectMenu(BtnInteract, Pages.length, CurrentIndex);
-  const PromptEmbed = new EmbedBuilder()
-    .setColor(Colors.Greyple)
-    .setTitle("Page Selection")
-    .setDescription("Please select a page to view from the dropdown menu below.");
+  const PromptContainer = new ContainerBuilder()
+    .setAccentColor(Colors.Greyple)
+    .addTextDisplayComponents(
+      new TextDisplayBuilder({
+        content: "### Page Selection",
+      })
+    )
+    .addSeparatorComponents(new SeparatorBuilder({ divider: true, spacing: 1 }))
+    .addTextDisplayComponents(
+      new TextDisplayBuilder({
+        content: "Please select a page to view from the dropdown menu below.",
+      })
+    )
+    .addActionRowComponents(PageSelectMenu);
 
-  const PromptMsg = await BtnInteract.followUp({
-    components: [PageSelectMenu],
-    embeds: [PromptEmbed],
-    flags: MessageFlags.Ephemeral,
+  const PromptResp = await BtnInteract.reply({
+    flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
+    components: [PromptContainer],
   });
 
-  const MenuSelection = await PromptMsg.awaitMessageComponent({
+  const MenuSelection = await PromptResp.awaitMessageComponent({
     time: 8 * 60 * 1000,
     componentType: ComponentType.StringSelect,
     filter: (IC) =>
@@ -190,7 +240,7 @@ async function HandleSelectMenuPageSelection(
 }
 
 async function HandleModalPageSelection(
-  Pages: EmbedBuilder[],
+  Pages: (EmbedBuilder | ContainerBuilder)[],
   CurrentIndex: number,
   BtnInteract: ButtonInteraction<"cached">
 ): Promise<number | null> {
@@ -224,12 +274,27 @@ async function HandleModalPageSelection(
 }
 
 async function HandleInitialInteractReply(
-  Interact: SlashCommandInteraction | ButtonInteraction,
-  Pages: EmbedBuilder[],
+  Interact: RepliableInteraction,
+  Pages: (EmbedBuilder | ContainerBuilder)[],
   Flags?: InteractionReplyOptions["flags"]
 ): Promise<Message> {
   let ReplyMethod: "reply" | "followUp" | "editReply";
   const NavigationButtons = GetPredefinedNavButtons(Interact, Pages.length, true, true);
+  const IsComponentsV2Pagination = Pages[0] instanceof ContainerBuilder;
+  const ResponseOpts = IsComponentsV2Pagination
+    ? {
+        components: [Pages[0] as ContainerBuilder],
+      }
+    : {
+        embeds: [Pages[0] as EmbedBuilder],
+        components: [NavigationButtons],
+      };
+
+  if (Pages.length > 1) {
+    ResponseOpts.components = IsComponentsV2Pagination
+      ? [ResponseOpts.components[0] as ContainerBuilder]
+      : [NavigationButtons];
+  }
 
   if (Interact.deferred) {
     ReplyMethod = "editReply";
@@ -241,21 +306,17 @@ async function HandleInitialInteractReply(
 
   if (ReplyMethod === "reply") {
     return Interact.reply({
-      components: Pages.length > 1 ? [NavigationButtons] : undefined,
-      flags: Flags,
-      embeds: [Pages[0]],
+      ...ResponseOpts,
       withResponse: true,
     }).then((Resp) => Resp.resource!.message!);
   } else if (ReplyMethod === "followUp") {
     return Interact.followUp({
-      components: Pages.length > 1 ? [NavigationButtons] : undefined,
+      ...ResponseOpts,
       flags: Flags,
-      embeds: [Pages[0]],
     });
   } else {
     return Interact.editReply({
-      components: Pages.length > 1 ? [NavigationButtons] : undefined,
-      embeds: [Pages[0]],
+      ...ResponseOpts,
     });
   }
 }
@@ -310,4 +371,30 @@ function GetPageSelectModal(
           .setValue(`${CurrPageIndex + 1}`)
       )
     );
+}
+
+function AttachComponentsV2NavButtons(
+  Pages: ContainerBuilder[],
+  NavButtonsAR: NavButtonsActionRow
+): void {
+  const PagesLength = Pages.length;
+  return Pages.forEach((Page) => {
+    if (PagesLength > 1) {
+      if (Page.components[Page.components.length - 1].data.type === ComponentType.ActionRow) {
+        Page.spliceComponents(-1, 1);
+      }
+
+      return Page.addActionRowComponents(NavButtonsAR);
+    } else {
+      return Page;
+    }
+  });
+}
+
+function AttachComponentsV2Footer(Pages: ContainerBuilder[], FooterText?: string): void {
+  return Pages.forEach((Page) => {
+    Page.addSeparatorComponents(new SeparatorBuilder({ divider: true }));
+    if (FooterText)
+      Page.addTextDisplayComponents(new TextDisplayBuilder({ content: `-# ${FooterText}` }));
+  });
 }

@@ -5,7 +5,7 @@ import { Colors, EmbedBuilder, SlashCommandSubcommandBuilder, channelLink, time 
 import { HydratedDocumentFromSchema } from "mongoose";
 import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
-import HandleEmbedPagination from "@Utilities/Other/HandleEmbedPagination.js";
+import HandlePagePagination from "@Utilities/Other/HandleEmbedPagination.js";
 import MSRolesModel from "@Models/MemberRoles.js";
 import Chunks from "@Utilities/Other/SliceIntoChunks.js";
 import Dedent from "dedent";
@@ -74,10 +74,10 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
       .useInfoTemplate("RoleSavesNotFoundFSM")
       .replyToInteract(CmdInteraction, true, false);
   } else {
-    return HandleEmbedPagination(
-      GetSavePages(Saves, CmdInteraction, SelectedMember.user.username),
-      CmdInteraction
-    );
+    return HandlePagePagination({
+      pages: GetSavePages(Saves, CmdInteraction, SelectedMember.user.username),
+      interact: CmdInteraction,
+    });
   }
 }
 

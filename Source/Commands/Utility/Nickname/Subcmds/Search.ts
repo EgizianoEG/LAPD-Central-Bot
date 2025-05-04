@@ -1,6 +1,6 @@
 import { EmbedBuilder, GuildMember, SlashCommandSubcommandBuilder } from "discord.js";
 import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import HandleEmbedPagination from "@Utilities/Other/HandleEmbedPagination.js";
+import HandlePagePagination from "@Utilities/Other/HandleEmbedPagination.js";
 
 const ListFormatter = new Intl.ListFormat("en");
 const RegexFlags = ["i", "g", "gi"];
@@ -51,12 +51,12 @@ async function Callback(CmdInteract: SlashCommandInteraction<"cached">) {
 
     const EmbedPages = ToEmbedPages(MembersMatching.toJSON());
     if (EmbedPages.length) {
-      return HandleEmbedPagination(
-        EmbedPages,
-        CmdInteract,
-        "Commands:Utility:Nickname:Search",
-        ResponseEphemeral
-      );
+      return HandlePagePagination({
+        pages: EmbedPages,
+        interact: CmdInteract,
+        ephemeral: ResponseEphemeral,
+        context: "Commands:Utility:Nickname:Search",
+      });
     } else {
       return new InfoEmbed()
         .useInfoTemplate("NicknameRegexNoMatchingMembers")

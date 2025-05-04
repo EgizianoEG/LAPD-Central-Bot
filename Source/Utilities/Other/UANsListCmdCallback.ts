@@ -4,7 +4,7 @@ import { TimestampStylesString, time as FormatTime } from "discord.js";
 
 import Chunks from "@Utilities/Other/SliceIntoChunks.js";
 import LeaveOfAbsenceModel from "@Models/UserActivityNotice.js";
-import HandleEmbedPagination from "@Utilities/Other/HandleEmbedPagination.js";
+import HandlePagePagination from "@Utilities/Other/HandleEmbedPagination.js";
 
 /**
  * Handles the User Activity Notice list command, displaying active or pending notices.
@@ -49,7 +49,7 @@ export default async function UANListCmdCallback(
 
   const LOAsChunks = Chunks(NoticeRecords, 8);
   const Pages = FormaLOARecords(LOAsChunks, DesiredStatus, NoticeRecords.length, RecordsType);
-  return HandleEmbedPagination(Pages, Interaction);
+  return HandlePagePagination(Pages, Interaction);
 }
 
 // ---------------------------------------------------------------------------------------

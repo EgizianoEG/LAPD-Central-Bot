@@ -25,11 +25,11 @@ import {
 import { Shifts } from "@Typings/Utilities/Database.js";
 import { RandomString } from "@Utilities/Strings/Random.js";
 import { IsValidShiftId } from "@Utilities/Other/Validators.js";
-import { Colors as ExtraColors, Emojis } from "@Config/Shared.js";
+import { Colors, Emojis } from "@Config/Shared.js";
 import { SuccessEmbed, InfoEmbed, WarnEmbed, ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
-import HandleEmbedPagination from "@Utilities/Other/HandleEmbedPagination.js";
+import HandlePagePagination from "@Utilities/Other/HandleEmbedPagination.js";
 import HandleRoleAssignment from "@Utilities/Other/HandleShiftRoleAssignment.js";
 import GetMainShiftsData from "@Utilities/Database/GetShiftsData.js";
 import ShiftActionLogger from "@Utilities/Classes/ShiftActionLogger.js";
@@ -762,7 +762,12 @@ async function HandleShiftListing(
 ) {
   const Pages = await GetPaginatedShifts(TargetUser, BInteract.guildId, ShiftType);
   if (Pages.length) {
-    return HandleEmbedPagination(Pages, BInteract, "Commands:Miscellaneous:Duty:Admin", true);
+    return HandlePagePagination({
+      context: "Commands:Miscellaneous:Duty:Admin",
+      interact: BInteract,
+      ephemeral: true,
+      pages: Pages,
+    });
   } else {
     return new InfoEmbed()
       .setTitle("No Recorded Shifts")
@@ -907,7 +912,7 @@ async function HandleUserShiftEnd(
     `**Average Time:** ${UserShiftsData.avg_onduty}`;
 
   const RespEmbed = new EmbedBuilder()
-    .setColor(ExtraColors.ShiftOff)
+    .setColor(Colors.ShiftOff)
     .setTimestamp(EndedShift.end_timestamp)
     .setTitle("Shift Ended")
     .setFooter({ text: `Shift Type: ${EndedShift.type}` })
@@ -1055,9 +1060,9 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
     })
     .setColor(
       ActiveShift?.hasBreakActive()
-        ? ExtraColors.ShiftBreak
+        ? Colors.ShiftBreak
         : ActiveShift
-          ? ExtraColors.ShiftOn
+          ? Colors.ShiftOn
           : Colors.DarkBlue
     );
 

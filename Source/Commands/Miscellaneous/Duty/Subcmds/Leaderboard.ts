@@ -4,7 +4,7 @@ import { IsValidShiftTypeName } from "@Utilities/Other/Validators.js";
 import { ErrorMessages } from "@Resources/AppMessages.js";
 import { Shifts } from "@Typings/Utilities/Database.js";
 
-import HandleEmbedPagination from "@Utilities/Other/HandleEmbedPagination.js";
+import HandlePagePagination from "@Utilities/Other/HandleEmbedPagination.js";
 import DurationHumanize from "humanize-duration";
 import ShiftModel from "@Models/Shift.js";
 import Chunks from "@Utilities/Other/SliceIntoChunks.js";
@@ -132,7 +132,11 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   }
 
   const BuiltPages = BuildLeaderboardPages(Interaction, PaginatedData, CmdShiftType);
-  return HandleEmbedPagination(BuiltPages, Interaction, "Commands:Miscellaneous:Duty:Leaderboard");
+  return HandlePagePagination({
+    context: "Commands:Miscellaneous:Duty:Leaderboard",
+    pages: BuiltPages,
+    interact: Interaction,
+  });
 }
 
 // ---------------------------------------------------------------------------------------
