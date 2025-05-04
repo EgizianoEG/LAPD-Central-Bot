@@ -20,6 +20,10 @@ import {
   channelLink,
   Message,
   User,
+  ContainerBuilder,
+  SeparatorBuilder,
+  TextDisplayBuilder,
+  resolveColor,
 } from "discord.js";
 
 import { Shifts } from "@Typings/Utilities/Database.js";
@@ -705,9 +709,8 @@ async function GetPaginatedShifts(TargetUser: User, GuildId: string, ShiftType?:
     },
   ]).exec();
 
-  // Split results into arrays of 2 shift records each & format them as embeds.
   return Chunks(ShiftData, 2).map((Chunk) => {
-    const EmbedDescription = Chunk.map((Data) => {
+    const Descriptions = Chunk.map((Data) => {
       const Started = FormatTime(Math.round(Data.started / 1000), "f");
       const Ended =
         typeof Data.ended === "string"
@@ -730,21 +733,31 @@ async function GetPaginatedShifts(TargetUser: User, GuildId: string, ShiftType?:
             - **Ended:** ${Ended}
         `);
       }
-    }).join("\n\n");
+    });
 
-    const FooterAppend = ShiftType ? `type: ${ShiftType}` : "all shift types";
-    return new InfoEmbed()
-      .setDescription(EmbedDescription)
-      .setThumbnail(null)
-      .setTimestamp()
-      .setTitle("Recorded Shifts")
-      .setFooter({
-        text: `Showing records for ${FooterAppend}`,
-      })
-      .setAuthor({
-        name: `@${TargetUser.username}`,
-        iconURL: TargetUser.displayAvatarURL({ size: 128 }),
-      });
+    const ShiftTypeAppend = ShiftType ? `type: ${ShiftType}` : "all types";
+    const PageContainer = new ContainerBuilder()
+      .setAccentColor(resolveColor(Colors.Info))
+      .addTextDisplayComponents(
+        new TextDisplayBuilder({
+          content: `### Recorded Shifts\n-# Displaying \`${ShiftData.length}\` total shifts of ${ShiftTypeAppend}; data as of ${FormatTime(Date.now(), "f")}`,
+        })
+      )
+      .addSeparatorComponents(new SeparatorBuilder({ divider: true, spacing: 2 }));
+
+    Descriptions.forEach((Description, Index) => {
+      PageContainer.addTextDisplayComponents(
+        new TextDisplayBuilder({
+          content: Description,
+        })
+      );
+
+      if (Index !== Descriptions.length - 1) {
+        PageContainer.addSeparatorComponents(new SeparatorBuilder({ divider: true }));
+      }
+    });
+
+    return PageContainer;
   });
 }
 
