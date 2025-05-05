@@ -56,6 +56,8 @@ class BaseEmbed extends EmbedBuilder {
       (interaction.deferred || interaction.replied)
     ) {
       ReplyMethod = "editReply";
+    } else if (!replyMethod && interaction instanceof MessageComponentInteraction) {
+      ReplyMethod = "update";
     }
 
     // If the reply is about error messages, removing components of a message is necessary
@@ -98,7 +100,7 @@ class BaseEmbed extends EmbedBuilder {
           });
         }
       })
-      .catch((err: UtilityTypes.Class<Error>) => {
+      .catch((err: unknown) => {
         if (silent) return null;
         else throw err;
       });
