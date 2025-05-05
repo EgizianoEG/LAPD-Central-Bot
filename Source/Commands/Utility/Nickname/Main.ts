@@ -3,6 +3,7 @@ import {
   PermissionFlagsBits,
   InteractionContextType,
   SlashCommandSubcommandsOnlyBuilder,
+  ApplicationIntegrationType,
 } from "discord.js";
 
 const Subcommands = [
@@ -39,6 +40,7 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
   data: new SlashCommandBuilder()
     .setName("nicknames")
     .setDescription("Utility commands for member nicknames.")
+    .setIntegrationTypes(ApplicationIntegrationType.GuildInstall)
     .setContexts(InteractionContextType.Guild)
     .addSubcommand(Subcommands[0].data)
     .addSubcommand(Subcommands[1].data),

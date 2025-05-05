@@ -1,5 +1,7 @@
 import {
+  ApplicationIntegrationType,
   AutocompleteInteraction,
+  InteractionContextType,
   SlashCommandBuilder,
   EmbedBuilder,
   MessageFlags,
@@ -124,6 +126,15 @@ const CommandObject: SlashCommandObject<any> = {
       Option.setName("private")
         .setDescription("Show the response only to you. Defaults to true.")
         .setRequired(false)
+    )
+    .setIntegrationTypes(
+      ApplicationIntegrationType.GuildInstall,
+      ApplicationIntegrationType.UserInstall
+    )
+    .setContexts(
+      InteractionContextType.Guild,
+      InteractionContextType.BotDM,
+      InteractionContextType.PrivateChannel
     ),
 };
 

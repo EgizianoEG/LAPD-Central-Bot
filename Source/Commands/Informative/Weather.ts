@@ -3,9 +3,15 @@
 import GetWeatherIcon from "@Utilities/Other/GetWeatherIcon.js";
 import { Icons, Emojis } from "@Config/Shared.js";
 import { GetCurrentWeather } from "@Utilities/Other/WeatherData.js";
-import { Colors, EmbedBuilder, SlashCommandBuilder } from "discord.js";
-// ---------------------------------------------------------------------------------------
+import {
+  ApplicationIntegrationType,
+  InteractionContextType,
+  SlashCommandBuilder,
+  EmbedBuilder,
+  Colors,
+} from "discord.js";
 
+// ---------------------------------------------------------------------------------------
 async function Callback(Interaction: SlashCommandInteraction<"raw">) {
   const Units: any = Interaction.options.getString("units") ?? "imperial";
   const WeatherData = await GetCurrentWeather({ Formatted: true, Units });
@@ -72,6 +78,15 @@ const CommandObject: SlashCommandObject<any> = {
   data: new SlashCommandBuilder()
     .setName("weather")
     .setDescription("Check the current weather in the city of Los Angeles.")
+    .setIntegrationTypes(
+      ApplicationIntegrationType.GuildInstall,
+      ApplicationIntegrationType.UserInstall
+    )
+    .setContexts(
+      InteractionContextType.Guild,
+      InteractionContextType.BotDM,
+      InteractionContextType.PrivateChannel
+    )
     .addStringOption((Option) =>
       Option.setName("units").setDescription("Units of measurement.").addChoices(
         {

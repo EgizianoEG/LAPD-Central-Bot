@@ -8,6 +8,7 @@ import {
   SlashCommandBuilder,
   InteractionContextType,
   AutocompleteInteraction,
+  ApplicationIntegrationType,
   ApplicationCommandOptionChoiceData,
 } from "discord.js";
 
@@ -124,6 +125,7 @@ const CommandObject: SlashCommandObject<any> = {
   data: new SlashCommandBuilder()
     .setName("log")
     .setDescription("Logs a particular information into the database.")
+    .setIntegrationTypes(ApplicationIntegrationType.GuildInstall)
     .setContexts(InteractionContextType.Guild)
     .addSubcommand(Subcommands[0].data)
     .addSubcommand(Subcommands[1].data)

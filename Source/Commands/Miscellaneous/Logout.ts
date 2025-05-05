@@ -7,6 +7,7 @@ import {
   ComponentType,
   SlashCommandBuilder,
   InteractionContextType,
+  ApplicationIntegrationType,
   ActionRowBuilder,
   ButtonBuilder,
   MessageFlags,
@@ -146,6 +147,7 @@ const CommandObject: SlashCommandObject = {
   data: new SlashCommandBuilder()
     .setName("log-out")
     .setDescription("Log out and unlink the associated Roblox account from the application.")
+    .setIntegrationTypes(ApplicationIntegrationType.GuildInstall)
     .setContexts(InteractionContextType.Guild),
 
   callback: Callback,

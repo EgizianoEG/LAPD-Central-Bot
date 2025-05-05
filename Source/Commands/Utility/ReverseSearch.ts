@@ -11,6 +11,7 @@ import {
   userMention,
   SlashCommandBuilder,
   InteractionContextType,
+  ApplicationIntegrationType,
   type AutocompleteInteraction,
 } from "discord.js";
 
@@ -84,6 +85,7 @@ const CommandObject: SlashCommandObject<any> = {
     .setDescription(
       "See who has the Roblox account with the given username linked to their Discord account."
     )
+    .setIntegrationTypes(ApplicationIntegrationType.GuildInstall)
     .setContexts(InteractionContextType.Guild)
     .addStringOption((Option) =>
       Option.setName("roblox-username")

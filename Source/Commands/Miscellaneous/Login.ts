@@ -12,6 +12,7 @@ import {
   SlashCommandBuilder,
   InteractionContextType,
   AutocompleteInteraction,
+  ApplicationIntegrationType,
 } from "discord.js";
 
 import { DummyText } from "@Utilities/Strings/Random.js";
@@ -251,6 +252,7 @@ const CommandObject: SlashCommandObject<any> = {
     .setName("log-in")
     .setDescription("Log into the application and get access to restricted actions.")
     .setContexts(InteractionContextType.Guild)
+    .setIntegrationTypes(ApplicationIntegrationType.GuildInstall)
     .addStringOption((Option) =>
       Option.setName("username")
         .setDescription("The Roblox username to log in as.")

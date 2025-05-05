@@ -8,6 +8,7 @@ import {
   type AutocompleteInteraction,
   type ApplicationCommandOptionChoiceData,
   type SlashCommandSubcommandsOnlyBuilder,
+  ApplicationIntegrationType,
 } from "discord.js";
 
 const Subcommands = [
@@ -64,6 +65,7 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
   data: new SlashCommandBuilder()
     .setName("activity")
     .setDescription("Get information about server activity.")
+    .setIntegrationTypes(ApplicationIntegrationType.GuildInstall)
     .setContexts(InteractionContextType.Guild)
     .addSubcommand(Subcommands[0].data)
     .addSubcommand(Subcommands[1].data),

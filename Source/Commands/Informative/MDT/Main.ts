@@ -11,6 +11,7 @@ import {
   type AutocompleteInteraction,
   type ApplicationCommandOptionChoiceData,
   type SlashCommandSubcommandsOnlyBuilder,
+  ApplicationIntegrationType,
 } from "discord.js";
 
 const Subcommands = [(await import("./Subcmds/Lookup.js")).default];
@@ -72,7 +73,8 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
     .setDescription("Mobile data terminal commands.")
     .setContexts(InteractionContextType.Guild)
     .addSubcommand(Subcommands[0].data)
-    .addSubcommandGroup(SearchSubcmdGroup.data),
+    .addSubcommandGroup(SearchSubcmdGroup.data)
+    .setIntegrationTypes(ApplicationIntegrationType.GuildInstall),
 };
 
 // ---------------------------------------------------------------------------------------

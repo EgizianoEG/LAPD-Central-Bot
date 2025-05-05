@@ -22,6 +22,7 @@ import {
   InteractionContextType,
   StringSelectMenuBuilder,
   ChannelSelectMenuBuilder,
+  ApplicationIntegrationType,
   StringSelectMenuInteraction,
   ChannelSelectMenuInteraction,
   StringSelectMenuOptionBuilder,
@@ -2175,6 +2176,7 @@ const CommandObject: SlashCommandObject = {
   data: new SlashCommandBuilder()
     .setName("config")
     .setDescription("View and manage the application configuration for this server.")
+    .setIntegrationTypes(ApplicationIntegrationType.GuildInstall)
     .setContexts(InteractionContextType.Guild),
 
   callback: Callback,
