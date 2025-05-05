@@ -11,11 +11,16 @@ import {
   Message,
 } from "discord.js";
 
+import {
+  WarnContainer,
+  ErrorContainer,
+  SuccessContainer,
+} from "@Utilities/Classes/ExtraContainers.js";
+
 import { ReducedActivityEventLogger } from "@Utilities/Classes/UANEventLogger.js";
 import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { Colors, Emojis } from "@Config/Shared.js";
 import { compareDesc } from "date-fns";
-import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import MentionCmdByName from "@Utilities/Other/MentionCmd.js";
 import GetUANData from "@Utilities/Database/GetUANData.js";
@@ -127,8 +132,7 @@ async function HandlePendingCancellation(
   ActiveOrPendingRA: RADocument,
   PromptMsgId: string
 ) {
-  const ConfirmationEmbed = new EmbedBuilder()
-    .setColor(Colors.Warning)
+  const ConfirmationContainer = new WarnContainer()
     .setTitle("Reduced Activity Cancellation")
     .setDescription(
       Dedent(`
@@ -149,10 +153,9 @@ async function HandlePendingCancellation(
   );
 
   const ConfirmationMsg = await Interaction.reply({
+    flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
+    components: [ConfirmationContainer.setPromptActionRow(ConfirmationBtns)],
     withResponse: true,
-    components: [ConfirmationBtns],
-    embeds: [ConfirmationEmbed],
-    flags: MessageFlags.Ephemeral,
   }).then((Resp) => Resp.resource!.message! as Message<true>);
 
   const ButtonInteract = await ConfirmationMsg.awaitMessageComponent({
@@ -184,7 +187,7 @@ async function HandlePendingCancellation(
         message: PromptMsgId,
         embeds: [GetManagementPromptEmbed(ExistingRA)],
       }),
-      new ErrorEmbed()
+      new ErrorContainer()
         .useErrTemplate("NoPendingRAToCancel")
         .replyToInteract(ButtonInteract, true, true, "editReply"),
     ]).then(() => true);
@@ -195,14 +198,13 @@ async function HandlePendingCancellation(
   await ExistingRA.save();
 
   const UpdatedPromptEmbed = GetManagementPromptEmbed(ExistingRA);
-  const ReplyEmbed = new EmbedBuilder()
-    .setColor(Colors.Success)
+  const RespContainer = new SuccessContainer()
     .setTitle("Request Cancelled")
     .setDescription("Your reduced activity request was successfully cancelled.");
 
   return Promise.all([
     RAEventLogger.LogCancellation(ButtonInteract, ExistingRA),
-    ButtonInteract.editReply({ embeds: [ReplyEmbed], components: [] }),
+    ButtonInteract.editReply({ components: [RespContainer] }),
     ButtonInteract.editReply({
       components: [],
       message: PromptMsgId,

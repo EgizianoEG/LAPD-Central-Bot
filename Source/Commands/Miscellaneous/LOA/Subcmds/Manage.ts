@@ -17,9 +17,16 @@ import {
   InteractionCollector,
 } from "discord.js";
 
+import {
+  InfoContainer,
+  WarnContainer,
+  ErrorContainer,
+  SuccessContainer,
+} from "@Utilities/Classes/ExtraContainers.js";
+
+import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { Colors, Emojis } from "@Config/Shared.js";
 import { UserActivityNotice } from "@Typings/Utilities/Database.js";
-import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
 import { LeaveOfAbsenceEventLogger } from "@Utilities/Classes/UANEventLogger.js";
 import { milliseconds, addMilliseconds } from "date-fns";
@@ -368,12 +375,12 @@ async function HandleLeaveEarlyEnd(
     ]);
   }
 
-  const ConfirmationEmbed = new EmbedBuilder()
+  const ConfirmationContainer = new WarnContainer()
     .setColor(Colors.Warning)
     .setTitle("Leave of Absence Early Termination")
     .setDescription(
       Dedent(`
-        **Are you sure you want to terminate your active leave early**
+        **Are you sure you want to terminate your active leave early?**
         Please keep in mind that once confirmed, you will be unable to request a new leave for the next hour.
       `)
     );
@@ -381,18 +388,17 @@ async function HandleLeaveEarlyEnd(
   const ConfirmationBtns = new ActionRowBuilder<ButtonBuilder>().setComponents(
     new ButtonBuilder()
       .setCustomId("loa-end-confirm")
-      .setStyle(ButtonStyle.Success)
+      .setStyle(ButtonStyle.Danger)
       .setLabel("Yes, End Leave"),
     new ButtonBuilder()
       .setCustomId("loa-end-cancel")
-      .setStyle(ButtonStyle.Danger)
+      .setStyle(ButtonStyle.Secondary)
       .setLabel("No, Cancel")
   );
 
   const ConfirmationMsg = await Interaction.reply({
-    embeds: [ConfirmationEmbed],
-    components: [ConfirmationBtns],
-    flags: MessageFlags.Ephemeral,
+    components: [ConfirmationContainer.setPromptActionRow(ConfirmationBtns)],
+    flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
     withResponse: true,
   }).then((Resp) => Resp.resource!.message! as Message<true>);
 
@@ -402,23 +408,20 @@ async function HandleLeaveEarlyEnd(
     time: 5 * 60_000,
   }).catch(() => null);
 
-  const UnchangedLeaveEmbed = new InfoEmbed()
-    .setThumbnail(null)
+  const UnchangedLeaveNotice = new InfoContainer()
     .setTitle("Leave Early Termination")
     .setDescription(
-      "Your leave of absence has not been changed." +
+      "Your leave of absence state has not been changed." +
         (ButtonInteract?.customId.includes("cancel") ? "" : " Prompt timed out.")
     );
 
   if (!ButtonInteract) {
     return Interaction.editReply({
-      embeds: [UnchangedLeaveEmbed],
-      components: [],
+      components: [UnchangedLeaveNotice],
     });
   } else if (ButtonInteract.customId.includes("cancel")) {
     return ButtonInteract.update({
-      embeds: [UnchangedLeaveEmbed],
-      components: [],
+      components: [UnchangedLeaveNotice],
     });
   }
 
@@ -428,10 +431,8 @@ async function HandleLeaveEarlyEnd(
       Callback(ButtonInteract, MainPromptMsgId),
       CompCollector.stop("Updated"),
       ButtonInteract.editReply({
-        components: [],
-        embeds: [
-          new ErrorEmbed()
-            .setThumbnail(null)
+        components: [
+          new ErrorContainer()
             .useErrTemplate("LOAAlreadyEnded")
             .setTitle("Leave Early Termination"),
         ],
@@ -443,12 +444,11 @@ async function HandleLeaveEarlyEnd(
   ActiveLeave.end_processed = true;
   await ActiveLeave.save();
 
-  const ReplyEmbed = new EmbedBuilder()
-    .setColor(Colors.Success)
+  const RespContainer = new SuccessContainer()
     .setTitle("Leave of Absence Terminated")
     .setDescription("Your leave of absence has been successfully terminated at your request.");
 
-  await ButtonInteract.update({ embeds: [ReplyEmbed], components: [] }).catch(() => null);
+  await ButtonInteract.update({ components: [RespContainer] }).catch(() => null);
   return Promise.allSettled([
     CompCollector.stop("Updated"),
     Callback(ButtonInteract, MainPromptMsgId),
@@ -481,8 +481,7 @@ async function HandlePendingLeaveCancellation(
     ]);
   }
 
-  const ConfirmationEmbed = new EmbedBuilder()
-    .setColor(Colors.Warning)
+  const ConfirmationContainer = new WarnContainer()
     .setTitle("Leave of Absence Cancellation")
     .setDescription(
       Dedent(`
@@ -503,9 +502,8 @@ async function HandlePendingLeaveCancellation(
   );
 
   const ConfirmationMsg = await Interaction.reply({
-    embeds: [ConfirmationEmbed],
-    components: [ConfirmationBtns],
-    flags: MessageFlags.Ephemeral,
+    flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
+    components: [ConfirmationContainer.setPromptActionRow(ConfirmationBtns)],
     withResponse: true,
   }).then((Resp) => Resp.resource!.message! as Message<true>);
 
@@ -516,6 +514,7 @@ async function HandlePendingLeaveCancellation(
   }).catch(() => null);
 
   if (!ButtonInteract || ButtonInteract.customId === "loa-cancel-keep") {
+    if (ButtonInteract) await ButtonInteract.deferUpdate().catch(() => null);
     return Interaction.deleteReply().catch(() => null);
   }
 
@@ -531,8 +530,7 @@ async function HandlePendingLeaveCancellation(
   PendingLeave.review_date = ButtonInteract.createdAt;
   await PendingLeave.save();
 
-  const ReplyEmbed = new EmbedBuilder()
-    .setColor(Colors.Success)
+  const RespContainer = new SuccessContainer()
     .setTitle("Leave Request Cancelled")
     .setDescription("Your leave request was successfully cancelled at your request.");
 
@@ -540,7 +538,7 @@ async function HandlePendingLeaveCancellation(
     CompCollector.stop("Updated"),
     Callback(ButtonInteract, MainPromptMsgId),
     LOAEventLogger.LogCancellation(ButtonInteract, PendingLeave),
-    ButtonInteract.editReply({ embeds: [ReplyEmbed], components: [] }),
+    ButtonInteract.editReply({ components: [RespContainer] }),
   ]);
 }
 
@@ -565,8 +563,7 @@ async function HandlePendingExtensionCancellation(
     ]);
   }
 
-  const ConfirmationEmbed = new EmbedBuilder()
-    .setColor(Colors.Warning)
+  const ConfirmationContainer = new WarnContainer()
     .setTitle("Extension Cancellation")
     .setDescription(
       Dedent(`
@@ -587,8 +584,7 @@ async function HandlePendingExtensionCancellation(
   );
 
   const ConfirmationMsg = await Interaction.reply({
-    embeds: [ConfirmationEmbed],
-    components: [ConfirmationBtns],
+    components: [ConfirmationContainer.setPromptActionRow(ConfirmationBtns)],
     flags: MessageFlags.Ephemeral,
     withResponse: true,
   }).then((Resp) => Resp.resource!.message! as Message<true>);
@@ -618,16 +614,15 @@ async function HandlePendingExtensionCancellation(
   ActiveLeave.extension_request.review_date = ButtonInteract.createdAt;
   await ActiveLeave.save();
 
-  const SuccessCancellationEmbed = new EmbedBuilder()
-    .setColor(Colors.Success)
+  const SuccessCancellationContainer = new SuccessContainer()
     .setTitle("Extension Request Cancelled")
-    .setDescription("Your LOA extension request was successfully cancelled.");
+    .setDescription("Your leave extension request was successfully cancelled.");
 
   return Promise.allSettled([
     CompCollector.stop("Updated"),
     Callback(ButtonInteract, MainPromptMsgId),
     LOAEventLogger.LogExtensionCancellation(Interaction, ActiveLeave),
-    Interaction.editReply({ embeds: [SuccessCancellationEmbed], components: [] }),
+    Interaction.editReply({ components: [SuccessCancellationContainer] }),
   ]);
 }
 
@@ -642,7 +637,7 @@ async function HandleLeaveReviewValidation(
       RequestDocument?.extension_request?.status === "Pending");
 
   if (!RequestHasToBeReviewed) {
-    return new ErrorEmbed()
+    return new ErrorContainer()
       .setTitle("Leave of Absence Modified")
       .setDescription(
         "The request/leave you are taking action on either does not exist or has been modified."
