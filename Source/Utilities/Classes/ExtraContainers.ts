@@ -1,20 +1,28 @@
-import {
-  MessageComponentInteraction,
+import type {
+  MessageActionRowComponentBuilder,
+  APIComponentInMessageActionRow,
   MessageFlagsResolvable,
+  APIActionRowComponent,
   APIThumbnailComponent,
   RepliableInteraction,
   InteractionResponse,
+  ColorResolvable,
+  Message,
+} from "discord.js";
+
+import {
+  MessageComponentInteraction,
   CommandInteraction,
   TextDisplayBuilder,
   ButtonInteraction,
   ContainerBuilder,
   ThumbnailBuilder,
+  ActionRowBuilder,
   SeparatorBuilder,
-  ColorResolvable,
   SectionBuilder,
+  ComponentType,
   MessageFlags,
   resolveColor,
-  Message,
 } from "discord.js";
 
 import { ErrorMessages, InfoMessages } from "@Resources/AppMessages.js";
@@ -128,24 +136,45 @@ export class BaseExtraContainer extends ContainerBuilder {
    * @returns The current instance for method chaining.
    */
   public setFooter(footer: string | null): this {
-    if (this.components.length && this.components[this.components.length - 1].data.id === 3) {
-      this.spliceComponents(-1, 2);
+    const FooterIndex = this.components.findLastIndex(
+      (c) => c.data.type === ComponentType.TextDisplay && c.data.id === 3
+    );
+
+    const HasLastActionRow =
+      this.components.length > 0 &&
+      this.components[this.components.length - 1] instanceof ActionRowBuilder;
+
+    if (FooterIndex !== -1) {
+      const StartIndex =
+        FooterIndex > 0 && this.components[FooterIndex - 1].data.type === ComponentType.Separator
+          ? FooterIndex - 1
+          : FooterIndex;
+
+      const ItemsToRemove = FooterIndex - StartIndex + 1;
+      this.spliceComponents(StartIndex, ItemsToRemove);
     }
 
-    if (!footer) {
+    if (!footer?.trim()) {
       this._footer = null;
       return this;
     }
 
     this._footer = footer.trim();
+    const FooterComponent = new TextDisplayBuilder({
+      content: `-# ${this._footer}`,
+      id: 3,
+    });
+
+    if (HasLastActionRow) {
+      const ActionRow = this.components.pop() as ActionRowBuilder<MessageActionRowComponentBuilder>;
+      return this.addSeparatorComponents(new SeparatorBuilder().setDivider())
+        .addTextDisplayComponents(FooterComponent)
+        .addActionRowComponents(ActionRow);
+    }
+
     return this.addSeparatorComponents(
       new SeparatorBuilder().setDivider()
-    ).addTextDisplayComponents(
-      new TextDisplayBuilder({
-        id: 3,
-        content: `-# ${this._footer}`,
-      })
-    );
+    ).addTextDisplayComponents(FooterComponent);
   }
 
   /**
@@ -232,6 +261,61 @@ export class BaseExtraContainer extends ContainerBuilder {
     }
 
     return this;
+  }
+
+  public setPromptActionRow(
+    actionRow:
+      | ActionRowBuilder<MessageActionRowComponentBuilder>
+      | APIActionRowComponent<APIComponentInMessageActionRow>,
+    separatorOpts: { spacing?: 1 | 2; divider?: boolean } = { spacing: 1, divider: true }
+  ): this {
+    const Separator = new SeparatorBuilder()
+      .setSpacing(separatorOpts.spacing ?? 1)
+      .setDivider(separatorOpts.divider);
+
+    if (
+      this.components.length &&
+      this.components[this.components.length - 1] instanceof ActionRowBuilder
+    ) {
+      if (
+        this.components.length > 1 &&
+        this.components[this.components.length - 2].data.type === ComponentType.TextDisplay &&
+        this.components[this.components.length - 2].data.id === 3
+      ) {
+        return this.spliceComponents(-1, 1, actionRow);
+      }
+
+      return this.spliceComponents(-1, 2, Separator, actionRow);
+    }
+
+    if (this._footer) {
+      const FooterIndex = this.components.findLastIndex(
+        (c) => c.data.type === ComponentType.TextDisplay && c.data.id === 3
+      );
+
+      if (FooterIndex !== -1) {
+        const footerComponent = this.components[FooterIndex];
+        if (FooterIndex === this.components.length - 1) {
+          if (
+            FooterIndex > 0 &&
+            this.components[FooterIndex - 1].data.type === ComponentType.Separator
+          ) {
+            return this.addActionRowComponents(actionRow);
+          } else {
+            return this.spliceComponents(FooterIndex, 1, Separator, footerComponent, actionRow);
+          }
+        }
+        return this.spliceComponents(
+          FooterIndex,
+          this.components.length - FooterIndex,
+          Separator,
+          footerComponent,
+          actionRow
+        );
+      }
+    }
+
+    return this.addSeparatorComponents(Separator).addActionRowComponents(actionRow);
   }
 
   /**
