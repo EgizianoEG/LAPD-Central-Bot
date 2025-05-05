@@ -154,7 +154,7 @@ async function HandlePendingCancellation(
 
   const ConfirmationMsg = await Interaction.reply({
     flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
-    components: [ConfirmationContainer.setPromptActionRow(ConfirmationBtns)],
+    components: [ConfirmationContainer.attachPromptActionRow(ConfirmationBtns)],
     withResponse: true,
   }).then((Resp) => Resp.resource!.message! as Message<true>);
 

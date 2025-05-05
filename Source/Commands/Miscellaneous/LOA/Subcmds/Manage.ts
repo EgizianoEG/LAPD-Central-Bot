@@ -397,7 +397,7 @@ async function HandleLeaveEarlyEnd(
   );
 
   const ConfirmationMsg = await Interaction.reply({
-    components: [ConfirmationContainer.setPromptActionRow(ConfirmationBtns)],
+    components: [ConfirmationContainer.attachPromptActionRow(ConfirmationBtns)],
     flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
     withResponse: true,
   }).then((Resp) => Resp.resource!.message! as Message<true>);
@@ -503,7 +503,7 @@ async function HandlePendingLeaveCancellation(
 
   const ConfirmationMsg = await Interaction.reply({
     flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
-    components: [ConfirmationContainer.setPromptActionRow(ConfirmationBtns)],
+    components: [ConfirmationContainer.attachPromptActionRow(ConfirmationBtns)],
     withResponse: true,
   }).then((Resp) => Resp.resource!.message! as Message<true>);
 
@@ -584,7 +584,7 @@ async function HandlePendingExtensionCancellation(
   );
 
   const ConfirmationMsg = await Interaction.reply({
-    components: [ConfirmationContainer.setPromptActionRow(ConfirmationBtns)],
+    components: [ConfirmationContainer.attachPromptActionRow(ConfirmationBtns)],
     flags: MessageFlags.Ephemeral,
     withResponse: true,
   }).then((Resp) => Resp.resource!.message! as Message<true>);

@@ -263,7 +263,40 @@ export class BaseExtraContainer extends ContainerBuilder {
     return this;
   }
 
-  public setPromptActionRow(
+  /**
+   * Attaches an action row containing interactive components (buttons, select menus, etc.) to the container.
+   * Maintains proper component hierarchy by:
+   * - Replacing existing action rows
+   * - Preserving footer components
+   * - Adding appropriate separators between content and interactive elements
+   *
+   * This method ensures consistent layout regardless of whether components were added before
+   * or after setting a footer, thumbnail, or other container elements.
+   *
+   * @param actionRow - The action row component containing interactive elements (buttons, select menus, etc.)
+   * @param separatorOpts - Configuration options for the separator above the action row.
+   * @param separatorOpts.spacing - The spacing size to use for the separator (1 = small, 2 = large).
+   * @param separatorOpts.divider - Whether to show a visible divider line in the separator.
+   * @returns The current container instance for method chaining.
+   *
+   * @example
+   * const container = new InfoContainer()
+   *   .setTitle("Confirmation")
+   *   .setDescription("Please confirm your choice")
+   *   .attachPromptActionRow(
+   *     new ActionRowBuilder<ButtonBuilder>().addComponents(
+   *       new ButtonBuilder()
+   *         .setCustomId("confirm")
+   *         .setLabel("Confirm")
+   *         .setStyle(ButtonStyle.Success),
+   *       new ButtonBuilder()
+   *         .setCustomId("cancel")
+   *         .setLabel("Cancel")
+   *         .setStyle(ButtonStyle.Secondary)
+   *     )
+   *   );
+   */
+  public attachPromptActionRow(
     actionRow:
       | ActionRowBuilder<MessageActionRowComponentBuilder>
       | APIActionRowComponent<APIComponentInMessageActionRow>,
