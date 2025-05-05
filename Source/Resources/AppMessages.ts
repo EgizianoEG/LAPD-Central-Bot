@@ -921,7 +921,7 @@ export const InfoMessages = {
   },
 
   NicknameRegexNoMatchingMembers: {
-    Title: "Matching Members",
+    Title: "No Matching Members",
     Description: "There were no members found with that nickname regex.",
   },
 
