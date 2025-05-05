@@ -804,7 +804,7 @@ export class BaseUserActivityNoticeLogger {
       .setTitle(
         TargettedUser
           ? `Member ${this.cmd_name.toUpperCase()} Records Wiped`
-          : `${this.title_lower} Records Wiped`
+          : `${this.title} Records Wiped`
       )
       .setFooter({ text: `Wiped by: @${MgmtInteract.user.username} on` })
       .setDescription(

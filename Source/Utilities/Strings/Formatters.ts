@@ -762,8 +762,8 @@ export function FormatSortRDInputNames(
  */
 export function Dedent(text: string): string {
   return _Dedent(text)
-    .replace(/\.[^\S\r\n]{2,}(\w)/g, ". $1")
-    .replace(/(\w)[^\S\r\n]{2,}(\w)/g, "$1 $2");
+    .replace(/\.[^\S\r\n]{2,}([`'"</>\w])/g, ". $1")
+    .replace(/([`'"</>\w])[^\S\r\n]{2,}([`'"</>\w])/g, "$1 $2");
 }
 
 /**
