@@ -100,6 +100,9 @@ export namespace Secrets {
 
     /** Logtail source token to send any outputted logs; see {@link https://betterstack.com/logtail} */
     LogTailSourceToken?: string | null;
+
+    /** [Warning] include the https:// prefix to work properly. */
+    LogTailIngestingHost?: string | null;
   }
 
   interface OpenWeather {

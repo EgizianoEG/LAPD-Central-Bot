@@ -477,6 +477,11 @@ export const ErrorMessages = {
     Description: "The time for this shift has already been reset.",
   },
 
+  ShiftCreationDurationTooLong: {
+    Title: "Duration Too Long",
+    Description: "The specified duration exceeds the maximum allowed shift length of 1 month.",
+  },
+
   NoRecentShifts: {
     Title: "No Recent Shifts",
     Description:

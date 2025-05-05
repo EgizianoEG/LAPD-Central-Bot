@@ -42,6 +42,7 @@ export default async function HandleAbandonedInteractions(
 
   const OriginUserId = Interaction.customId.split(":")?.[1];
   if (
+    !Interaction.ephemeral &&
     IsValidDiscordId(OriginUserId) &&
     Interaction.user.id !== OriginUserId &&
     !UnauthorizedUsageIgnoredCompsWithCustomIds.some((RegEx) => RegEx.test(Interaction.customId))

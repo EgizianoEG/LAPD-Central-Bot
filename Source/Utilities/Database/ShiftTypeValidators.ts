@@ -1,4 +1,5 @@
 import { IsValidDiscordId, IsValidShiftTypeName } from "@Utilities/Other/Validators.js";
+import { RepliableInteraction } from "discord.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import GuildModel from "@Models/Guild.js";
 
@@ -38,19 +39,19 @@ export async function ShiftTypeExists(GuildId: string, ShiftType: string): Promi
  * @returns If the interaction has been handled and a response has been sent, returns `true`; otherwise returns `false`.
  */
 export async function HandleShiftTypeValidation(
-  CmdInteraction: SlashCommandInteraction<"cached">,
+  Interaction: RepliableInteraction<"cached">,
   ShiftTypeName: string,
   DBCheck: boolean = false
 ): Promise<boolean> {
   if (!IsValidShiftTypeName(ShiftTypeName)) {
     return new ErrorEmbed()
       .useErrTemplate("MalformedShiftTypeName")
-      .replyToInteract(CmdInteraction, true)
+      .replyToInteract(Interaction, true)
       .then(() => true);
-  } else if (DBCheck && !(await ShiftTypeExists(CmdInteraction.guildId, ShiftTypeName))) {
+  } else if (DBCheck && !(await ShiftTypeExists(Interaction.guildId, ShiftTypeName))) {
     return new ErrorEmbed()
       .useErrTemplate("NonexistentShiftTypeUsage")
-      .replyToInteract(CmdInteraction, true)
+      .replyToInteract(Interaction, true)
       .then(() => true);
   }
 

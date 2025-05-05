@@ -1,109 +1,141 @@
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import {
-  DiscordAPIError,
   type MessagePayload,
   type ButtonInteraction,
   type MessageCreateOptions,
   type ModalSubmitInteraction,
+  type ForumThreadChannel,
+  PermissionFlagsBits,
+  DiscordAPIError,
 } from "discord.js";
 
 /**
- * ...
- * @param StrList - String list (array) to sanitize (remove duplicates & validate snowflake).
- * @returns
- */
-function SanitizeList(StrList: string[]): string[] {
-  StrList = [...new Set(StrList)];
-  const NewList: string[] = [];
-
-  StrList.forEach((Str) => {
-    if (!Str?.match(/^(?:\d{15,22}|\d{15,22}:\d{15,22})$/)) return;
-    if (!Str.includes(":")) {
-      const FoundItem = StrList.findIndex((Pred) => Pred.startsWith(Str));
-      if (FoundItem) {
-        return;
-      }
-    }
-    NewList.push(Str);
-  });
-
-  return NewList;
-}
-
-/**
- * Sends messages to specific *joined* guilds and channels with a given message payload.
- * @param Interact - The originally received interaction from the user.
- * @param MsgPayload - The message payload to send over the provided channels.
- * @param GuildChannelIds - An array of strings or a single string representing guild and channel Ids in the format "GuildId:ChannelId" or "ChannelId".
- * 1. `Guild Id - Channel Id` format:
- * The string should be splittable by the `:` character and have both the guild id and the channel id where the message shall be sent.
- *
- * 2. `Channel Id` format:
- * The string should be the channel id where the message shall be sent. The guild id is retrieved from the interaction.
- * @returns A message link of the main sent message (where the interaction was initiated) or `null` if there was no main message sent (as if error occurred).
- * @notice
- * This function should not throw any errors occurring and just ignore them after logging.
- *
- * This function will ignore sending messages (to a guild/channel) if any of the following happens:
- *  - A provided guild is not available (or the bot is not a member of it)
- *  - A provided channel in a guild cannot be found (invisible to the bot)
- *  - The bot can't send messages in a provided channel (lack of perms)
- *  - An unexpected error occurred
+ * Sends a message payload to one or more specified guild channels or threads.
+ * @param Interact - The cached interaction object.
+ * @param FormattedIds - A single formatted channel/thread identifier or an array of such identifiers. Each identifier can be in the format:
+ *   - "GuildId:ChannelId"
+ *   - "GuildId:ChannelId:ThreadId"
+ *   - "ChannelId" (uses the guild ID from the interaction)
+ * @param MessagePayload - The message payload to send, which can be a MessagePayload or MessageCreateOptions object.
+ * @returns A promise that resolves to the URL of the main sent message (if any was sent in the interaction's guild), or null if no message was sent.
+ * @remarks
+ * - The function sanitizes and normalizes the list of IDs before processing.
+ * - For each ID, it attempts to fetch the corresponding guild, channel, and optionally thread.
+ * - It checks for appropriate permissions before sending messages.
+ * - If a thread ID is provided, it attempts to send the message to the thread if possible.
+ * - If not a thread or thread is not sendable, it attempts to send the message to the channel.
+ * - Only the URL of the message sent in the interaction's guild is returned.
+ * - Errors related to missing access or unknown channels/threads are silently ignored; other errors are logged.
  */
 export async function SendGuildMessages(
   Interact:
     | SlashCommandInteraction<"cached">
     | ButtonInteraction<"cached">
     | ModalSubmitInteraction<"cached">,
-  GuildChannelIds: string | string[],
+  FormattedIds: string | string[],
   MessagePayload: MessagePayload | MessageCreateOptions
 ): Promise<string | null> {
-  let MainReportMsgLink: string | null = null;
-  GuildChannelIds = SanitizeList(
-    Array.isArray(GuildChannelIds) ? GuildChannelIds : [GuildChannelIds]
-  );
+  FormattedIds = SanitizeList(Array.isArray(FormattedIds) ? FormattedIds : [FormattedIds]);
 
-  for (const GuildChannelId of GuildChannelIds) {
+  // Prepare all send attempts as promises
+  const SendPromises = FormattedIds.map(async (FormattedId) => {
     let GuildId: string;
     let ChannelId: string;
-    const Split = GuildChannelId.split(":");
+    let ThreadId: string | null = null;
+    const Split = FormattedId.split(":");
 
     if (Split.length === 2) {
       [GuildId, ChannelId] = Split;
-    } else {
+    } else if (Split.length === 3) {
+      [GuildId, ChannelId, ThreadId] = Split;
+      ThreadId = ThreadId ?? null;
+    } else if (Split.length === 1) {
       GuildId = Interact.guildId;
-      ChannelId = GuildChannelId;
+      ChannelId = FormattedId;
+    } else {
+      return null;
     }
 
     try {
       const Guild = Interact.client.guilds.cache.get(GuildId);
-      if (!Guild) continue;
+      if (!Guild) return null;
 
       const Channel = Guild.channels.cache.get(ChannelId);
-      if (!Channel) continue;
+      if (!Channel) return null;
+
+      let Thread: ForumThreadChannel | null = null;
+      if (ThreadId && Channel.isThreadOnly()) {
+        Thread = await Channel.threads.fetch(ThreadId);
+        if (!Thread) return null;
+      } else if (ThreadId) {
+        return null;
+      }
+
+      if (
+        Thread?.isSendable() &&
+        Thread.permissionsFor(Interact.client.user.id)?.has([
+          PermissionFlagsBits.SendMessages,
+          PermissionFlagsBits.ViewChannel,
+        ])
+      ) {
+        const SentMsg = await Thread.send(MessagePayload);
+        if (SentMsg && SentMsg.guildId === Interact.guildId) {
+          return SentMsg.url;
+        }
+        return null;
+      }
 
       // Check if the channel is viewable, text-based, and the bot has permission to send messages
       const IsAbleToSendMsgs =
         Channel?.viewable &&
         Channel.isTextBased() &&
-        Channel.permissionsFor(Interact.client.user.id)?.has(["SendMessages", "ViewChannel"]);
+        Channel.permissionsFor(Interact.client.user.id)?.has([
+          PermissionFlagsBits.SendMessages,
+          PermissionFlagsBits.ViewChannel,
+        ]);
 
       if (IsAbleToSendMsgs) {
         const SentMsg = await Channel.send(MessagePayload);
         if (SentMsg && SentMsg.guildId === Interact.guildId) {
-          MainReportMsgLink = SentMsg.url;
+          return SentMsg.url;
         }
       }
+      return null;
     } catch (Err: any) {
-      if (Err instanceof DiscordAPIError && (Err.code === 10_003 || Err.code === 10_004)) continue;
+      if (Err instanceof DiscordAPIError && (Err.code === 10_003 || Err.code === 10_004))
+        return null;
       AppLogger.error({
-        message: Err.message ?? "An error occurred while bulk-sending messages; ignoring..",
+        message: "An error occurred while bulk-sending messages; ignoring..",
         label: "Utilities:Other:SendGuildMessages",
         stack: Err.stack,
       });
-      continue;
+      return null;
     }
+  });
+
+  const SendResults = await Promise.allSettled(SendPromises);
+  if (SendResults[0]?.status === "fulfilled" && SendResults[0]?.value) {
+    return SendResults[0].value;
   }
 
-  return MainReportMsgLink;
+  return null;
+}
+
+/**
+ * Removes duplicate strings from the input list and filters the list to include only valid ID patterns.
+ * @param StrList - The array of strings to sanitize.
+ * @returns A new array containing only unique and valid strings according to the specified rules.
+ */
+function SanitizeList(StrList: string[]): string[] {
+  StrList = [...new Set(StrList)];
+  return StrList.filter((Str) => Str?.match(/^(?:\d{15,22})(?::\d{15,22}){0,2}$/)).sort((A, B) => {
+    const AColons = (A.match(/:/g) || []).length;
+    const BColons = (B.match(/:/g) || []).length;
+
+    if (AColons !== BColons) {
+      return AColons - BColons;
+    }
+
+    return A.localeCompare(B);
+  });
 }

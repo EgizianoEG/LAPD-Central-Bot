@@ -47,7 +47,7 @@ export default async function SlashCommandHandler(
           "Could not find the command object of slash command %o; terminating command execution.",
         label: FileLogLabel,
         splat: [FullCmdName],
-        cmd_options: Object(Interaction.options)._hoistedOptions,
+        cmd_options: Interaction.options,
       });
 
       return new ErrorEmbed()
@@ -74,9 +74,8 @@ export default async function SlashCommandHandler(
         splat: [FullCmdName],
         details: {
           execution_time: ReadableDuration(Date.now() - Interaction.createdTimestamp),
-          full_name: FullCmdName,
-          cmd_options: Interaction.options,
           stringified: Interaction.toString(),
+          cmd_options: Interaction.options,
         },
       });
 
@@ -102,7 +101,7 @@ export default async function SlashCommandHandler(
       error_id: ErrorId,
       stack: Err.stack,
       splat: [FullCmdName],
-      cmd_options: Object(Interaction.options)._hoistedOptions,
+      cmd_options: Interaction.options,
     });
 
     if (Err instanceof AppError && Err.is_showable) {

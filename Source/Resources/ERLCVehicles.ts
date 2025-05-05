@@ -357,6 +357,17 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         },
       },
       {
+        name: "Camaro ZL1",
+        alias: "Amigo LZR",
+        style: "Coupe",
+        class: "Car",
+        category: "Regular",
+        model_year: {
+          org: "2016",
+          alt: "2016",
+        },
+      },
+      {
         name: "Impala SS",
         alias: "Antelope",
         style: "Sedan",
@@ -759,6 +770,28 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
           alt: "",
         },
       },
+      {
+        name: "F100",
+        alias: "Advance 100 Holiday",
+        style: "Pickup",
+        class: "Truck",
+        category: "Classic",
+        model_year: {
+          org: "1956",
+          alt: "1956",
+        },
+      },
+      {
+        name: "Hot Rod",
+        alias: "Coupe Hotrod",
+        style: "Coupe",
+        class: "Car",
+        category: "Classic",
+        model_year: {
+          org: "1932",
+          alt: "1934",
+        },
+      },
     ],
   },
 
@@ -830,6 +863,17 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         model_year: {
           org: "2019",
           alt: "2019",
+        },
+      },
+      {
+        name: "Tacoma TRD Off Road",
+        alias: "Everest VRD Max",
+        style: "Pickup",
+        class: "Truck",
+        category: "Regular",
+        model_year: {
+          org: "2023",
+          alt: "2023",
         },
       },
     ],
@@ -986,6 +1030,17 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         model_year: {
           org: "2018",
           alt: "2018",
+        },
+      },
+      {
+        name: "Fleetwood Krystal Hearse",
+        alias: "Birchwood Hearse",
+        style: "Hearse",
+        class: "Car",
+        category: "Regular",
+        model_year: {
+          org: "1995",
+          alt: "1995",
         },
       },
     ],
@@ -1208,6 +1263,24 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
   },
 
   {
+    brand: "Autocar",
+    counterpart: "",
+    models: [
+      {
+        name: "ACX with Heil Half-Pack",
+        alias: "Front-Loader Garbage Truck",
+        style: "Truck",
+        class: "Industrial",
+        category: "Regular",
+        model_year: {
+          org: "2017",
+          alt: "",
+        },
+      },
+    ],
+  },
+
+  {
     brand: "Westerm Star",
     counterpart: "",
     models: [
@@ -1291,6 +1364,42 @@ export const ERLCVehiclesData: Vehicles.VehicleData[] = [
         category: "Regular",
         model_year: {
           org: "2013",
+          alt: "",
+        },
+      },
+    ],
+  },
+
+  {
+    brand: "Gillig",
+    counterpart: "Metro",
+    models: [
+      {
+        name: "BRT Low Floor",
+        alias: "Transit Bus",
+        style: "Bus",
+        class: "Industrial",
+        category: "Regular",
+        model_year: {
+          org: "2005",
+          alt: "",
+        },
+      },
+    ],
+  },
+
+  {
+    brand: "Other",
+    counterpart: "",
+    models: [
+      {
+        name: "[N/A]",
+        alias: "[N/A]",
+        style: "Sedan",
+        class: "Car",
+        category: "Regular",
+        model_year: {
+          org: "",
           alt: "",
         },
       },
