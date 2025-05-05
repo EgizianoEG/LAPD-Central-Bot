@@ -290,20 +290,11 @@ async function HandleInitialInteractReply(
 ): Promise<Message> {
   let ReplyMethod: "reply" | "followUp" | "editReply";
   const NavigationButtons = GetPredefinedNavButtons(Interact, Pages.length, true, true);
-  const IsComponentsV2Pagination = Pages[0] instanceof ContainerBuilder;
-  const ResponseOpts = IsComponentsV2Pagination
-    ? {
-        components: [Pages[0] as ContainerBuilder],
-      }
-    : {
-        embeds: [Pages[0] as EmbedBuilder],
-        components: [NavigationButtons],
-      };
+  const ResponseOpts: InteractionReplyOptions =
+    Pages[0] instanceof ContainerBuilder ? { components: [Pages[0]] } : { embeds: [Pages[0]] };
 
-  if (Pages.length > 1) {
-    ResponseOpts.components = IsComponentsV2Pagination
-      ? [ResponseOpts.components[0] as ContainerBuilder]
-      : [NavigationButtons];
+  if (Pages.length > 1 && ResponseOpts.embeds) {
+    ResponseOpts.components = [NavigationButtons];
   }
 
   if (Interact.deferred) {
@@ -330,6 +321,7 @@ async function HandleInitialInteractReply(
   } else {
     return Interact.editReply({
       ...ResponseOpts,
+      flags: Flags ? (Flags as number) & ~MessageFlags.Ephemeral : undefined,
       allowedMentions: {},
     });
   }
@@ -403,7 +395,7 @@ function AttachComponentsV2NavButtons(
 
 function AttachComponentsV2Footer(Pages: ContainerBuilder[], FooterText?: string): void {
   return Pages.forEach((Page) => {
-    Page.addSeparatorComponents(new SeparatorBuilder({ divider: true }));
+    if (Pages.length > 1) Page.addSeparatorComponents(new SeparatorBuilder({ divider: true }));
     if (FooterText)
       Page.addTextDisplayComponents(new TextDisplayBuilder({ content: `-# ${FooterText}` }));
   });
