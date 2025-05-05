@@ -740,7 +740,7 @@ async function GetPaginatedShifts(TargetUser: User, GuildId: string, ShiftType?:
       .setAccentColor(resolveColor(Colors.Info))
       .addTextDisplayComponents(
         new TextDisplayBuilder({
-          content: `### Recorded Shifts\n-# Displaying \`${ShiftData.length}\` total shifts of ${ShiftTypeAppend}; data as of ${FormatTime(Date.now(), "f")}`,
+          content: `### Recorded Shifts\n-# Displaying \`${ShiftData.length}\` total shifts of ${ShiftTypeAppend}; data as of ${FormatTime(new Date(), "f")}`,
         })
       )
       .addSeparatorComponents(new SeparatorBuilder({ divider: true, spacing: 2 }));
