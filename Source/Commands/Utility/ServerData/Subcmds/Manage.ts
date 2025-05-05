@@ -5,34 +5,46 @@ import {
   StringSelectMenuBuilder,
   InteractionReplyOptions,
   ModalSubmitInteraction,
+  RepliableInteraction,
   InteractionResponse,
   time as FormatTime,
+  TextDisplayBuilder,
   ButtonInteraction,
   ActionRowBuilder,
   TextInputBuilder,
+  ContainerBuilder,
+  SeparatorBuilder,
   TextInputStyle,
   MessagePayload,
   ButtonBuilder,
   ComponentType,
-  EmbedBuilder,
   ModalBuilder,
+  MessageFlags,
+  resolveColor,
   ButtonStyle,
   inlineCode,
   CacheType,
   Message,
 } from "discord.js";
 
-import { Emojis } from "@Config/Shared.js";
-import { isAfter } from "date-fns";
-import { GetErrorId } from "@Utilities/Strings/Random.js";
-import { UserActivityNotice, Shifts } from "@Typings/Utilities/Database.js";
-import { ErrorEmbed, InfoEmbed, SuccessEmbed, WarnEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import {
+  SuccessContainer,
+  WarnContainer,
+  InfoContainer,
+} from "@Utilities/Classes/ExtraContainers.js";
+
 import {
   LeaveOfAbsenceEventLogger,
   ReducedActivityEventLogger,
 } from "@Utilities/Classes/UANEventLogger.js";
 
-import Dedent from "dedent";
+import { Dedent } from "@Utilities/Strings/Formatters.js";
+import { Emojis } from "@Config/Shared.js";
+import { isAfter } from "date-fns";
+import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
+import { UserActivityNotice, Shifts } from "@Typings/Utilities/Database.js";
+
 import UANModel from "@Models/UserActivityNotice.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import ShiftModel from "@Models/Shift.js";
@@ -41,6 +53,7 @@ import * as Chrono from "chrono-node";
 import HumanizeDuration from "humanize-duration";
 import MentionCmdByName from "@Utilities/Other/MentionCmd.js";
 import ShiftActionLogger from "@Utilities/Classes/ShiftActionLogger.js";
+import DisableMessageComponents from "@Utilities/Other/DisableMsgComps.js";
 import HandleActionCollectorExceptions from "@Utilities/Other/HandleCompCollectorExceptions.js";
 
 // ---------------------------------------------------------------------------------------
@@ -48,7 +61,7 @@ import HandleActionCollectorExceptions from "@Utilities/Other/HandleCompCollecto
 // -------------------------------
 const FileLabel = "Commands:Utility:ServerDataManage";
 const ListFormatter = new Intl.ListFormat("en");
-const BaseEmbedColor = "#5F9EA0";
+const BaseAccentColor = resolveColor("#5F9EA0");
 const RADataLogger = new ReducedActivityEventLogger();
 const LeaveDataLogger = new LeaveOfAbsenceEventLogger();
 
@@ -167,7 +180,7 @@ function GetUANManagementComponents(
   return [
     new ActionRowBuilder<ButtonBuilder>().setComponents(
       new ButtonBuilder()
-        .setLabel(`Wipe All ${GetUANShortenedWEName(IsLOA)} Records`)
+        .setLabel(`Wipe All ${GetUANShortenedName(IsLOA)} Records`)
         .setStyle(ButtonStyle.Danger)
         .setCustomId(`${ActionPrefix}-${Actions.WipeAll.split("-").pop()}:${Interaction.user.id}`),
       new ButtonBuilder()
@@ -223,14 +236,24 @@ function GetDeleteConfirmationComponents(
   );
 }
 
-function GetShiftManagementEmbed() {
-  return new EmbedBuilder()
-    .setColor(BaseEmbedColor)
-    .setTitle("Shift Data Management")
-    .setDescription(
-      Dedent(`
+function GetShiftManagementContainer(): ContainerBuilder {
+  return new ContainerBuilder()
+    .setAccentColor(BaseAccentColor)
+    .addTextDisplayComponents({
+      type: ComponentType.TextDisplay,
+      content: "### Shift Data Management",
+    })
+    .addSeparatorComponents({
+      type: ComponentType.Separator,
+      spacing: 2,
+      divider: true,
+    })
+    .addTextDisplayComponents({
+      type: ComponentType.TextDisplay,
+      content: Dedent(`
         Shift data is the shift records that have been logged on the app's database to track staff members' duties and their time invested in working. \
-        A new record is created when a staff member starts a new shift using the ${MentionCmdByName("duty manage")} slash command. Use the buttons below to delete records by type, time frame, or status.
+        A new record is created when a staff member starts a new shift using the ${MentionCmdByName("duty manage")} slash command. Use the buttons below \
+        to delete records by type, time frame, or status.
 
         **Options Described:**
         - **Wipe All Shift Records**
@@ -243,19 +266,29 @@ function GetShiftManagementEmbed() {
           An option to delete a set of shifts based on a specific time frame. The start date of the shifts is used for this matter.
 
         -# This panel will automatically deactivate after 10 minutes of inactivity.
-      `)
-    );
+      `),
+    });
 }
 
-function GetUANManagementEmbed(NoticeIsLOA: boolean) {
+function GetUANManagementContainer(NoticeIsLOA: boolean): ContainerBuilder {
   const LeaveOrRA = NoticeIsLOA ? "leave" : "reduced activity";
-  return new EmbedBuilder()
-    .setColor(BaseEmbedColor)
-    .setTitle(`${GetUANNoticeTitle(NoticeIsLOA, true)} Data Management`)
-    .setDescription(
-      Dedent(`
-        ${GetUANNoticeTitle(NoticeIsLOA)} data consists of a set of records, each of which was created upon a staff member's request using the ${MentionCmdByName(`${NoticeIsLOA ? "loa" : "ra"} request`)} slash command. \
-        This panel provides the ability to delete a set of records based on status or time frame. Use the buttons below to take action on a specific set of records.
+  return new ContainerBuilder()
+    .setAccentColor(BaseAccentColor)
+    .addTextDisplayComponents({
+      type: ComponentType.TextDisplay,
+      content: `### ${GetUANNoticeTitle(NoticeIsLOA, true)} Data Management`,
+    })
+    .addSeparatorComponents({
+      type: ComponentType.Separator,
+      spacing: 2,
+      divider: true,
+    })
+    .addTextDisplayComponents({
+      type: ComponentType.TextDisplay,
+      content: Dedent(`
+        ${GetUANNoticeTitle(NoticeIsLOA)} data consists of a set of records, each of which was created upon a staff member's request using the \
+        ${MentionCmdByName(`${NoticeIsLOA ? "loa" : "ra"} request`)} slash command. This panel provides the ability to delete a set of records \
+        based on status or time frame. Use the buttons below to take action on a specific set of records.
 
         **Options Described:**
         - **Wipe All Records**
@@ -265,11 +298,13 @@ function GetUANManagementEmbed(NoticeIsLOA: boolean) {
         - **Delete Past Records**
           This option will delete only ${LeaveOrRA} records that are no longer active and not in a pending state. Only finished and cancelled ones will be affected.
         - **Delete Records Before/Since Date**
-          Delete past, finished, and cancelled ${LeaveOrRA} records based on a specific date, before or after it. The end date (first), review date, or request date for pending requests is being utilized for this action. Please take into considration that these two options are not accurate at the moment and may result into unexpected deletion of wanted records.
+          Delete past, finished, and cancelled ${LeaveOrRA} records based on a specific date, before or after it. The end date (first), review date, or request date \
+          for pending requests is being utilized for this action. Please take into considration that these two options are not accurate at the moment and may result \
+          into unexpected deletion of wanted records.
         
         -# This panel will automatically deactivate after 10 minutes of inactivity.
-      `)
-    );
+      `),
+    });
 }
 
 function GetComparisonDateInputModal(
@@ -279,7 +314,7 @@ function GetComparisonDateInputModal(
 ) {
   const Modal = new ModalBuilder()
     .setTitle(`Delete ${TargetData} Records ${CDType} Date`)
-    .setCustomId(`sdm-dab-input:${Interaction.user.id}`)
+    .setCustomId(`sdm-dab-input:${Interaction.user.id}:${RandomString(4)}`)
     .setComponents(
       new ActionRowBuilder<TextInputBuilder>().setComponents(
         new TextInputBuilder()
@@ -341,11 +376,23 @@ async function ShowModalAndAwaitSubmission(
 }
 
 async function SendReplyAndFetchMessage(
-  Interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">,
+  Interaction: RepliableInteraction<"cached">,
   Options: MessagePayload | InteractionReplyOptions
 ): Promise<Message<true>> {
+  let Flags =
+    "components" in Options && Options.components?.length
+      ? Options.components[0] instanceof ContainerBuilder
+        ? MessageFlags.IsComponentsV2
+        : undefined
+      : undefined;
+
+  if ("flags" in Options && Options.flags && Flags) {
+    Flags = Flags & (Options.flags as number);
+  }
+
   const Response = await Interaction.reply({
     ...Options,
+    flags: Flags,
     withResponse: true,
   } as InteractionReplyOptions & {
     withResponse: true;
@@ -396,13 +443,13 @@ async function AwaitDeleteConfirmation(
 // ---------------------------------------------------------------------------------------
 // Shift Data Mgmt. Helpers:
 // -------------------------
-function GetSDConfirmationPromptEmbed(Opts: {
+function GetSDConfirmationPromptContainer(Opts: {
   SShiftInfo: Awaited<ReturnType<typeof GetSummarizedShiftInfo>>;
   ShiftTypes?: string[];
   ShiftStatus?: string;
   AfterDate?: Date | null;
   BeforeDate?: Date | null;
-}) {
+}): WarnContainer {
   const { SShiftInfo, ShiftTypes, ShiftStatus, AfterDate, BeforeDate } = Opts;
   const ShiftStatusText = ShiftStatus || "all";
   const RecordedBeforeAfterText = BeforeDate
@@ -420,24 +467,23 @@ function GetSDConfirmationPromptEmbed(Opts: {
     ShiftTypeText = ` under the \`${ShiftTypes}\` shift type`;
   }
 
-  return new WarnEmbed()
-    .setThumbnail(null)
-    .setTitle("Confirmation Required")
-    .setDescription(
-      Dedent(`
-        **Are you certain you want to delete ${ShiftStatusText} shifts${RecordedBeforeAfterText}${ShiftTypeText}?**
-        This will permanently erase \`${SShiftInfo.shift_count}\` shifts totalling around ${HumanizeDuration(SShiftInfo.total_time, { round: true, conjunction: " and " })} of on duty time.
+  return new WarnContainer().setTitle("Confirmation Required").setDescription(
+    Dedent(`
+      **Are you certain you want to delete ${ShiftStatusText} shifts${RecordedBeforeAfterText}${ShiftTypeText}?**
+      This will permanently erase \`${SShiftInfo.shift_count}\` shifts totalling around ${HumanizeDuration(SShiftInfo.total_time, { round: true, conjunction: " and " })} of on duty time.
 
-        -# **Note:** This action is ***irreversible***, and data deleted cannot be restored after confirmation. By confirming, you accept full responsibility for this action.
-        -# This prompt will automatically cancel after five minutes of inactivity.
-      `)
-    );
+      -# **Note:** This action is ***irreversible***, and data deleted cannot be restored after confirmation. By confirming, you accept full responsibility for this action.
+      -# This prompt will automatically cancel after five minutes of inactivity.
+    `)
+  );
 }
 
 function GetShiftTypeInputModal(Interaction: ButtonInteraction<"cached">) {
   return new ModalBuilder()
     .setTitle("Delete Records by Shift Type")
-    .setCustomId(`sdm-${ShiftDataActions.DeleteOfType}-input:${Interaction.user.id}`)
+    .setCustomId(
+      `sdm-${ShiftDataActions.DeleteOfType}-input:${Interaction.user.id}:${RandomString(4)}`
+    )
     .setComponents(
       new ActionRowBuilder<TextInputBuilder>().setComponents(
         new TextInputBuilder()
@@ -515,8 +561,7 @@ async function HandleNoShiftsDeletedStatus(
 
 async function HandleShiftDataWipeAllConfirm(ConfirmInteract: ButtonInteraction<"cached">) {
   await ConfirmInteract.update({
-    embeds: [new InfoEmbed().useInfoTemplate("SRWipeAllInProgress")],
-    components: [],
+    components: [new InfoContainer().useInfoTemplate("SRWipeAllInProgress")],
   });
 
   const [UpdatedShifTData, DeleteResponse] = await Promise.all([
@@ -529,14 +574,11 @@ async function HandleShiftDataWipeAllConfirm(ConfirmInteract: ButtonInteraction<
   return Promise.all([
     ShiftActionLogger.LogShiftsWipe(ConfirmInteract, DeleteResponse),
     ConfirmInteract.editReply({
-      components: [],
-      embeds: [
-        new SuccessEmbed()
-          .setThumbnail(null)
-          .setDescription(
-            "Successfully deleted **`%d`** shift records.",
-            DeleteResponse.deletedCount
-          ),
+      components: [
+        new SuccessContainer().setDescription(
+          "Successfully deleted **`%d`** shift records.",
+          DeleteResponse.deletedCount
+        ),
       ],
     }),
   ]);
@@ -546,15 +588,16 @@ async function HandleShiftDataWipeAll(BtnInteract: ButtonInteraction<"cached">) 
   const SummarizedShiftInfo = await GetSummarizedShiftInfo({ guild: BtnInteract.guildId });
   if (await HandleNoShiftsToTakeActionOn(BtnInteract, SummarizedShiftInfo)) return;
 
-  const ConfirmationEmbed = GetSDConfirmationPromptEmbed({ SShiftInfo: SummarizedShiftInfo });
+  const ConfirmationContainer = GetSDConfirmationPromptContainer({
+    SShiftInfo: SummarizedShiftInfo,
+  });
   const ConfirmationComponents = GetDeleteConfirmationComponents(
     BtnInteract,
     `sdm-${ShiftDataActions.WipeAll}`
   );
 
   const RespMessage = await SendReplyAndFetchMessage(BtnInteract, {
-    embeds: [ConfirmationEmbed],
-    components: [ConfirmationComponents],
+    components: [ConfirmationContainer.attachPromptActionRow(ConfirmationComponents)],
   });
 
   return AwaitDeleteConfirmation(BtnInteract, RespMessage, HandleShiftDataWipeAllConfirm);
@@ -562,8 +605,7 @@ async function HandleShiftDataWipeAll(BtnInteract: ButtonInteraction<"cached">) 
 
 async function HandleShiftDataDeletePastConfirm(ConfirmInteract: ButtonInteraction<"cached">) {
   await ConfirmInteract.update({
-    embeds: [new InfoEmbed().useInfoTemplate("SRDeletionInProgress")],
-    components: [],
+    components: [new InfoContainer().useInfoTemplate("SRDeletionInProgress")],
   });
 
   const QueryFilter = {
@@ -581,14 +623,11 @@ async function HandleShiftDataDeletePastConfirm(ConfirmInteract: ButtonInteracti
   return Promise.all([
     ShiftActionLogger.LogShiftsWipe(ConfirmInteract, DeleteResponse),
     ConfirmInteract.editReply({
-      components: [],
-      embeds: [
-        new SuccessEmbed()
-          .setThumbnail(null)
-          .setDescription(
-            "Successfully deleted **`%d`** past shifts.",
-            DeleteResponse.deletedCount
-          ),
+      components: [
+        new SuccessContainer().setDescription(
+          "Successfully deleted **`%d`** past shifts.",
+          DeleteResponse.deletedCount
+        ),
       ],
     }),
   ]);
@@ -604,7 +643,7 @@ async function HandleShiftDataDeletePast(BtnInteract: ButtonInteraction<"cached"
     return;
   }
 
-  const ConfirmationEmbed = GetSDConfirmationPromptEmbed({
+  const ConfirmationContainer = GetSDConfirmationPromptContainer({
     SShiftInfo: SummarizedShiftInfo,
     ShiftStatus: "past",
   });
@@ -615,8 +654,7 @@ async function HandleShiftDataDeletePast(BtnInteract: ButtonInteraction<"cached"
   );
 
   const RespMessage = await SendReplyAndFetchMessage(BtnInteract, {
-    embeds: [ConfirmationEmbed],
-    components: [ConfirmationComponents],
+    components: [ConfirmationContainer.attachPromptActionRow(ConfirmationComponents)],
   });
 
   return AwaitDeleteConfirmation(BtnInteract, RespMessage, HandleShiftDataDeletePastConfirm);
@@ -627,8 +665,7 @@ async function HandleShiftDataDeleteOfTypeConfirm(
   ShiftTypes: string[]
 ) {
   await ConfirmInteract.update({
-    embeds: [new InfoEmbed().useInfoTemplate("SRDeletionInProgress")],
-    components: [],
+    components: [new InfoContainer().useInfoTemplate("SRDeletionInProgress")],
   });
 
   const QueryFilter = {
@@ -646,15 +683,12 @@ async function HandleShiftDataDeleteOfTypeConfirm(
   return Promise.all([
     ShiftActionLogger.LogShiftsWipe(ConfirmInteract, DeleteResponse, ShiftTypes),
     ConfirmInteract.editReply({
-      components: [],
-      embeds: [
-        new SuccessEmbed()
-          .setThumbnail(null)
-          .setDescription(
-            "Successfully deleted **`%d`** recorded shifts of type(s): %s",
-            DeleteResponse.deletedCount,
-            ListFormatter.format(ShiftTypes.map((T) => inlineCode(T)))
-          ),
+      components: [
+        new SuccessContainer().setDescription(
+          "Successfully deleted **`%d`** recorded shifts of type(s): %s",
+          DeleteResponse.deletedCount,
+          ListFormatter.format(ShiftTypes.map((T) => inlineCode(T)))
+        ),
       ],
     }),
   ]);
@@ -684,7 +718,7 @@ async function HandleShiftDataDeleteOfType(BtnInteract: ButtonInteraction<"cache
     return;
   }
 
-  const ConfirmationEmbed = GetSDConfirmationPromptEmbed({
+  const ConfirmationContainer = GetSDConfirmationPromptContainer({
     SShiftInfo: SummarizedShiftInfo,
     ShiftTypes,
   });
@@ -695,8 +729,7 @@ async function HandleShiftDataDeleteOfType(BtnInteract: ButtonInteraction<"cache
   );
 
   const RespMessage = await SendReplyAndFetchMessage(ModalSubmission, {
-    embeds: [ConfirmationEmbed],
-    components: [ConfirmationComponents],
+    components: [ConfirmationContainer.attachPromptActionRow(ConfirmationComponents)],
   });
 
   return AwaitDeleteConfirmation(
@@ -714,8 +747,7 @@ async function HandleShiftDataDeleteWithDateConfirm(
   ShiftTypes?: string[]
 ) {
   await ConfirmInteract.update({
-    embeds: [new InfoEmbed().useInfoTemplate("SRDeletionInProgress")],
-    components: [],
+    components: [new InfoContainer().useInfoTemplate("SRDeletionInProgress")],
   });
 
   const QueryFilter = {
@@ -741,20 +773,17 @@ async function HandleShiftDataDeleteWithDateConfirm(
   return Promise.all([
     ShiftActionLogger.LogShiftsWipe(ConfirmInteract, DeleteResponse, ShiftTypes),
     ConfirmInteract.editReply({
-      components: [],
-      embeds: [
-        new SuccessEmbed()
-          .setThumbnail(null)
-          .setDescription(
-            "Successfully deleted **`%d`** shifts%s recorded %s.",
-            DeleteResponse.deletedCount,
-            ShiftTypes?.length
-              ? ` of type(s): ${ListFormatter.format(ShiftTypes.map((T) => inlineCode(T)))}`
-              : " of all types",
-            ComparisonType === "Before"
-              ? `before ${FormatTime(ComparisonDate, "D")}`
-              : `after ${FormatTime(ComparisonDate, "D")}`
-          ),
+      components: [
+        new SuccessContainer().setDescription(
+          "Successfully deleted **`%d`** shifts%s recorded %s.",
+          DeleteResponse.deletedCount,
+          ShiftTypes?.length
+            ? ` of type(s): ${ListFormatter.format(ShiftTypes.map((T) => inlineCode(T)))}`
+            : " of all types",
+          ComparisonType === "Before"
+            ? `before ${FormatTime(ComparisonDate, "D")}`
+            : `after ${FormatTime(ComparisonDate, "D")}`
+        ),
       ],
     }),
   ]);
@@ -800,7 +829,7 @@ async function HandleShiftDataDeleteBeforeOrAfterDate(
   const SummarizedShiftInfo = await GetSummarizedShiftInfo(MatchFilter);
   if (await HandleNoShiftsToTakeActionOn(ModalSubmission, SummarizedShiftInfo)) return;
 
-  const ConfirmationEmbed = GetSDConfirmationPromptEmbed({
+  const ConfirmationContainer = GetSDConfirmationPromptContainer({
     ShiftTypes,
     SShiftInfo: SummarizedShiftInfo,
     AfterDate: ComparisonType === "After" ? ParsedDate : null,
@@ -813,8 +842,7 @@ async function HandleShiftDataDeleteBeforeOrAfterDate(
   );
 
   const RespMessage = await SendReplyAndFetchMessage(ModalSubmission, {
-    embeds: [ConfirmationEmbed],
-    components: [ConfirmationComponents],
+    components: [ConfirmationContainer.attachPromptActionRow(ConfirmationComponents)],
   });
 
   return AwaitDeleteConfirmation(
@@ -829,16 +857,19 @@ async function HandleShiftDataDeleteBeforeOrAfterDate(
 
 async function HandleShiftRecordsManagement(
   SMenuInteract: StringSelectMenuInteraction<"cached">,
-  CmdInteraction: CmdOrStringSelectInteract<"cached">
+  PanelMessageId: string
 ) {
-  const MsgEmbed = GetShiftManagementEmbed();
+  const PanelContainer = GetShiftManagementContainer();
   const ManagementComps = GetShiftDataManagementComponents(SMenuInteract);
-  const EdittedMessage = await SMenuInteract.update({
-    embeds: [MsgEmbed],
-    components: ManagementComps,
+  const ResponeseMessage = await SendReplyAndFetchMessage(SMenuInteract, {
+    components: [
+      PanelContainer.addSeparatorComponents(
+        new SeparatorBuilder().setDivider()
+      ).addActionRowComponents(ManagementComps),
+    ],
   });
 
-  const CompActionCollector = EdittedMessage.createMessageComponentCollector({
+  const CompActionCollector = ResponeseMessage.createMessageComponentCollector({
     componentType: ComponentType.Button,
     filter: (Interact) => Interact.user.id === SMenuInteract.user.id,
     time: 10 * 60 * 1000,
@@ -880,17 +911,17 @@ async function HandleShiftRecordsManagement(
     }
   });
 
-  CompActionCollector.on("end", async function OnSDMEnd(_, EndReason) {
+  CompActionCollector.on("end", async function OnSDMEnd(Collected, EndReason) {
     if (EndReason.match(/^\w+Delete/)) return;
     if (EndReason === "BackToMain") {
-      return Callback(CmdInteraction);
+      return Callback(SMenuInteract);
     } else if (EndReason.includes("time")) {
-      ManagementComps.forEach((ActionRow) =>
-        ActionRow.components.forEach((Button) => Button.setDisabled(true))
-      );
-
-      return EdittedMessage.edit({
-        components: ManagementComps,
+      const LastInteract = Collected.last() ?? SMenuInteract;
+      const APICompatibleComps = ResponeseMessage.components.map((Comp) => Comp.toJSON());
+      const DisabledComponents = DisableMessageComponents(APICompatibleComps);
+      return LastInteract.editReply({
+        message: PanelMessageId,
+        components: DisabledComponents,
       });
     }
   });
@@ -899,13 +930,13 @@ async function HandleShiftRecordsManagement(
 // ---------------------------------------------------------------------------------------
 // UAN Data Mgmt. Helpers:
 // ------------------------
-function GetUANConfirmationPromptEmbed(Opts: {
+function GetUANConfirmationPromptContainer(Opts: {
   NoticeRecordsCount: number;
   RecordsStatus?: string;
   AfterDate?: Date | null;
   BeforeDate?: Date | null;
   IsLOA: boolean;
-}) {
+}): WarnContainer {
   const { NoticeRecordsCount, RecordsStatus, AfterDate, BeforeDate, IsLOA } = Opts;
   const NoticeStatusText = RecordsStatus || "all";
   const NoticeType = GetUANNoticeTitle(IsLOA).toLowerCase();
@@ -915,18 +946,15 @@ function GetUANConfirmationPromptEmbed(Opts: {
       ? ` recorded after ${FormatTime(AfterDate, "D")}`
       : "";
 
-  return new WarnEmbed()
-    .setThumbnail(null)
-    .setTitle("Confirmation Required")
-    .setDescription(
-      Dedent(`
-        **Are you certain you want to delete '${NoticeStatusText.toLowerCase()}' ${NoticeType} records${RecordedBeforeAfterText}?**
-        This will permanently erase \`${NoticeRecordsCount}\` ${GetUANNoticeTitle(IsLOA).toLowerCase()} records.
+  return new WarnContainer().setTitle("Confirmation Required").setDescription(
+    Dedent(`
+      **Are you certain you want to delete '${NoticeStatusText.toLowerCase()}' ${NoticeType} records${RecordedBeforeAfterText}?**
+      This will permanently erase \`${NoticeRecordsCount}\` ${GetUANNoticeTitle(IsLOA).toLowerCase()} records.
 
-        -# **Note:** This action is ***irreversible***, and data deleted cannot be restored after confirmation. By confirming, you accept full responsibility for this action.
-        -# This prompt will automatically cancel after five minutes of inactivity.
-      `)
-    );
+      -# **Note:** This action is ***irreversible***, and data deleted cannot be restored after confirmation. By confirming, you accept full responsibility for this action.
+      -# This prompt will automatically cancel after five minutes of inactivity.
+    `)
+  );
 }
 
 async function HandleNoNoticesToTakeActionOn(
@@ -956,8 +984,9 @@ async function HandleUANDataWipeAllConfirm(
 ) {
   const Logger = IsLOA ? LeaveDataLogger : RADataLogger;
   await ConfirmInteract.update({
-    embeds: [new InfoEmbed().useInfoTemplate("UANWipeAllInProgress", GetUANShortenedName(IsLOA))],
-    components: [],
+    components: [
+      new InfoContainer().useInfoTemplate("UANWipeAllInProgress", GetUANShortenedName(IsLOA)),
+    ],
   });
 
   const NoticeType = IsLOA ? "LeaveOfAbsence" : "ReducedActivity";
@@ -975,15 +1004,12 @@ async function HandleUANDataWipeAllConfirm(
   return Promise.all([
     Logger.LogUserActivityNoticesWipe(ConfirmInteract, DeleteResponse),
     ConfirmInteract.editReply({
-      components: [],
-      embeds: [
-        new SuccessEmbed()
-          .setThumbnail(null)
-          .setDescription(
-            "Successfully deleted **`%d`** %s notices.",
-            DeleteResponse.deletedCount,
-            GetUANShortenedWEName(IsLOA).toLowerCase()
-          ),
+      components: [
+        new SuccessContainer().setDescription(
+          "Successfully deleted **`%d`** %s notices.",
+          DeleteResponse.deletedCount,
+          GetUANShortenedWEName(IsLOA).toLowerCase()
+        ),
       ],
     }),
   ]);
@@ -999,7 +1025,7 @@ async function HandleUANDataWipeAll(BtnInteract: ButtonInteraction<"cached">, Is
   if ((await HandleNoNoticesToTakeActionOn(BtnInteract, NoticeRecordsCount, false, IsLOA)) === true)
     return;
 
-  const ConfirmationEmbed = GetUANConfirmationPromptEmbed({
+  const ConfirmationContainer = GetUANConfirmationPromptContainer({
     NoticeRecordsCount,
     IsLOA,
   });
@@ -1008,8 +1034,7 @@ async function HandleUANDataWipeAll(BtnInteract: ButtonInteraction<"cached">, Is
   const ConfirmationComponents = GetDeleteConfirmationComponents(BtnInteract, `sdm-${ActionType}`);
 
   const RespMessage = await SendReplyAndFetchMessage(BtnInteract, {
-    embeds: [ConfirmationEmbed],
-    components: [ConfirmationComponents],
+    components: [ConfirmationContainer.attachPromptActionRow(ConfirmationComponents)],
   });
 
   return AwaitDeleteConfirmation(BtnInteract, RespMessage, HandleUANDataWipeAllConfirm, IsLOA);
@@ -1021,8 +1046,9 @@ async function HandleUANDataDeletePastConfirm(
 ) {
   const Logger = IsLOA ? LeaveDataLogger : RADataLogger;
   await ConfirmInteract.update({
-    embeds: [new InfoEmbed().useInfoTemplate("UANDeletionInProgress", GetUANShortenedName(IsLOA))],
-    components: [],
+    components: [
+      new InfoContainer().useInfoTemplate("UANDeletionInProgress", GetUANShortenedName(IsLOA)),
+    ],
   });
 
   const NoticeType = IsLOA ? "LeaveOfAbsence" : "ReducedActivity";
@@ -1049,14 +1075,11 @@ async function HandleUANDataDeletePastConfirm(
       `Past ${GetUANNoticeTitle(IsLOA, true)} Notices (Finished, Cancelled, Denied)`
     ),
     ConfirmInteract.editReply({
-      components: [],
-      embeds: [
-        new SuccessEmbed()
-          .setThumbnail(null)
-          .setDescription(
-            "Successfully deleted **`%d`** past records.",
-            DeleteResponse.deletedCount
-          ),
+      components: [
+        new SuccessContainer().setDescription(
+          "Successfully deleted **`%d`** past records.",
+          DeleteResponse.deletedCount
+        ),
       ],
     }),
   ]);
@@ -1077,7 +1100,7 @@ async function HandleUANDataDeletePast(BtnInteract: ButtonInteraction<"cached">,
   if ((await HandleNoNoticesToTakeActionOn(BtnInteract, NoticeRecordsCount, false, IsLOA)) === true)
     return;
 
-  const ConfirmationEmbed = GetUANConfirmationPromptEmbed({
+  const ConfirmationContainer = GetUANConfirmationPromptContainer({
     NoticeRecordsCount,
     RecordsStatus: "past",
     IsLOA,
@@ -1087,8 +1110,7 @@ async function HandleUANDataDeletePast(BtnInteract: ButtonInteraction<"cached">,
   const ConfirmationComponents = GetDeleteConfirmationComponents(BtnInteract, `sdm-${actionType}`);
 
   const RespMessage = await SendReplyAndFetchMessage(BtnInteract, {
-    embeds: [ConfirmationEmbed],
-    components: [ConfirmationComponents],
+    components: [ConfirmationContainer.attachPromptActionRow(ConfirmationComponents)],
   });
 
   return AwaitDeleteConfirmation(BtnInteract, RespMessage, HandleUANDataDeletePastConfirm, IsLOA);
@@ -1100,8 +1122,9 @@ async function HandleUANDataDeletePendingConfirm(
 ) {
   const Logger = IsLOA ? LeaveDataLogger : RADataLogger;
   await ConfirmInteract.update({
-    embeds: [new InfoEmbed().useInfoTemplate("UANDeletionInProgress", GetUANShortenedName(IsLOA))],
-    components: [],
+    components: [
+      new InfoContainer().useInfoTemplate("UANDeletionInProgress", GetUANShortenedName(IsLOA)),
+    ],
   });
 
   const NoticeType = IsLOA ? "LeaveOfAbsence" : "ReducedActivity";
@@ -1125,14 +1148,11 @@ async function HandleUANDataDeletePendingConfirm(
       `Pending ${GetUANNoticeTitle(IsLOA, true)} Requests`
     ),
     ConfirmInteract.editReply({
-      components: [],
-      embeds: [
-        new SuccessEmbed()
-          .setThumbnail(null)
-          .setDescription(
-            "Successfully deleted **`%d`** pending notices.",
-            DeleteResponse.deletedCount
-          ),
+      components: [
+        new SuccessContainer().setDescription(
+          "Successfully deleted **`%d`** pending notices.",
+          DeleteResponse.deletedCount
+        ),
       ],
     }),
   ]);
@@ -1153,7 +1173,7 @@ async function HandleUANDataDeletePending(
   if ((await HandleNoNoticesToTakeActionOn(BtnInteract, NoticeRecordsCount, false, IsLOA)) === true)
     return;
 
-  const ConfirmationEmbed = GetUANConfirmationPromptEmbed({
+  const ConfirmationContainer = GetUANConfirmationPromptContainer({
     NoticeRecordsCount,
     RecordsStatus: "pending",
     IsLOA,
@@ -1163,8 +1183,7 @@ async function HandleUANDataDeletePending(
   const ConfirmationComponents = GetDeleteConfirmationComponents(BtnInteract, `sdm-${ActionType}`);
 
   const RespMessage = await SendReplyAndFetchMessage(BtnInteract, {
-    embeds: [ConfirmationEmbed],
-    components: [ConfirmationComponents],
+    components: [ConfirmationContainer.attachPromptActionRow(ConfirmationComponents)],
   });
 
   return AwaitDeleteConfirmation(
@@ -1185,8 +1204,9 @@ async function HandleUANDataDeleteWithDateConfirm(
 ) {
   const Logger = IsLOA ? LeaveDataLogger : RADataLogger;
   await ConfirmInteract.update({
-    embeds: [new InfoEmbed().useInfoTemplate("UANDeletionInProgress", GetUANShortenedName(IsLOA))],
-    components: [],
+    components: [
+      new InfoContainer().useInfoTemplate("UANDeletionInProgress", GetUANShortenedName(IsLOA)),
+    ],
   });
 
   const DeleteResponse = await UANModel.deleteMany(QueryFilter).exec();
@@ -1209,15 +1229,12 @@ async function HandleUANDataDeleteWithDateConfirm(
       NoticeStatuses.length ? ListFormatter.format(NoticeStatuses) : "N/A"
     ),
     ConfirmInteract.editReply({
-      components: [],
-      embeds: [
-        new SuccessEmbed()
-          .setThumbnail(null)
-          .setDescription(
-            "Successfully deleted **`%d`** %s records.",
-            DeleteResponse.deletedCount,
-            GetUANShortenedWEName(IsLOA).toLowerCase()
-          ),
+      components: [
+        new SuccessContainer().setDescription(
+          "Successfully deleted **`%d`** %s records.",
+          DeleteResponse.deletedCount,
+          GetUANShortenedWEName(IsLOA).toLowerCase()
+        ),
       ],
     }),
   ]);
@@ -1233,6 +1250,7 @@ async function HandleUANDataDeleteBeforeOrAfterDate(
     IsLOA ? "Leave" : "RA",
     ComparisonType
   );
+
   const ModalSubmission = await ShowModalAndAwaitSubmission(ComparisonDateModal, BtnInteract).catch(
     () => null
   );
@@ -1311,7 +1329,7 @@ async function HandleUANDataDeleteBeforeOrAfterDate(
           end_date: ComparisonType === "Before" ? { $lte: ParsedDate } : { $gte: ParsedDate },
         },
         {
-          status: "Pending",
+          status: ["Pending", "Cancelled"],
           request_date: ComparisonType === "Before" ? { $lte: ParsedDate } : { $gte: ParsedDate },
         },
       ],
@@ -1333,14 +1351,6 @@ async function HandleUANDataDeleteBeforeOrAfterDate(
     return;
   }
 
-  const ConfirmationEmbed = GetUANConfirmationPromptEmbed({
-    NoticeRecordsCount,
-    RecordsStatus: NoticeStatuses.length ? ListFormatter.format(NoticeStatuses) : undefined,
-    AfterDate: ComparisonType === "After" ? ParsedDate : null,
-    BeforeDate: ComparisonType === "Before" ? ParsedDate : null,
-    IsLOA,
-  });
-
   const ActionType = IsLOA
     ? ComparisonType === "Before"
       ? LeaveDataActions.DeleteBefore
@@ -1350,9 +1360,17 @@ async function HandleUANDataDeleteBeforeOrAfterDate(
       : RADataActions.DeleteAfter;
 
   const ConfirmationComponents = GetDeleteConfirmationComponents(BtnInteract, `sdm-${ActionType}`);
+  const ConfirmationContainer = GetUANConfirmationPromptContainer({
+    NoticeRecordsCount,
+    RecordsStatus: NoticeStatuses.length ? ListFormatter.format(NoticeStatuses) : undefined,
+    AfterDate: ComparisonType === "After" ? ParsedDate : null,
+    BeforeDate: ComparisonType === "Before" ? ParsedDate : null,
+    IsLOA,
+  });
+
   const RespMessage = await ModalSubmission.followUp({
-    embeds: [ConfirmationEmbed],
-    components: [ConfirmationComponents],
+    flags: MessageFlags.IsComponentsV2,
+    components: [ConfirmationContainer.attachPromptActionRow(ConfirmationComponents)],
   });
 
   return AwaitDeleteConfirmation(
@@ -1369,17 +1387,20 @@ async function HandleUANDataDeleteBeforeOrAfterDate(
 
 async function HandleUserActivityNoticeRecordsManagement(
   SMenuInteract: StringSelectMenuInteraction<"cached">,
-  CmdInteraction: CmdOrStringSelectInteract<"cached">,
+  PanelMessageId: string,
   IsLeaveManagement: boolean
 ) {
-  const MsgEmbed = GetUANManagementEmbed(IsLeaveManagement);
+  const PanelContainer = GetUANManagementContainer(IsLeaveManagement);
   const ManagementComps = GetUANManagementComponents(SMenuInteract, IsLeaveManagement);
-  const EdittedMessage = await SMenuInteract.update({
-    embeds: [MsgEmbed],
-    components: ManagementComps,
+  const ResponeseMessage = await SendReplyAndFetchMessage(SMenuInteract, {
+    components: [
+      PanelContainer.addSeparatorComponents(
+        new SeparatorBuilder().setDivider()
+      ).addActionRowComponents(ManagementComps),
+    ],
   });
 
-  const CompActionCollector = EdittedMessage.createMessageComponentCollector({
+  const CompActionCollector = ResponeseMessage.createMessageComponentCollector({
     componentType: ComponentType.Button,
     filter: (Interact) => Interact.user.id === SMenuInteract.user.id,
     time: 12 * 60 * 1000,
@@ -1426,14 +1447,14 @@ async function HandleUserActivityNoticeRecordsManagement(
   CompActionCollector.on("end", async function OnUANEnd(Collected, EndReason) {
     if (EndReason.match(/^\w+Delete/)) return;
     if (EndReason === "BackToMain") {
-      return Callback(CmdInteraction);
+      return Callback(SMenuInteract);
     } else if (EndReason.includes("time") || EndReason.includes("idle")) {
-      ManagementComps.forEach((ActionRow) =>
-        ActionRow.components.forEach((Button) => Button.setDisabled(true))
-      );
-
-      return SMenuInteract.editReply({
-        components: ManagementComps,
+      const LastInteract = Collected.last() ?? SMenuInteract;
+      const APICompatibleComps = ResponeseMessage.components.map((Comp) => Comp.toJSON());
+      const DisabledComponents = DisableMessageComponents(APICompatibleComps);
+      return LastInteract.editReply({
+        message: PanelMessageId,
+        components: DisabledComponents,
       });
     }
   });
@@ -1454,40 +1475,46 @@ async function HandleInitialRespActions(
   })
     .then(async function OnDataCategorySelection(TopicSelectInteract) {
       const SelectedDataTopic = TopicSelectInteract.values[0];
-
       if (SelectedDataTopic === DataCategories.ShiftData) {
-        return HandleShiftRecordsManagement(TopicSelectInteract, CmdInteract);
+        return HandleShiftRecordsManagement(TopicSelectInteract, CmdRespMsg.id);
       } else if (SelectedDataTopic === DataCategories.LeaveData) {
-        return HandleUserActivityNoticeRecordsManagement(TopicSelectInteract, CmdInteract, true);
+        return HandleUserActivityNoticeRecordsManagement(TopicSelectInteract, CmdRespMsg.id, true);
       } else if (SelectedDataTopic === DataCategories.RAData) {
-        return HandleUserActivityNoticeRecordsManagement(TopicSelectInteract, CmdInteract, false);
+        return HandleUserActivityNoticeRecordsManagement(TopicSelectInteract, CmdRespMsg.id, false);
       }
     })
     .catch((Err) => HandleActionCollectorExceptions(Err, SMenuDisabler));
 }
 
 async function Callback(CmdInteraction: CmdOrStringSelectInteract<"cached">) {
-  const CmdRespEmbed = new EmbedBuilder()
-    .setColor(BaseEmbedColor)
-    .setTitle("Server Data Management")
-    .setDescription("**Please select a data category from the drop-down list below to continue.**");
+  const DataCategoriesMenu = GetDataCategoriesDropdownMenu(CmdInteraction);
+  const CmdRespContainer = new ContainerBuilder()
+    .setAccentColor(BaseAccentColor)
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        "### Server Data Management\n**Please select a data category from the drop-down list below to continue.**"
+      )
+    )
+    .addSeparatorComponents(new SeparatorBuilder().setDivider())
+    .addActionRowComponents(DataCategoriesMenu);
 
-  const CTopicsMenu = GetDataCategoriesDropdownMenu(CmdInteraction);
   const CmdRespMsg =
     CmdInteraction.replied || CmdInteraction.deferred
       ? await CmdInteraction.editReply({
-          embeds: [CmdRespEmbed],
-          components: [CTopicsMenu],
+          components: [CmdRespContainer],
+          flags: MessageFlags.IsComponentsV2,
         })
       : await CmdInteraction.reply({
-          embeds: [CmdRespEmbed],
-          components: [CTopicsMenu],
-        });
+          components: [CmdRespContainer],
+          flags: MessageFlags.IsComponentsV2,
+          withResponse: true,
+        }).then((Resp) => Resp.resource!.message! as Message<true>);
 
   const PromptDisabler = () => {
-    CTopicsMenu.components[0].setDisabled(true);
+    const APICompatibleComps = CmdRespMsg.components.map((Comp) => Comp.toJSON());
+    const DisabledComponents = DisableMessageComponents(APICompatibleComps);
     return CmdInteraction.editReply({
-      components: [CTopicsMenu],
+      components: DisabledComponents,
     });
   };
 
