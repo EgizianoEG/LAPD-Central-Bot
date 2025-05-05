@@ -21,6 +21,7 @@ import {
   WarnContainer,
 } from "@Utilities/Classes/ExtraContainers.js";
 
+import { Dedent } from "@Utilities/Strings/Formatters.js";
 import ShiftModel, { ShiftFlags } from "@Models/Shift.js";
 import ResolveUsernamesToIds from "@Utilities/Other/ResolveDiscordUsernames.js";
 import ShiftActionLogger from "@Utilities/Classes/ShiftActionLogger.js";
@@ -28,7 +29,6 @@ import ParseDuration from "parse-duration";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import HDuration from "humanize-duration";
 import AppError from "@Utilities/Classes/AppError.js";
-import Dedent from "@Utilities/Other/CustomDedent.js";
 
 type LeaderboardEntry = {
   // Common to both formats

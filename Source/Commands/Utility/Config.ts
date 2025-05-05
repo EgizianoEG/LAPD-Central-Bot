@@ -41,6 +41,7 @@ import {
 } from "@Utilities/Classes/ExtraContainers.js";
 
 import { Emojis } from "@Config/Shared.js";
+import { Dedent } from "@Utilities/Strings/Formatters.js";
 import { GetErrorId } from "@Utilities/Strings/Random.js";
 import { milliseconds } from "date-fns/milliseconds";
 import { ArraysAreEqual } from "@Utilities/Other/ArraysAreEqual.js";
@@ -52,7 +53,6 @@ import ParseDuration from "parse-duration";
 import GuildModel from "@Models/Guild.js";
 import DHumanize from "humanize-duration";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
-import Dedent from "@Utilities/Other/CustomDedent.js";
 
 // ---------------------------------------------------------------------------------------
 // Constants, Types, & Enums:
@@ -2572,7 +2572,7 @@ async function Callback(CmdInteract: SlashCommandInteraction<"cached">) {
         `)
       )
     )
-    .addSeparatorComponents(new SeparatorBuilder().setDivider().setSpacing(1))
+    .addSeparatorComponents(new SeparatorBuilder().setDivider())
     .addActionRowComponents(ConfigTopicsMenu);
 
   const ReplyMethod = CmdInteract.replied || CmdInteract.deferred ? "editReply" : "reply";
