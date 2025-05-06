@@ -874,7 +874,7 @@ async function HandleShiftRecordsManagement(SMenuInteract: StringSelectMenuInter
   const CompActionCollector = ResponeseMessage.createMessageComponentCollector({
     componentType: ComponentType.Button,
     filter: (Interact) => Interact.user.id === SMenuInteract.user.id,
-    time: 0.2 * 60 * 1000,
+    time: 10 * 60 * 1000,
   });
 
   CompActionCollector.on("collect", async function OnSDMBtnInteract(BtnInteract) {
