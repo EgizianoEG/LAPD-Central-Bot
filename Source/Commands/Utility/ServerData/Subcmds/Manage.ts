@@ -859,13 +859,11 @@ async function HandleShiftDataDeleteBeforeOrAfterDate(
   );
 }
 
-async function HandleShiftRecordsManagement(
-  SMenuInteract: StringSelectMenuInteraction<"cached">,
-  PanelMessageId: string
-) {
+async function HandleShiftRecordsManagement(SMenuInteract: StringSelectMenuInteraction<"cached">) {
   const PanelContainer = GetShiftManagementContainer();
   const ManagementComps = GetShiftDataManagementComponents(SMenuInteract);
   const ResponeseMessage = await SendReplyAndFetchMessage(SMenuInteract, {
+    replyMethod: "update",
     components: [
       PanelContainer.addSeparatorComponents(
         new SeparatorBuilder().setDivider()
@@ -876,7 +874,7 @@ async function HandleShiftRecordsManagement(
   const CompActionCollector = ResponeseMessage.createMessageComponentCollector({
     componentType: ComponentType.Button,
     filter: (Interact) => Interact.user.id === SMenuInteract.user.id,
-    time: 10 * 60 * 1000,
+    time: 0.2 * 60 * 1000,
   });
 
   CompActionCollector.on("collect", async function OnSDMBtnInteract(BtnInteract) {
@@ -924,7 +922,7 @@ async function HandleShiftRecordsManagement(
       const APICompatibleComps = ResponeseMessage.components.map((Comp) => Comp.toJSON());
       const DisabledComponents = DisableMessageComponents(APICompatibleComps);
       return LastInteract.editReply({
-        message: PanelMessageId,
+        message: SMenuInteract.message.id,
         components: DisabledComponents,
       });
     }
@@ -1391,7 +1389,6 @@ async function HandleUANDataDeleteBeforeOrAfterDate(
 
 async function HandleUserActivityNoticeRecordsManagement(
   SMenuInteract: StringSelectMenuInteraction<"cached">,
-  PanelMessageId: string,
   IsLeaveManagement: boolean
 ) {
   const PanelContainer = GetUANManagementContainer(IsLeaveManagement);
@@ -1458,7 +1455,7 @@ async function HandleUserActivityNoticeRecordsManagement(
       const APICompatibleComps = ResponeseMessage.components.map((Comp) => Comp.toJSON());
       const DisabledComponents = DisableMessageComponents(APICompatibleComps);
       return LastInteract.editReply({
-        message: PanelMessageId,
+        message: SMenuInteract.message.id,
         components: DisabledComponents,
       });
     }
@@ -1481,11 +1478,11 @@ async function HandleInitialRespActions(
     .then(async function OnDataCategorySelection(TopicSelectInteract) {
       const SelectedDataTopic = TopicSelectInteract.values[0];
       if (SelectedDataTopic === DataCategories.ShiftData) {
-        return HandleShiftRecordsManagement(TopicSelectInteract, CmdRespMsg.id);
+        return HandleShiftRecordsManagement(TopicSelectInteract);
       } else if (SelectedDataTopic === DataCategories.LeaveData) {
-        return HandleUserActivityNoticeRecordsManagement(TopicSelectInteract, CmdRespMsg.id, true);
+        return HandleUserActivityNoticeRecordsManagement(TopicSelectInteract, true);
       } else if (SelectedDataTopic === DataCategories.RAData) {
-        return HandleUserActivityNoticeRecordsManagement(TopicSelectInteract, CmdRespMsg.id, false);
+        return HandleUserActivityNoticeRecordsManagement(TopicSelectInteract, false);
       }
     })
     .catch((Err) => HandleActionCollectorExceptions(Err, SMenuDisabler));
