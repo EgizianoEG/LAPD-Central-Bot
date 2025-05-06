@@ -8,6 +8,7 @@ import SearchSubcmdGroup from "./Search/Search.js";
 import {
   SlashCommandBuilder,
   InteractionContextType,
+  ApplicationIntegrationType,
   type AutocompleteInteraction,
   type ApplicationCommandOptionChoiceData,
   type SlashCommandSubcommandsOnlyBuilder,
@@ -72,7 +73,8 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
     .setDescription("Mobile data terminal commands.")
     .setContexts(InteractionContextType.Guild)
     .addSubcommand(Subcommands[0].data)
-    .addSubcommandGroup(SearchSubcmdGroup.data),
+    .addSubcommandGroup(SearchSubcmdGroup.data)
+    .setIntegrationTypes(ApplicationIntegrationType.GuildInstall),
 };
 
 // ---------------------------------------------------------------------------------------

@@ -3,6 +3,7 @@ import {
   SlashCommandBuilder,
   InteractionContextType,
   AutocompleteInteraction,
+  ApplicationIntegrationType,
   SlashCommandSubcommandsOnlyBuilder,
 } from "discord.js";
 
@@ -115,6 +116,7 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
     .setName("duty")
     .setDescription("Duty and shifts related actions.")
     .addSubcommandGroup(DutyTypesSubcommandGroup.data)
+    .setIntegrationTypes(ApplicationIntegrationType.GuildInstall)
     .setContexts(InteractionContextType.Guild),
 };
 

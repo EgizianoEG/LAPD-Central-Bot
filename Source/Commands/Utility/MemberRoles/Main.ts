@@ -4,6 +4,7 @@ import {
   PermissionFlagsBits,
   InteractionContextType,
   AutocompleteInteraction,
+  ApplicationIntegrationType,
   ApplicationCommandOptionChoiceData,
   SlashCommandSubcommandsOnlyBuilder,
 } from "discord.js";
@@ -66,6 +67,7 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
   data: new SlashCommandBuilder()
     .setName("member-roles")
     .setDescription("Utility commands for managing member roles.")
+    .setIntegrationTypes(ApplicationIntegrationType.GuildInstall)
     .setContexts(InteractionContextType.Guild),
 
   callback: Callback,

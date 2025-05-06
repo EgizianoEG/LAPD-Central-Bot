@@ -1,8 +1,13 @@
-import { OAuth2Scopes, SlashCommandBuilder } from "discord.js";
-import { InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import { Discord } from "@Config/Secrets.js";
 import Humanizer from "humanize-duration";
 import { IsValidDiscordId } from "@Utilities/Other/Validators.js";
+import { InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { Discord } from "@Config/Secrets.js";
+import {
+  ApplicationIntegrationType,
+  InteractionContextType,
+  SlashCommandBuilder,
+  OAuth2Scopes,
+} from "discord.js";
 
 const ListFormatter = new Intl.ListFormat("en");
 const AppAuthorId = "560396280497438731";
@@ -101,7 +106,13 @@ const CommandObject: SlashCommandObject = {
   callback: Callback,
   data: new SlashCommandBuilder()
     .setName("about")
-    .setDescription("Provides information about the application."),
+    .setDescription("Provides information about the application.")
+    .setIntegrationTypes(ApplicationIntegrationType.GuildInstall)
+    .setContexts(
+      InteractionContextType.Guild,
+      InteractionContextType.BotDM,
+      InteractionContextType.PrivateChannel
+    ),
 };
 
 // ---------------------------------------------------------------------------------------

@@ -1,6 +1,13 @@
-import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from "discord.js";
 import { Colors } from "@Config/Shared.js";
+import {
+  ApplicationIntegrationType,
+  InteractionContextType,
+  SlashCommandBuilder,
+  EmbedBuilder,
+  MessageFlags,
+} from "discord.js";
 
+// ---------------------------------------------------------------------------------------
 async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction) {
   const ResponseEmbed = new EmbedBuilder()
     .setColor(Colors.Info)
@@ -20,7 +27,15 @@ async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction) 
 // ------------------
 const CommandObject: SlashCommandObject = {
   callback: Callback,
-  data: new SlashCommandBuilder().setName("help").setDescription("Learn more about LAPD Central."),
+  data: new SlashCommandBuilder()
+    .setName("help")
+    .setDescription("Learn more about LAPD Central.")
+    .setIntegrationTypes(ApplicationIntegrationType.GuildInstall)
+    .setContexts(
+      InteractionContextType.Guild,
+      InteractionContextType.BotDM,
+      InteractionContextType.PrivateChannel
+    ),
 };
 
 // ---------------------------------------------------------------------------------------
