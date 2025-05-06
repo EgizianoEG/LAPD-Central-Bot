@@ -2,6 +2,7 @@
 /* eslint-disable sonarjs/use-type-alias */
 import {
   Message,
+  CacheType,
   ButtonStyle,
   ChannelType,
   roleMention,
@@ -27,11 +28,12 @@ import {
   InteractionContextType,
   StringSelectMenuBuilder,
   ChannelSelectMenuBuilder,
-  InteractionCallbackResponse,
   StringSelectMenuInteraction,
   ChannelSelectMenuInteraction,
   StringSelectMenuOptionBuilder,
   ModalActionRowComponentBuilder,
+  InteractionUpdateOptions,
+  MessageComponentInteraction,
 } from "discord.js";
 
 import {
@@ -68,6 +70,11 @@ const FormatDuration = DHumanize.humanizer({
 });
 
 type GuildSettings = NonNullable<Awaited<ReturnType<typeof GetGuildSettings>>>;
+type CmdSelectOrButtonInteract<Cached extends CacheType = CacheType> =
+  | SlashCommandInteraction<Cached>
+  | StringSelectMenuInteraction<Cached>
+  | ButtonInteraction<Cached>;
+
 enum ConfigTopics {
   ShowConfigurations = "app-config-vc",
   BasicConfiguration = "app-config-bc",
@@ -217,10 +224,16 @@ const ConfigTopicsExplanations = {
           "The local channel within this server that will be used to log any arrests reported by staff members.",
       },
       {
-        Name: "Outside Server Connections",
+        Name: "Incident Report Channel",
         Description:
-          "Outside Citation Log Channel: Add an external citation logs channel (from another server) to be used alongside the local channel.\n" +
-          "Outside Arrest Log Channel: Add an external arrest logs channel (from another server) to be used alongside the local set one.",
+          "Select the channel where submitted incident reports will be sent. This channel should be accessible " +
+          "to relevant staff members for reviewing and managing incident reports.",
+      },
+      {
+        Name: "Cross-Server Log Sharing",
+        Description:
+          "Add channels from other servers to mirror your citation and arrest logs. " +
+          "These will receive identical log messages alongside your primary local channels.",
       },
     ],
   },
@@ -232,12 +245,6 @@ const ConfigTopicsExplanations = {
         Description:
           "Specify the interval, in days, at which citation, arrest, and incident logs will be automatically deleted. " +
           "The default setting is to never delete logs. Note: changing this setting will affect both existing and new logs.",
-      },
-      {
-        Name: "Incident Report Channel",
-        Description:
-          "Select the channel where submitted incident reports will be sent. This channel should be accessible to relevant " +
-          "staff members for reviewing and managing incident reports.",
       },
       {
         Name: "Member Text Inputs Filtering",
@@ -294,11 +301,26 @@ function GetHumanReadableLogDeletionInterval(Interval: number) {
   }
 }
 
+/**
+ * Updates an interaction prompt and returns the updated message.
+ * @param Interact - The cached message component interaction to update
+ * @param Opts - The options to update the interaction with
+ * @returns A promise that resolves to the updated message
+ */
+async function UpdatePromptReturnMessage(
+  Interact: MessageComponentInteraction<"cached">,
+  Opts: InteractionUpdateOptions
+): Promise<Message<true>> {
+  return Interact.update({ ...Opts, withResponse: true }).then(
+    (resp) => resp.resource!.message! as Message<true>
+  );
+}
+
 // ---------------------------------------------------------------------------------------
 // Component Getters:
 // ------------------
 function GetConfigTopicConfirmAndBackBtns(
-  CmdInteract: SlashCommandInteraction<"cached"> | StringSelectMenuInteraction<"cached">,
+  Interaction: CmdSelectOrButtonInteract<"cached">,
   ConfigTopicId: ConfigTopics
 ) {
   return new ActionRowBuilder<ButtonBuilder>().setComponents(
@@ -306,19 +328,21 @@ function GetConfigTopicConfirmAndBackBtns(
       .setLabel("Confirm and Save")
       .setEmoji(Emojis.WhiteCheck)
       .setStyle(ButtonStyle.Success)
-      .setCustomId(`${ConfigTopicId}-cfm:${CmdInteract.user.id}`),
+      .setCustomId(`${ConfigTopicId}-cfm:${Interaction.user.id}`),
     new ButtonBuilder()
       .setLabel("Back")
       .setEmoji(Emojis.WhiteBack)
       .setStyle(ButtonStyle.Secondary)
-      .setCustomId(`${ConfigTopicId}-bck:${CmdInteract.user.id}`)
+      .setCustomId(`${ConfigTopicId}-bck:${Interaction.user.id}`)
   );
 }
 
-function GetConfigTopicsDropdownMenu(CmdInteract: SlashCommandInteraction<"cached">) {
+function GetConfigTopicsDropdownMenu(
+  Interaction: CmdSelectOrButtonInteract<"cached"> | ButtonInteraction<"cached">
+) {
   return new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(
     new StringSelectMenuBuilder()
-      .setCustomId(`app-config:${CmdInteract.user.id}`)
+      .setCustomId(`app-config:${Interaction.user.id}`)
       .setPlaceholder("Select a topic...")
       .setMinValues(1)
       .setMaxValues(1)
@@ -356,7 +380,7 @@ function GetConfigTopicsDropdownMenu(CmdInteract: SlashCommandInteraction<"cache
 }
 
 function GetBasicConfigComponents(
-  CmdInteract: SlashCommandInteraction<"cached"> | StringSelectMenuInteraction<"cached">,
+  Interaction: CmdSelectOrButtonInteract<"cached">,
   GuildConfig: NonNullable<Awaited<ReturnType<typeof GetGuildSettings>>>
 ) {
   const RobloxAuthorizationAR = new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(
@@ -366,7 +390,7 @@ function GetBasicConfigComponents(
       .setMinValues(1)
       .setMaxValues(1)
       .setCustomId(
-        `${CTAIds[ConfigTopics.BasicConfiguration].RobloxAuthRequired}:${CmdInteract.user.id}`
+        `${CTAIds[ConfigTopics.BasicConfiguration].RobloxAuthRequired}:${Interaction.user.id}`
       )
       .setOptions(
         new StringSelectMenuOptionBuilder()
@@ -384,7 +408,7 @@ function GetBasicConfigComponents(
 
   const StaffRolesAR = new ActionRowBuilder<RoleSelectMenuBuilder>().setComponents(
     new RoleSelectMenuBuilder()
-      .setCustomId(`${CTAIds[ConfigTopics.BasicConfiguration].StaffRoles}:${CmdInteract.user.id}`)
+      .setCustomId(`${CTAIds[ConfigTopics.BasicConfiguration].StaffRoles}:${Interaction.user.id}`)
       .setDefaultRoles(GuildConfig.role_perms.staff)
       .setPlaceholder("Staff Roles")
       .setMinValues(0)
@@ -393,7 +417,7 @@ function GetBasicConfigComponents(
 
   const ManagementRolesAR = new ActionRowBuilder<RoleSelectMenuBuilder>().setComponents(
     new RoleSelectMenuBuilder()
-      .setCustomId(`${CTAIds[ConfigTopics.BasicConfiguration].MgmtRoles}:${CmdInteract.user.id}`)
+      .setCustomId(`${CTAIds[ConfigTopics.BasicConfiguration].MgmtRoles}:${Interaction.user.id}`)
       .setDefaultRoles(GuildConfig.role_perms.management)
       .setPlaceholder("Management Roles")
       .setMinValues(0)
@@ -404,7 +428,7 @@ function GetBasicConfigComponents(
 }
 
 function GetShiftModuleConfigComponents(
-  CmdInteract: SlashCommandInteraction<"cached">,
+  Interaction: CmdSelectOrButtonInteract<"cached">,
   ShiftModuleConfig: GuildSettings["shift_management"]
 ) {
   const ModuleEnabledAR = new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(
@@ -413,7 +437,7 @@ function GetShiftModuleConfigComponents(
       .setMinValues(1)
       .setMaxValues(1)
       .setCustomId(
-        `${CTAIds[ConfigTopics.ShiftConfiguration].ModuleEnabled}:${CmdInteract.user.id}`
+        `${CTAIds[ConfigTopics.ShiftConfiguration].ModuleEnabled}:${Interaction.user.id}`
       )
       .setOptions(
         new StringSelectMenuOptionBuilder()
@@ -433,7 +457,7 @@ function GetShiftModuleConfigComponents(
     new ChannelSelectMenuBuilder()
       .setDefaultChannels(ShiftModuleConfig.log_channel ? [ShiftModuleConfig.log_channel] : [])
       .setChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
-      .setCustomId(`${CTAIds[ConfigTopics.ShiftConfiguration].LogChannel}:${CmdInteract.user.id}`)
+      .setCustomId(`${CTAIds[ConfigTopics.ShiftConfiguration].LogChannel}:${Interaction.user.id}`)
       .setPlaceholder("Shift Log Channel")
       .setMinValues(0)
       .setMaxValues(1)
@@ -445,7 +469,7 @@ function GetShiftModuleConfigComponents(
       .setMaxValues(3)
       .setPlaceholder("On-Duty Role(s)")
       .setDefaultRoles(ShiftModuleConfig.role_assignment.on_duty)
-      .setCustomId(`${CTAIds[ConfigTopics.ShiftConfiguration].OnDutyRoles}:${CmdInteract.user.id}`)
+      .setCustomId(`${CTAIds[ConfigTopics.ShiftConfiguration].OnDutyRoles}:${Interaction.user.id}`)
   );
 
   const OnBreakRolesAR = new ActionRowBuilder<RoleSelectMenuBuilder>().setComponents(
@@ -454,14 +478,14 @@ function GetShiftModuleConfigComponents(
       .setMaxValues(3)
       .setPlaceholder("On-Break Role(s)")
       .setDefaultRoles(ShiftModuleConfig.role_assignment.on_break)
-      .setCustomId(`${CTAIds[ConfigTopics.ShiftConfiguration].OnBreakRoles}:${CmdInteract.user.id}`)
+      .setCustomId(`${CTAIds[ConfigTopics.ShiftConfiguration].OnBreakRoles}:${Interaction.user.id}`)
   );
 
   return [ModuleEnabledAR, ShiftLogChannelAR, OnDutyRolesAR, OnBreakRolesAR] as const;
 }
 
 function GetLeaveModuleConfigComponents(
-  CmdInteract: SlashCommandInteraction<"cached">,
+  Interaction: CmdSelectOrButtonInteract<"cached">,
   LeaveNoticesConfig: GuildSettings["leave_notices"]
 ) {
   const ModuleEnabledAR = new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(
@@ -470,7 +494,7 @@ function GetLeaveModuleConfigComponents(
       .setMinValues(1)
       .setMaxValues(1)
       .setCustomId(
-        `${CTAIds[ConfigTopics.LeaveConfiguration].ModuleEnabled}:${CmdInteract.user.id}`
+        `${CTAIds[ConfigTopics.LeaveConfiguration].ModuleEnabled}:${Interaction.user.id}`
       )
       .setOptions(
         new StringSelectMenuOptionBuilder()
@@ -488,7 +512,7 @@ function GetLeaveModuleConfigComponents(
 
   const OnLeaveRoleAR = new ActionRowBuilder<RoleSelectMenuBuilder>().setComponents(
     new RoleSelectMenuBuilder()
-      .setCustomId(`${CTAIds[ConfigTopics.LeaveConfiguration].OnLeaveRole}:${CmdInteract.user.id}`)
+      .setCustomId(`${CTAIds[ConfigTopics.LeaveConfiguration].OnLeaveRole}:${Interaction.user.id}`)
       .setDefaultRoles(LeaveNoticesConfig.leave_role ? [LeaveNoticesConfig.leave_role] : [])
       .setPlaceholder("On-Leave Role")
       .setMinValues(0)
@@ -506,7 +530,7 @@ function GetLeaveModuleConfigComponents(
       .setPlaceholder("Leave Requests Channel")
       .setChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
       .setCustomId(
-        `${CTAIds[ConfigTopics.LeaveConfiguration].RequestsChannel}:${CmdInteract.user.id}`
+        `${CTAIds[ConfigTopics.LeaveConfiguration].RequestsChannel}:${Interaction.user.id}`
       )
       .setDefaultChannels(
         LeaveNoticesConfig.requests_channel ? [LeaveNoticesConfig.requests_channel] : []
@@ -519,7 +543,7 @@ function GetLeaveModuleConfigComponents(
       .setMaxValues(1)
       .setPlaceholder("Leave Activities Log Channel")
       .setChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
-      .setCustomId(`${CTAIds[ConfigTopics.LeaveConfiguration].LogChannel}:${CmdInteract.user.id}`)
+      .setCustomId(`${CTAIds[ConfigTopics.LeaveConfiguration].LogChannel}:${Interaction.user.id}`)
       .setDefaultChannels(LeaveNoticesConfig.log_channel ? [LeaveNoticesConfig.log_channel] : [])
   );
 
@@ -527,7 +551,7 @@ function GetLeaveModuleConfigComponents(
 }
 
 function GetDutyActModuleConfigComponents(
-  CmdInteract: SlashCommandInteraction<"cached">,
+  Interaction: CmdSelectOrButtonInteract<"cached">,
   DActivitiesConfig: GuildSettings["duty_activities"]
 ) {
   const LocalArrestLogChannel = DActivitiesConfig.log_channels.arrests.find(
@@ -544,7 +568,7 @@ function GetDutyActModuleConfigComponents(
       .setMinValues(1)
       .setMaxValues(1)
       .setCustomId(
-        `${CTAIds[ConfigTopics.DutyActConfiguration].ModuleEnabled}:${CmdInteract.user.id}`
+        `${CTAIds[ConfigTopics.DutyActConfiguration].ModuleEnabled}:${Interaction.user.id}`
       )
       .setOptions(
         new StringSelectMenuOptionBuilder()
@@ -567,7 +591,7 @@ function GetDutyActModuleConfigComponents(
       .setMinValues(0)
       .setMaxValues(1)
       .setCustomId(
-        `${CTAIds[ConfigTopics.DutyActConfiguration].CitationLogLocalChannel}:${CmdInteract.user.id}`
+        `${CTAIds[ConfigTopics.DutyActConfiguration].CitationLogLocalChannel}:${Interaction.user.id}`
       )
   );
 
@@ -578,7 +602,19 @@ function GetDutyActModuleConfigComponents(
       .setMinValues(0)
       .setMaxValues(1)
       .setCustomId(
-        `${CTAIds[ConfigTopics.DutyActConfiguration].ArrestLogLocalChannel}:${CmdInteract.user.id}`
+        `${CTAIds[ConfigTopics.DutyActConfiguration].ArrestLogLocalChannel}:${Interaction.user.id}`
+      )
+  );
+
+  const IncidentLogChannelAR = new ActionRowBuilder<ChannelSelectMenuBuilder>().setComponents(
+    new ChannelSelectMenuBuilder()
+      .setMinValues(0)
+      .setMaxValues(1)
+      .setPlaceholder("Incident Report Channel")
+      .setChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+      .setDefaultChannels([DActivitiesConfig.log_channels.incidents].filter(Boolean) as string[])
+      .setCustomId(
+        `${CTAIds[ConfigTopics.DutyActConfiguration].IncidentLogLocalChannel}:${Interaction.user.id}`
       )
   );
 
@@ -587,13 +623,13 @@ function GetDutyActModuleConfigComponents(
       .setLabel("Set Outside Citation Log Channel")
       .setStyle(ButtonStyle.Secondary)
       .setCustomId(
-        `${CTAIds[ConfigTopics.DutyActConfiguration].OutsideCitationLogChannel}:${CmdInteract.user}`
+        `${CTAIds[ConfigTopics.DutyActConfiguration].OutsideCitationLogChannel}:${Interaction.user}`
       ),
     new ButtonBuilder()
       .setLabel("Set Outside Arrest Log Channel")
       .setStyle(ButtonStyle.Secondary)
       .setCustomId(
-        `${CTAIds[ConfigTopics.DutyActConfiguration].OutsideArrestLogChannel}:${CmdInteract.user}`
+        `${CTAIds[ConfigTopics.DutyActConfiguration].OutsideArrestLogChannel}:${Interaction.user}`
       )
   );
 
@@ -606,12 +642,13 @@ function GetDutyActModuleConfigComponents(
     ModuleEnabledAR,
     LocalCitsLogChannelAR,
     LocalArrestsLogChannelAR,
+    IncidentLogChannelAR,
     SetOutsideLogChannelBtns,
   ] as const;
 }
 
 function GetAdditionalConfigComponents(
-  CmdInteract: SlashCommandInteraction<"cached">,
+  Interaction: CmdSelectOrButtonInteract<"cached">,
   GuildConfig: NonNullable<Awaited<ReturnType<typeof GetGuildSettings>>>
 ) {
   const SetIntervalInDays = GuildConfig.duty_activities.log_deletion_interval / MillisInDay;
@@ -621,7 +658,7 @@ function GetAdditionalConfigComponents(
       .setMinValues(1)
       .setMaxValues(1)
       .setCustomId(
-        `${CTAIds[ConfigTopics.AdditionalConfiguration].DActivitiesDeletionInterval}:${CmdInteract.user.id}`
+        `${CTAIds[ConfigTopics.AdditionalConfiguration].DActivitiesDeletionInterval}:${Interaction.user.id}`
       )
       .setOptions(
         new StringSelectMenuOptionBuilder()
@@ -651,27 +688,13 @@ function GetAdditionalConfigComponents(
       )
   );
 
-  const IncidentLogChannelAR = new ActionRowBuilder<ChannelSelectMenuBuilder>().setComponents(
-    new ChannelSelectMenuBuilder()
-      .setMinValues(0)
-      .setMaxValues(1)
-      .setPlaceholder("Incident Report Channel")
-      .setChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
-      .setDefaultChannels(
-        [GuildConfig.duty_activities.log_channels.incidents].filter(Boolean) as string[]
-      )
-      .setCustomId(
-        `${CTAIds[ConfigTopics.DutyActConfiguration].IncidentLogLocalChannel}:${CmdInteract.user.id}`
-      )
-  );
-
   const UTIFilteringEnabledAR = new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(
     new StringSelectMenuBuilder()
       .setPlaceholder("Input Filtering Enabled/Disabled")
       .setMinValues(1)
       .setMaxValues(1)
       .setCustomId(
-        `${CTAIds[ConfigTopics.AdditionalConfiguration].UserTextInputFilteringEnabled}:${CmdInteract.user.id}`
+        `${CTAIds[ConfigTopics.AdditionalConfiguration].UserTextInputFilteringEnabled}:${Interaction.user.id}`
       )
       .setOptions(
         new StringSelectMenuOptionBuilder()
@@ -692,7 +715,7 @@ function GetAdditionalConfigComponents(
       .setLabel("Set Default Shift Quota")
       .setStyle(ButtonStyle.Secondary)
       .setCustomId(
-        `${CTAIds[ConfigTopics.AdditionalConfiguration].ServerDefaultShiftQuota}:${CmdInteract.user.id}`
+        `${CTAIds[ConfigTopics.AdditionalConfiguration].ServerDefaultShiftQuota}:${Interaction.user.id}`
       )
   );
 
@@ -702,16 +725,11 @@ function GetAdditionalConfigComponents(
     }
   });
 
-  return [
-    LogDelIntervalSMAR,
-    IncidentLogChannelAR,
-    UTIFilteringEnabledAR,
-    SetDefaultShiftQuotaAR,
-  ] as const;
+  return [LogDelIntervalSMAR, UTIFilteringEnabledAR, SetDefaultShiftQuotaAR] as const;
 }
 
 function GetReducedActivityModuleConfigComponents(
-  CmdInteract: SlashCommandInteraction<"cached">,
+  Interaction: CmdSelectOrButtonInteract<"cached">,
   ReducedActivityConfig: GuildSettings["reduced_activity"]
 ) {
   const ModuleEnabledAR = new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(
@@ -720,7 +738,7 @@ function GetReducedActivityModuleConfigComponents(
       .setMinValues(1)
       .setMaxValues(1)
       .setCustomId(
-        `${CTAIds[ConfigTopics.ReducedActivityConfiguration].ModuleEnabled}:${CmdInteract.user.id}`
+        `${CTAIds[ConfigTopics.ReducedActivityConfiguration].ModuleEnabled}:${Interaction.user.id}`
       )
       .setOptions(
         new StringSelectMenuOptionBuilder()
@@ -739,7 +757,7 @@ function GetReducedActivityModuleConfigComponents(
   const RARoleAR = new ActionRowBuilder<RoleSelectMenuBuilder>().setComponents(
     new RoleSelectMenuBuilder()
       .setCustomId(
-        `${CTAIds[ConfigTopics.ReducedActivityConfiguration].RARole}:${CmdInteract.user.id}`
+        `${CTAIds[ConfigTopics.ReducedActivityConfiguration].RARole}:${Interaction.user.id}`
       )
       .setDefaultRoles(ReducedActivityConfig.ra_role ? [ReducedActivityConfig.ra_role] : [])
       .setPlaceholder("Reduced Activity Role")
@@ -754,7 +772,7 @@ function GetReducedActivityModuleConfigComponents(
       .setPlaceholder("Requests Channel")
       .setChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
       .setCustomId(
-        `${CTAIds[ConfigTopics.ReducedActivityConfiguration].RequestsChannel}:${CmdInteract.user.id}`
+        `${CTAIds[ConfigTopics.ReducedActivityConfiguration].RequestsChannel}:${Interaction.user.id}`
       )
       .setDefaultChannels(
         ReducedActivityConfig.requests_channel ? [ReducedActivityConfig.requests_channel] : []
@@ -768,7 +786,7 @@ function GetReducedActivityModuleConfigComponents(
       .setPlaceholder("Log Channel")
       .setChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
       .setCustomId(
-        `${CTAIds[ConfigTopics.ReducedActivityConfiguration].LogChannel}:${CmdInteract.user.id}`
+        `${CTAIds[ConfigTopics.ReducedActivityConfiguration].LogChannel}:${Interaction.user.id}`
       )
       .setDefaultChannels(
         ReducedActivityConfig.log_channel ? [ReducedActivityConfig.log_channel] : []
@@ -779,26 +797,26 @@ function GetReducedActivityModuleConfigComponents(
 }
 
 function GetShowConfigurationsPageComponents(
-  CmdInteract: SlashCommandInteraction<"cached">,
+  Interaction: CmdSelectOrButtonInteract<"cached"> | ButtonInteraction<"cached">,
   SafePIndex: number,
   TotalPages: number
 ) {
   const PaginationRow = new ActionRowBuilder<ButtonBuilder>().setComponents(
     new ButtonBuilder()
-      .setCustomId(`config-show-prev:${CmdInteract.user.id}:${SafePIndex - 1}`)
+      .setCustomId(`config-show-prev:${Interaction.user.id}:${SafePIndex - 1}`)
       .setLabel("Previous")
       .setEmoji(Emojis.NavPrev)
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(SafePIndex <= 0),
 
     new ButtonBuilder()
-      .setCustomId(`config-show-page:${CmdInteract.user.id}`)
+      .setCustomId(`config-show-page:${Interaction.user.id}`)
       .setLabel(`Page ${SafePIndex + 1} of ${TotalPages}`)
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(true),
 
     new ButtonBuilder()
-      .setCustomId(`config-show-next:${CmdInteract.user.id}:${SafePIndex + 1}`)
+      .setCustomId(`config-show-next:${Interaction.user.id}:${SafePIndex + 1}`)
       .setLabel("Next")
       .setEmoji(Emojis.NavNext)
       .setStyle(ButtonStyle.Secondary)
@@ -808,7 +826,7 @@ function GetShowConfigurationsPageComponents(
   const BackButtonRow = new ActionRowBuilder<ButtonBuilder>().setComponents(
     new ButtonBuilder()
       .setLabel("Back to Configration Topics")
-      .setCustomId(`app-config-bck:${CmdInteract.user.id}`)
+      .setCustomId(`app-config-bck:${Interaction.user.id}`)
       .setStyle(ButtonStyle.Secondary)
       .setEmoji(Emojis.WhiteBack)
   );
@@ -820,10 +838,10 @@ function GetShowConfigurationsPageComponents(
 // Containers Getters:
 // -------------------
 function GetBasicConfigContainer(
-  CmdInteract: SlashCommandInteraction<"cached">,
+  SelectInteract: CmdSelectOrButtonInteract<"cached">,
   GuildSettings: GuildSettings
 ): ContainerBuilder {
-  const BasicConfigInteractComponents = GetBasicConfigComponents(CmdInteract, GuildSettings);
+  const BasicConfigInteractComponents = GetBasicConfigComponents(SelectInteract, GuildSettings);
   return new ContainerBuilder()
     .setId(1)
     .setAccentColor(AccentColor)
@@ -861,16 +879,16 @@ function GetBasicConfigContainer(
     .addActionRowComponents(BasicConfigInteractComponents[2])
     .addSeparatorComponents(new SeparatorBuilder().setDivider().setSpacing(2))
     .addActionRowComponents(
-      GetConfigTopicConfirmAndBackBtns(CmdInteract, ConfigTopics.BasicConfiguration)
+      GetConfigTopicConfirmAndBackBtns(SelectInteract, ConfigTopics.BasicConfiguration)
     );
 }
 
 function GetShiftModuleConfigContainer(
-  CmdInteract: SlashCommandInteraction<"cached">,
+  SelectInteract: CmdSelectOrButtonInteract<"cached">,
   GuildSettings: GuildSettings
 ): ContainerBuilder {
   const ShiftModuleInteractComponents = GetShiftModuleConfigComponents(
-    CmdInteract,
+    SelectInteract,
     GuildSettings.shift_management
   );
 
@@ -912,16 +930,16 @@ function GetShiftModuleConfigContainer(
     .addActionRowComponents(ShiftModuleInteractComponents[3])
     .addSeparatorComponents(new SeparatorBuilder().setDivider().setSpacing(2))
     .addActionRowComponents(
-      GetConfigTopicConfirmAndBackBtns(CmdInteract, ConfigTopics.ShiftConfiguration)
+      GetConfigTopicConfirmAndBackBtns(SelectInteract, ConfigTopics.ShiftConfiguration)
     );
 }
 
 function GetDutyActivitiesModuleConfigContainer(
-  CmdInteract: SlashCommandInteraction<"cached">,
+  SelectInteract: CmdSelectOrButtonInteract<"cached">,
   GuildSettings: GuildSettings
 ) {
   const DutyActivitiesInteractComponents = GetDutyActModuleConfigComponents(
-    CmdInteract,
+    SelectInteract,
     GuildSettings.duty_activities
   );
 
@@ -970,18 +988,28 @@ function GetDutyActivitiesModuleConfigContainer(
       )
     )
     .addActionRowComponents(DutyActivitiesInteractComponents[3])
+    .addSeparatorComponents(new SeparatorBuilder().setDivider())
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        Dedent(`
+          5. **${ConfigTopicsExplanations[ConfigTopics.DutyActConfiguration].Settings[4].Name}**
+          ${ConfigTopicsExplanations[ConfigTopics.DutyActConfiguration].Settings[4].Description}
+        `)
+      )
+    )
+    .addActionRowComponents(DutyActivitiesInteractComponents[4])
     .addSeparatorComponents(new SeparatorBuilder().setDivider().setSpacing(2))
     .addActionRowComponents(
-      GetConfigTopicConfirmAndBackBtns(CmdInteract, ConfigTopics.DutyActConfiguration)
+      GetConfigTopicConfirmAndBackBtns(SelectInteract, ConfigTopics.DutyActConfiguration)
     );
 }
 
 function GetLeaveModuleConfigContainer(
-  CmdInteract: SlashCommandInteraction<"cached">,
+  SelectInteract: CmdSelectOrButtonInteract<"cached">,
   GuildSettings: GuildSettings
 ) {
   const LeaveModuleInteractComponents = GetLeaveModuleConfigComponents(
-    CmdInteract,
+    SelectInteract,
     GuildSettings.leave_notices
   );
 
@@ -1032,16 +1060,16 @@ function GetLeaveModuleConfigContainer(
     .addActionRowComponents(LeaveModuleInteractComponents[3])
     .addSeparatorComponents(new SeparatorBuilder().setDivider().setSpacing(2))
     .addActionRowComponents(
-      GetConfigTopicConfirmAndBackBtns(CmdInteract, ConfigTopics.LeaveConfiguration)
+      GetConfigTopicConfirmAndBackBtns(SelectInteract, ConfigTopics.LeaveConfiguration)
     );
 }
 
 function GetReducedActivityModuleConfigContainer(
-  CmdInteract: SlashCommandInteraction<"cached">,
+  SelectInteract: CmdSelectOrButtonInteract<"cached">,
   GuildSettings: GuildSettings
 ) {
   const ReducedActivityInteractComponents = GetReducedActivityModuleConfigComponents(
-    CmdInteract,
+    SelectInteract,
     GuildSettings.reduced_activity
   );
 
@@ -1092,16 +1120,16 @@ function GetReducedActivityModuleConfigContainer(
     .addActionRowComponents(ReducedActivityInteractComponents[3])
     .addSeparatorComponents(new SeparatorBuilder().setDivider().setSpacing(2))
     .addActionRowComponents(
-      GetConfigTopicConfirmAndBackBtns(CmdInteract, ConfigTopics.ReducedActivityConfiguration)
+      GetConfigTopicConfirmAndBackBtns(SelectInteract, ConfigTopics.ReducedActivityConfiguration)
     );
 }
 
 function GetAdditionalConfigContainer(
-  CmdInteract: SlashCommandInteraction<"cached">,
+  SelectInteract: CmdSelectOrButtonInteract<"cached">,
   GuildSettings: GuildSettings
 ): ContainerBuilder {
   const AdditionalConfigInteractComponents = GetAdditionalConfigComponents(
-    CmdInteract,
+    SelectInteract,
     GuildSettings
   );
 
@@ -1131,31 +1159,21 @@ function GetAdditionalConfigContainer(
     )
     .addActionRowComponents(AdditionalConfigInteractComponents[1])
     .addSeparatorComponents(new SeparatorBuilder().setDivider())
-    .addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(
-        Dedent(`
-          3. **${ConfigTopicsExplanations[ConfigTopics.AdditionalConfiguration].Settings[2].Name}**
-          ${ConfigTopicsExplanations[ConfigTopics.AdditionalConfiguration].Settings[2].Description}
-        `)
-      )
-    )
-    .addActionRowComponents(AdditionalConfigInteractComponents[2])
-    .addSeparatorComponents(new SeparatorBuilder().setDivider())
     .addSectionComponents(
       new SectionBuilder()
         .addTextDisplayComponents(
           new TextDisplayBuilder().setContent(
             Dedent(`
-            4. **${ConfigTopicsExplanations[ConfigTopics.AdditionalConfiguration].Settings[3].Name}**
-            ${ConfigTopicsExplanations[ConfigTopics.AdditionalConfiguration].Settings[3].Description}
+            3. **${ConfigTopicsExplanations[ConfigTopics.AdditionalConfiguration].Settings[2].Name}**
+            ${ConfigTopicsExplanations[ConfigTopics.AdditionalConfiguration].Settings[2].Description}
           `)
           )
         )
-        .setButtonAccessory(AdditionalConfigInteractComponents[3].components[0])
+        .setButtonAccessory(AdditionalConfigInteractComponents[2].components[0])
     )
     .addSeparatorComponents(new SeparatorBuilder().setDivider().setSpacing(2))
     .addActionRowComponents(
-      GetConfigTopicConfirmAndBackBtns(CmdInteract, ConfigTopics.AdditionalConfiguration)
+      GetConfigTopicConfirmAndBackBtns(SelectInteract, ConfigTopics.AdditionalConfiguration)
     );
 }
 
@@ -1218,7 +1236,7 @@ function GetCSReducedActivityContent(GuildSettings: GuildSettings): string {
 function GetCSDutyActivitiesContent(GuildSettings: GuildSettings): string {
   const IncidentLogChannel = GuildSettings.duty_activities.log_channels.incidents
     ? channelMention(GuildSettings.duty_activities.log_channels.incidents)
-    : "None";
+    : "*None*";
 
   const CitationLogChannels = GuildSettings.duty_activities.log_channels.citations.map(
     (CI) => `<#${CI.match(/:?(\d+)$/)?.[1]}>`
@@ -1241,6 +1259,8 @@ function GetCSDutyActivitiesContent(GuildSettings: GuildSettings): string {
 function GetCSAdditionalConfigContent(GuildSettings: GuildSettings): string {
   return Dedent(`
     >>> **Log Deletion Interval:** ${GetHumanReadableLogDeletionInterval(GuildSettings.duty_activities.log_deletion_interval)}
+    **User Text Input Filtering:** ${GuildSettings.utif_enabled ? "Enabled" : "Disabled"}
+    **Default Shift Quota:** ${GuildSettings.shift_management.default_quota > 500 ? FormatDuration(GuildSettings.shift_management.default_quota) : "*None*"}
   `);
 }
 
@@ -1264,7 +1284,7 @@ async function HandleOutsideLogChannelBtnInteracts(
     .setComponents(
       new ActionRowBuilder<ModalActionRowComponentBuilder>().setComponents(
         new TextInputBuilder()
-          .setLabel("Channel in The Format: [ServerId:ChannelId]")
+          .setLabel("Channel in The Format: [ServerID:ServerID]")
           .setPlaceholder("ServerID:ChannelID")
           .setCustomId("channel_id")
           .setStyle(TextInputStyle.Short)
@@ -1374,7 +1394,7 @@ async function HandleDefaultShiftQuotaBtnInteract(
 }
 
 async function HandleBasicConfigPageInteracts(
-  CmdInteract: SlashCommandInteraction<"cached">,
+  SelectInteract: CmdSelectOrButtonInteract<"cached">,
   BasicConfigPrompt: Message<true> | InteractionResponse<true>,
   CurrConfiguration: GuildSettings
 ) {
@@ -1385,7 +1405,7 @@ async function HandleBasicConfigPageInteracts(
   const BCCompActionCollector = BasicConfigPrompt.createMessageComponentCollector<
     ComponentType.Button | ComponentType.RoleSelect | ComponentType.StringSelect
   >({
-    filter: (Interact) => Interact.user.id === CmdInteract.user.id,
+    filter: (Interact) => Interact.user.id === SelectInteract.user.id,
     time: 10 * 60 * 1000,
   });
 
@@ -1454,7 +1474,7 @@ async function HandleBasicConfigPageInteracts(
         } else if (RecInteract.customId.startsWith(`${ConfigTopics.BasicConfiguration}-bck`)) {
           BCCompActionCollector.stop("Back");
           await RecInteract.deferUpdate();
-          return Callback(CmdInteract);
+          return Callback(RecInteract);
         }
       } else if (RecInteract.isRoleSelectMenu()) {
         if (RecInteract.customId.startsWith(CTAIds[ConfigTopics.BasicConfiguration].StaffRoles)) {
@@ -1487,7 +1507,7 @@ async function HandleBasicConfigPageInteracts(
 
   BCCompActionCollector.on("end", async (Collected, EndReason) => {
     if (EndReason.includes("time") || EndReason.includes("idle")) {
-      const LastInteract = Collected.last() || CmdInteract;
+      const LastInteract = Collected.last() ?? SelectInteract;
       if (!(await BasicConfigPrompt.fetch(true).catch(() => null))) return;
       await new InfoContainer()
         .useInfoTemplate("TimedOutConfigPrompt")
@@ -1498,26 +1518,24 @@ async function HandleBasicConfigPageInteracts(
 }
 
 async function HandleAdditionalConfigPageInteracts(
-  CmdInteract: SlashCommandInteraction<"cached">,
+  SelectInteract: CmdSelectOrButtonInteract<"cached">,
   AddConfigPrompt: Message<true> | InteractionResponse<true>,
   CurrConfiguration: GuildSettings
 ) {
   let LogDeletionInterval = CurrConfiguration.duty_activities.log_deletion_interval;
-  let IncidentLogChannel = CurrConfiguration.duty_activities.log_channels.incidents;
   let DefaultShiftQuota = CurrConfiguration.shift_management.default_quota;
   let UTIFEnabled = CurrConfiguration.utif_enabled;
 
   const BCCompActionCollector = AddConfigPrompt.createMessageComponentCollector<
-    ComponentType.Button | ComponentType.StringSelect | ComponentType.ChannelSelect
+    ComponentType.Button | ComponentType.StringSelect
   >({
-    filter: (Interact) => Interact.user.id === CmdInteract.user.id,
+    filter: (Interact) => Interact.user.id === SelectInteract.user.id,
     time: 10 * 60 * 1000,
   });
 
   const HandleSettingsSave = async (ButtonInteract: ButtonInteraction<"cached">) => {
     if (
       CurrConfiguration.duty_activities.log_deletion_interval === LogDeletionInterval &&
-      CurrConfiguration.duty_activities.log_channels.incidents === IncidentLogChannel &&
       CurrConfiguration.shift_management.default_quota === DefaultShiftQuota &&
       CurrConfiguration.utif_enabled === UTIFEnabled
     ) {
@@ -1530,11 +1548,10 @@ async function HandleAdditionalConfigPageInteracts(
       await ButtonInteract.deferReply({ flags: MessageFlags.Ephemeral });
 
     CurrConfiguration = await GuildModel.findByIdAndUpdate(
-      CmdInteract.guildId,
+      SelectInteract.guildId,
       {
         $set: {
           "settings.duty_activities.log_deletion_interval": LogDeletionInterval,
-          "settings.duty_activities.log_channels.incidents": IncidentLogChannel,
           "settings.shift_management.default_quota": DefaultShiftQuota,
           "settings.utif_enabled": UTIFEnabled,
         },
@@ -1556,16 +1573,11 @@ async function HandleAdditionalConfigPageInteracts(
         CurrConfiguration.duty_activities.log_deletion_interval
       );
 
-      const ILSetChannel = CurrConfiguration.duty_activities.log_channels.incidents
-        ? channelMention(CurrConfiguration.duty_activities.log_channels.incidents)
-        : "None";
-
       const FormattedDesc = Dedent(`
         Successfully set/updated the app's additional configuration.
         
         **Current Configuration:**
         - **Log Deletion Interval:** ${LDIFormatted}
-        - **Incidents Log Channel:** ${ILSetChannel}
         - **Input Filtering Enabled:** ${CurrConfiguration.utif_enabled ? "Yes" : "No"}
         - **Server Default Shift Quota:** ${DefaultQuota ? FormatDuration(DefaultQuota) : "None"}
       `);
@@ -1584,7 +1596,7 @@ async function HandleAdditionalConfigPageInteracts(
         } else if (RecInteract.customId.startsWith(`${ConfigTopics.AdditionalConfiguration}-bck`)) {
           BCCompActionCollector.stop("Back");
           await RecInteract.deferUpdate();
-          return Callback(CmdInteract);
+          return Callback(RecInteract);
         } else if (
           RecInteract.customId.startsWith(
             CTAIds[ConfigTopics.AdditionalConfiguration].ServerDefaultShiftQuota
@@ -1603,15 +1615,6 @@ async function HandleAdditionalConfigPageInteracts(
           )
         ) {
           LogDeletionInterval = (parseInt(RecInteract.values[0]) || 0) * MillisInDay;
-        }
-
-        if (
-          RecInteract.isChannelSelectMenu() &&
-          RecInteract.customId.startsWith(
-            CTAIds[ConfigTopics.DutyActConfiguration].IncidentLogLocalChannel
-          )
-        ) {
-          IncidentLogChannel = RecInteract.values[0];
         }
 
         if (
@@ -1643,7 +1646,7 @@ async function HandleAdditionalConfigPageInteracts(
 
   BCCompActionCollector.on("end", async (Collected, EndReason) => {
     if (EndReason.includes("time") || EndReason.includes("idle")) {
-      const LastInteract = Collected.last() || CmdInteract;
+      const LastInteract = Collected.last() ?? SelectInteract;
       if (!(await AddConfigPrompt.fetch(true).catch(() => null))) return;
       await new InfoContainer()
         .useInfoTemplate("TimedOutConfigPrompt")
@@ -1654,7 +1657,7 @@ async function HandleAdditionalConfigPageInteracts(
 }
 
 async function HandleShiftConfigPageInteracts(
-  CmdInteract: SlashCommandInteraction<"cached">,
+  SelectInteract: CmdSelectOrButtonInteract<"cached">,
   ConfigPrompt: Message<true> | InteractionResponse<true>,
   SMCurrConfiguration: GuildSettings["shift_management"]
 ) {
@@ -1669,7 +1672,7 @@ async function HandleShiftConfigPageInteracts(
     | ComponentType.ChannelSelect
     | ComponentType.StringSelect
   >({
-    filter: (Interact) => Interact.user.id === CmdInteract.user.id,
+    filter: (Interact) => Interact.user.id === SelectInteract.user.id,
     time: 10 * 60 * 1000,
   });
 
@@ -1689,7 +1692,7 @@ async function HandleShiftConfigPageInteracts(
       await ButtonInteract.deferReply({ flags: MessageFlags.Ephemeral });
 
     SMCurrConfiguration = await GuildModel.findByIdAndUpdate(
-      CmdInteract.guildId,
+      SelectInteract.guildId,
       {
         $set: {
           "settings.shift_management.enabled": ModuleEnabled,
@@ -1748,7 +1751,7 @@ async function HandleShiftConfigPageInteracts(
       ) {
         SCCompActionCollector.stop("Back");
         await RecInteract.deferUpdate();
-        return Callback(CmdInteract);
+        return Callback(RecInteract);
       } else if (
         RecInteract.isStringSelectMenu() &&
         ActionId.startsWith(CTAIds[ConfigTopics.ShiftConfiguration].ModuleEnabled)
@@ -1784,7 +1787,7 @@ async function HandleShiftConfigPageInteracts(
 
   SCCompActionCollector.on("end", async (Collected, EndReason) => {
     if (EndReason.includes("time") || EndReason.includes("idle")) {
-      const LastInteract = Collected.last() || CmdInteract;
+      const LastInteract = Collected.last() ?? SelectInteract;
       if (!(await ConfigPrompt.fetch(true).catch(() => null))) return;
       return new InfoContainer()
         .useInfoTemplate("TimedOutConfigPrompt")
@@ -1795,7 +1798,7 @@ async function HandleShiftConfigPageInteracts(
 }
 
 async function HandleLeaveConfigPageInteracts(
-  CmdInteract: SlashCommandInteraction<"cached">,
+  SelectInteract: CmdSelectOrButtonInteract<"cached">,
   ConfigPrompt: Message<true> | InteractionResponse<true>,
   LNCurrConfiguration: GuildSettings["leave_notices"]
 ) {
@@ -1810,7 +1813,7 @@ async function HandleLeaveConfigPageInteracts(
     | ComponentType.StringSelect
     | ComponentType.RoleSelect
   >({
-    filter: (Interact) => Interact.user.id === CmdInteract.user.id,
+    filter: (Interact) => Interact.user.id === SelectInteract.user.id,
     time: 10 * 60 * 1000,
   });
 
@@ -1830,7 +1833,7 @@ async function HandleLeaveConfigPageInteracts(
       await ButtonInteract.deferReply({ flags: MessageFlags.Ephemeral });
 
     LNCurrConfiguration = await GuildModel.findByIdAndUpdate(
-      CmdInteract.guildId,
+      SelectInteract.guildId,
       {
         $set: {
           "settings.leave_notices.enabled": ModuleEnabled,
@@ -1889,7 +1892,7 @@ async function HandleLeaveConfigPageInteracts(
       ) {
         SCCompActionCollector.stop("Back");
         await RecInteract.deferUpdate();
-        return Callback(CmdInteract);
+        return Callback(RecInteract);
       } else if (
         RecInteract.isStringSelectMenu() &&
         ActionId.startsWith(CTAIds[ConfigTopics.LeaveConfiguration].ModuleEnabled)
@@ -1925,7 +1928,7 @@ async function HandleLeaveConfigPageInteracts(
 
   SCCompActionCollector.on("end", async (Collected, EndReason) => {
     if (EndReason.includes("time") || EndReason.includes("idle")) {
-      const LastInteract = Collected.last() || CmdInteract;
+      const LastInteract = Collected.last() ?? SelectInteract;
       if (!(await ConfigPrompt.fetch(true).catch(() => null))) return;
       return new InfoContainer()
         .useInfoTemplate("TimedOutConfigPrompt")
@@ -1936,24 +1939,26 @@ async function HandleLeaveConfigPageInteracts(
 }
 
 async function HandleDutyActivitiesConfigPageInteracts(
-  CmdInteract: SlashCommandInteraction<"cached">,
+  SelectInteract: CmdSelectOrButtonInteract<"cached">,
   ConfigPrompt: Message<true> | InteractionResponse<true>,
   DACurrentConfig: GuildSettings["duty_activities"]
 ) {
   let ArrestReportsChannels = DACurrentConfig.log_channels.arrests.slice();
   let CitationsLogChannels = DACurrentConfig.log_channels.citations.slice();
+  let IncidentLogChannel = DACurrentConfig.log_channels.incidents;
   let ModuleEnabled = DACurrentConfig.enabled;
 
   const LCCompActionCollector = ConfigPrompt.createMessageComponentCollector<
     ComponentType.Button | ComponentType.ChannelSelect | ComponentType.StringSelect
   >({
-    filter: (Interact) => Interact.user.id === CmdInteract.user.id,
+    filter: (Interact) => Interact.user.id === SelectInteract.user.id,
     time: 10 * 60 * 1000,
   });
 
   const HandleSaveConfirmation = async (ButtonInteract: ButtonInteraction<"cached">) => {
     if (
       ModuleEnabled === DACurrentConfig.enabled &&
+      IncidentLogChannel === DACurrentConfig.log_channels.incidents &&
       ArraysAreEqual(DACurrentConfig.log_channels.arrests, ArrestReportsChannels) &&
       ArraysAreEqual(DACurrentConfig.log_channels.citations, CitationsLogChannels)
     ) {
@@ -1966,11 +1971,12 @@ async function HandleDutyActivitiesConfigPageInteracts(
       await ButtonInteract.deferReply({ flags: MessageFlags.Ephemeral });
 
     DACurrentConfig = await GuildModel.findByIdAndUpdate(
-      CmdInteract.guildId,
+      SelectInteract.guildId,
       {
         $set: {
           "settings.duty_activities.enabled": ModuleEnabled,
           "settings.duty_activities.log_channels.arrests": ArrestReportsChannels,
+          "settings.duty_activities.log_channels.incidents": IncidentLogChannel,
           "settings.duty_activities.log_channels.citations": CitationsLogChannels,
         },
       },
@@ -1994,11 +2000,16 @@ async function HandleDutyActivitiesConfigPageInteracts(
         channelMention(CI.match(/:?(\d+)$/)?.[1] || "0")
       );
 
+      const ILSetChannel = DACurrentConfig.log_channels.incidents
+        ? channelMention(DACurrentConfig.log_channels.incidents)
+        : "*None*";
+
       const FormattedDesc = Dedent(`
         Successfully set/updated the app's duty activities module configuration.
         
         **Current Configuration:**
         - **Module Enabled:** ${DACurrentConfig.enabled ? "Yes" : "No"}
+        - **Incidents Log Channel:** ${ILSetChannel}
         - **Arrest Reports Log Channel(s):**
           > ${ARSetChannels.length ? ListFormatter.format(ARSetChannels) : "*None*"}
         - **Citation Issued Log Channel(s):**
@@ -2039,15 +2050,19 @@ async function HandleDutyActivitiesConfigPageInteracts(
         if (ExistingChannelIndex === -1) {
           CitationsLogChannels.push(SelectInteract.values[0]);
         } else if (SelectInteract.values[0]?.length) {
-          ArrestReportsChannels[ExistingChannelIndex] = SelectInteract.values[0];
+          CitationsLogChannels[ExistingChannelIndex] = SelectInteract.values[0];
         } else {
-          ArrestReportsChannels = ArrestReportsChannels.filter(
-            (C) => C !== ArrestReportsChannels[ExistingChannelIndex]
+          CitationsLogChannels = CitationsLogChannels.filter(
+            (C) => C !== CitationsLogChannels[ExistingChannelIndex]
           );
         }
       } else {
         CitationsLogChannels = SelectInteract.values;
       }
+    } else if (
+      OptionId.startsWith(CTAIds[ConfigTopics.DutyActConfiguration].IncidentLogLocalChannel)
+    ) {
+      IncidentLogChannel = SelectInteract.values[0] || null;
     }
   };
 
@@ -2087,7 +2102,7 @@ async function HandleDutyActivitiesConfigPageInteracts(
     } else if (BtnId.startsWith(`${ConfigTopics.DutyActConfiguration}-bck`)) {
       LCCompActionCollector.stop("Back");
       await ButtonInteract.deferUpdate();
-      return Callback(CmdInteract);
+      return Callback(ButtonInteract);
     }
   };
 
@@ -2123,7 +2138,7 @@ async function HandleDutyActivitiesConfigPageInteracts(
 
   LCCompActionCollector.on("end", async (Collected, EndReason) => {
     if (EndReason.includes("time") || EndReason.includes("idle")) {
-      const LastInteract = Collected.last() || CmdInteract;
+      const LastInteract = Collected.last() ?? SelectInteract;
       if (!(await ConfigPrompt.fetch(true).catch(() => null))) return;
       return new InfoContainer()
         .useInfoTemplate("TimedOutConfigPrompt")
@@ -2134,7 +2149,7 @@ async function HandleDutyActivitiesConfigPageInteracts(
 }
 
 async function HandleReducedActivityConfigPageInteracts(
-  CmdInteract: SlashCommandInteraction<"cached">,
+  SelectInteract: CmdSelectOrButtonInteract<"cached">,
   ConfigPrompt: Message<true> | InteractionResponse<true>,
   RACurrConfiguration: GuildSettings["reduced_activity"]
 ) {
@@ -2149,7 +2164,7 @@ async function HandleReducedActivityConfigPageInteracts(
     | ComponentType.StringSelect
     | ComponentType.RoleSelect
   >({
-    filter: (Interact) => Interact.user.id === CmdInteract.user.id,
+    filter: (Interact) => Interact.user.id === SelectInteract.user.id,
     time: 10 * 60 * 1000,
   });
 
@@ -2169,7 +2184,7 @@ async function HandleReducedActivityConfigPageInteracts(
       await ButtonInteract.deferReply({ flags: MessageFlags.Ephemeral });
 
     RACurrConfiguration = await GuildModel.findByIdAndUpdate(
-      CmdInteract.guildId,
+      SelectInteract.guildId,
       {
         $set: {
           "settings.reduced_activity.enabled": ModuleEnabled,
@@ -2231,7 +2246,7 @@ async function HandleReducedActivityConfigPageInteracts(
       ) {
         RACompActionCollector.stop("Back");
         await RecInteract.deferUpdate();
-        return Callback(CmdInteract);
+        return Callback(RecInteract);
       } else if (
         RecInteract.isStringSelectMenu() &&
         ActionId.startsWith(CTAIds[ConfigTopics.ReducedActivityConfiguration].ModuleEnabled)
@@ -2269,7 +2284,7 @@ async function HandleReducedActivityConfigPageInteracts(
 
   RACompActionCollector.on("end", async (Collected, EndReason) => {
     if (EndReason.includes("time") || EndReason.includes("idle")) {
-      const LastInteract = Collected.last() || CmdInteract;
+      const LastInteract = Collected.last() ?? SelectInteract;
       if (!(await ConfigPrompt.fetch(true).catch(() => null))) return;
       return new InfoContainer()
         .useInfoTemplate("TimedOutConfigPrompt")
@@ -2279,18 +2294,15 @@ async function HandleReducedActivityConfigPageInteracts(
   });
 }
 
-async function HandleBasicConfigSelection(
-  SelectInteract: StringSelectMenuInteraction<"cached">,
-  CmdInteract: SlashCommandInteraction<"cached">
-) {
-  const GuildConfig = await GetGuildSettings(CmdInteract.guildId);
+async function HandleBasicConfigSelection(SelectInteract: StringSelectMenuInteraction<"cached">) {
+  const GuildConfig = await GetGuildSettings(SelectInteract.guildId);
   if (GuildConfig) {
-    const ModuleContainer = GetBasicConfigContainer(CmdInteract, GuildConfig);
-    const ConfigPrompt = await SelectInteract.update({
+    const ModuleContainer = GetBasicConfigContainer(SelectInteract, GuildConfig);
+    const ConfigPrompt = await UpdatePromptReturnMessage(SelectInteract, {
       components: [ModuleContainer],
     });
 
-    return HandleBasicConfigPageInteracts(CmdInteract, ConfigPrompt, GuildConfig);
+    return HandleBasicConfigPageInteracts(SelectInteract, ConfigPrompt, GuildConfig);
   } else {
     return new ErrorContainer()
       .useErrTemplate("GuildConfigNotFound")
@@ -2299,17 +2311,16 @@ async function HandleBasicConfigSelection(
 }
 
 async function HandleAdditionalConfigSelection(
-  SelectInteract: StringSelectMenuInteraction<"cached">,
-  CmdInteract: SlashCommandInteraction<"cached">
+  SelectInteract: StringSelectMenuInteraction<"cached">
 ) {
-  const GuildConfig = await GetGuildSettings(CmdInteract.guildId);
+  const GuildConfig = await GetGuildSettings(SelectInteract.guildId);
   if (GuildConfig) {
-    const ModuleContainer = GetAdditionalConfigContainer(CmdInteract, GuildConfig);
-    const ConfigPrompt = await SelectInteract.update({
+    const ModuleContainer = GetAdditionalConfigContainer(SelectInteract, GuildConfig);
+    const ConfigPrompt = await UpdatePromptReturnMessage(SelectInteract, {
       components: [ModuleContainer],
     });
 
-    return HandleAdditionalConfigPageInteracts(CmdInteract, ConfigPrompt, GuildConfig);
+    return HandleAdditionalConfigPageInteracts(SelectInteract, ConfigPrompt, GuildConfig);
   } else {
     return new ErrorContainer()
       .useErrTemplate("GuildConfigNotFound")
@@ -2317,18 +2328,19 @@ async function HandleAdditionalConfigSelection(
   }
 }
 
-async function HandleShiftModuleSelection(
-  SelectInteract: StringSelectMenuInteraction<"cached">,
-  CmdInteract: SlashCommandInteraction<"cached">
-) {
-  const GuildConfig = await GetGuildSettings(CmdInteract.guildId);
+async function HandleShiftModuleSelection(SelectInteract: StringSelectMenuInteraction<"cached">) {
+  const GuildConfig = await GetGuildSettings(SelectInteract.guildId);
   if (GuildConfig) {
-    const ModuleContainer = GetShiftModuleConfigContainer(CmdInteract, GuildConfig);
-    const ConfigPrompt = await SelectInteract.update({
+    const ModuleContainer = GetShiftModuleConfigContainer(SelectInteract, GuildConfig);
+    const ConfigPrompt = await UpdatePromptReturnMessage(SelectInteract, {
       components: [ModuleContainer],
     });
 
-    return HandleShiftConfigPageInteracts(CmdInteract, ConfigPrompt, GuildConfig.shift_management);
+    return HandleShiftConfigPageInteracts(
+      SelectInteract,
+      ConfigPrompt,
+      GuildConfig.shift_management
+    );
   } else {
     return new ErrorContainer()
       .useErrTemplate("GuildConfigNotFound")
@@ -2337,18 +2349,17 @@ async function HandleShiftModuleSelection(
 }
 
 async function HandleDutyActivitiesModuleSelection(
-  SelectInteract: StringSelectMenuInteraction<"cached">,
-  CmdInteract: SlashCommandInteraction<"cached">
+  SelectInteract: StringSelectMenuInteraction<"cached">
 ) {
-  const GuildConfig = await GetGuildSettings(CmdInteract.guildId);
+  const GuildConfig = await GetGuildSettings(SelectInteract.guildId);
   if (GuildConfig) {
-    const ModuleContainer = GetDutyActivitiesModuleConfigContainer(CmdInteract, GuildConfig);
-    const ConfigPrompt = await SelectInteract.update({
+    const ModuleContainer = GetDutyActivitiesModuleConfigContainer(SelectInteract, GuildConfig);
+    const ConfigPrompt = await UpdatePromptReturnMessage(SelectInteract, {
       components: [ModuleContainer],
     });
 
     return HandleDutyActivitiesConfigPageInteracts(
-      CmdInteract,
+      SelectInteract,
       ConfigPrompt,
       GuildConfig.duty_activities
     );
@@ -2359,18 +2370,19 @@ async function HandleDutyActivitiesModuleSelection(
   }
 }
 
-async function HandleLeaveModuleSelection(
-  SelectInteract: StringSelectMenuInteraction<"cached">,
-  CmdInteract: SlashCommandInteraction<"cached">
-) {
-  const GuildConfig = await GetGuildSettings(CmdInteract.guildId);
+async function HandleLeaveModuleSelection(SelectInteract: StringSelectMenuInteraction<"cached">) {
+  const GuildConfig = await GetGuildSettings(SelectInteract.guildId);
   if (GuildConfig) {
-    const ModuleContainer = GetLeaveModuleConfigContainer(CmdInteract, GuildConfig);
-    const ConfigPrompt = await SelectInteract.update({
+    const ModuleContainer = GetLeaveModuleConfigContainer(SelectInteract, GuildConfig);
+    const ConfigPrompt = await UpdatePromptReturnMessage(SelectInteract, {
       components: [ModuleContainer],
     });
 
-    return HandleLeaveConfigPageInteracts(CmdInteract, ConfigPrompt, GuildConfig.duty_activities);
+    return HandleLeaveConfigPageInteracts(
+      SelectInteract,
+      ConfigPrompt,
+      GuildConfig.duty_activities
+    );
   } else {
     return new ErrorContainer()
       .useErrTemplate("GuildConfigNotFound")
@@ -2379,18 +2391,17 @@ async function HandleLeaveModuleSelection(
 }
 
 async function HandleReducedActivityModuleSelection(
-  SelectInteract: StringSelectMenuInteraction<"cached">,
-  CmdInteract: SlashCommandInteraction<"cached">
+  SelectInteract: StringSelectMenuInteraction<"cached">
 ) {
-  const GuildConfig = await GetGuildSettings(CmdInteract.guildId);
+  const GuildConfig = await GetGuildSettings(SelectInteract.guildId);
   if (GuildConfig) {
-    const ModuleContainer = GetReducedActivityModuleConfigContainer(CmdInteract, GuildConfig);
-    const ConfigPrompt = await SelectInteract.update({
+    const ModuleContainer = GetReducedActivityModuleConfigContainer(SelectInteract, GuildConfig);
+    const ConfigPrompt = await UpdatePromptReturnMessage(SelectInteract, {
       components: [ModuleContainer],
     });
 
     return HandleReducedActivityConfigPageInteracts(
-      CmdInteract,
+      SelectInteract,
       ConfigPrompt,
       GuildConfig.reduced_activity
     );
@@ -2403,10 +2414,9 @@ async function HandleReducedActivityModuleSelection(
 
 async function HandleConfigShowSelection(
   SelectInteract: StringSelectMenuInteraction<"cached"> | ButtonInteraction<"cached">,
-  CmdInteract: SlashCommandInteraction<"cached">,
   PageIndex: number = 0
 ) {
-  const GuildSettings = await GetGuildSettings(CmdInteract.guildId);
+  const GuildSettings = await GetGuildSettings(SelectInteract.guildId);
   if (!GuildSettings) {
     return new ErrorContainer()
       .useErrTemplate("GuildConfigNotFound")
@@ -2471,7 +2481,7 @@ async function HandleConfigShowSelection(
   );
 
   ResponseContainer.addActionRowComponents(
-    ...GetShowConfigurationsPageComponents(CmdInteract, SafePageIndex, TotalPages)
+    ...GetShowConfigurationsPageComponents(SelectInteract, SafePageIndex, TotalPages)
   );
 
   const ShowConfigPageMsg = await SelectInteract.update({
@@ -2479,17 +2489,21 @@ async function HandleConfigShowSelection(
     withResponse: true,
   }).then((Resp) => Resp.resource!.message as Message<true>);
 
-  return HandleConfigShowPageInteractsWithPagination(CmdInteract, ShowConfigPageMsg, SafePageIndex);
+  return HandleConfigShowPageInteractsWithPagination(
+    SelectInteract,
+    ShowConfigPageMsg,
+    SafePageIndex
+  );
 }
 
 async function HandleConfigShowPageInteractsWithPagination(
-  CmdInteract: SlashCommandInteraction<"cached">,
+  Interaction: CmdSelectOrButtonInteract<"cached"> | ButtonInteraction<"cached">,
   ConfigPrompt: Message<true> | InteractionResponse<true>,
   CurrentPageIndex: number
 ) {
   try {
     const ReceivedInteraction = await ConfigPrompt.awaitMessageComponent({
-      filter: (Interact) => Interact.user.id === CmdInteract.user.id,
+      filter: (Interact) => Interact.user.id === Interaction.user.id,
       componentType: ComponentType.Button,
       time: 10 * 60 * 1000,
     });
@@ -2498,12 +2512,12 @@ async function HandleConfigShowPageInteractsWithPagination(
       const BtnId = ReceivedInteraction.customId;
 
       if (BtnId.includes("prev")) {
-        return HandleConfigShowSelection(ReceivedInteraction, CmdInteract, CurrentPageIndex - 1);
+        return HandleConfigShowSelection(ReceivedInteraction, CurrentPageIndex - 1);
       } else if (BtnId.includes("next")) {
-        return HandleConfigShowSelection(ReceivedInteraction, CmdInteract, CurrentPageIndex + 1);
+        return HandleConfigShowSelection(ReceivedInteraction, CurrentPageIndex + 1);
       } else if (BtnId.includes("app-config-bck")) {
         await ReceivedInteraction.deferUpdate();
-        return Callback(CmdInteract);
+        return Callback(ReceivedInteraction);
       }
     }
   } catch (Err: any) {
@@ -2516,7 +2530,7 @@ async function HandleConfigShowPageInteractsWithPagination(
         PromptMessage.components.map((Comp) => Comp.toJSON())
       );
 
-      return CmdInteract.editReply({ components: MessageComponents }).catch(() => null);
+      return Interaction.editReply({ components: MessageComponents }).catch(() => null);
     }
   }
 }
@@ -2525,7 +2539,7 @@ async function HandleConfigShowPageInteractsWithPagination(
 // Initial Handlers:
 // -----------------
 async function HandleInitialRespActions(
-  CmdInteract: SlashCommandInteraction<"cached">,
+  CmdInteract: CmdSelectOrButtonInteract<"cached">,
   CmdRespMsg: Message<true> | InteractionResponse<true>,
   SMenuDisabler: () => Promise<any>
 ) {
@@ -2536,21 +2550,20 @@ async function HandleInitialRespActions(
   })
     .then(async function OnInitialRespCallback(TopicSelectInteract) {
       const SelectedConfigTopic = TopicSelectInteract.values[0];
-
       if (SelectedConfigTopic === ConfigTopics.BasicConfiguration) {
-        return HandleBasicConfigSelection(TopicSelectInteract, CmdInteract);
+        return HandleBasicConfigSelection(TopicSelectInteract);
       } else if (SelectedConfigTopic === ConfigTopics.ShiftConfiguration) {
-        return HandleShiftModuleSelection(TopicSelectInteract, CmdInteract);
+        return HandleShiftModuleSelection(TopicSelectInteract);
       } else if (SelectedConfigTopic === ConfigTopics.DutyActConfiguration) {
-        return HandleDutyActivitiesModuleSelection(TopicSelectInteract, CmdInteract);
+        return HandleDutyActivitiesModuleSelection(TopicSelectInteract);
       } else if (SelectedConfigTopic === ConfigTopics.ShowConfigurations) {
-        return HandleConfigShowSelection(TopicSelectInteract, CmdInteract);
+        return HandleConfigShowSelection(TopicSelectInteract);
       } else if (SelectedConfigTopic === ConfigTopics.LeaveConfiguration) {
-        return HandleLeaveModuleSelection(TopicSelectInteract, CmdInteract);
+        return HandleLeaveModuleSelection(TopicSelectInteract);
       } else if (SelectedConfigTopic === ConfigTopics.AdditionalConfiguration) {
-        return HandleAdditionalConfigSelection(TopicSelectInteract, CmdInteract);
+        return HandleAdditionalConfigSelection(TopicSelectInteract);
       } else if (SelectedConfigTopic === ConfigTopics.ReducedActivityConfiguration) {
-        return HandleReducedActivityModuleSelection(TopicSelectInteract, CmdInteract);
+        return HandleReducedActivityModuleSelection(TopicSelectInteract);
       } else {
         return new ErrorContainer()
           .useErrTemplate("UnknownConfigTopic")
@@ -2560,8 +2573,10 @@ async function HandleInitialRespActions(
     .catch((Err) => HandleActionCollectorExceptions(Err, SMenuDisabler));
 }
 
-async function Callback(CmdInteract: SlashCommandInteraction<"cached">) {
-  const ConfigTopicsMenu = GetConfigTopicsDropdownMenu(CmdInteract);
+async function Callback(
+  PromptInteraction: CmdSelectOrButtonInteract<"cached"> | ButtonInteraction<"cached">
+) {
+  const ConfigTopicsMenu = GetConfigTopicsDropdownMenu(PromptInteraction);
   const CmdRespContainer = new ContainerBuilder()
     .setAccentColor(AccentColor)
     .addTextDisplayComponents(
@@ -2575,28 +2590,38 @@ async function Callback(CmdInteract: SlashCommandInteraction<"cached">) {
     .addSeparatorComponents(new SeparatorBuilder().setDivider())
     .addActionRowComponents(ConfigTopicsMenu);
 
-  const ReplyMethod = CmdInteract.replied || CmdInteract.deferred ? "editReply" : "reply";
-  const CmdRespMsg = await CmdInteract[ReplyMethod]({
-    flags: MessageFlags.IsComponentsV2,
-    components: [CmdRespContainer],
-    withResponse: true,
-  }).then((Msg: Message<true> | InteractionCallbackResponse) =>
-    Msg instanceof Message ? Msg : (Msg.resource!.message as Message<true>)
-  );
+  let PromptMessage: Message<true>;
+  const PromptMessageId =
+    PromptInteraction instanceof MessageComponentInteraction ? PromptInteraction.message.id : null;
+
+  if (!(PromptInteraction.replied || PromptInteraction.deferred)) {
+    PromptMessage = await PromptInteraction.reply({
+      withResponse: true,
+      components: [CmdRespContainer],
+      flags: MessageFlags.IsComponentsV2,
+    }).then((Resp) => Resp.resource!.message as Message<true>);
+  } else {
+    PromptMessage = await PromptInteraction.editReply({
+      components: [CmdRespContainer],
+      flags: MessageFlags.IsComponentsV2,
+      ...(PromptMessageId ? { message: PromptMessageId } : {}),
+    });
+  }
 
   const DisablePrompt = () => {
-    const APICompatibleComps = CmdRespMsg.components.map((Comp) => Comp.toJSON());
+    const APICompatibleComps = PromptMessage.components.map((Comp) => Comp.toJSON());
     const DisabledComponents = DisableMessageComponents(APICompatibleComps);
-    return CmdInteract.editReply({
+    return PromptInteraction.editReply({
       components: DisabledComponents,
+      message: PromptMessage.id,
     });
   };
 
-  return HandleInitialRespActions(CmdInteract, CmdRespMsg, DisablePrompt);
+  return HandleInitialRespActions(PromptInteraction, PromptMessage, DisablePrompt);
 }
 
 // ---------------------------------------------------------------------------------------
-// Command structure:
+// Command Structure:
 // ------------------
 const CommandObject: SlashCommandObject = {
   options: { user_perms: [PermissionFlagsBits.ManageGuild] },
