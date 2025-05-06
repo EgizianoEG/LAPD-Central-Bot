@@ -161,7 +161,7 @@ export class BaseExtraContainer extends ContainerBuilder {
 
     this._footer = footer.trim();
     const FooterComponent = new TextDisplayBuilder({
-      content: `-# ${this._footer}`,
+      content: this._footer?.startsWith("-# ") ? this._footer : `-# ${this._footer}`,
       id: 3,
     });
 
