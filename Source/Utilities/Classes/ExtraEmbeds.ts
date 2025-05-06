@@ -56,7 +56,12 @@ class BaseEmbed extends EmbedBuilder {
       (interaction.deferred || interaction.replied)
     ) {
       ReplyMethod = "editReply";
-    } else if (!replyMethod && interaction instanceof MessageComponentInteraction) {
+    } else if (
+      replyMethod === "editReply" &&
+      interaction instanceof MessageComponentInteraction &&
+      !(interaction.deferred || interaction.replied) &&
+      !interaction.message.flags.has(MessageFlags.IsComponentsV2)
+    ) {
       ReplyMethod = "update";
     }
 
