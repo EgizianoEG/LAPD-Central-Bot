@@ -31,6 +31,7 @@ import { milliseconds } from "date-fns";
 import { RandomString } from "@Utilities/Strings/Random.js";
 import { IsValidShiftId } from "@Utilities/Other/Validators.js";
 import { Colors, Emojis } from "@Config/Shared.js";
+import { AggregateResults, Shifts } from "@Typings/Utilities/Database.js";
 import { HandleShiftTypeValidation } from "@Utilities/Database/ShiftTypeValidators.js";
 import { SuccessEmbed, InfoEmbed, WarnEmbed, ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
@@ -521,34 +522,21 @@ async function WipeUserShifts(
 }
 
 /**
- * Returns a paginated and listed shifts of a user, where
- * each embed shouldn't describe/list more than 4 shifts.
+ * Returns a paginated and listed shifts of a target user.
  * Aggregation test: https://mongoplayground.net/p/PwnbTQVfPBy
  * @param TargetUser - The targetted user.
  * @param GuildId - The guild id that the user is in.
  * @param [ShiftType] - Shift type targetted.
+ * @param [CurrentDate=new Date()] - The current date to use for calculating shift durations.
  * @returns
  */
 async function RetrieveShiftRecordsAsEmbeds(
   TargetUser: User,
   GuildId: string,
-  ShiftType: Nullable<string>
+  ShiftType: Nullable<string>,
+  CurrentDate: Date = new Date()
 ) {
-  const ShiftData: {
-    _id: string;
-    /** Shift type */
-    type: string;
-    /** Start epoch in milliseconds */
-    started: number;
-    /** End epoch in milliseconds or `"Currently Active"` */
-    ended: number | string;
-    /** On-duty duration in milliseconds */
-    duration: number;
-    /** On-break duration in milliseconds */
-    break_duration: number;
-    /** Flag */
-    flag: ShiftFlags;
-  }[] = await ShiftModel.aggregate([
+  const ShiftData: AggregateResults.DutyAdminShiftRecordsShow[] = await ShiftModel.aggregate([
     {
       $match: {
         user: TargetUser.id,
@@ -591,7 +579,7 @@ async function RetrieveShiftRecordsAsEmbeds(
                 },
                 {
                   $subtract: [
-                    new Date(),
+                    CurrentDate,
                     {
                       $toDate: "$start_timestamp",
                     },
@@ -626,7 +614,7 @@ async function RetrieveShiftRecordsAsEmbeds(
                           {
                             $arrayElemAt: ["$$this", 1],
                           },
-                          new Date(),
+                          CurrentDate,
                         ],
                       },
                     },
@@ -690,7 +678,7 @@ async function RetrieveShiftRecordsAsEmbeds(
       .setAccentColor(resolveColor(Colors.Info))
       .addTextDisplayComponents(
         new TextDisplayBuilder({
-          content: `### Recorded Shifts\n-# Displaying \`${ShiftData.length}\` total shifts of ${ShiftTypeAppend}; data as of ${FormatTime(new Date(), "f")}`,
+          content: `### Recorded Shifts\n-# Displaying \`${ShiftData.length}\` total shifts of ${ShiftTypeAppend}; data as of ${FormatTime(CurrentDate, "f")}`,
         })
       )
       .addSeparatorComponents(new SeparatorBuilder({ divider: true, spacing: 2 }));

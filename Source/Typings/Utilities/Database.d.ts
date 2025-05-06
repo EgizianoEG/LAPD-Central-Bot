@@ -1109,4 +1109,26 @@ export namespace AggregateResults {
     /** Total shifts recorded. */
     total_shifts: number;
   }
+
+  interface DutyAdminShiftRecordsShow {
+    _id: string;
+
+    /** Shift type */
+    type: string;
+
+    /** Start epoch in milliseconds */
+    started: number;
+
+    /** End epoch in milliseconds or `"Currently Active"` */
+    ended: number | string;
+
+    /** On-duty duration in milliseconds */
+    duration: number;
+
+    /** On-break duration in milliseconds */
+    break_duration: number;
+
+    /** Flag */
+    flag: ShiftFlags;
+  }
 }
