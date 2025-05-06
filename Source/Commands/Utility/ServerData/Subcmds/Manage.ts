@@ -54,6 +54,7 @@ import HumanizeDuration from "humanize-duration";
 import MentionCmdByName from "@Utilities/Other/MentionCmd.js";
 import ShiftActionLogger from "@Utilities/Classes/ShiftActionLogger.js";
 import DisableMessageComponents from "@Utilities/Other/DisableMsgComps.js";
+import ShowModalAndAwaitSubmission from "@Utilities/Other/ShowModalAwaitSubmit.js";
 import HandleActionCollectorExceptions from "@Utilities/Other/HandleCompCollectorExceptions.js";
 
 // ---------------------------------------------------------------------------------------
@@ -361,18 +362,6 @@ function GetComparisonDateInputModal(
   }
 
   return Modal;
-}
-
-async function ShowModalAndAwaitSubmission(
-  Modal: ModalBuilder,
-  Interaction: ButtonInteraction<"cached">,
-  TimeoutInMs: number = 5 * 60 * 1000
-): Promise<ModalSubmitInteraction<"cached">> {
-  await Interaction.showModal(Modal);
-  return Interaction.awaitModalSubmit({
-    filter: (MS) => MS.customId === Modal.data.custom_id,
-    time: TimeoutInMs,
-  });
 }
 
 async function SendReplyAndFetchMessage(
@@ -700,9 +689,7 @@ async function HandleShiftDataDeleteOfTypeConfirm(
 
 async function HandleShiftDataDeleteOfType(BtnInteract: ButtonInteraction<"cached">) {
   const ShiftTypeInputModal = GetShiftTypeInputModal(BtnInteract);
-  const ModalSubmission = await ShowModalAndAwaitSubmission(ShiftTypeInputModal, BtnInteract).catch(
-    () => null
-  );
+  const ModalSubmission = await ShowModalAndAwaitSubmission(BtnInteract, ShiftTypeInputModal);
   const InputShiftType = ModalSubmission?.fields.getTextInputValue("shift_type").trim();
   const ShiftTypes: string[] = [];
 
@@ -798,10 +785,7 @@ async function HandleShiftDataDeleteBeforeOrAfterDate(
   ComparisonType: DataDeletionWithDateType
 ) {
   const ComparisonDateModal = GetComparisonDateInputModal(BtnInteract, "Shift", ComparisonType);
-  const ModalSubmission = await ShowModalAndAwaitSubmission(ComparisonDateModal, BtnInteract).catch(
-    () => null
-  );
-
+  const ModalSubmission = await ShowModalAndAwaitSubmission(BtnInteract, ComparisonDateModal);
   const InputDate = ModalSubmission?.fields.getTextInputValue("comp_date").trim();
   const ParsedDate = InputDate ? Chrono.parseDate(InputDate, ModalSubmission?.createdAt) : null;
   const InputShiftType = ModalSubmission?.fields.getTextInputValue("shift_type").trim();
@@ -1253,10 +1237,7 @@ async function HandleUANDataDeleteBeforeOrAfterDate(
     ComparisonType
   );
 
-  const ModalSubmission = await ShowModalAndAwaitSubmission(ComparisonDateModal, BtnInteract).catch(
-    () => null
-  );
-
+  const ModalSubmission = await ShowModalAndAwaitSubmission(BtnInteract, ComparisonDateModal);
   const NoticeStatuses: string[] = [];
   const InputDate = ModalSubmission?.fields.getTextInputValue("comp_date").trim();
   const ParsedDate = InputDate ? Chrono.parseDate(InputDate, ModalSubmission?.createdAt) : null;
