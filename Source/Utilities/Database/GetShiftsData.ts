@@ -63,7 +63,7 @@ export default async function GetMainShiftsData(
     .then((Doc) => Doc?.settings.shift_management.default_quota || 0)
     .catch(() => 0);
 
-  return ShiftModel.aggregate([
+  return ShiftModel.aggregate<UserMainShiftsData>([
     { $match: QueryFilter },
     {
       $group: {
@@ -172,7 +172,7 @@ export default async function GetMainShiftsData(
         },
       },
     },
-  ]).then((Resp: UserMainShiftsData[]) => {
+  ]).then((Resp) => {
     if (Resp.length === 0) {
       Resp[0] = {
         shift_count: 0,
@@ -197,7 +197,17 @@ export default async function GetMainShiftsData(
       }
 
       if (Key === "shift_count" || Key.endsWith("s") || typeof Duration !== "number") continue;
-      Resp[0][Key] = HumanizeDuration(Duration);
+      if (Key === "avg_onduty" || Key === "avg_onbreak") {
+        (Resp[0][Key] as unknown as string) =
+          Duration > 500
+            ? HumanizeDuration(Duration)
+            : Duration > 0
+              ? "less than 1 minute"
+              : "*insufficient data*";
+      } else {
+        Resp[0][Key] =
+          Duration < 500 && Duration > 0 ? "less than 1 minute" : HumanizeDuration(Duration);
+      }
     }
 
     return Resp[0] as unknown as ExpandRecursively<
