@@ -2,8 +2,8 @@
 import type { PropertiesToString } from "utility-types";
 import type { Shifts } from "@Typings/Utilities/Database.js";
 import type { FilterQuery } from "mongoose";
+import ShiftModel, { ShiftFlags } from "@Models/Shift.js";
 import DHumanize from "humanize-duration";
-import ShiftModel from "@Models/Shift.js";
 import Guild from "@Models/Guild.js";
 
 export type UserMainShiftsData = {
@@ -84,10 +84,12 @@ export default async function GetMainShiftsData(
           },
         },
 
-        total_onduty_imported: {
+        total_onduty_manual: {
           $sum: {
             $cond: {
-              if: { $eq: ["$flag", "Imported"] },
+              if: {
+                $in: ["$flag", [ShiftFlags.Imported, ShiftFlags.Administrative, ShiftFlags.System]],
+              },
               then: {
                 $add: [
                   "$durations.on_duty",
@@ -101,10 +103,12 @@ export default async function GetMainShiftsData(
           },
         },
 
-        imported_shift_count: {
+        manual_shift_count: {
           $sum: {
             $cond: {
-              if: { $eq: ["$flag", "Imported"] },
+              if: {
+                $in: ["$flag", [ShiftFlags.Imported, ShiftFlags.Administrative, ShiftFlags.System]],
+              },
               then: 1,
               else: 0,
             },
@@ -123,8 +127,8 @@ export default async function GetMainShiftsData(
         total_arrests: { $sum: "$total_arrests" },
         total_citations: { $sum: "$total_citations" },
 
-        imported_shift_count: { $sum: "$imported_shift_count" },
-        total_onduty_imported: { $sum: "$total_onduty_imported" },
+        manual_shift_count: { $sum: "$manual_shift_count" },
+        total_onduty_manual: { $sum: "$total_onduty_manual" },
       },
     },
     {
@@ -138,16 +142,16 @@ export default async function GetMainShiftsData(
         frequent_shift_type: 1,
         avg_onduty: {
           $cond: {
-            if: { $eq: [{ $subtract: ["$shift_count", "$imported_shift_count"] }, 0] },
+            if: { $eq: [{ $subtract: ["$shift_count", "$manual_shift_count"] }, 0] },
             then: 0,
             else: {
               $round: {
                 $divide: [
                   {
-                    $subtract: ["$total_onduty", "$total_onduty_imported"],
+                    $subtract: ["$total_onduty", "$total_onduty_manual"],
                   },
                   {
-                    $subtract: ["$shift_count", "$imported_shift_count"],
+                    $subtract: ["$shift_count", "$manual_shift_count"],
                   },
                 ],
               },
@@ -156,14 +160,14 @@ export default async function GetMainShiftsData(
         },
         avg_onbreak: {
           $cond: {
-            if: { $eq: [{ $subtract: ["$shift_count", "$imported_shift_count"] }, 0] },
+            if: { $eq: [{ $subtract: ["$shift_count", "$manual_shift_count"] }, 0] },
             then: 0,
             else: {
               $round: {
                 $divide: [
                   "$total_onbreak",
                   {
-                    $subtract: ["$shift_count", "$imported_shift_count"],
+                    $subtract: ["$shift_count", "$manual_shift_count"],
                   },
                 ],
               },
