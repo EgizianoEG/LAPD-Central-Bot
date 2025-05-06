@@ -1331,7 +1331,7 @@ async function HandleUANDataDeleteBeforeOrAfterDate(
           end_date: ComparisonType === "Before" ? { $lte: ParsedDate } : { $gte: ParsedDate },
         },
         {
-          status: ["Pending", "Cancelled"],
+          status: ["Pending", "Cancelled", "Denied"],
           request_date: ComparisonType === "Before" ? { $lte: ParsedDate } : { $gte: ParsedDate },
         },
       ],
