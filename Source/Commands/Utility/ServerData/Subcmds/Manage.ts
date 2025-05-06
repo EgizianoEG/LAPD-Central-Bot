@@ -377,8 +377,11 @@ async function ShowModalAndAwaitSubmission(
 
 async function SendReplyAndFetchMessage(
   Interaction: RepliableInteraction<"cached">,
-  Options: MessagePayload | InteractionReplyOptions
+  Options: (MessagePayload | InteractionReplyOptions) & {
+    replyMethod?: "reply" | "editReply" | "update" | "followUp";
+  }
 ): Promise<Message<true>> {
+  const ReplyMethod = Options.replyMethod ?? "reply";
   let Flags =
     "components" in Options && Options.components?.length
       ? Options.components[0] instanceof ContainerBuilder
@@ -390,7 +393,8 @@ async function SendReplyAndFetchMessage(
     Flags = Flags & (Options.flags as number);
   }
 
-  const Response = await Interaction.reply({
+  delete Options.replyMethod;
+  const Response = await Interaction[ReplyMethod]({
     ...Options,
     flags: Flags,
     withResponse: true,
@@ -1393,6 +1397,7 @@ async function HandleUserActivityNoticeRecordsManagement(
   const PanelContainer = GetUANManagementContainer(IsLeaveManagement);
   const ManagementComps = GetUANManagementComponents(SMenuInteract, IsLeaveManagement);
   const ResponeseMessage = await SendReplyAndFetchMessage(SMenuInteract, {
+    replyMethod: "update",
     components: [
       PanelContainer.addSeparatorComponents(
         new SeparatorBuilder().setDivider()
