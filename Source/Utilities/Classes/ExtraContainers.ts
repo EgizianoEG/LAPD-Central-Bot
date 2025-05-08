@@ -30,6 +30,10 @@ import { format as FormatString } from "node:util";
 import { Colors } from "@Config/Shared.js";
 import AppError from "./AppError.js";
 
+type MessageActionRowComponent =
+  | ActionRowBuilder<MessageActionRowComponentBuilder>
+  | APIActionRowComponent<APIComponentInMessageActionRow>;
+
 type ThumbnailAccessory =
   | APIThumbnailComponent
   | ThumbnailBuilder
@@ -110,12 +114,13 @@ export class BaseExtraContainer extends ContainerBuilder {
 
   /**
    * Sets the description of this embed using node `util.format()`.
+   * @remarks This method will set the description to a single space if it was provided as a falsey value.
    * @requires {@link FormatString `node:util.format()`}
    * @param description - A tuple of data to format (by `util.format()`) and set as the description.
    */
   setDescription(...description: any[]): this {
     const Formatted = FormatString(...description).trim();
-    this._description = Formatted.match(/^(?:\s*|NaN|null|undefined)$/) ? "" : Formatted;
+    this._description = Formatted.match(/^(?:\s*|NaN|null|undefined)$/) ? " " : Formatted;
     if (this.components.length > 0 && this.components[0] instanceof SectionBuilder) {
       return (
         (this.components[0].components[1] as TextDisplayBuilder).setContent(this._description) &&
@@ -166,10 +171,15 @@ export class BaseExtraContainer extends ContainerBuilder {
     });
 
     if (HasLastActionRow) {
-      const ActionRow = this.components.pop() as ActionRowBuilder<MessageActionRowComponentBuilder>;
+      const TotalARsExisting = this.components.reduceRight(
+        (acc, c) => acc + (c.data.type === ComponentType.ActionRow ? 1 : 0),
+        0
+      );
+
+      const ActionRows = this.components.slice(-TotalARsExisting) as MessageActionRowComponent[];
       return this.addSeparatorComponents(new SeparatorBuilder().setDivider())
         .addTextDisplayComponents(FooterComponent)
-        .addActionRowComponents(ActionRow);
+        .addActionRowComponents(...ActionRows);
     }
 
     return this.addSeparatorComponents(
@@ -264,7 +274,7 @@ export class BaseExtraContainer extends ContainerBuilder {
   }
 
   /**
-   * Attaches an action row containing interactive components (buttons, select menus, etc.) to the container.
+   * Attaches action row(s) containing interactive components (buttons, select menus, etc.) to the container.
    * Maintains proper component hierarchy by:
    * - Replacing existing action rows
    * - Preserving footer components
@@ -273,7 +283,7 @@ export class BaseExtraContainer extends ContainerBuilder {
    * This method ensures consistent layout regardless of whether components were added before
    * or after setting a footer, thumbnail, or other container elements.
    *
-   * @param actionRow - The action row component containing interactive elements (buttons, select menus, etc.)
+   * @param actionRows - The action row component containing interactive elements (buttons, select menus, etc.)
    * @param separatorOpts - Configuration options for the separator above the action row.
    * @param separatorOpts.spacing - The spacing size to use for the separator (1 = small, 2 = large).
    * @param separatorOpts.divider - Whether to show a visible divider line in the separator.
@@ -297,28 +307,20 @@ export class BaseExtraContainer extends ContainerBuilder {
    *   );
    */
   public attachPromptActionRow(
-    actionRow:
-      | ActionRowBuilder<MessageActionRowComponentBuilder>
-      | APIActionRowComponent<APIComponentInMessageActionRow>,
+    actionRows: MessageActionRowComponent | MessageActionRowComponent[],
     separatorOpts: { spacing?: 1 | 2; divider?: boolean } = { spacing: 1, divider: true }
   ): this {
+    const ActionRows = Array.isArray(actionRows) ? actionRows : [actionRows];
     const Separator = new SeparatorBuilder()
       .setSpacing(separatorOpts.spacing ?? 1)
       .setDivider(separatorOpts.divider);
 
-    if (
-      this.components.length &&
-      this.components[this.components.length - 1] instanceof ActionRowBuilder
-    ) {
-      if (
-        this.components.length > 1 &&
-        this.components[this.components.length - 2].data.type === ComponentType.TextDisplay &&
-        this.components[this.components.length - 2].data.id === 3
-      ) {
-        return this.spliceComponents(-1, 1, actionRow);
-      }
+    const ActionRowIndices = this.components
+      .map((c, i) => (c instanceof ActionRowBuilder ? i : -1))
+      .filter((i) => i !== -1);
 
-      return this.spliceComponents(-1, 2, Separator, actionRow);
+    for (let i = ActionRowIndices.length - 1; i >= 0; i--) {
+      this.spliceComponents(ActionRowIndices[i], 1);
     }
 
     if (this._footer) {
@@ -327,28 +329,17 @@ export class BaseExtraContainer extends ContainerBuilder {
       );
 
       if (FooterIndex !== -1) {
-        const footerComponent = this.components[FooterIndex];
-        if (FooterIndex === this.components.length - 1) {
-          if (
-            FooterIndex > 0 &&
-            this.components[FooterIndex - 1].data.type === ComponentType.Separator
-          ) {
-            return this.addActionRowComponents(actionRow);
-          } else {
-            return this.spliceComponents(FooterIndex, 1, Separator, footerComponent, actionRow);
-          }
+        if (
+          FooterIndex < this.components.length - 1 &&
+          this.components[FooterIndex + 1].data.type === ComponentType.Separator
+        ) {
+          this.spliceComponents(FooterIndex + 1, 1);
         }
-        return this.spliceComponents(
-          FooterIndex,
-          this.components.length - FooterIndex,
-          Separator,
-          footerComponent,
-          actionRow
-        );
+        return this.addSeparatorComponents(Separator).addActionRowComponents(...ActionRows);
       }
     }
 
-    return this.addSeparatorComponents(Separator).addActionRowComponents(actionRow);
+    return this.addSeparatorComponents(Separator).addActionRowComponents(...ActionRows);
   }
 
   /**
