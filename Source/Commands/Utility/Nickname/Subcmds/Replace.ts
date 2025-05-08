@@ -313,7 +313,7 @@ async function HandleReplacementConfirmation(
           > - Nicknames Replaced: \`${TotalReplaced}\`
           > - Nicknames Failed: \`${TotalFailed}\`
           
-          The process took approximately ${HumanizeDuration(Date.now() - ButtonInteract.createdTimestamp)}.
+          -# The process took approximately ${HumanizeDuration(Date.now() - ButtonInteract.createdTimestamp)}.
         `)
     );
   }
