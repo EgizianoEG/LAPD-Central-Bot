@@ -25,6 +25,7 @@ import {
   ComponentType,
   MessageFlags,
   resolveColor,
+  SeparatorBuilder,
 } from "discord.js";
 
 jest.mock("discord.js", () => {
@@ -241,6 +242,20 @@ describe("BaseExtraContainer", () => {
     Container.setThumbnail(null);
     expect(Container.components[0] instanceof TextDisplayBuilder).toBeTruthy();
     expect(Container.components.length).toBe(3); // Title, separator, description
+
+    const Container_V2 = new BaseExtraContainer();
+    Container_V2.components.splice(0, Container_V2.components.length);
+    const Result = Container_V2.setThumbnail(null);
+    expect(Result).toBe(Container_V2);
+    expect(Container_V2.thumbnail).toBeNull();
+
+    Container_V2.setThumbnail((builder) => builder.setURL("https://example.com/func.jpg"));
+    expect(Container_V2.thumbnail).toBe("https://example.com/func.jpg");
+
+    const NewContainer = new BaseExtraContainer();
+    NewContainer.components.splice(0, NewContainer.components.length);
+    NewContainer.setThumbnail("https://example.com/test.jpg");
+    expect(NewContainer.components[0] instanceof SectionBuilder).toBeTruthy();
   });
 
   test("attachPromptActionRows should handle various container states", () => {
@@ -270,6 +285,28 @@ describe("BaseExtraContainer", () => {
 
     expect(FooterIndex).toBeGreaterThan(0);
     expect(NewContainer.components[NewContainer.components.length - 1]).toBe(ActionRow1);
+  });
+
+  test("attachPromptActionRows should handle action rows with separators configuration", () => {
+    const Container = new BaseExtraContainer();
+    const ActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder().setCustomId("test-btn").setLabel("Test")
+    );
+
+    Container.attachPromptActionRows(ActionRow, { spacing: undefined, divider: undefined });
+    const ContainerWithFooter = new BaseExtraContainer();
+    ContainerWithFooter.setFooter("Test Footer");
+
+    const Separator = new SeparatorBuilder();
+    const FooterIndex = ContainerWithFooter.components.findLastIndex(
+      (c) => c.data.type === ComponentType.TextDisplay && c.data.id === 3
+    );
+
+    ContainerWithFooter.spliceComponents(FooterIndex + 1, 0, Separator);
+    ContainerWithFooter.attachPromptActionRows(ActionRow);
+    expect(ContainerWithFooter.components[ContainerWithFooter.components.length - 1]).toBe(
+      ActionRow
+    );
   });
 
   test("should support attaching multiple action rows at once", () => {
@@ -694,6 +731,21 @@ describe("Complex Interaction Tests", () => {
 
     expect(FailingInteraction.update).toHaveBeenCalled();
     expect(FailingInteraction.followUp).toHaveBeenCalled();
+  });
+
+  test("replyToInteract should handle interaction reply fallback scenarios", async () => {
+    const Container = new BaseExtraContainer();
+    const BtnInteraction = CreateMockInteraction("ButtonInteraction");
+
+    BtnInteraction.reply = jest.fn().mockRejectedValue(new Error("Reply failed"));
+    await Container.replyToInteract(BtnInteraction, false, true);
+    expect(BtnInteraction.followUp).toHaveBeenCalled();
+
+    // Test MessageComponentInteraction fallback paths
+    const CompInteraction = CreateMockInteraction("MessageComponentInteraction");
+    CompInteraction.update = jest.fn().mockRejectedValue(new Error("Update failed"));
+    await Container.replyToInteract(CompInteraction, false, true, "editReply");
+    expect(CompInteraction.followUp).toHaveBeenCalled();
   });
 });
 
