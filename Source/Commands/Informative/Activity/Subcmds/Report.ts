@@ -10,12 +10,13 @@ import {
 } from "discord.js";
 
 import { differenceInMilliseconds, isAfter, milliseconds } from "date-fns";
-import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { IsValidShiftTypeName } from "@Utilities/Other/Validators.js";
 import { ShiftTypeExists } from "@Utilities/Database/ShiftTypeValidators.js";
+import { InfoContainer } from "@Utilities/Classes/ExtraContainers.js";
+import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { Dedent } from "@Utilities/Strings/Formatters.js";
 
 import * as Chrono from "chrono-node";
-import Dedent from "dedent";
 import DHumanize from "humanize-duration";
 import ShiftModel from "@Models/Shift.js";
 import ParseDuration from "parse-duration";
@@ -35,6 +36,10 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
   const InputShiftType = CmdInteraction.options.getString("shift-type", false);
   const IMNicknames = CmdInteraction.options.getBoolean("include-nicknames", false);
   const InputSince = CmdInteraction.options.getString("since", true);
+  const RespFlags = EphemeralResponse
+    ? MessageFlags.Ephemeral | MessageFlags.IsComponentsV2
+    : MessageFlags.IsComponentsV2;
+
   let SinceDate: Date | null = null;
   let QuotaDur: number = 0;
 
@@ -86,38 +91,40 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
   }
 
   await CmdInteraction.deferReply({
-    flags: EphemeralResponse ? MessageFlags.Ephemeral : undefined,
+    flags: RespFlags,
   });
 
-  const CheckedShiftType = InputShiftType?.toLowerCase() === "default" ? "Default" : InputShiftType;
-  const QuickShiftCount = await ShiftModel.countDocuments({
+  const NormalizedShiftType =
+    InputShiftType?.trim().toLowerCase() === "default" ? "Default" : InputShiftType;
+
+  const EstimatedShiftCount = await ShiftModel.countDocuments({
     guild: CmdInteraction.guild.id,
-    type: CheckedShiftType || { $exists: true },
+    type: NormalizedShiftType || { $exists: true },
     start_timestamp: SinceDate ? { $gte: SinceDate } : { $exists: true },
     end_timestamp: { $ne: null },
   });
 
-  if (QuickShiftCount === 0) {
-    return new InfoEmbed()
+  if (EstimatedShiftCount === 0) {
+    return new InfoContainer()
       .useInfoTemplate("NoShiftsFoundReport")
       .replyToInteract(CmdInteraction, true, false);
   }
 
   await CmdInteraction.editReply({
-    embeds: [new InfoEmbed().useInfoTemplate("CreatingActivityReport")],
+    components: [new InfoContainer().useInfoTemplate("CreatingActivityReport")],
+    flags: RespFlags,
   });
 
-  const GSettings = await GetGuildSettings(CmdInteraction.guildId, true);
-  const ServerDefaultQuota = GSettings?.shift_management.default_quota || 0;
+  const GuildSettings = await GetGuildSettings(CmdInteraction.guildId, true);
+  const FetchedGuildMembers = await CmdInteraction.guild.members.fetch();
+  const ServerDefaultQuota = GuildSettings?.shift_management.default_quota ?? 0;
   const ReportSpredsheetURL = await CreateShiftReport({
     guild: CmdInteraction.guild,
-    shift_type: CheckedShiftType,
     after: SinceDate,
+    members: FetchedGuildMembers,
+    shift_type: NormalizedShiftType,
     quota_duration: QuotaDur || ServerDefaultQuota,
     include_member_nicknames: !!IMNicknames,
-    members: await CmdInteraction.guild.members
-      .fetch()
-      .catch(() => CmdInteraction.guild.members.cache),
   });
 
   const ShowReportButton = new ActionRowBuilder<ButtonBuilder>().setComponents(
@@ -133,8 +140,7 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
       ? `${HumanizeDuration(ServerDefaultQuota)} (Server Default)`
       : "Disabled (No Quota)";
 
-  const RespEmbed = new InfoEmbed()
-    .setThumbnail(null)
+  const ResponseContainer = new InfoContainer()
     .setTitle("Report Created")
     .setDescription(
       Dedent(`
@@ -145,18 +151,21 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
         - **Shift Time Requirement:** ${ShiftTimeReqText}
         - **Member Nicknames Included:** ${IMNicknames ? "Yes" : "No"}
         
-        *Click the button below to view the report on Google Sheets.*
+        -# *Click the button below to view the report on Google Sheets. \
+        To make changes or to use interactive highlighting features, use \
+        "File > Make a copy" in Google Sheets.*
       `)
-    );
+    )
+    .attachPromptActionRow(ShowReportButton);
 
   return CmdInteraction.editReply({
-    components: [ShowReportButton],
-    embeds: [RespEmbed],
+    components: [ResponseContainer],
+    flags: RespFlags,
   }).catch(() => null);
 }
 
 // ---------------------------------------------------------------------------------------
-// Command structure:
+// Command Structure:
 // ------------------
 const CommandObject: SlashCommandObject<SlashCommandSubcommandBuilder> = {
   callback: Callback,
