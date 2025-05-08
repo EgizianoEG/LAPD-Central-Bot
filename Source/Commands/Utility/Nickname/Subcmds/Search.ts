@@ -1,33 +1,44 @@
-import { EmbedBuilder, GuildMember, SlashCommandSubcommandBuilder } from "discord.js";
-import { ErrorEmbed, InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import HandlePagePagination from "@Utilities/Other/HandlePagePagination.js";
+import {
+  GuildMember,
+  MessageFlags,
+  ContainerBuilder,
+  SlashCommandSubcommandBuilder,
+} from "discord.js";
 
+import AppLogger from "@Utilities/Classes/AppLogger.js";
+import HandlePagePagination from "@Utilities/Other/HandlePagePagination.js";
+import { ErrorContainer, InfoContainer } from "@Utilities/Classes/ExtraContainers.js";
+import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { GetErrorId } from "@Utilities/Strings/Random.js";
+
+const FileLogLabel = "Commands:Utility:Nickname:Search";
 const ListFormatter = new Intl.ListFormat("en");
+const MembersPerPage = 15;
 const RegexFlags = ["i", "g", "gi"];
 
 // ---------------------------------------------------------------------------------------
 // Functions:
 // ----------
 /**
- * Takes an array of GuildMembers and returns an array of EmbedBuilders, where each EmbedBuilder contains a subset of the GuildMembers in a formatted list.
+ * Takes an array of GuildMembers and returns an array of ContainerBuilder, where each container contains a subset of the GuildMembers in a formatted list.
  * @param {GuildMember[]} Members - An array of GuildMember objects, representing the members of a guild.
- * @returns an array of EmbedBuilder objects.
+ * @returns an array of ContainerBuilder objects.
  */
-function ToEmbedPages(Members: GuildMember[]) {
-  const Embeds: EmbedBuilder[] = [];
+function GeneratePageContainers(Members: GuildMember[]): ContainerBuilder[] {
+  const Containers: ContainerBuilder[] = [];
   const MMTotal = Members.length;
 
-  for (let i = 0; i < Members.length; i += 20) {
-    Embeds.push(
-      new InfoEmbed()
+  for (let i = 0; i < Members.length; i += MembersPerPage) {
+    Containers.push(
+      new InfoContainer()
         .setTitle(`Matching Members — ${MMTotal}`)
         .setDescription(
-          ListFormatter.format(Members.slice(i, i + 20).map((M) => `<@${M.user.id}>`))
+          ListFormatter.format(Members.slice(i, i + MembersPerPage).map((M) => `<@${M.user.id}>`))
         )
     );
   }
 
-  return Embeds;
+  return Containers;
 }
 
 async function Callback(CmdInteract: SlashCommandInteraction<"cached">) {
@@ -35,13 +46,18 @@ async function Callback(CmdInteract: SlashCommandInteraction<"cached">) {
   const InputRFlag = CmdInteract.options.getString("flags", false);
   const RoleFilter = CmdInteract.options.getRole("role_filter", false);
   const ResponseEphemeral = CmdInteract.options.getBoolean("ephemeral", false) || false;
+  const ReplyFlags = ResponseEphemeral
+    ? MessageFlags.Ephemeral | MessageFlags.IsComponentsV2
+    : MessageFlags.IsComponentsV2;
 
   try {
     const Regex = new RegExp(InputRegex, InputRFlag ?? undefined);
+    await CmdInteract.deferReply({ flags: ReplyFlags });
+
     const GuildMembers = await CmdInteract.guild.members.fetch();
     const MembersMatching = GuildMembers.filter((Member) => {
       return (
-        !Member.user.bot &&
+        // !Member.user.bot &&
         (RoleFilter ? Member.roles.cache.has(RoleFilter.id) : true) &&
         Regex.test(Member.nickname ?? Member.displayName)
       );
@@ -49,36 +65,48 @@ async function Callback(CmdInteract: SlashCommandInteraction<"cached">) {
       (M1.nickname ?? M1.displayName).localeCompare(M2.nickname ?? M2.displayName)
     );
 
-    const EmbedPages = ToEmbedPages(MembersMatching.toJSON());
-    if (EmbedPages.length) {
+    const MemberResultContainers = GeneratePageContainers(MembersMatching.toJSON());
+    if (MemberResultContainers.length) {
       return HandlePagePagination({
-        pages: EmbedPages,
+        pages: MemberResultContainers,
+        context: FileLogLabel,
         interact: CmdInteract,
         ephemeral: ResponseEphemeral,
-        context: "Commands:Utility:Nickname:Search",
       });
     } else {
-      return new InfoEmbed()
+      return new InfoContainer()
         .useInfoTemplate("NicknameRegexNoMatchingMembers")
         .replyToInteract(CmdInteract, true);
     }
-  } catch (Err) {
+  } catch (Err: any) {
     if (Err instanceof SyntaxError) {
       return new ErrorEmbed()
         .useErrTemplate("InvalidRegexSyntax")
         .replyToInteract(CmdInteract, true);
     }
 
-    return new ErrorEmbed()
+    const ErrorId = GetErrorId();
+    AppLogger.error({
+      label: FileLogLabel,
+      message: "An error occurred while searching for members;",
+      error_id: ErrorId,
+      stack: Err.stack,
+      error: {
+        ...Err,
+      },
+    });
+
+    return new ErrorContainer()
       .setDescription(
         "Seems like an unexpected error occurred while searching for members. Please try again later."
       )
+      .setErrorId(ErrorId)
       .replyToInteract(CmdInteract, true);
   }
 }
 
 // ---------------------------------------------------------------------------------------
-// Command structure:
+// Command Structure:
 // ------------------
 const CommandObject = {
   callback: Callback,
