@@ -156,7 +156,7 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
         "File > Make a copy" in Google Sheets.*
       `)
     )
-    .attachPromptActionRow(ShowReportButton);
+    .attachPromptActionRows(ShowReportButton);
 
   return CmdInteraction.editReply({
     components: [ResponseContainer],

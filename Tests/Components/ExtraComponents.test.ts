@@ -180,7 +180,7 @@ describe("BaseExtraContainer", () => {
     expect(Container.thumbnail).toBe("https://example.com/image2.png");
   });
 
-  test("attachPromptActionRow should add action row components", () => {
+  test("attachPromptActionRows should add action row components", () => {
     const ActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder().setCustomId("test-button").setLabel("Test Button")
     );
@@ -188,12 +188,12 @@ describe("BaseExtraContainer", () => {
     const AddSpy = jest.spyOn(Container, "addSeparatorComponents");
     const AddActionSpy = jest.spyOn(Container, "addActionRowComponents");
 
-    Container.attachPromptActionRow(ActionRow);
+    Container.attachPromptActionRows(ActionRow);
 
     expect(AddSpy).toHaveBeenCalled();
     expect(AddActionSpy).toHaveBeenCalledWith(ActionRow);
 
-    Container.attachPromptActionRow(ActionRow, { spacing: 2, divider: false });
+    Container.attachPromptActionRows(ActionRow, { spacing: 2, divider: false });
   });
 
   test("replyToInteract should handle different interaction types", async () => {
@@ -243,7 +243,7 @@ describe("BaseExtraContainer", () => {
     expect(Container.components.length).toBe(3); // Title, separator, description
   });
 
-  test("attachPromptActionRow should handle various container states", () => {
+  test("attachPromptActionRows should handle various container states", () => {
     // Test with an existing action row
     const ActionRow1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder().setCustomId("test-button-1").setLabel("Button 1")
@@ -252,17 +252,17 @@ describe("BaseExtraContainer", () => {
       new ButtonBuilder().setCustomId("test-button-2").setLabel("Button 2")
     );
 
-    Container.attachPromptActionRow(ActionRow1);
+    Container.attachPromptActionRows(ActionRow1);
     expect(Container.components[Container.components.length - 1]).toBe(ActionRow1);
 
     // Test replacing existing action row
-    Container.attachPromptActionRow(ActionRow2);
+    Container.attachPromptActionRows(ActionRow2);
     expect(Container.components[Container.components.length - 1]).toBe(ActionRow2);
 
     // Test with footer then action row
     const NewContainer = new BaseExtraContainer();
     NewContainer.setFooter("Test Footer");
-    NewContainer.attachPromptActionRow(ActionRow1);
+    NewContainer.attachPromptActionRows(ActionRow1);
 
     const FooterIndex = NewContainer.components.findIndex(
       (c) => c.data.type === ComponentType.TextDisplay && c.data.id === 3
@@ -286,7 +286,7 @@ describe("BaseExtraContainer", () => {
     );
 
     // Attach multiple rows at once using an array
-    Container.attachPromptActionRow([ActionRow1, ActionRow2, ActionRow3]);
+    Container.attachPromptActionRows([ActionRow1, ActionRow2, ActionRow3]);
 
     // Verify all three rows were added with proper order
     const componentCount = Container.components.length;
@@ -306,7 +306,7 @@ describe("BaseExtraContainer", () => {
       ),
     ];
 
-    Container.attachPromptActionRow(OldRows);
+    Container.attachPromptActionRows(OldRows);
 
     // Now replace them with different action rows
     const NewRows = [
@@ -321,7 +321,7 @@ describe("BaseExtraContainer", () => {
       ),
     ];
 
-    Container.attachPromptActionRow(NewRows);
+    Container.attachPromptActionRows(NewRows);
 
     // Verify old rows were removed and new ones added
     const ActionRows = Container.components.filter((c) => c instanceof ActionRowBuilder);
@@ -343,7 +343,7 @@ describe("BaseExtraContainer", () => {
       ),
     ];
 
-    Container.attachPromptActionRow(ActionRows);
+    Container.attachPromptActionRows(ActionRows);
 
     // Verify the footer is still present
     const FooterIndex = Container.components.findIndex(
@@ -369,7 +369,7 @@ describe("BaseExtraContainer", () => {
       ),
     ];
 
-    Container.attachPromptActionRow(ActionRows);
+    Container.attachPromptActionRows(ActionRows);
 
     // Now set a footer
     Container.setFooter("Test Footer");
@@ -385,7 +385,7 @@ describe("BaseExtraContainer", () => {
 
   test("should preserve multiple action rows when removing footer", () => {
     // Add footer and multiple action rows
-    Container.setFooter("Test Footer").attachPromptActionRow([
+    Container.setFooter("Test Footer").attachPromptActionRows([
       new ActionRowBuilder<ButtonBuilder>().addComponents(
         new ButtonBuilder().setCustomId("test-button-1").setLabel("Button 1")
       ),
@@ -430,10 +430,10 @@ describe("BaseExtraContainer", () => {
 
     Container.setTitle("Test Title")
       .setDescription("Test Description")
-      .attachPromptActionRow(ActionRows1)
+      .attachPromptActionRows(ActionRows1)
       .setFooter("First Footer")
       .setFooter("Updated Footer")
-      .attachPromptActionRow(ActionRows2)
+      .attachPromptActionRows(ActionRows2)
       .setThumbnail("https://example.com/image.png");
 
     // Verify final state
@@ -589,7 +589,7 @@ describe("Integration Tests", () => {
     const Container = new SuccessContainer()
       .setTitle("Interactive Container")
       .setDescription("This container has buttons")
-      .attachPromptActionRow(
+      .attachPromptActionRows(
         new ActionRowBuilder<ButtonBuilder>().addComponents(
           new ButtonBuilder().setCustomId("test-button").setLabel("Test Button")
         )
@@ -751,7 +751,7 @@ describe("Container Lifecycle", () => {
     const ActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder().setCustomId("test-btn").setLabel("Test")
     );
-    Container.attachPromptActionRow(ActionRow);
+    Container.attachPromptActionRows(ActionRow);
 
     // Change thumbnail
     Container.setThumbnail("https://example.com/thumb2.jpg");

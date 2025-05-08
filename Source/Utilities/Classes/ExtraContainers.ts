@@ -306,7 +306,7 @@ export class BaseExtraContainer extends ContainerBuilder {
    *     )
    *   );
    */
-  public attachPromptActionRow(
+  public attachPromptActionRows(
     actionRows: MessageActionRowComponent | MessageActionRowComponent[],
     separatorOpts: { spacing?: 1 | 2; divider?: boolean } = { spacing: 1, divider: true }
   ): this {

@@ -590,7 +590,7 @@ async function HandleShiftDataWipeAll(BtnInteract: ButtonInteraction<"cached">) 
   );
 
   const RespMessage = await SendReplyAndFetchMessage(BtnInteract, {
-    components: [ConfirmationContainer.attachPromptActionRow(ConfirmationComponents)],
+    components: [ConfirmationContainer.attachPromptActionRows(ConfirmationComponents)],
   });
 
   return AwaitDeleteConfirmation(BtnInteract, RespMessage, HandleShiftDataWipeAllConfirm);
@@ -647,7 +647,7 @@ async function HandleShiftDataDeletePast(BtnInteract: ButtonInteraction<"cached"
   );
 
   const RespMessage = await SendReplyAndFetchMessage(BtnInteract, {
-    components: [ConfirmationContainer.attachPromptActionRow(ConfirmationComponents)],
+    components: [ConfirmationContainer.attachPromptActionRows(ConfirmationComponents)],
   });
 
   return AwaitDeleteConfirmation(BtnInteract, RespMessage, HandleShiftDataDeletePastConfirm);
@@ -720,7 +720,7 @@ async function HandleShiftDataDeleteOfType(BtnInteract: ButtonInteraction<"cache
   );
 
   const RespMessage = await SendReplyAndFetchMessage(ModalSubmission, {
-    components: [ConfirmationContainer.attachPromptActionRow(ConfirmationComponents)],
+    components: [ConfirmationContainer.attachPromptActionRows(ConfirmationComponents)],
   });
 
   return AwaitDeleteConfirmation(
@@ -830,7 +830,7 @@ async function HandleShiftDataDeleteBeforeOrAfterDate(
   );
 
   const RespMessage = await SendReplyAndFetchMessage(ModalSubmission, {
-    components: [ConfirmationContainer.attachPromptActionRow(ConfirmationComponents)],
+    components: [ConfirmationContainer.attachPromptActionRows(ConfirmationComponents)],
   });
 
   return AwaitDeleteConfirmation(
@@ -1020,7 +1020,7 @@ async function HandleUANDataWipeAll(BtnInteract: ButtonInteraction<"cached">, Is
   const ConfirmationComponents = GetDeleteConfirmationComponents(BtnInteract, `sdm-${ActionType}`);
 
   const RespMessage = await SendReplyAndFetchMessage(BtnInteract, {
-    components: [ConfirmationContainer.attachPromptActionRow(ConfirmationComponents)],
+    components: [ConfirmationContainer.attachPromptActionRows(ConfirmationComponents)],
   });
 
   return AwaitDeleteConfirmation(BtnInteract, RespMessage, HandleUANDataWipeAllConfirm, IsLOA);
@@ -1096,7 +1096,7 @@ async function HandleUANDataDeletePast(BtnInteract: ButtonInteraction<"cached">,
   const ConfirmationComponents = GetDeleteConfirmationComponents(BtnInteract, `sdm-${actionType}`);
 
   const RespMessage = await SendReplyAndFetchMessage(BtnInteract, {
-    components: [ConfirmationContainer.attachPromptActionRow(ConfirmationComponents)],
+    components: [ConfirmationContainer.attachPromptActionRows(ConfirmationComponents)],
   });
 
   return AwaitDeleteConfirmation(BtnInteract, RespMessage, HandleUANDataDeletePastConfirm, IsLOA);
@@ -1169,7 +1169,7 @@ async function HandleUANDataDeletePending(
   const ConfirmationComponents = GetDeleteConfirmationComponents(BtnInteract, `sdm-${ActionType}`);
 
   const RespMessage = await SendReplyAndFetchMessage(BtnInteract, {
-    components: [ConfirmationContainer.attachPromptActionRow(ConfirmationComponents)],
+    components: [ConfirmationContainer.attachPromptActionRows(ConfirmationComponents)],
   });
 
   return AwaitDeleteConfirmation(
@@ -1353,7 +1353,7 @@ async function HandleUANDataDeleteBeforeOrAfterDate(
 
   const RespMessage = await ModalSubmission.followUp({
     flags: MessageFlags.IsComponentsV2,
-    components: [ConfirmationContainer.attachPromptActionRow(ConfirmationComponents)],
+    components: [ConfirmationContainer.attachPromptActionRows(ConfirmationComponents)],
   });
 
   return AwaitDeleteConfirmation(

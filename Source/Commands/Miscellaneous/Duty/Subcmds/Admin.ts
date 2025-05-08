@@ -1102,7 +1102,7 @@ async function HandleUserShiftsWipe(
     .setFooter(
       "**Note:** This is an ***irrevocable*** action, and erased data cannot be recovered. This prompt will time out in 5 minutes."
     )
-    .attachPromptActionRow(ButtonsAR);
+    .attachPromptActionRows(ButtonsAR);
 
   const ConfirmationPrompt = await BInteract.reply({
     flags: MessageFlags.IsComponentsV2,

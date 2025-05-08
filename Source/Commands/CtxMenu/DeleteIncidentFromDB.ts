@@ -36,7 +36,7 @@ async function Callback(Interaction: MessageContextMenuCommandInteraction<"cache
       `Please confirm your intent to the deletion of incident report with number \`${IncidentRecord.num}\` from the database.\n`
     )
     .setFooter("The deletion will be cancelled automatically after five minutes.")
-    .attachPromptActionRow(ConfirmationComponents);
+    .attachPromptActionRows(ConfirmationComponents);
 
   const PromptMessage = await Interaction.editReply({
     components: [DeletionPromptContainer],

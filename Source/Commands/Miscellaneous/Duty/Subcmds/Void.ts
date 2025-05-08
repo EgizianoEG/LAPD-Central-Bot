@@ -57,7 +57,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   );
 
   const PromptMessage = await Interaction.reply({
-    components: [PromptContainer.attachPromptActionRow(PromptButtons)],
+    components: [PromptContainer.attachPromptActionRows(PromptButtons)],
     flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
     withResponse: true,
   }).then((Resp) => Resp.resource!.message! as Message<true>);
