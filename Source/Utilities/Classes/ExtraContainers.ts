@@ -335,7 +335,7 @@ export class BaseExtraContainer extends ContainerBuilder {
         ) {
           this.spliceComponents(FooterIndex + 1, 1);
         }
-        return this.addSeparatorComponents(Separator).addActionRowComponents(...ActionRows);
+        return this.addActionRowComponents(...ActionRows);
       }
     }
 
