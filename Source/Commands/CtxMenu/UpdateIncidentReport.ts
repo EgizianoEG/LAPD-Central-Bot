@@ -10,14 +10,13 @@ import {
   InteractionContextType,
   ModalSubmitInteraction,
   InteractionCollector,
-  CollectedInteraction,
+  RepliableInteraction,
   ButtonInteraction,
   ActionRowBuilder,
   TextInputBuilder,
   TextInputStyle,
   ComponentType,
   ButtonBuilder,
-  EmbedBuilder,
   MessageFlags,
   ModalBuilder,
   ButtonStyle,
@@ -26,37 +25,42 @@ import {
 } from "discord.js";
 
 import {
-  InfoEmbed,
-  ErrorEmbed,
-  SuccessEmbed,
-  UnauthorizedEmbed,
-} from "@Utilities/Classes/ExtraEmbeds.js";
-
-import {
   IncidentNotesLength,
   IncidentStatusesWithDescriptions,
 } from "@Resources/IncidentConstants.js";
 
+import {
+  InfoContainer,
+  ErrorContainer,
+  SuccessContainer,
+  BaseExtraContainer,
+} from "@Utilities/Classes/ExtraContainers.js";
+
+import { Emojis } from "@Config/Shared.js";
 import { GuildIncidents } from "@Typings/Utilities/Database.js";
 import { ArraysAreEqual } from "@Utilities/Other/ArraysAreEqual.js";
 import { FilterUserInput } from "@Utilities/Strings/Redactor.js";
+import { FormatSortRDInputNames } from "@Utilities/Strings/Formatters.js";
+import { ErrorEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { SanitizeDiscordAttachmentLink } from "@Utilities/Strings/OtherUtils.js";
 import { IncidentReportNumberLineRegex } from "@Resources/RegularExpressions.js";
 
-import Dedent from "dedent";
 import IsEqual from "lodash/isEqual.js";
 import UserHasPerms from "@Utilities/Database/UserHasPermissions.js";
 import IncidentModel from "@Models/Incident.js";
 import GetIncidentRecord from "@Utilities/Database/GetIncidentRecord.js";
 import GetIncidentReportEmbeds from "@Utilities/Other/GetIncidentReportEmbeds.js";
-import { FormatSortRDInputNames } from "@Utilities/Strings/Formatters.js";
-import { Emojis } from "@Config/Shared.js";
+import DisableMessageComponents from "@Utilities/Other/DisableMsgComps.js";
 
 const ListFormatter = new Intl.ListFormat("en");
 const NoneProvidedPlaceholder = "`[None Provided]`";
+const SplitRegexForInputs = /\s*,\s*(?:and\s*)?|\s+/i;
 const CompCollectorTimeout = 12.5 * 60 * 1000;
 const CompCollectorIdleTime = 10 * 60 * 1000;
-const SplitRegexForInputs = /\s*,\s*(?:and\s*)?|\s+/i;
+
+type SelectButtonInteractionCollector =
+  | InteractionCollector<StringSelectMenuInteraction<"cached"> | ButtonInteraction<"cached">>
+  | InteractionCollector<StringSelectMenuInteraction<"cached">>;
 
 type ValidationResult = {
   handled: boolean;
@@ -83,10 +87,13 @@ enum ModalInputIds {
 // ---------------------------------------------------------------------------------------
 // Component & Utility Helpers:
 // ----------------------------
-function GetIncidentEditOptionsMenu() {
+function GetIncidentEditOptionsMenu(
+  ModInteract: RepliableInteraction,
+  IncRecord: GuildIncidents.IncidentRecord
+) {
   return new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(
     new StringSelectMenuBuilder()
-      .setCustomId("incident-edit-select")
+      .setCustomId(`ir-update-options:${ModInteract.user.id}:${IncRecord._id}`)
       .setPlaceholder("Select an option...")
       .setMinValues(1)
       .setMaxValues(1)
@@ -125,14 +132,15 @@ function GetIncidentEditOptionsMenu() {
   );
 }
 
-function GetSaveConfirmationButtons() {
+function GetSaveConfirmationButtons(RecInteract: RepliableInteraction) {
   return new ActionRowBuilder<ButtonBuilder>().setComponents(
     new ButtonBuilder()
-      .setCustomId(IncidentEditOptionIds.SaveConfirm)
+      .setCustomId(`${IncidentEditOptionIds.SaveConfirm}:${RecInteract.user.id}`)
       .setLabel("Confirm and Update")
+      .setEmoji(Emojis.WhiteCheck)
       .setStyle(ButtonStyle.Success),
     new ButtonBuilder()
-      .setCustomId(IncidentEditOptionIds.SaveCancel)
+      .setCustomId(`${IncidentEditOptionIds.SaveCancel}:${RecInteract.user.id}`)
       .setLabel("Cancel Modifications")
       .setStyle(ButtonStyle.Danger)
   );
@@ -216,57 +224,64 @@ function GetChangeIncidentNotesInputModal(
   return NotesModal;
 }
 
-function GetIncidentUpdatePromptComponentsBasedOnChanges(
+function GetUpdatePromptContainer(
+  RecInteract: RepliableInteraction,
   DatabaseIncRecord: GuildIncidents.IncidentRecord,
-  UpdatedIncRecord: GuildIncidents.IncidentRecord
+  UpdatedIncRecord?: GuildIncidents.IncidentRecord
 ) {
-  if (IsEqual(DatabaseIncRecord, UpdatedIncRecord)) {
-    return [GetIncidentEditOptionsMenu()];
-  } else {
-    return [GetIncidentEditOptionsMenu(), GetSaveConfirmationButtons()];
-  }
-}
-
-function GetUpdatePromptEmbedBasedOnChanges(
-  DatabaseIncRecord: GuildIncidents.IncidentRecord,
-  UpdatedIncRecord: GuildIncidents.IncidentRecord
-) {
-  const PromptEmbed = new EmbedBuilder()
+  const PromptContainer = new BaseExtraContainer()
     .setTitle(`Incident Report Modification — \`INC-${DatabaseIncRecord.num}\``)
     .setColor(Colors.Greyple);
 
-  let UpdatedPromptMsgDesc =
-    "**Please select an option from the drop-down menu below to modify or update the incident report.**";
+  const UpdatedPromptMsgDesc = [
+    "**Please select an option from the drop-down menu below to modify or update the incident report.**",
+  ];
 
-  if (!IsEqual(DatabaseIncRecord, UpdatedIncRecord)) {
-    UpdatedPromptMsgDesc += "\n\n**Updated Fields:**";
-    PromptEmbed.setFooter({
-      text: "To confirm the changes, click the 'Confirm and Update' button, or click the 'Cancel Modifications' button to cancel them.",
-    });
+  if (UpdatedIncRecord && !IsEqual(DatabaseIncRecord, UpdatedIncRecord)) {
+    UpdatedPromptMsgDesc.push("\n\n**Updated Fields:**");
+    PromptContainer.setFooter(
+      "To confirm the changes, click the 'Confirm and Update' button, or click the 'Cancel Modifications' button to cancel them."
+    );
 
     if (DatabaseIncRecord.status !== UpdatedIncRecord.status) {
-      UpdatedPromptMsgDesc += `\n- **Status:** \`${UpdatedIncRecord.status}\``;
+      UpdatedPromptMsgDesc.push(`\n- **Status:** \`${UpdatedIncRecord.status}\``);
     }
 
     if (!ArraysAreEqual(DatabaseIncRecord.officers, UpdatedIncRecord.officers)) {
-      UpdatedPromptMsgDesc += `\n- **Involved Officers:** ${UpdatedIncRecord.officers.length ? ListFormatter.format(FormatSortRDInputNames(UpdatedIncRecord.officers, true)) : NoneProvidedPlaceholder}`;
+      UpdatedPromptMsgDesc.push(
+        `\n- **Involved Officers:** ${UpdatedIncRecord.officers.length ? ListFormatter.format(FormatSortRDInputNames(UpdatedIncRecord.officers, true)) : NoneProvidedPlaceholder}`
+      );
     }
 
     if (!ArraysAreEqual(DatabaseIncRecord.suspects, UpdatedIncRecord.suspects)) {
-      UpdatedPromptMsgDesc += `\n- **Suspects:** ${UpdatedIncRecord.suspects.length ? ListFormatter.format(UpdatedIncRecord.suspects) : NoneProvidedPlaceholder}`;
+      UpdatedPromptMsgDesc.push(
+        `\n- **Suspects:** ${UpdatedIncRecord.suspects.length ? ListFormatter.format(UpdatedIncRecord.suspects) : NoneProvidedPlaceholder}`
+      );
     }
 
     if (!ArraysAreEqual(DatabaseIncRecord.witnesses, UpdatedIncRecord.witnesses)) {
-      UpdatedPromptMsgDesc += `\n- **Witnesses:** ${UpdatedIncRecord.witnesses.length ? ListFormatter.format(UpdatedIncRecord.witnesses) : NoneProvidedPlaceholder}`;
+      UpdatedPromptMsgDesc.push(
+        `\n- **Witnesses:** ${UpdatedIncRecord.witnesses.length ? ListFormatter.format(UpdatedIncRecord.witnesses) : NoneProvidedPlaceholder}`
+      );
     }
 
     if (DatabaseIncRecord.notes !== UpdatedIncRecord.notes) {
       const Notes = UpdatedIncRecord.notes?.length ? `\n  ${UpdatedIncRecord.notes}` : "[Removed]";
-      UpdatedPromptMsgDesc += `\n- **Notes:** ${Notes}`;
+      UpdatedPromptMsgDesc.push(`\n- **Notes:** ${Notes}`);
     }
+
+    PromptContainer.attachPromptActionRows([
+      GetIncidentEditOptionsMenu(RecInteract, DatabaseIncRecord),
+      GetSaveConfirmationButtons(RecInteract),
+    ]);
+  } else {
+    PromptContainer.attachPromptActionRows(
+      GetIncidentEditOptionsMenu(RecInteract, DatabaseIncRecord),
+      { divider: false }
+    );
   }
 
-  return PromptEmbed.setDescription(UpdatedPromptMsgDesc);
+  return PromptContainer.setDescription(UpdatedPromptMsgDesc.join(""));
 }
 
 async function EditIncidentReportLogMessageBasedOnRecordAndInteraction(
@@ -355,18 +370,15 @@ async function HandlePromptUpdateBasedOnModifiedRecord(
   DatabaseIncRecord: GuildIncidents.IncidentRecord,
   UpdatedIncRecord: GuildIncidents.IncidentRecord
 ) {
-  const UpdatedPromptEmbed = GetUpdatePromptEmbedBasedOnChanges(
+  const UpdatedPromptContainer = GetUpdatePromptContainer(
+    ChangeInteract,
     DatabaseIncRecord,
     UpdatedIncRecord
   );
 
   const UpdatedPromptMessage = await ChangeInteract.editReply({
     message: PromptMessage,
-    embeds: [UpdatedPromptEmbed],
-    components: GetIncidentUpdatePromptComponentsBasedOnChanges(
-      DatabaseIncRecord,
-      UpdatedIncRecord
-    ),
+    components: [UpdatedPromptContainer],
   }).catch(() => null);
 
   if (!UpdatedPromptMessage) {
@@ -380,29 +392,32 @@ async function HandlePromptUpdateBasedOnModifiedRecord(
   });
 
   return HandleComponentCollectorInteracts(
-    NewComponentCollector as InteractionCollector<
-      StringSelectMenuInteraction<"cached"> | ButtonInteraction<"cached">
-    >,
+    ChangeInteract,
+    NewComponentCollector as SelectButtonInteractionCollector,
     UpdatedPromptMessage,
     DatabaseIncRecord,
     UpdatedIncRecord
   );
 }
 
-async function HandleIncidentRecordEditWithHandler(
-  RecInteract: StringSelectMenuInteraction<"cached"> | ButtonInteraction<"cached">,
-  DatabaseIncRecord: GuildIncidents.IncidentRecord,
-  UpdatedIncRecord: GuildIncidents.IncidentRecord,
-  PromptMessage: Message<true>,
-  ComponentCollector: InteractionCollector<CollectedInteraction>,
-  EditHandler: (
-    ...args: any
-  ) => Promise<
+async function HandleIncidentRecordEditWithHandler<
+  T extends StringSelectMenuInteraction<"cached"> | ButtonInteraction<"cached">,
+  U extends
     | ModalSubmitInteraction<"cached">
     | ButtonInteraction<"cached">
     | StringSelectMenuInteraction<"cached">
-    | null
-  >
+    | null,
+>(
+  RecInteract: T,
+  DatabaseIncRecord: GuildIncidents.IncidentRecord,
+  UpdatedIncRecord: GuildIncidents.IncidentRecord,
+  PromptMessage: Message<true>,
+  ComponentCollector: SelectButtonInteractionCollector,
+  EditHandler: (
+    interaction: T,
+    dbRecord: GuildIncidents.IncidentRecord,
+    updatedRecord: GuildIncidents.IncidentRecord
+  ) => Promise<U>
 ) {
   const Interaction = await EditHandler(RecInteract, DatabaseIncRecord, UpdatedIncRecord);
   if (!Interaction) {
@@ -411,7 +426,7 @@ async function HandleIncidentRecordEditWithHandler(
 
   ComponentCollector.stop("PromptUpdated");
   DatabaseIncRecord =
-    (await GetIncidentRecord(RecInteract.guildId, DatabaseIncRecord._id)) || DatabaseIncRecord;
+    (await GetIncidentRecord(RecInteract.guildId, DatabaseIncRecord._id)) ?? DatabaseIncRecord;
 
   return HandlePromptUpdateBasedOnModifiedRecord(
     PromptMessage,
@@ -422,9 +437,8 @@ async function HandleIncidentRecordEditWithHandler(
 }
 
 async function HandleComponentCollectorInteracts(
-  ComponentCollector:
-    | InteractionCollector<StringSelectMenuInteraction<"cached"> | ButtonInteraction<"cached">>
-    | InteractionCollector<StringSelectMenuInteraction<"cached">>,
+  InitialInteract: RepliableInteraction<"cached">,
+  ComponentCollector: SelectButtonInteractionCollector,
   PromptMessage: Message<true>,
   DatabaseIncRecord: GuildIncidents.IncidentRecord,
   UpdatedIncRecord: GuildIncidents.IncidentRecord
@@ -442,7 +456,7 @@ async function HandleComponentCollectorInteracts(
           DatabaseIncRecord,
           UpdatedIncRecord,
           PromptMessage,
-          ComponentCollector as unknown as any,
+          ComponentCollector,
           HandleIncidentStatusEdit
         );
       } else if (
@@ -455,7 +469,7 @@ async function HandleComponentCollectorInteracts(
           DatabaseIncRecord,
           UpdatedIncRecord,
           PromptMessage,
-          ComponentCollector as unknown as any,
+          ComponentCollector,
           (
             _RecInteract: StringSelectMenuInteraction<"cached">,
             _DBRecord: GuildIncidents.IncidentRecord,
@@ -478,7 +492,7 @@ async function HandleComponentCollectorInteracts(
           DatabaseIncRecord,
           UpdatedIncRecord,
           PromptMessage,
-          ComponentCollector as unknown as any,
+          ComponentCollector,
           HandleIncidentNotesEdit
         );
       }
@@ -499,21 +513,13 @@ async function HandleComponentCollectorInteracts(
 
   ComponentCollector.on("end", async (Interacts, EndReason) => {
     if (EndReason.match(/reason: \w+Delete/) || EndReason === "PromptUpdated") return;
-    const LastInteract = Interacts.last();
-    if (!LastInteract) return;
-
-    const UpdatedComps = GetIncidentUpdatePromptComponentsBasedOnChanges(
-      DatabaseIncRecord,
-      UpdatedIncRecord
-    );
-
-    UpdatedComps.forEach((AR) =>
-      AR.components.forEach((Comp: StringSelectMenuBuilder | ButtonBuilder) =>
-        Comp.setDisabled(true)
-      )
+    const LastInteract = Interacts.last() ?? InitialInteract;
+    const UpdatedComps = DisableMessageComponents(
+      PromptMessage.components.map((Comp) => Comp.toJSON())
     );
 
     return LastInteract.editReply({
+      message: PromptMessage,
       components: UpdatedComps,
     }).catch(() => null);
   });
@@ -555,9 +561,8 @@ async function HandleIncidentRecordUpdateConfirm(
 
   if (Object.keys(RecordSetMap).length === 0) {
     return BtnInteract.editReply({
-      components: [],
-      embeds: [
-        new InfoEmbed()
+      components: [
+        new InfoContainer()
           .setTitle("Unnecessary Update")
           .setDescription("There were no changes made to the incident report to update."),
       ],
@@ -587,7 +592,7 @@ async function HandleIncidentRecordUpdateConfirm(
     .exec();
 
   if (!UpdatedDatabaseIncRecord) {
-    return new ErrorEmbed()
+    return new ErrorContainer()
       .useErrTemplate("UpdateIncidentReportDBFailed")
       .replyToInteract(BtnInteract, true, true, "editReply");
   }
@@ -595,9 +600,8 @@ async function HandleIncidentRecordUpdateConfirm(
   return Promise.allSettled([
     EditIncidentReportLogMessageBasedOnRecordAndInteraction(BtnInteract, UpdatedDatabaseIncRecord),
     BtnInteract.editReply({
-      components: [],
-      embeds: [
-        new SuccessEmbed()
+      components: [
+        new SuccessContainer()
           .setTitle("Incident Report Updated")
           .setDescription(
             `The incident report \`${UpdatedDatabaseIncRecord.num}\` was successfully updated.`
@@ -612,21 +616,25 @@ async function HandleIncidentStatusEdit(
   DBIncidentRecord: GuildIncidents.IncidentRecord,
   IRUpdatesCopy: GuildIncidents.IncidentRecord
 ) {
-  const StatusPromptMsgEmbed = new EmbedBuilder()
+  const StatusPromptContainer = new BaseExtraContainer()
     .setColor(Colors.Greyple)
     .setTitle("Incident Status Update")
     .setDescription(
-      "**What would you like to change the status to?**\nPlease select from the drop-down list below."
+      "**What would you like to change the status to?**\n" +
+        "Select a new status from the menu below. To maintain the current report status, close or clear the current selection."
     );
 
   await SelectInteract.update({
-    components: GetIncidentUpdatePromptComponentsBasedOnChanges(DBIncidentRecord, IRUpdatesCopy),
+    components: [GetUpdatePromptContainer(SelectInteract, DBIncidentRecord, IRUpdatesCopy)],
   }).catch(() => null);
 
   const StatusPromptMsg = await SelectInteract.followUp({
-    flags: MessageFlags.Ephemeral,
-    embeds: [StatusPromptMsgEmbed],
-    components: [GetChangeIncidentStatusSelectMenuAR(DBIncidentRecord.status)],
+    flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
+    components: [
+      StatusPromptContainer.attachPromptActionRows(
+        GetChangeIncidentStatusSelectMenuAR(DBIncidentRecord.status)
+      ),
+    ],
   });
 
   const RecInteract = await StatusPromptMsg.awaitMessageComponent({
@@ -661,7 +669,7 @@ async function HandleIncidentSuspectsOrWitnessesEdit(
 
   await SelectInteract.showModal(TextInputModal);
   await SelectInteract.editReply({
-    components: GetIncidentUpdatePromptComponentsBasedOnChanges(IncidentRecord, IRUpdatesCopy),
+    components: [GetUpdatePromptContainer(SelectInteract, IncidentRecord, IRUpdatesCopy)],
   });
 
   const InputSubmission = await SelectInteract.awaitModalSubmit({
@@ -692,8 +700,8 @@ async function HandleIncidentNotesEdit(
 
   await SelectInteract.showModal(NotesInputModal);
   await SelectInteract.editReply({
-    components: GetIncidentUpdatePromptComponentsBasedOnChanges(IncidentRecord, IRUpdatesCopy),
-  }).catch(() => null);
+    components: [GetUpdatePromptContainer(SelectInteract, IncidentRecord, IRUpdatesCopy)],
+  });
 
   const InputSubmission = await SelectInteract.awaitModalSubmit({
     filter: (Submision) => Submision.customId === NotesInputModal.data.custom_id,
@@ -725,24 +733,16 @@ async function HandleIncidentNotesEdit(
 // -----------------
 async function Callback(Interaction: MessageContextMenuCommandInteraction<"cached">) {
   const ValidationResult = await HandleCommandValidationAndPossiblyGetIncident(Interaction);
+  const PromptMsgFlags = MessageFlags.Ephemeral | MessageFlags.IsComponentsV2;
   if (ValidationResult.handled && !ValidationResult.incident) return;
-  await Interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  await Interaction.deferReply({ flags: PromptMsgFlags });
 
   const IncidentRecord = ValidationResult.incident!;
   const IncidentRecordModified = { ...IncidentRecord };
-  const UpdatePromptComps = GetIncidentEditOptionsMenu();
-  const UpdatePromptEmbed = new EmbedBuilder()
-    .setTitle(`Incident Report Modification — \`INC-${IncidentRecord.num}\``)
-    .setColor(Colors.Greyple)
-    .setDescription(
-      Dedent(`
-        **Please select an option from the drop-down menu below to modify or update the incident report.**
-      `)
-    );
-
+  const UpdatePromptContainer = GetUpdatePromptContainer(Interaction, IncidentRecord);
   const UpdatePromptMessage = await Interaction.editReply({
-    embeds: [UpdatePromptEmbed],
-    components: [UpdatePromptComps],
+    components: [UpdatePromptContainer],
+    flags: PromptMsgFlags,
   });
 
   const PromptInteractsCollector = UpdatePromptMessage.createMessageComponentCollector({
@@ -753,6 +753,7 @@ async function Callback(Interaction: MessageContextMenuCommandInteraction<"cache
   });
 
   HandleComponentCollectorInteracts(
+    Interaction,
     PromptInteractsCollector,
     UpdatePromptMessage,
     IncidentRecord,
