@@ -35,7 +35,7 @@ To use the application, you must be at least 13 years old and legally capable of
 
 ## 3. License and Open Source
 
-The code for the LAPD Central application is publicly available on GitHub and is licensed under the [MIT License](https://opensource.org/licenses/MIT). You are free to use the code under the terms of the MIT License. However, your use of the live application (hosted version/instance) is governed by these Terms, not the MIT License..
+The code for the LAPD Central application is publicly available on GitHub and is licensed under the [MIT License](https://opensource.org/licenses/MIT). You are free to use the code under the terms of the MIT License. However, self-hosted instances of the codebase are subject to the MIT License and their maintainers’ own policies, not these Terms.
 
 ***
 
@@ -50,7 +50,7 @@ You agree to use the Application only for its intended purposes and in complianc
 
 ### **b. Prohibited Content**
 
-While we implement multiple safeguards (including input validation, Discord's AutoMod integration, restricting attachments, and other ones), you must NOT use the Application to transmit:
+While we implement multiple safeguards (including input validation, Discord's Auto-Mod integration, restricting attachments, and other ones), you must **NOT** use the Application to transmit:
 
 * Harmful or dangerous content
 * False or misleading information
@@ -63,7 +63,7 @@ While we implement multiple safeguards (including input validation, Discord's Au
 
 We do not:
 
-* Prescreen or monitor all user-generated content.
+* Prescreen or monitor all user-provided content.
 * Assume responsibility for damages caused by other users' content.
 * Guarantee the accuracy, safety, or legality of content sent via the Application.
 
@@ -74,7 +74,7 @@ Please immediately report any violations to:
 * Discord's Trust & Safety team:
   1. **Identify the original sender/author** of the problematic content (not the bot's message)
   2. **Right-click their username** → _Report_ → Follow Discord's reporting process
-  3. **Additionally notify our team** at: \[Your Contact Method] with:
+  3. **Additionally notify our us** at with available contact methods (such as the support server or DMs) with evidence and context of the violation.
 * Our moderation or development team on the support server or by DMs.
 
 ***
@@ -87,12 +87,13 @@ Your data is collected and used according to our [Privacy Policy](application-pr
 
 ## 6. Liability Limitation
 
-### **a. User-Generated Content**
+### **a. User-Provided Content**
 
 While we implement technical safeguards (as described in [Section 4](application-terms-of-service.md#id-4.-user-conduct)), you acknowledge that:
 
+* The Application may display user-provided images hosted on Discord, but does not independently store, process, or alter them beyond Discord’s native embedding system,&#x20;
 * We cannot prevent all potentially harmful or unwanted content,&#x20;
-* Other users may find ways to bypass our filters, and
+* Other users may find ways to bypass our filters, and&#x20;
 * You use the Application at your own risk.
 
 ### **b. Limitation of Liability**
@@ -111,7 +112,7 @@ We currently employ these protective measures:
 
 * Automatic filtering of web links,
 * Input validation for potentially harmful content,
-* Integration with Discord's AutoMod system (guild settings based), and
+* Integration with Discord's auto-mod system (server/guild settings based), and
 * Restricting attachments to those uploaded directly to Discord.
 
 ***
