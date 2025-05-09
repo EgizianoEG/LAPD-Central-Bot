@@ -16,12 +16,11 @@ import {
   userMention,
   ButtonStyle,
   Message,
-  Colors,
   User,
 } from "discord.js";
 
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import { Embeds, Emojis } from "@Config/Shared.js";
+import { Colors, Emojis } from "@Config/Shared.js";
 import { addMilliseconds } from "date-fns";
 import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
@@ -118,7 +117,7 @@ function GetPanelEmbed(
     ActiveOrPendingLOA.review_date &&
     ActiveOrPendingLOA.extension_request?.status !== "Pending"
   ) {
-    PanelEmbed.setColor(Embeds.Colors.LOARequestApproved);
+    PanelEmbed.setColor(Colors.LOARequestApproved);
     PanelEmbed.addFields({
       inline: true,
       name:
@@ -133,7 +132,7 @@ function GetPanelEmbed(
       `),
     });
   } else if (ActiveOrPendingLOA?.status === "Pending") {
-    PanelEmbed.setColor(Embeds.Colors.LOARequestPending);
+    PanelEmbed.setColor(Colors.LOARequestPending);
     PanelEmbed.addFields({
       inline: true,
       name: "Pending Leave",
@@ -149,7 +148,7 @@ function GetPanelEmbed(
     ActiveOrPendingLOA?.review_date &&
     ActiveOrPendingLOA?.extension_request?.status === "Pending"
   ) {
-    PanelEmbed.setColor(Embeds.Colors.LOARequestPending);
+    PanelEmbed.setColor(Colors.LOARequestPending);
     PanelEmbed.addFields({
       inline: true,
       name: "Pending Extension",
@@ -382,7 +381,7 @@ export async function HandleLeaveReviewValidation(
 
   if (!RequestHasToBeReviewed) {
     const ReplyEmbed = new EmbedBuilder()
-      .setColor(Embeds.Colors.Error)
+      .setColor(Colors.Error)
       .setTitle("Request Modified")
       .setDescription(
         "The request you are taking action on either does not exist or has already been reviewed."
@@ -498,7 +497,7 @@ async function HandleLeaveStart(
   });
 
   const ReplyEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.Success)
+    .setColor(Colors.Success)
     .setTitle("Leave of Absence Started")
     .setDescription(
       `Successfully started a new leave of absence for ${userMention(TargetMemberId)}. It is scheduled to end on ${FormatTime(CreatedLeave.end_date, "D")}.`
@@ -608,7 +607,7 @@ async function HandleLeaveExtend(
 
   await ActiveLeave.save();
   const ReplyEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.Success)
+    .setColor(Colors.Success)
     .setTitle("Leave Extended")
     .setDescription(
       `Successfully extended the active leave of absence for ${userMention(TargetMemberId)}. This leave is now set to expire on ${FormatTime(ActiveLeave.end_date, "D")}.`
@@ -680,7 +679,7 @@ async function HandleLeaveEnd(
   await ActiveLeave.save();
 
   const ReplyEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.Success)
+    .setColor(Colors.Success)
     .setTitle("Leave of Absence Terminated")
     .setDescription(
       `The active leave of absence for ${userMention(TargetMemberId)} has been successfully terminated.`
@@ -728,7 +727,7 @@ async function HandleLeaveApprovalOrDenial(
 
   const ActionInPastForm = ActionType === "Approval" ? "Approved" : "Denied";
   const ReplyEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.Success)
+    .setColor(Colors.Success)
     .setTitle(`Leave of Absence ${ActionInPastForm}`)
     .setDescription(
       `Successfully ${ActionInPastForm.toLowerCase()} ${userMention(TargetMemberId)}'s pending leave request.`
@@ -788,7 +787,7 @@ async function HandleExtensionApprovalOrDenial(
   const ActionInPastForm =
     ActionType === "Extension Approval" ? "Extension Approved" : "Extension Denied";
   const ReplyEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.Success)
+    .setColor(Colors.Success)
     .setTitle(`Leave of Absence ${ActionInPastForm}`)
     .setDescription(
       `Successfully ${ActionType === "Extension Approval" ? "approved" : "denied"} ${userMention(TargetMemberId)}'s pending extension request.`

@@ -22,7 +22,7 @@ import { ReducedActivityEventLogger } from "@Utilities/Classes/UANEventLogger.js
 import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
 import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { addMilliseconds } from "date-fns";
-import { Embeds, Emojis } from "@Config/Shared.js";
+import { Colors, Emojis } from "@Config/Shared.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import HandleUserActivityNoticeRoleAssignment from "@Utilities/Other/HandleUANRoleAssignment.js";
@@ -92,10 +92,10 @@ function GetAdminPromptEmbed(
 
   const PromptEmbed = new EmbedBuilder()
     .setTitle("Reduced Activity Administration")
-    .setColor(Embeds.Colors.Info);
+    .setColor(Colors.Info);
 
   if (ActiveOrPendingRA?.status === "Approved") {
-    PromptEmbed.setColor(Embeds.Colors.LOARequestApproved).addFields({
+    PromptEmbed.setColor(Colors.LOARequestApproved).addFields({
       inline: true,
       name: "Active Notice",
       value: Dedent(`
@@ -106,7 +106,7 @@ function GetAdminPromptEmbed(
       `),
     });
   } else if (ActiveOrPendingRA?.status === "Pending") {
-    PromptEmbed.setColor(Embeds.Colors.LOARequestPending).addFields({
+    PromptEmbed.setColor(Colors.LOARequestPending).addFields({
       inline: true,
       name: "Pending Notice",
       value: Dedent(`
@@ -192,7 +192,7 @@ async function HandleApprovalOrDenial(
   const ReviewerNotes = NotesSubmission.fields.getTextInputValue("notes") || null;
   const ActionInPastForm = ActionType === "Approval" ? "Approved" : "Denied";
   const ReplyEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.Success)
+    .setColor(Colors.Success)
     .setTitle(`Reduced Activity ${ActionInPastForm}`)
     .setDescription(
       `Successfully ${ActionInPastForm.toLowerCase()} the pending reduced activity request for ${userMention(
@@ -248,7 +248,7 @@ async function HandleEarlyTermination(
 
   await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
   const ReplyEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.Success)
+    .setColor(Colors.Success)
     .setTitle("Reduced Activity Terminated")
     .setDescription(
       `The active reduced activity for ${userMention(

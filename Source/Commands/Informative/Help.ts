@@ -1,4 +1,4 @@
-import { Embeds } from "@Config/Shared.js";
+import { Colors } from "@Config/Shared.js";
 import {
   ApplicationIntegrationType,
   InteractionContextType,
@@ -10,7 +10,7 @@ import {
 // ---------------------------------------------------------------------------------------
 async function Callback(_: DiscordClient, Interaction: SlashCommandInteraction) {
   const ResponseEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.Info)
+    .setColor(Colors.Info)
     .setTitle("Help and Information")
     .setDescription(
       "For more information and assistance with LAPD Central, please visit our [documentation site](https://lapd-central-app.gitbook.io/documentation)."

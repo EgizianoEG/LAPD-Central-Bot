@@ -1,4 +1,4 @@
-import { Embeds } from "@Config/Shared.js";
+import { Thumbs } from "@Config/Shared.js";
 import { APIResponses, APITypes } from "@Typings/Utilities/Roblox.js";
 import GetPlaceholderImgURL from "@Utilities/Other/GetPlaceholderImg.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
@@ -198,7 +198,7 @@ function GetFallbackThumbnail(
   TargetSize: number | string = 352
 ): string {
   return typeof IsManCharacter === "boolean"
-    ? Embeds.Thumbs[`RobloxAvatar${IsManCharacter ? "Male" : "Female"}`]
+    ? Thumbs[`RobloxAvatar${IsManCharacter ? "Male" : "Female"}`]
     : GetPlaceholderImgURL(TargetSize as any, "?");
 }
 

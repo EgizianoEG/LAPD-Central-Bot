@@ -18,6 +18,7 @@ AppLogger.info(Chalk.grey("=========================== New Run =================
 // Discord Application:
 // --------------------
 export const App = new Client({
+  allowedMentions: {},
   intents: [
     //
     GatewayIntentBits.Guilds,

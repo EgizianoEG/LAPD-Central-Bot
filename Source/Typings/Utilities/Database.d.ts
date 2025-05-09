@@ -274,7 +274,7 @@ export namespace Shifts {
 
     /**
      * Fetches the latest saved version (last state) of the shift document.
-     * @param old_fallback - Whether or not to return the old shift document if fetching the latest fails.
+     * @param old_fallback - Whether or not to return the old shift document if fetching the latest fails. Defaults to `false`.
      * @param silent - Whether or not to *not* throw an error if fetching the latest state fails. Defaults to `true`.
      * @returns The saved shift or `null` if it wasn't found on the database and `old_fallback` is `false`.
      */
@@ -1108,5 +1108,27 @@ export namespace AggregateResults {
 
     /** Total shifts recorded. */
     total_shifts: number;
+  }
+
+  interface DutyAdminShiftRecordsShow {
+    _id: string;
+
+    /** Shift type */
+    type: string;
+
+    /** Start epoch in milliseconds */
+    started: number;
+
+    /** End epoch in milliseconds or `"Currently Active"` */
+    ended: number | string;
+
+    /** On-duty duration in milliseconds */
+    duration: number;
+
+    /** On-break duration in milliseconds */
+    break_duration: number;
+
+    /** Flag */
+    flag: ShiftFlags;
   }
 }

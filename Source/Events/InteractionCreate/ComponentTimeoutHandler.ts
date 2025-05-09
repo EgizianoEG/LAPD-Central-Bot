@@ -1,19 +1,13 @@
 import AppLogger from "@Utilities/Classes/AppLogger.js";
+import DisableComponents from "@Utilities/Other/DisableMsgComps.js";
 import { IsValidDiscordId } from "@Utilities/Other/Validators.js";
 import { differenceInMilliseconds } from "date-fns";
 import { InfoEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { MessageFlags, ComponentType, BaseInteraction } from "discord.js";
 import {
   DutyManagementBtnCustomIdRegex,
   UserActivityNoticeMgmtCustomIdRegex,
 } from "@Resources/RegularExpressions.js";
-
-import {
-  MessageFlags,
-  ComponentType,
-  BaseInteraction,
-  ActionRowBuilder,
-  createComponentBuilder,
-} from "discord.js";
 
 const UnauthorizedUsageIgnoredCompsWithCustomIds: RegExp[] = [
   UserActivityNoticeMgmtCustomIdRegex,
@@ -79,20 +73,14 @@ export default async function HandleAbandonedInteractions(
 
       if (TimeGap >= 10 * 60 * 1000) {
         try {
-          const DisabledMsgComponents = Interaction.message.components.map((AR) => {
-            return ActionRowBuilder.from({
-              type: ComponentType.ActionRow,
-              components: AR.components.map((Comp) =>
-                (createComponentBuilder(Comp.data) as any).setDisabled(true)
-              ),
-            });
-          }) as any;
+          const APICompatibleComps = Interaction.message.components.map((Comp) => Comp.toJSON());
+          const DisabledComponents = DisableComponents(APICompatibleComps);
 
           if (Interaction.user.id === OriginUserId) {
             await Interaction.deferUpdate();
             await Promise.all([
               Interaction.editReply({
-                components: DisabledMsgComponents,
+                components: DisabledComponents,
               }),
               Interaction.followUp({
                 flags: MessageFlags.Ephemeral,
@@ -100,10 +88,12 @@ export default async function HandleAbandonedInteractions(
               }),
             ]);
           }
-        } catch {
-          // Ignored.
-          // There is no need to handle any errors output while
-          // trying to disable the message components or provide feedback.
+        } catch (Err: any) {
+          AppLogger.debug({
+            label: "Events:InteractionCreate:ComponentTimeoutHandler",
+            message: "Non-critical error occurred while trying to disable message components;",
+            stack: Err.stack,
+          });
         }
         return;
       }
