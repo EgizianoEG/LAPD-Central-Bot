@@ -59,6 +59,13 @@ export const GuildSettingsCache = new NodeCache({
   deleteOnExpire: true,
 });
 
+export const GuildMembersCache = new NodeCache({
+  stdTTL: 45,
+  checkperiod: 30,
+  useClones: false,
+  deleteOnExpire: true,
+});
+
 export const OngoingServerMemberNicknamesReplaceCache = new NodeCache({
   stdTTL: 6 * 60 * 60,
   checkperiod: 5 * 60,

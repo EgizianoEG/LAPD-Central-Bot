@@ -1,4 +1,5 @@
 import {
+  Collection,
   GuildMember,
   MessageFlags,
   ContainerBuilder,
@@ -8,6 +9,7 @@ import {
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import HandlePagePagination from "@Utilities/Other/HandlePagePagination.js";
 import { ErrorContainer, InfoContainer } from "@Utilities/Classes/ExtraContainers.js";
+import { GuildMembersCache } from "@Utilities/Other/Cache.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import { GetErrorId } from "@Utilities/Strings/Random.js";
 
@@ -52,12 +54,19 @@ async function Callback(CmdInteract: SlashCommandInteraction<"cached">) {
 
   try {
     const Regex = new RegExp(InputRegex, InputRFlag ?? undefined);
+    let GuildMembers: Collection<string, GuildMember>;
     await CmdInteract.deferReply({ flags: ReplyFlags });
 
-    const GuildMembers = await CmdInteract.guild.members.fetch();
+    if (GuildMembersCache.has(CmdInteract.guildId)) {
+      GuildMembers = GuildMembersCache.get<Collection<string, GuildMember>>(CmdInteract.guildId)!;
+    } else {
+      GuildMembers = await CmdInteract.guild.members.fetch();
+      GuildMembersCache.set(CmdInteract.guildId, GuildMembers);
+    }
+
     const MembersMatching = GuildMembers.filter((Member) => {
       return (
-        // !Member.user.bot &&
+        !Member.user.bot &&
         (RoleFilter ? Member.roles.cache.has(RoleFilter.id) : true) &&
         Regex.test(Member.nickname ?? Member.displayName)
       );
