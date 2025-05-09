@@ -63,7 +63,6 @@ export default async function LogArrestReport(
   const ArrestRecord = await ArrestModel.create({
     guild: CachedInteract.guildId,
     made_on: ReporterInfo.report_date,
-    assisting_officers: ReporterInfo.asst_officers,
     notes: ArresteeInfo.notes ?? null,
     booking_num: ArresteeInfo.booking_num,
 
@@ -78,6 +77,7 @@ export default async function LogArrestReport(
       mugshot_url: ArresteeInfo.booking_mugshot,
     },
 
+    assisting_officers: ReporterInfo.asst_officers,
     arresting_officer: {
       formatted_name: FReporterName,
       discord_id: ReporterInfo.discord_user_id,
@@ -102,6 +102,11 @@ export default async function LogArrestReport(
     GuildSettings.duty_activities.log_channels.arrests,
     { embeds: [FormattedReport] }
   );
+
+  if (MainMsgLink) {
+    ArrestRecord.report_msg = MainMsgLink.split(/[/\\]/).slice(-2).join(":");
+    ArrestRecord.save().catch(() => null);
+  }
 
   return {
     main_msg_link: MainMsgLink,

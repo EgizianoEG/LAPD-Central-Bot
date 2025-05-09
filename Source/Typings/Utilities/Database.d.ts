@@ -895,6 +895,9 @@ export namespace GuildArrests {
     /** The booking number. */
     booking_num: number;
 
+    /** The arrest report message link as [ChannelId]:[MessageId] */
+    report_msg?: string | null;
+
     /** The date when the arrest report was made. */
     made_on: Date;
 
