@@ -1,7 +1,6 @@
 /* eslint-disable sonarjs/no-duplicate-string */
 import {
   ModalSubmitInteraction,
-  createComponentBuilder,
   time as FormatTime,
   ButtonInteraction,
   TextInputBuilder,
@@ -18,7 +17,7 @@ import {
   ReducedActivityEventLogger,
 } from "@Utilities/Classes/UANEventLogger.js";
 
-import { Embeds } from "@Config/Shared.js";
+import { Colors } from "@Config/Shared.js";
 import { UserHasPermsV2 } from "@Utilities/Database/UserHasPermissions.js";
 import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { GetErrorId, RandomString } from "@Utilities/Strings/Random.js";
@@ -26,6 +25,7 @@ import { ErrorEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js
 import { UserActivityNoticeMgmtCustomIdRegex } from "@Resources/RegularExpressions.js";
 
 import HandleUserActivityNoticeRoleAssignment from "@Utilities/Other/HandleUANRoleAssignment.js";
+import DisableMessageComponents from "@Utilities/Other/DisableMsgComps.js";
 import LeaveOfAbsenceModel from "@Models/UserActivityNotice.js";
 import GetMainShiftsData from "@Utilities/Database/GetShiftsData.js";
 import GetUANsData from "@Utilities/Database/GetUANData.js";
@@ -148,7 +148,7 @@ async function HandleNoticeReviewValidation(
   if (!RequestHasToBeReviewed) {
     let UpdatedReqEmbed: EmbedBuilder | null = null;
     const ReplyEmbed = new EmbedBuilder()
-      .setColor(Embeds.Colors.Error)
+      .setColor(Colors.Error)
       .setTitle("Request Modified")
       .setDescription(
         "The request you are taking action on either does not exist or has already been reviewed."
@@ -177,7 +177,9 @@ async function HandleNoticeReviewValidation(
         InitialInteraction.editReply({
           embeds: [UpdatedReqEmbed],
           message: RequestDocument?.request_msg?.split(":")[1],
-          components: GetDisabledMessageComponents(InitialInteraction),
+          components: DisableMessageComponents(
+            InitialInteraction.message!.components.map((Comp) => Comp.toJSON())
+          ),
         })
       );
     } else {
@@ -185,7 +187,9 @@ async function HandleNoticeReviewValidation(
       Tasks.push(
         Interaction.followUp({ embeds: [ReplyEmbed], flags: MessageFlags.Ephemeral }),
         InitialInteraction.editReply({
-          components: GetDisabledMessageComponents(InitialInteraction),
+          components: DisableMessageComponents(
+            InitialInteraction.message!.components.map((Comp) => Comp.toJSON())
+          ),
         })
       );
     }
@@ -220,9 +224,7 @@ async function HandleNoticeAddInfo(
 
   const NoticeType = IsLOA ? "LOA" : "RA";
   const NoticeTypeMid = IsLOA ? "Leave" : "Reduced Activity";
-  const ReplyEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.Info)
-    .setTitle("Additional Officer Info");
+  const ReplyEmbed = new EmbedBuilder().setColor(Colors.Info).setTitle("Additional Officer Info");
 
   if (UANsData.recent_notice) {
     ReplyEmbed.addFields({
@@ -291,7 +293,7 @@ async function HandleUANApproval(
 
   await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
   const ReplyEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.Success)
+    .setColor(Colors.Success)
     .setTitle(`${NoticeType} Approved`)
     .setDescription(`Successfully approved the ${NoticeType.toLowerCase()} request.`);
 
@@ -350,7 +352,7 @@ async function HandleUANDenial(
 
   await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
   const ReplyEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.Success)
+    .setColor(Colors.Success)
     .setTitle(`${NoticeType} Denied`)
     .setDescription(`Successfully denied the ${NoticeType.toLowerCase()} request.`);
 
@@ -405,7 +407,7 @@ async function HandleExtApproval(
 
   await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
   const ReplyEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.Success)
+    .setColor(Colors.Success)
     .setTitle("Leave Extension Approved")
     .setDescription("Successfully approved the extension request.");
 
@@ -461,7 +463,7 @@ async function HandleExtDenial(
 
   await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
   const ReplyEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.Success)
+    .setColor(Colors.Success)
     .setTitle("Leave Extension Denied")
     .setDescription("Successfully denied the extension request.");
 
@@ -520,21 +522,4 @@ function GetNotesModal(
   }
 
   return Modal;
-}
-
-/**
- * Creates disabled versions of all message components from the original interaction.
- * Used to disable buttons after an action has been taken.
- * @param Interaction - The interaction containing components to disable.
- * @returns An array of action rows with disabled components.
- */
-function GetDisabledMessageComponents(
-  Interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">
-) {
-  return Interaction.message?.components.map((AR) => {
-    return ActionRowBuilder.from({
-      // @ts-expect-error; Type conflict.
-      components: AR.components.map((Comp) => createComponentBuilder(Comp.data).setDisabled(true)),
-    });
-  }) as any;
 }

@@ -1,10 +1,17 @@
 import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { InfoEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import { TimestampStylesString, time as FormatTime } from "discord.js";
+import { Colors } from "@Config/Shared.js";
+import {
+  time as FormatTime,
+  TimestampStylesString,
+  TextDisplayBuilder,
+  ContainerBuilder,
+  resolveColor,
+} from "discord.js";
 
 import Chunks from "@Utilities/Other/SliceIntoChunks.js";
 import LeaveOfAbsenceModel from "@Models/UserActivityNotice.js";
-import HandleEmbedPagination from "@Utilities/Other/HandleEmbedPagination.js";
+import HandlePagePagination from "@Utilities/Other/HandlePagePagination.js";
 
 /**
  * Handles the User Activity Notice list command, displaying active or pending notices.
@@ -19,7 +26,7 @@ export default async function UANListCmdCallback(
   const RecordTypeText =
     RecordsType === "ReducedActivity" ? "reduced activity" : "leave of absence";
   const QueryFilter = { guild: Interaction.guildId, type: RecordsType, status: "Pending" };
-  const DesiredStatus = (Interaction.options.getString("status", false) || "Active") as
+  const DesiredStatus = (Interaction.options.getString("status", false) ?? "Active") as
     | "Active"
     | "Pending";
 
@@ -48,8 +55,18 @@ export default async function UANListCmdCallback(
   }
 
   const LOAsChunks = Chunks(NoticeRecords, 8);
-  const Pages = FormaLOARecords(LOAsChunks, DesiredStatus, NoticeRecords.length, RecordsType);
-  return HandleEmbedPagination(Pages, Interaction);
+  const Pages = BuildUserActivityNoticesPages(
+    LOAsChunks,
+    DesiredStatus,
+    NoticeRecords.length,
+    RecordsType
+  );
+
+  return HandlePagePagination({
+    pages: Pages,
+    interact: Interaction,
+    cv2_footer: `*Displaying all ${DesiredStatus.toLowerCase()} ${RecordTypeText} records in an ascending order of ${DesiredStatus === "Active" ? "end" : "request"} dates.*`,
+  });
 }
 
 // ---------------------------------------------------------------------------------------
@@ -75,33 +92,32 @@ function SafeFormatTime<TStyle extends TimestampStylesString>(InputDate: Date, S
  * @param RecordsType - The type of notices being displayed ("LeaveOfAbsence" or "ReducedActivity").
  * @returns An array of InfoEmbed objects ready for pagination.
  */
-function FormaLOARecords(
+function BuildUserActivityNoticesPages(
   UANRecords: UserActivityNotice.UserActivityNoticeDocument[][],
   UANStatus: "Active" | "Pending",
   RecordsTotal: number,
   RecordsType: UserActivityNotice.NoticeType
 ) {
-  const Pages: InfoEmbed[] = [];
-  const RecordTypeText =
-    RecordsType === "ReducedActivity" ? "reduced activity" : "leave of absence";
+  const Pages: ContainerBuilder[] = [];
   const RecordTypeStrinAbbr = RecordsType === "ReducedActivity" ? "RA" : "Leave";
 
   for (const Chunk of UANRecords) {
-    const Lines: string[] = [];
-    for (const Notice of Chunk) {
-      Lines.push(
-        `<@${Notice.user}> \u{1680} ${SafeFormatTime(Notice[UANStatus === "Active" ? "end_date" : "request_date"], "F")}`
+    const PageContainer = new ContainerBuilder()
+      .setAccentColor(resolveColor(Colors.Info))
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+          `### ${UANStatus} ${RecordTypeStrinAbbr} Notices — ${RecordsTotal}`
+        )
       );
-    }
 
     Pages.push(
-      new InfoEmbed()
-        .setThumbnail(null)
-        .setDescription(Lines.join("\n"))
-        .setTitle(`${UANStatus} ${RecordTypeStrinAbbr} Notices — ${RecordsTotal}`)
-        .setFooter({
-          text: `Displaying all ${UANStatus.toLowerCase()} ${RecordTypeText} records in an ascending order of ${UANStatus === "Active" ? "end" : "request"} dates.`,
-        })
+      PageContainer.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+          Chunk.map((Notice) => {
+            return `<@${Notice.user}> \u{1680} ${SafeFormatTime(Notice[UANStatus === "Active" ? "end_date" : "request_date"], "F")}`;
+          }).join("\n")
+        )
+      )
     );
   }
 

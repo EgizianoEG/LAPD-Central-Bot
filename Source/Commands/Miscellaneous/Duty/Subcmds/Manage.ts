@@ -17,7 +17,7 @@ import {
 } from "discord.js";
 
 import { Guilds, Shifts } from "@Typings/Utilities/Database.js";
-import { Embeds, Emojis } from "@Config/Shared.js";
+import { Colors, Emojis } from "@Config/Shared.js";
 import { ErrorEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import GetMainShiftsData from "@Utilities/Database/GetShiftsData.js";
@@ -299,9 +299,7 @@ async function HandleNonActiveShift(
   MgmtShiftType: string
 ) {
   const MgmtComps = GetShiftManagementButtons(CmdInteract, MgmtShiftType);
-  const PromptEmbed = MgmtPromptEmbed.setColor(
-    MgmtPromptEmbed.data.color || Embeds.Colors.ShiftNatural
-  );
+  const PromptEmbed = MgmtPromptEmbed.setColor(MgmtPromptEmbed.data.color || Colors.ShiftNatural);
 
   return CmdInteractSafeReplyOrEditReply(CmdInteract, {
     embeds: [PromptEmbed],
@@ -324,7 +322,7 @@ async function HandleOnBreakShift(
   `);
 
   const PromptEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.ShiftBreak)
+    .setColor(Colors.ShiftBreak)
     .setTitle(BaseEmbedTitle)
     .setFields({ name: "Current Shift", value: FieldDescription });
 
@@ -339,7 +337,7 @@ async function HandleActiveShift(
   ShiftActive: ShiftDocument,
   MgmtPromptEmbed: EmbedBuilder
 ) {
-  const PromptEmbed = MgmtPromptEmbed.setColor(Embeds.Colors.ShiftOn);
+  const PromptEmbed = MgmtPromptEmbed.setColor(Colors.ShiftOn);
   const MgmtButtonComponents = GetShiftManagementButtons(
     CmdInteract,
     ShiftActive.type,
@@ -407,7 +405,7 @@ async function Callback(CmdInteract: SlashCommandInteraction<"cached">) {
   `);
 
   const BasePromptEmbed = new EmbedBuilder()
-    .setColor(Embeds.Colors.ShiftNatural)
+    .setColor(Colors.ShiftNatural)
     .setTitle(ShiftActive ? `Shift Management: \`${ShiftActive.type}\` Type` : MgmtEmbedTitle)
     .setFields({
       inline: true,

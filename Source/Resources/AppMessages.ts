@@ -1,5 +1,5 @@
 /* eslint-disable sonarjs/no-duplicate-string */
-import { Embeds, Emojis } from "@Config/Shared.js";
+import { Emojis, Colors } from "@Config/Shared.js";
 import Dedent from "dedent";
 
 /**
@@ -875,6 +875,12 @@ export const ErrorMessages = {
     Description:
       "The shift state has been modified elsewhere since this prompt was displayed. The prompt has been updated to reflect the current state.",
   },
+
+  DutyImportNoEntries: {
+    Title: "No Entries Found",
+    Description:
+      "The duty import file included no valid entries that could be processed. Make sure the entries in the file are formatted correctly, then try again.",
+  },
 };
 
 export const InfoMessages = {
@@ -1013,14 +1019,14 @@ export const InfoMessages = {
 
   ProcessingCitationDetails: {
     Thumb: null,
-    Color: Embeds.Colors.Gold,
+    Color: Colors.Gold,
     Title: `${Emojis.LoadingGold}\u{2000}Processing Details...`,
     Description: "Citation details are being processed and validated for submission, please wait.",
   },
 
   LoggingCitationRecord: {
     Thumb: null,
-    Color: Embeds.Colors.Gold,
+    Color: Colors.Gold,
     Title: `${Emojis.LoadingGold}\u{2000}Logging Citation...`,
     Description: "Please wait while your submitted citation is processed and logged.",
   },

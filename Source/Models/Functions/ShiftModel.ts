@@ -35,7 +35,6 @@ function GetUpdateShiftOnDutyDuration(SD: ThisType) {
   const TotalShiftDuration = EndTimestamp - SD.start_timestamp.valueOf();
   let OnDutyDuration = TotalShiftDuration;
   OnDutyDuration -= GetUpdateShiftOnBreakDuration(SD);
-  OnDutyDuration += SD.durations.on_duty_mod;
 
   return Math.max(OnDutyDuration, 0);
 }

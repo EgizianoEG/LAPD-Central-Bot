@@ -8,10 +8,10 @@ import SearchSubcmdGroup from "./Search/Search.js";
 import {
   SlashCommandBuilder,
   InteractionContextType,
+  ApplicationIntegrationType,
   type AutocompleteInteraction,
   type ApplicationCommandOptionChoiceData,
   type SlashCommandSubcommandsOnlyBuilder,
-  ApplicationIntegrationType,
 } from "discord.js";
 
 const Subcommands = [(await import("./Subcmds/Lookup.js")).default];

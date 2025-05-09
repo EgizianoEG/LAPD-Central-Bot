@@ -5,10 +5,10 @@ import AutocompleteTimeDuration from "../../../Utilities/Autocompletion/TimeDura
 import {
   SlashCommandBuilder,
   InteractionContextType,
+  ApplicationIntegrationType,
   type AutocompleteInteraction,
   type ApplicationCommandOptionChoiceData,
   type SlashCommandSubcommandsOnlyBuilder,
-  ApplicationIntegrationType,
 } from "discord.js";
 
 const Subcommands = [

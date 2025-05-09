@@ -1,18 +1,5 @@
+import { type RepliableInteraction, MessageFlags, ModalSubmitInteraction } from "discord.js";
 import { UnauthorizedEmbed } from "../Classes/ExtraEmbeds.js";
-import {
-  MessageFlags,
-  ModalSubmitInteraction,
-  type AnySelectMenuInteraction,
-  type ButtonInteraction,
-  type MessageComponentInteraction,
-} from "discord.js";
-
-type FilterableInteraction =
-  | MessageComponentInteraction
-  | SlashCommandInteraction
-  | AnySelectMenuInteraction
-  | ModalSubmitInteraction
-  | ButtonInteraction;
 
 /**
  * A helper function that filters the component collector interactions to ensure authorization
@@ -23,8 +10,8 @@ type FilterableInteraction =
  * @returns A boolean indicating if the interaction is authorized or not
  */
 export default function HandleCollectorFiltering(
-  OriginalInteract: FilterableInteraction,
-  ReceivedInteract: FilterableInteraction
+  OriginalInteract: RepliableInteraction,
+  ReceivedInteract: RepliableInteraction
 ): boolean {
   if (OriginalInteract.user.id !== ReceivedInteract.user.id) {
     if (ReceivedInteract instanceof ModalSubmitInteraction) {
