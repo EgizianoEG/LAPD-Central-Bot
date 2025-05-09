@@ -78,7 +78,7 @@ export default async function RegisterCommands(Client: DiscordClient): Promise<v
       message: "An error occurred while registering commands.",
       label: LogLabel,
       stack: (Err as Error).stack,
-      details: { ...(Err as Error) },
+      error: { ...(Err as Error) },
     });
   }
 }
