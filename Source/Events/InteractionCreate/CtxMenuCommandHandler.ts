@@ -66,9 +66,7 @@ export default async function ContextMenuCommandHandler(
         message: "Handled execution of context menu command %o.",
         label: FileLogLabel,
         splat: [CommandName],
-        details: {
-          execution_time: ReadableDuration(Date.now() - Interaction.createdTimestamp),
-        },
+        execution_time: ReadableDuration(Date.now() - Interaction.createdTimestamp),
       });
 
       if (Interaction.replied || Interaction.deferred) return;
@@ -92,6 +90,7 @@ export default async function ContextMenuCommandHandler(
       label: FileLogLabel,
       error_id: ErrorId,
       stack: Err.stack,
+      error: { ...Err },
       splat: [CommandName],
     });
 

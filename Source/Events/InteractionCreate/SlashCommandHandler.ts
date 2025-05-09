@@ -72,11 +72,9 @@ export default async function SlashCommandHandler(
         message: "Handled execution of slash command %o.",
         label: FileLogLabel,
         splat: [FullCmdName],
-        details: {
-          execution_time: ReadableDuration(Date.now() - Interaction.createdTimestamp),
-          stringified: Interaction.toString(),
-          cmd_options: Interaction.options,
-        },
+        execution_time: ReadableDuration(Date.now() - Interaction.createdTimestamp),
+        stringified: Interaction.toString(),
+        cmd_options: Interaction.options,
       });
 
       if (Interaction.replied || Interaction.deferred) return;
@@ -100,6 +98,7 @@ export default async function SlashCommandHandler(
       label: FileLogLabel,
       error_id: ErrorId,
       stack: Err.stack,
+      error: { ...Err },
       splat: [FullCmdName],
       cmd_options: Interaction.options,
     });
