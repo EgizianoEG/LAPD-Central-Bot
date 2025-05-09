@@ -40,7 +40,7 @@ import { TitleCase } from "@Utilities/Strings/Converters.js";
 import { Colors } from "@Config/Shared.js";
 
 import HandleActionCollectorExceptions from "@Utilities/Other/HandleCompCollectorExceptions.js";
-import LogTrafficCitation from "@Utilities/Other/LogCitation.js";
+import LogTrafficCitation from "@Utilities/Database/LogCitation.js";
 import FindClosestMatch from "didyoumean2";
 import GetIdByUsername from "@Utilities/Roblox/GetIdByUsername.js";
 import BrickColors from "@Resources/BrickColors.js";

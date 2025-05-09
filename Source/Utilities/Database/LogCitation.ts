@@ -7,7 +7,7 @@ import {
   time,
 } from "discord.js";
 
-import { CitationImgDimensions } from "./GetFilledCitation.js";
+import { CitationImgDimensions } from "../Other/GetFilledCitation.js";
 import { SendGuildMessages } from "@Utilities/Other/GuildMessages.js";
 import { GuildCitations } from "@Typings/Utilities/Database.js";
 import { FormatUsername } from "@Utilities/Strings/Formatters.js";
@@ -16,9 +16,9 @@ import { APIResponses } from "@Typings/Utilities/Roblox.js";
 import Dedent from "dedent";
 import AppError from "@Utilities/Classes/AppError.js";
 import CitationModel from "@Models/Citation.js";
-import UploadToImgBB from "./ImgBBUpload.js";
+import UploadToImgBB from "../Other/ImgBBUpload.js";
 import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
-import GetPlaceholderImgURL from "./GetPlaceholderImg.js";
+import GetPlaceholderImgURL from "../Other/GetPlaceholderImg.js";
 import IncrementActiveShiftEvent from "@Utilities/Database/IncrementActiveShiftEvent.js";
 
 /**

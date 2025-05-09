@@ -33,7 +33,7 @@ import {
 import LogArrestReport, {
   type ArresteeInfoType,
   type ReporterInfoType,
-} from "@Utilities/Other/LogArrestReport.js";
+} from "@Utilities/Database/LogArrestReport.js";
 
 import { RandomString } from "@Utilities/Strings/Random.js";
 import { ReporterInfo } from "../Log.js";

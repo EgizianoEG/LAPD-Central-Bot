@@ -9,7 +9,7 @@ import AppError from "@Utilities/Classes/AppError.js";
 import ArrestModel from "@Models/Arrest.js";
 import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
 import IncrementActiveShiftEvent from "@Utilities/Database/IncrementActiveShiftEvent.js";
-import GetFormattedArrestReportEmbed from "./FormatArrestReportEmbed.js";
+import GetFormattedArrestReportEmbed from "../Other/FormatArrestReportEmbed.js";
 
 export type ReporterInfoType = {
   /** Shift currently active for the reporting officer */
