@@ -24,15 +24,85 @@ export type SlashCommandInteraction<Cached extends CacheType = undefined> =
   ChatInputCommandInteraction<Cached>;
 
 export type CommandObjectDataType =
-  | SlashCommandBuilder
-  | SlashCommandSubcommandBuilder
   | SlashCommandSubcommandsOnlyBuilder
+  | SlashCommandSubcommandBuilder
+  | SlashCommandBuilder
   | undefined;
 
 export type ContextMenuCmdInteractionType =
   | ContextMenuCommandInteraction<Cached | undefined>
   | UserContextMenuCommandInteraction<Cached | undefined>
   | MessageContextMenuCommandInteraction<Cached | undefined>;
+
+export type CommandOptsFallbackKeys = "$all_other" | "$other_cmds" | "$all" | "$other";
+
+export namespace CommandCooldowns {
+  export interface CooldownConfig {
+    /**
+     * The maximum number of times the command can be executed within the given timeframe.
+     * If `undefined` or `null`, there is no limit based on execution count.
+     * @requires timeframe
+     */
+    max_executions?: Nullable<number>;
+
+    /**
+     * The duration in seconds during which the max_executions limit applies.
+     * If `undefined` or `null`, the execution count limit is not time-bound.
+     * @requires max_executions
+     */
+    timeframe?: Nullable<number>;
+
+    /**
+     * The cooldown period in seconds before the command can be run again.
+     * If `undefined` or `null`, no time-based cooldown is applied.
+     */
+    cooldown?: Nullable<number>;
+  }
+
+  /** A cooldown value can be a simple number (seconds) or a full configuration object. */
+  export type CooldownValue = number | CooldownConfig;
+
+  /** A structure to define separate cooldowns for users and guilds. */
+  export interface UserGuildCooldownConfig {
+    /** User-specific cooldown value (simply a number or full config). */
+    $user?: CooldownValue;
+
+    /** Guild-wide cooldown value (simply a number or full config). */
+    $guild?: CooldownValue;
+  }
+
+  /**
+   * A map of subcommand names (excluding $user and $guild special keys).
+   * Each subcommand can either:
+   * - have a simple cooldown number
+   * - or have per-user and/or per-guild settings
+   * - or be `null` to disable
+   */
+  export type SubcommandCooldownMap = {
+    [K in string as K extends "$user" | "$guild" ? never : K]?:
+      | UserGuildCooldownConfig
+      | number
+      | null;
+  };
+
+  /**
+   * The top-level structure for defining cooldowns.
+   * Special keys:
+   * - `$user`: applies a global user-wide cooldown (cannot nest further)
+   * - `$guild`: applies a global guild-wide cooldown (cannot nest further)
+   *
+   * All other keys are treated as subcommands and support more complex rules.
+   */
+  export type CooldownRecord =
+    | ({
+        /** Top-level user cooldown (flat only — nesting is invalid) */
+        $user?: CooldownValue | null;
+
+        /** Top-level guild cooldown (flat only — nesting is invalid) */
+        $guild?: CooldownValue | null;
+      } & SubcommandCooldownMap)
+    | number;
+}
 
 /**
  * @note Each cron job will be automatically started even if not specified in cron options.
@@ -169,17 +239,36 @@ declare global {
     /** Should the command be updated regardless of whether it is altered or not? */
     force_update?: boolean;
 
-    /**Should command execution be restricted to application developers only? */
+    /** Should command execution be restricted to application developers only? */
     dev_only?: boolean;
 
     /**
-     * Cooldown period in *seconds* between each command execution (Check the `CommandHandler` file for the default cooldown value).
-     * Could be a record of cooldowns so that there are different cooldowns for each sub command or sub command group individually.
-     * Use "$all_other", "$other_cmds", "$all", or "$other" to set a cooldown for all other commands/subcmds/subcmd-groups under a single slash command.
+     * Configure cooldowns for command execution. Can be:
+     * - A simple number (seconds between each execution, for each user)
+     * - A detailed cooldown configuration object with more granular control
+     * - A record mapping subcommands/subcommand groups to their respective cooldown settings
      *
-     * If there is a cooldown set for a subcommand or subcommand group, it will override the default or $all_other cooldown value.
+     * Special keys:
+     * - Top level `$user`: Applies rate limiting per-user across all commands, alternative to special keys `$other_cmds`, `$all`, etc.
+     * - Top level `$guild`: Applies rate limiting per-guild across all commands, alternative to special keys `$other_cmds`, `$all`, etc.
+     * - `$all_other`, `$other_cmds`, `$all`, or `$other`: Sets default cooldown for commands not explicitly listed. Has higher priority than top-level `$user` and `$guild`.
+     *
+     * Important: Special keys (`$user`, `$guild`) cannot be nested within themselves.
+     * For example, `{ $user: { $user: 5 } }` is invalid, but `{ $user: 5 }` or `{ search: { $user: 5, $guild: 10 } }` are valid.
+     *
+     * @example
+     * cooldown: {
+     *   // Global user cooldown of 10 seconds
+     *   $user: 10,
+     *
+     *   // Specific cooldowns per subcommand
+     *   search: {
+     *     $user: { max_executions: 20, timeframe: 86400 }, // Limit to 20 uses per day per user
+     *     $guild: 30 // Guild-wide cooldown of 30 seconds
+     *   }
+     * }
      */
-    cooldown?: number | Record<"$all_other" | "$other_cmds" | "$all" | "$other" | string, number>;
+    cooldown?: Nullable<CommandCooldowns.CooldownRecord>;
 
     /**
      * The required user guild permissions to run this command.
@@ -202,7 +291,7 @@ declare global {
       | PermissionResolvable[]
       | UtilityTypesMask.DeepPartial<GeneralTypings.UserPermissionsConfig>
       | Record<
-          "$all_other" | "$other_cmds" | "$all" | "$other" | string,
+          CommandOptsFallbackKeys | string,
           | UtilityTypesMask.DeepPartial<GeneralTypings.UserPermissionsConfig>
           | PermissionResolvable[]
         >;

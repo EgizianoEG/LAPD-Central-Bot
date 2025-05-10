@@ -49,7 +49,7 @@ export default async function ContextMenuCommandHandler(
         .replyToInteract(Interaction, true);
     }
 
-    await HandleCommandCooldowns(Client, Interaction, CommandObject, CommandName);
+    await HandleCommandCooldowns(Interaction, CommandObject, CommandName);
     await HandleDevOnlyCommands(CommandObject, Interaction);
     await HandleUserPermissions(CommandObject, Interaction);
     await HandleBotPermissions(CommandObject, Interaction);

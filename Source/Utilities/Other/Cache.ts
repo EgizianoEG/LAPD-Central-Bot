@@ -72,3 +72,15 @@ export const OngoingServerMemberNicknamesReplaceCache = new NodeCache({
   useClones: false,
   deleteOnExpire: true,
 });
+
+export const UserCommandExecutionsCache = new NodeCache({
+  stdTTL: 3600,
+  useClones: false,
+  deleteOnExpire: true,
+});
+
+export const GuildCommandExecutionsCache = new NodeCache({
+  stdTTL: 3600,
+  useClones: false,
+  deleteOnExpire: true,
+});

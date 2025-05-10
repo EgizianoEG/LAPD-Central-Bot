@@ -55,7 +55,7 @@ export default async function SlashCommandHandler(
         .replyToInteract(Interaction, true);
     }
 
-    await HandleCommandCooldowns(Client, Interaction, CommandObject, FullCmdName);
+    await HandleCommandCooldowns(Interaction, CommandObject, FullCmdName);
     await HandleDevOnlyCommands(CommandObject, Interaction);
     await HandleUserPermissions(CommandObject, Interaction);
     await HandleBotPermissions(CommandObject, Interaction);

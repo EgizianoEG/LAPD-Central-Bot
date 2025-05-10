@@ -1,7 +1,6 @@
 import {
   time,
   CacheType,
-  Collection,
   GuildMember,
   MessageFlags,
   PermissionsBitField,
@@ -14,8 +13,10 @@ import {
 import { Discord } from "@Config/Secrets.js";
 import { UnorderedList } from "@Utilities/Strings/Formatters.js";
 import { PascalToNormal } from "@Utilities/Strings/Converters.js";
+import { CommandCooldowns } from "@Typings/Global.js";
 import { IsValidUserPermsObj } from "@Utilities/Other/Validators.js";
 import { WarnEmbed, ErrorEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { UserCommandExecutionsCache, GuildCommandExecutionsCache } from "@Utilities/Other/Cache.js";
 import UserHasPerms from "@Utilities/Database/UserHasPermissions.js";
 import Dedent from "dedent";
 
@@ -34,73 +35,46 @@ type ChatContextCmdInteraction<Cached extends CacheType = CacheType> =
  * @param CommandName - The full name of the command.
  */
 export async function HandleCommandCooldowns(
-  Client: DiscordClient,
   Interaction: ChatContextCmdInteraction,
   CommandObject: SlashCommandObject | ContextMenuCommandObject,
   CommandName: string
 ) {
   if (Interaction.replied) return;
   const CurrentTS = Date.now();
-  const Cooldowns = Client.cooldowns;
-  const CommandID = Interaction.commandId;
+  const { UserCooldown, GuildCooldown, BaseCooldownMs } = ExtractCooldownConfig(
+    CommandObject,
+    Interaction
+  );
 
-  if (!Cooldowns.has(CommandName)) {
-    Cooldowns.set(CommandName, new Collection());
-  }
+  const StandardCooldownResult = await ProcessStandardCooldown(
+    Interaction,
+    CommandName,
+    BaseCooldownMs,
+    CurrentTS
+  );
 
-  const Timestamps = Cooldowns.get(CommandName);
-  let CommandCooldownTimeMs: number = BaseCommandCooldownTime * 1000;
+  if (StandardCooldownResult) return StandardCooldownResult;
+  if (!UserCooldown && !GuildCooldown) return;
+  const UserCooldownResult = await ProcessUserCooldown(
+    Interaction,
+    CommandName,
+    UserCooldown,
+    CurrentTS
+  );
 
-  if (CommandObject.options?.cooldown) {
-    if (typeof CommandObject.options.cooldown === "number") {
-      CommandCooldownTimeMs = CommandObject.options.cooldown * 1000;
-    } else if (Interaction.isChatInputCommand()) {
-      const RunningCmdGS =
-        Interaction.options.getSubcommandGroup(false) ?? Interaction.options.getSubcommand(false);
+  if (UserCooldownResult) return UserCooldownResult;
+  if (Interaction.inGuild()) {
+    const GuildCooldownResult = await ProcessGuildCooldown(
+      Interaction,
+      CommandName,
+      GuildCooldown,
+      CurrentTS
+    );
 
-      if (RunningCmdGS) {
-        const MatchingSubcmdCooldown = CommandObject.options.cooldown[RunningCmdGS];
-        if (MatchingSubcmdCooldown) {
-          CommandCooldownTimeMs = MatchingSubcmdCooldown * 1000;
-        } else {
-          // Handle special cases like '$all_other', '$other_cmds', etc.
-          const CooldownFallbackKey = Object.keys(CommandObject.options.cooldown).find(
-            (key) => !!key.match(AllOtherCmdNamesPattern)
-          );
-
-          if (CooldownFallbackKey) {
-            CommandCooldownTimeMs = CommandObject.options.cooldown[CooldownFallbackKey] * 1000;
-          }
-        }
-      }
+    if (GuildCooldownResult) {
+      return GuildCooldownResult;
     }
   }
-
-  if (!Timestamps) return;
-  if (Timestamps.has(Interaction.user.id)) {
-    const ExpTimestamp = (Timestamps.get(Interaction.user.id) ?? 0) + CommandCooldownTimeMs;
-    if (CurrentTS < ExpTimestamp) {
-      const IsSlashCommand = Interaction.isChatInputCommand();
-
-      return Interaction.reply({
-        flags: MessageFlags.Ephemeral,
-        embeds: [
-          new WarnEmbed()
-            .setTitle("Cooldown")
-            .setDescription(
-              IsSlashCommand
-                ? "Kindly wait. You currently have a cooldown for the %s slash command and may use it again %s."
-                : "Kindly wait. You currently have a cooldown for the `%s` context menu command and may use it again %s.",
-              IsSlashCommand ? `</${CommandName}:${CommandID}>` : CommandName,
-              time(Math.round(ExpTimestamp / 1000), "R")
-            ),
-        ],
-      });
-    }
-  }
-
-  Timestamps.set(Interaction.user.id, CurrentTS);
-  setTimeout(() => Timestamps.delete(Interaction.user.id), CommandCooldownTimeMs);
 }
 
 /**
@@ -377,4 +351,305 @@ export async function HandleCommandUserPerms(
       )
       .replyToInteract(Interaction, true);
   }
+}
+
+// ---------------------------------------------------------------------------------------
+// Helper Functions:
+// -----------------
+/**
+ * Extracts the appropriate cooldown configuration based on command structure and interaction.
+ * @param CommandObject - The command object containing cooldown configuration.
+ * @param Interaction - The interaction to process.
+ * @returns Object containing extracted cooldown configuration.
+ */
+// eslint-disable-next-line sonarjs/cognitive-complexity
+function ExtractCooldownConfig(
+  CommandObject: ChatContextCmdObject,
+  Interaction: ChatContextCmdInteraction
+): {
+  UserCooldown: Nullable<CommandCooldowns.CooldownValue>;
+  GuildCooldown: Nullable<CommandCooldowns.CooldownValue>;
+  BaseCooldownMs: number;
+} {
+  let BaseCooldownMs: number = BaseCommandCooldownTime * 1000;
+  let UserCooldown: Nullable<CommandCooldowns.CooldownValue> = null;
+  let GuildCooldown: Nullable<CommandCooldowns.CooldownValue> = null;
+
+  if (!CommandObject.options?.cooldown) {
+    return { UserCooldown, GuildCooldown, BaseCooldownMs };
+  }
+
+  if (typeof CommandObject.options.cooldown === "number") {
+    BaseCooldownMs = CommandObject.options.cooldown * 1000;
+    return { UserCooldown, GuildCooldown, BaseCooldownMs };
+  }
+
+  if (typeof CommandObject.options.cooldown === "object") {
+    if (Interaction.isChatInputCommand()) {
+      const RunningCmdGS =
+        Interaction.options.getSubcommandGroup(false) ?? Interaction.options.getSubcommand(false);
+
+      if (RunningCmdGS) {
+        const MatchingSubcmdCooldown = CommandObject.options.cooldown[RunningCmdGS];
+        if (MatchingSubcmdCooldown) {
+          if (typeof MatchingSubcmdCooldown === "number") {
+            BaseCooldownMs = MatchingSubcmdCooldown * 1000;
+          } else if (typeof MatchingSubcmdCooldown === "object") {
+            UserCooldown = MatchingSubcmdCooldown.$user ?? null;
+            GuildCooldown = MatchingSubcmdCooldown.$guild ?? null;
+
+            if (typeof UserCooldown === "number") {
+              BaseCooldownMs = UserCooldown * 1000;
+            }
+          }
+
+          return { UserCooldown, GuildCooldown, BaseCooldownMs };
+        }
+
+        const CooldownFallbackKey = Object.keys(CommandObject.options.cooldown).find((key) =>
+          AllOtherCmdNamesPattern.test(key)
+        );
+
+        if (CooldownFallbackKey) {
+          const FallbackCooldown = CommandObject.options.cooldown[CooldownFallbackKey];
+          if (typeof FallbackCooldown === "number") {
+            BaseCooldownMs = FallbackCooldown * 1000;
+          } else if (FallbackCooldown && typeof FallbackCooldown === "object") {
+            UserCooldown = FallbackCooldown.$user ?? null;
+            GuildCooldown = FallbackCooldown.$guild ?? null;
+
+            if (typeof UserCooldown === "number") {
+              BaseCooldownMs = UserCooldown * 1000;
+            }
+          }
+
+          return { UserCooldown, GuildCooldown, BaseCooldownMs };
+        }
+      }
+    }
+
+    // No subcommand-specific cooldown found, use global settings if present.
+    if ("$user" in CommandObject.options.cooldown || "$guild" in CommandObject.options.cooldown) {
+      UserCooldown = CommandObject.options.cooldown.$user ?? null;
+      GuildCooldown = CommandObject.options.cooldown.$guild ?? null;
+
+      if (typeof UserCooldown === "number") {
+        BaseCooldownMs = UserCooldown * 1000;
+      }
+    }
+  }
+
+  return { UserCooldown, GuildCooldown, BaseCooldownMs };
+}
+
+/**
+ * Process user-specific rate limits.
+ * @param Interaction - The command interaction to process.
+ * @param CommandName - The full name of the command.
+ * @param UserCooldown - The user cooldown configuration.
+ * @param CurrentTS - The current timestamp.
+ * @returns The interaction reply if a cooldown is applied, otherwise null.
+ */
+async function ProcessUserCooldown(
+  Interaction: ChatContextCmdInteraction,
+  CommandName: string,
+  UserCooldown: Nullable<CommandCooldowns.CooldownValue>,
+  CurrentTS: number
+) {
+  if (!UserCooldown) return null;
+  if (typeof UserCooldown === "object") {
+    const { timeframe: Timeframe, max_executions: MaxExecutions } = UserCooldown;
+
+    if (MaxExecutions && Timeframe) {
+      const UserCmdKey = `${Interaction.user.id}:${CommandName}`;
+      let UserExecInfo = UserCommandExecutionsCache.get<{ count: number; first_exec: number }>(
+        UserCmdKey
+      );
+
+      if (!UserExecInfo) {
+        UserExecInfo = { count: 1, first_exec: CurrentTS };
+        UserCommandExecutionsCache.set(UserCmdKey, UserExecInfo, Timeframe);
+      } else {
+        if (UserExecInfo.count >= MaxExecutions) {
+          const TimeframeEnds = UserExecInfo.first_exec + Timeframe * 1000;
+          return Interaction.reply({
+            flags: MessageFlags.Ephemeral,
+            embeds: [
+              new WarnEmbed()
+                .setTitle("Rate Limited")
+                .setDescription(
+                  "You have reached the maximum number of executions for this command at this time. You may try again %s.",
+                  time(Math.round(TimeframeEnds / 1000), "R")
+                ),
+            ],
+          });
+        }
+
+        UserExecInfo.count++;
+        UserCommandExecutionsCache.set(
+          UserCmdKey,
+          UserExecInfo,
+          Math.floor((UserExecInfo.first_exec + Timeframe * 1000 - CurrentTS) / 1000)
+        );
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Process guild-specific cooldowns including rate limits.
+ * @param Interaction - The command interaction to process.
+ * @param CommandName - The full name of the command.
+ * @param GuildCooldown - The guild cooldown configuration.
+ * @param CurrentTS - The current timestamp.
+ * @returns The interaction reply if a cooldown is applied, otherwise null.
+ */
+async function ProcessGuildCooldown(
+  Interaction: ChatContextCmdInteraction,
+  CommandName: string,
+  GuildCooldown: Nullable<CommandCooldowns.CooldownValue>,
+  CurrentTS: number
+) {
+  if (!GuildCooldown || !Interaction.inGuild()) return null;
+  const GuildId = Interaction.guildId;
+
+  if (typeof GuildCooldown === "object") {
+    const {
+      cooldown: Cooldown,
+      max_executions: MaxExecutions,
+      timeframe: Timeframe,
+    } = GuildCooldown;
+
+    if (Cooldown) {
+      const GuildCmdKey = `${GuildId}:${CommandName}:cooldown`;
+      const LastGuildExecution = GuildCommandExecutionsCache.get<number>(GuildCmdKey);
+
+      if (LastGuildExecution) {
+        const GuildCooldownTimeMs = Cooldown * 1000;
+        const ExpTimestamp = LastGuildExecution + GuildCooldownTimeMs;
+
+        if (CurrentTS < ExpTimestamp) {
+          return Interaction.reply({
+            flags: MessageFlags.Ephemeral,
+            embeds: [
+              new WarnEmbed()
+                .setTitle("Server Cooldown")
+                .setDescription(
+                  "This command is currently on cooldown for the entire server. It can be used again %s.",
+                  time(Math.round(ExpTimestamp / 1000), "R")
+                ),
+            ],
+          });
+        }
+      }
+
+      GuildCommandExecutionsCache.set(GuildCmdKey, CurrentTS);
+    }
+
+    // Process rate limiting (max executions within timeframe) after cooldown check passes.
+    if (MaxExecutions && Timeframe) {
+      const GuildCmdKey = `${GuildId}:${CommandName}`;
+      let GuildExecInfo = GuildCommandExecutionsCache.get<{ count: number; first_exec: number }>(
+        GuildCmdKey
+      );
+
+      if (!GuildExecInfo) {
+        GuildExecInfo = { count: 1, first_exec: CurrentTS };
+        GuildCommandExecutionsCache.set(GuildCmdKey, GuildExecInfo, Timeframe);
+      } else {
+        if (GuildExecInfo.count >= MaxExecutions) {
+          const TimeframeEnds = GuildExecInfo.first_exec + Timeframe * 1000;
+          return Interaction.reply({
+            flags: MessageFlags.Ephemeral,
+            embeds: [
+              new WarnEmbed()
+                .setTitle("Server Rate Limited")
+                .setDescription(
+                  "This server has reached its usage limit for this command at this time. Please try again %s.",
+                  time(Math.round(TimeframeEnds / 1000), "R")
+                ),
+            ],
+          });
+        }
+
+        GuildExecInfo.count++;
+        GuildCommandExecutionsCache.set(
+          GuildCmdKey,
+          GuildExecInfo,
+          Math.floor((GuildExecInfo.first_exec + Timeframe * 1000 - CurrentTS) / 1000)
+        );
+      }
+    }
+  } else if (typeof GuildCooldown === "number") {
+    const GuildCmdKey = `${GuildId}:${CommandName}:cooldown`;
+    const LastGuildExecution = GuildCommandExecutionsCache.get<number>(GuildCmdKey);
+
+    if (LastGuildExecution) {
+      const GuildCooldownTimeMs = GuildCooldown * 1000;
+      const ExpTimestamp = LastGuildExecution + GuildCooldownTimeMs;
+
+      if (CurrentTS < ExpTimestamp) {
+        return Interaction.reply({
+          flags: MessageFlags.Ephemeral,
+          embeds: [
+            new WarnEmbed()
+              .setTitle("Server Cooldown")
+              .setDescription(
+                "This command is currently on cooldown for the entire server. It can be used again %s.",
+                time(Math.round(ExpTimestamp / 1000), "R")
+              ),
+          ],
+        });
+      }
+    }
+
+    GuildCommandExecutionsCache.set(GuildCmdKey, CurrentTS);
+  }
+
+  return null;
+}
+
+/**
+ * Handles the cooldown mechanism for a command execution, ensuring that users
+ * cannot execute the same command repeatedly within a specified cooldown period.
+ * @param Interaction - The command interaction.
+ * @param CommandName - The name of the command being executed.
+ * @param CooldownTimeMs - The cooldown duration in milliseconds.
+ * @param CurrentTS - The current timestamp in milliseconds.
+ * @returns The interaction reply if a cooldown is applied, undefined otherwise.
+ */
+function ProcessStandardCooldown(
+  Interaction: ChatContextCmdInteraction,
+  CommandName: string,
+  CooldownTimeMs: number,
+  CurrentTS: number
+) {
+  const UserCmdKey = `${Interaction.user.id}:${CommandName}:cooldown`;
+  const LastUserExecution = UserCommandExecutionsCache.get<number>(UserCmdKey);
+
+  if (LastUserExecution) {
+    const ExpTimestamp = LastUserExecution + CooldownTimeMs;
+
+    if (CurrentTS < ExpTimestamp) {
+      const IsSlashCommand = Interaction.isChatInputCommand();
+      return Interaction.reply({
+        flags: MessageFlags.Ephemeral,
+        embeds: [
+          new WarnEmbed()
+            .setTitle("Cooldown")
+            .setDescription(
+              IsSlashCommand
+                ? "Kindly wait. You currently have a cooldown for the %s slash command and may use it again %s."
+                : "Kindly wait. You currently have a cooldown for the `%s` context menu command and may use it again %s.",
+              IsSlashCommand ? `</${CommandName}:${Interaction.commandId}>` : CommandName,
+              time(Math.round(ExpTimestamp / 1000), "R")
+            ),
+        ],
+      });
+    }
+  }
+
+  UserCommandExecutionsCache.set(UserCmdKey, CurrentTS, CooldownTimeMs / 1000);
 }
