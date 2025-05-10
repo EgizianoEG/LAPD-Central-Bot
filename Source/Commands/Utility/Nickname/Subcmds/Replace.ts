@@ -18,6 +18,7 @@ import {
 import Dedent from "dedent";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import DHumanize from "humanize-duration";
+import SafeRegex from "safe-regex";
 import { GetErrorId } from "@Utilities/Strings/Random.js";
 import { Emojis, Colors } from "@Config/Shared.js";
 import { FilterUserInput } from "@Utilities/Strings/Redactor.js";
@@ -589,6 +590,12 @@ async function Callback(CmdInteract: SlashCommandInteraction<"cached">) {
   await CmdInteract.deferReply();
   try {
     const MatchRegex = new RegExp(InputRegex, InputRFlag ?? undefined);
+    if (!SafeRegex(MatchRegex)) {
+      return new ErrorEmbed()
+        .useErrTemplate("ProvidedUnsafeRegex")
+        .replyToInteract(CmdInteract, true);
+    }
+
     const GuildMembers =
       GuildMembersCache.get<Collection<string, GuildMember>>(CmdInteract.guildId) ??
       (await CmdInteract.guild.members.fetch());

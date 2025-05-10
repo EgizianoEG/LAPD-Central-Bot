@@ -7,6 +7,7 @@ import {
 } from "discord.js";
 
 import AppLogger from "@Utilities/Classes/AppLogger.js";
+import SafeRegex from "safe-regex";
 import HandlePagePagination from "@Utilities/Other/HandlePagePagination.js";
 import { ErrorContainer, InfoContainer } from "@Utilities/Classes/ExtraContainers.js";
 import { GuildMembersCache } from "@Utilities/Other/Cache.js";
@@ -53,7 +54,13 @@ async function Callback(CmdInteract: SlashCommandInteraction<"cached">) {
     : MessageFlags.IsComponentsV2;
 
   try {
-    const Regex = new RegExp(InputRegex, InputRFlag ?? undefined);
+    const MatchRegex = new RegExp(InputRegex, InputRFlag ?? undefined);
+    if (!SafeRegex(MatchRegex)) {
+      return new ErrorEmbed()
+        .useErrTemplate("ProvidedUnsafeRegex")
+        .replyToInteract(CmdInteract, true);
+    }
+
     let GuildMembers: Collection<string, GuildMember>;
     await CmdInteract.deferReply({ flags: ReplyFlags });
 
@@ -68,7 +75,7 @@ async function Callback(CmdInteract: SlashCommandInteraction<"cached">) {
       return (
         !Member.user.bot &&
         (RoleFilter ? Member.roles.cache.has(RoleFilter.id) : true) &&
-        Regex.test(Member.nickname ?? Member.displayName)
+        MatchRegex.test(Member.nickname ?? Member.displayName)
       );
     }).sort((M1, M2) =>
       (M1.nickname ?? M1.displayName).localeCompare(M2.nickname ?? M2.displayName)

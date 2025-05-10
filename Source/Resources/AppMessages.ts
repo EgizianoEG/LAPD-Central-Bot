@@ -526,6 +526,16 @@ export const ErrorMessages = {
     `),
   },
 
+  ProvidedUnsafeRegex: {
+    Title: "Potentially Unsafe Regex",
+    Description:
+      "The regular expression you provided may be unsafe for execution.\n" +
+      "To improve its safety, please consider the following recommendations:\n" +
+      "- Simplify overly complex patterns.\n" +
+      "- Avoid using nested repetition quantifiers, such as `(a+)+`.\n" +
+      "- Prefer bounded repetition, like `a{1,10}`, instead of unbounded repetition, such as `a+`.\n",
+  },
+
   NicknameReplacementAlreadyInProgress: {
     Title: "Replacement Cooldown",
     Description:
