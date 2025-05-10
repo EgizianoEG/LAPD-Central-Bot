@@ -1,9 +1,10 @@
+import { secondsInDay } from "date-fns/constants";
 import {
   SlashCommandBuilder,
   PermissionFlagsBits,
   InteractionContextType,
-  SlashCommandSubcommandsOnlyBuilder,
   ApplicationIntegrationType,
+  SlashCommandSubcommandsOnlyBuilder,
 } from "discord.js";
 
 const Subcommands = [
@@ -14,7 +15,6 @@ const Subcommands = [
 // ---------------------------------------------------------------------------------------
 // Functions:
 // ----------
-
 async function Callback(Interaction: SlashCommandInteraction<"cached">) {
   for (const Subcommand of Subcommands) {
     if (Subcommand.data.name === Interaction.options.getSubcommand()) {
@@ -34,6 +34,23 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
   options: {
     app_perms: { replace: [PermissionFlagsBits.ManageNicknames] },
     user_perms: { replace: [PermissionFlagsBits.Administrator], $all_other: { staff: true } },
+    cooldown: {
+      search: {
+        $user: {
+          max_executions: 20,
+          timeframe: secondsInDay,
+          cooldown: 15,
+        },
+      },
+      replace: {
+        $user: 60,
+        $guild: {
+          max_executions: 3,
+          timeframe: secondsInDay,
+          cooldown: 60,
+        },
+      },
+    },
   },
 
   data: new SlashCommandBuilder()
