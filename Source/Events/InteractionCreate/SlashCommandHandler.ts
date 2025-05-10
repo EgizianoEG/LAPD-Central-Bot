@@ -8,7 +8,7 @@ import {
   HandleCommandCooldowns,
   HandleDevOnlyCommands,
   HandleUserPermissions,
-  HandleBotPermissions,
+  HandleAppPermissions,
 } from "@Utilities/Other/CommandExecutionGuards.js";
 
 const FileLogLabel = "Events:InteractionCreate:SlashCommandHandler";
@@ -58,7 +58,7 @@ export default async function SlashCommandHandler(
     await HandleCommandCooldowns(Interaction, CommandObject, FullCmdName);
     await HandleDevOnlyCommands(CommandObject, Interaction);
     await HandleUserPermissions(CommandObject, Interaction);
-    await HandleBotPermissions(CommandObject, Interaction);
+    await HandleAppPermissions(CommandObject, Interaction);
     if (Interaction.replied) return;
 
     if (typeof CommandObject.callback === "function") {

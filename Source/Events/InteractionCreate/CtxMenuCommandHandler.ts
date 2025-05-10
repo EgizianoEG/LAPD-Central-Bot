@@ -8,7 +8,7 @@ import {
   HandleCommandCooldowns,
   HandleDevOnlyCommands,
   HandleUserPermissions,
-  HandleBotPermissions,
+  HandleAppPermissions,
 } from "@Utilities/Other/CommandExecutionGuards.js";
 
 const FileLogLabel = "Events:InteractionCreate:ContextMenuCommandHandler";
@@ -52,7 +52,7 @@ export default async function ContextMenuCommandHandler(
     await HandleCommandCooldowns(Interaction, CommandObject, CommandName);
     await HandleDevOnlyCommands(CommandObject, Interaction);
     await HandleUserPermissions(CommandObject, Interaction);
-    await HandleBotPermissions(CommandObject, Interaction);
+    await HandleAppPermissions(CommandObject, Interaction);
     if (Interaction.replied) return;
 
     if (typeof CommandObject.callback === "function") {

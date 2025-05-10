@@ -297,10 +297,25 @@ declare global {
         >;
 
     /**
-     * Bot guild permissions that are required to run this command.
-     * This could also be a record mapped to each sub-command or sub-command group.
+     * Permissions the bot application needs in the guild to execute this command.
+     * If the bot lacks these permissions, the command will fail or behave unexpectedly.
+     *
+     * Can be provided in two formats:
+     * - An array of permissions for the entire command
+     * - A record mapping subcommand/group names to their required permission arrays
+     *
+     * @example
+     * // Require basic permissions for the whole command
+     * app_perms: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks]
+     *
+     * // Different permissions for different subcommands
+     * app_perms: {
+     *   ban: [PermissionFlagsBits.BanMembers],
+     *   info: [PermissionFlagsBits.SendMessages]
+     *   clear: [PermissionFlagsBits.ManageMessages],
+     * }
      */
-    bot_perms?: PermissionResolvable[] | Record<string, PermissionResolvable[]>;
+    app_perms?: PermissionResolvable[] | Record<string, PermissionResolvable[]>;
   }
 
   interface ContextMenuCommandObject<

@@ -32,8 +32,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
 // ------------------
 const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
   options: {
-    cooldown: { search: 15, replace: 60 },
-    bot_perms: { replace: [PermissionFlagsBits.ManageNicknames] },
+    app_perms: { replace: [PermissionFlagsBits.ManageNicknames] },
     user_perms: { replace: [PermissionFlagsBits.Administrator], $all_other: { staff: true } },
   },
 

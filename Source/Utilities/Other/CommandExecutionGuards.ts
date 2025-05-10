@@ -182,42 +182,42 @@ export async function HandleUserPermissions(
  * @returns A promise that resolves when the permission handling is complete.
  *          If the bot lacks any necessary permissions, the function may terminate early with a feedback reply to the user.
  */
-export async function HandleBotPermissions(
+export async function HandleAppPermissions(
   CommandObject: ChatContextCmdObject,
   Interaction: ChatContextCmdInteraction
 ) {
   if (Interaction.replied || !Interaction.inCachedGuild()) return;
-  if (!CommandObject.options?.bot_perms || !Object.keys(CommandObject.options.bot_perms).length) {
+  if (!CommandObject.options?.app_perms || !Object.keys(CommandObject.options.app_perms).length) {
     return;
   }
 
-  const BotInGuild = await Interaction.guild.members.fetch(Interaction.client.user.id);
-  if (!BotInGuild) {
+  const AppMember = await Interaction.guild.members.fetchMe();
+  if (!AppMember) {
     return new ErrorEmbed()
       .useErrTemplate("AppNotFoundInGuildForPerms")
       .replyToInteract(Interaction, true);
   }
 
-  if (Array.isArray(CommandObject.options.bot_perms)) {
-    return ValidateBotPermissionsArray(BotInGuild, CommandObject.options.bot_perms, Interaction);
+  if (Array.isArray(CommandObject.options.app_perms)) {
+    return ValidateAppPermissionsArray(AppMember, CommandObject.options.app_perms, Interaction);
   }
 
   if (!(Interaction instanceof ChatInputCommandInteraction)) return;
   const SubCmdGroup = Interaction.options.getSubcommandGroup(false);
   const SubCommand = Interaction.options.getSubcommand(false);
 
-  if (SubCmdGroup && Array.isArray(CommandObject.options.bot_perms[SubCmdGroup])) {
-    return ValidateBotPermissionsArray(
-      BotInGuild,
-      CommandObject.options.bot_perms[SubCmdGroup],
+  if (SubCmdGroup && Array.isArray(CommandObject.options.app_perms[SubCmdGroup])) {
+    return ValidateAppPermissionsArray(
+      AppMember,
+      CommandObject.options.app_perms[SubCmdGroup],
       Interaction
     );
   }
 
-  if (SubCommand && Array.isArray(CommandObject.options.bot_perms[SubCommand])) {
-    return ValidateBotPermissionsArray(
-      BotInGuild,
-      CommandObject.options.bot_perms[SubCommand],
+  if (SubCommand && Array.isArray(CommandObject.options.app_perms[SubCommand])) {
+    return ValidateAppPermissionsArray(
+      AppMember,
+      CommandObject.options.app_perms[SubCommand],
       Interaction
     );
   }
@@ -261,7 +261,7 @@ export async function ValidateUserPermissionsArray(
 
 /**
  * Checks if the app has the necessary permissions to perform a command and returns an promis to the error reply message if any permissions are missing.
- * @param {GuildMember} BotInGuild - The guild member object of the bot in the guild where the command is being executed.
+ * @param {GuildMember} AppInGuild - The guild member object of the bot in the guild where the command is being executed.
  * @param {PermissionResolvable[]} PermsArray - An array of `PermissionResolvable` values. These values represent the permissions that the bot needs to have in order to perform a specific command.
  * @param {ChatContextCmdInteraction<"cached">} Interaction - The slash command interaction object received.
  * @returns a reply to the interaction with an error message if the bot lacks any necessary
@@ -269,16 +269,16 @@ export async function ValidateUserPermissionsArray(
  * error embed that lists the missing permissions. If there are no missing permissions, the function
  * does not return anything.
  */
-export async function ValidateBotPermissionsArray(
-  BotInGuild: GuildMember,
+export async function ValidateAppPermissionsArray(
+  AppInGuild: GuildMember,
   PermsArray: PermissionResolvable[],
   Interaction: ChatContextCmdInteraction<"cached">
 ) {
   const MissingPerms: string[] = [];
   for (const Permission of PermsArray) {
     if (
-      BotInGuild?.permissions instanceof PermissionsBitField &&
-      !BotInGuild.permissions.has(Permission)
+      AppInGuild?.permissions instanceof PermissionsBitField &&
+      !AppInGuild.permissions.has(Permission)
     ) {
       const LiteralPerm =
         Object.keys(PermissionFlagsBits).find((Key) => PermissionFlagsBits[Key] === Permission) ??
@@ -293,7 +293,7 @@ export async function ValidateBotPermissionsArray(
       flags: MessageFlags.Ephemeral,
       embeds: [
         new ErrorEmbed().setDescription(
-          "The bot lacks the following necessary permission%s to perform this command:\n%s",
+          "The application lacks the following necessary permission%s to perform this command:\n%s",
           Plural,
           UnorderedList(MissingPerms)
         ),
@@ -305,12 +305,12 @@ export async function ValidateBotPermissionsArray(
 /**
  * The function `HandleSubcommandUserPerms` checks if a user has the required permissions to use a
  * command and returns an unauthorized embed if they do not.
- * @param {NonNullable<CommandObjectOptions["bot_perms"]>} Perms - The permissions required for a member/user to execute a command. It could be an array of permissions or an object representing specific permissions.
+ * @param {NonNullable<CommandObjectOptions["app_perms"]>} Perms - The permissions required for a member/user to execute a command. It could be an array of permissions or an object representing specific permissions.
  * @param {ChatContextCmdInteraction<"cached">} Interaction - The slash command interaction object received.
  * @returns
  */
 export async function HandleCommandUserPerms(
-  Perms: NonNullable<CommandObjectOptions["bot_perms"]>,
+  Perms: NonNullable<CommandObjectOptions["app_perms"]>,
   Interaction: ChatContextCmdInteraction<"cached">
 ) {
   if (Array.isArray(Perms)) {
