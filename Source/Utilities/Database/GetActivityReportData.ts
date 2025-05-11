@@ -16,8 +16,8 @@ interface GetActivityReportDataOpts {
   /** The date to return the activity report data after. If not provided, defaults to all the time. */
   after?: Date | null;
 
-  /** The shift type to get the activity report data for. */
-  shift_type?: string | null;
+  /** The shift type(s) to get the activity report data for. */
+  shift_type?: string | string[] | null;
 
   /** The duration in milliseconds of the quota that must be met. Defaults to 0 seconds, which means no quota. */
   quota_duration?: number | null;
@@ -87,21 +87,29 @@ export default async function GetActivityReportData(
     ...(GuildConfig?.shift_management.role_assignment.on_break ?? []),
   ];
 
+  const SpecifiedShiftTypes = Array.isArray(Opts.shift_type)
+    ? Opts.shift_type
+    : Opts.shift_type
+      ? [Opts.shift_type]
+      : [];
+
   if (!GuildConfig) throw new AppError({ template: "GuildConfigNotFound", showable: true });
   if (!GuildStaffMgmtRoles.length)
     throw new AppError({ template: "ActivityReportNoIdentifiedStaff", showable: true });
 
-  if (Opts.shift_type && Opts.shift_type.toLowerCase() !== "default") {
+  if (SpecifiedShiftTypes && SpecifiedShiftTypes.length > 0) {
     const GuildShiftTypes = GuildConfig.shift_management.shift_types;
-    const ShiftType = GuildShiftTypes.find((ST) => ST.name === Opts.shift_type);
-    if (!ShiftType) throw new AppError({ template: "NonexistentShiftTypeUsage", showable: true });
+    const ValidShiftTypes = SpecifiedShiftTypes.map((ST) => {
+      const ShiftType = GuildShiftTypes.find((Type) => Type.name === ST);
+      if (!ShiftType) throw new AppError({ template: "NonexistentShiftTypeUsage", showable: true });
+      return ShiftType;
+    });
 
     Opts.members = Opts.members.filter((Member) => {
       const HasStaffMgmtRoles = Member.roles.cache.hasAny(...GuildStaffMgmtRoles);
-      const HasShiftTypeRoles =
-        Opts.shift_type && Opts.shift_type.toLowerCase() !== "default"
-          ? Member.roles.cache.hasAny(...ShiftType.access_roles)
-          : true;
+      const HasShiftTypeRoles = ValidShiftTypes.some((ShiftType) =>
+        Member.roles.cache.hasAny(...ShiftType.access_roles)
+      );
 
       return HasStaffMgmtRoles && HasShiftTypeRoles && !Member.user.bot;
     });
@@ -114,7 +122,7 @@ export default async function GetActivityReportData(
   const RetrieveDate = new Date();
   const RecordsBaseData = await ProfileModel.aggregate<
     AggregateResults.BaseActivityReportData["records"][number]
-  >(CreateActivityReportAggregationPipeline(Opts));
+  >(CreateActivityReportAggregationPipeline({ ...Opts, shift_type: SpecifiedShiftTypes })).exec();
 
   if (!RecordsBaseData.length) {
     throw new AppError({
@@ -321,7 +329,7 @@ function HighestHoistedRoleName(Member: GuildMember, DisregardedRoleIds: string[
  * @returns An aggregation pipeline array to be used with the `aggregate` method of the `ProfileModel`.
  */
 function CreateActivityReportAggregationPipeline(
-  Opts: GetActivityReportDataOpts
+  Opts: Exclude<GetActivityReportDataOpts, "shift_type"> & { shift_type: string[] }
 ): Parameters<typeof ProfileModel.aggregate>[0] {
   return [
     {
@@ -353,7 +361,7 @@ function CreateActivityReportAggregationPipeline(
                     $or: [Opts.after ? { $gte: ["$start_timestamp", Opts.after] } : true],
                   },
                   {
-                    $or: [Opts.shift_type ? { $eq: ["$type", Opts.shift_type] } : true],
+                    $or: [Opts.shift_type.length ? { $in: ["$type", Opts.shift_type] } : true],
                   },
                 ],
               },

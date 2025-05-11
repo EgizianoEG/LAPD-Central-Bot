@@ -11,7 +11,6 @@ import {
 
 import { differenceInMilliseconds, isAfter, milliseconds } from "date-fns";
 import { Dedent, ListFormatter, ReadableDuration } from "@Utilities/Strings/Formatters.js";
-import { IsValidShiftTypeName } from "@Utilities/Other/Validators.js";
 import { ShiftTypeExists } from "@Utilities/Database/ShiftTypeValidators.js";
 import { InfoContainer } from "@Utilities/Classes/ExtraContainers.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
@@ -21,9 +20,13 @@ import ShiftModel from "@Models/Shift.js";
 import ParseDuration from "parse-duration";
 import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
 import CreateShiftReport from "@Utilities/Other/CreateShiftReport.js";
+import GetValidTargetShiftTypes from "@Utilities/Other/GetTargetShiftType.js";
 
 // ---------------------------------------------------------------------------------------
+// Command Handling:
+// -----------------
 async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
+  const [ValidShiftTypes, TargetShiftTypes] = await GetValidTargetShiftTypes(CmdInteraction, false);
   const InputQuotaDuration = CmdInteraction.options.getString("time-requirement", false);
   const EphemeralResponse = CmdInteraction.options.getBoolean("private", false) ?? false;
   const InputShiftType = CmdInteraction.options.getString("shift-type", false);
@@ -72,14 +75,22 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
   }
 
   if (InputShiftType) {
-    if (!IsValidShiftTypeName(InputShiftType)) {
+    if (ValidShiftTypes.length !== TargetShiftTypes.length) {
       return new ErrorEmbed()
         .useErrTemplate("MalformedShiftTypeName")
         .replyToInteract(CmdInteraction, true, false);
-    } else if (!(await ShiftTypeExists(CmdInteraction.guildId, InputShiftType))) {
-      return new ErrorEmbed()
-        .useErrTemplate("NonexistentShiftTypeUsage")
-        .replyToInteract(CmdInteraction, true, false);
+    } else if (ValidShiftTypes.length) {
+      const HasNonexistentShiftType = await Promise.all(
+        TargetShiftTypes.map(
+          async (ShiftType) => !(await ShiftTypeExists(CmdInteraction.guildId, ShiftType))
+        )
+      );
+
+      if (HasNonexistentShiftType.some((Exists) => Exists)) {
+        return new ErrorEmbed()
+          .useErrTemplate("NonexistentShiftTypeUsage")
+          .replyToInteract(CmdInteraction, true, false);
+      }
     }
   }
 
@@ -87,12 +98,9 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
     flags: RespFlags,
   });
 
-  const NormalizedShiftType =
-    InputShiftType?.trim().toLowerCase() === "default" ? "Default" : InputShiftType;
-
   const EstimatedShiftCount = await ShiftModel.countDocuments({
     guild: CmdInteraction.guild.id,
-    type: NormalizedShiftType || { $exists: true },
+    type: ValidShiftTypes.length ? { $in: ValidShiftTypes } : { $exists: true },
     start_timestamp: SinceDate ? { $gte: SinceDate } : { $exists: true },
     end_timestamp: { $ne: null },
   });
@@ -115,7 +123,7 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
     guild: CmdInteraction.guild,
     after: SinceDate,
     members: FetchedGuildMembers,
-    shift_type: NormalizedShiftType,
+    shift_type: ValidShiftTypes,
     quota_duration: QuotaDur || ServerDefaultQuota,
     include_member_nicknames: !!IMNicknames,
   });
@@ -127,10 +135,11 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
       .setURL(ReportSpredsheetURL)
   );
 
+  const STPluralSuffix = ValidShiftTypes.length > 1 || ValidShiftTypes.length === 0 ? "s" : "";
   const ShiftTimeReqText = QuotaDur
     ? ReadableDuration(QuotaDur)
     : ServerDefaultQuota
-      ? `${ReadableDuration(ServerDefaultQuota)} (Server Default)`
+      ? `${ReadableDuration(ServerDefaultQuota, { largest: 3 })} (Server Default)`
       : "Disabled (No Quota)";
 
   const ResponseContainer = new InfoContainer()
@@ -140,12 +149,12 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
         **The activity report has been successfully created and is ready to be viewed.**
         **Report Configuration:**
         - **Data Since:** ${SinceDate ? FormatTime(SinceDate, "F") : "Not Specified"}
-        - **Shift Type:** ${InputShiftType ?? "All Shift Types"}
+        - **Shift Type${STPluralSuffix}:** ${ValidShiftTypes.length ? ListFormatter.format(ValidShiftTypes) : "All Shift Types"}
         - **Shift Time Requirement:** ${ShiftTimeReqText}
         - **Member Nicknames Included:** ${IMNicknames ? "Yes" : "No"}
         
-        -# *Click the button below to view the report on Google Sheets. \
-        To make changes or to use interactive highlighting features, use \
+        -# *Click the button below to view the report on Google Sheets.*
+        -# *To make changes or to use interactive highlighting features, use \
         "File > Make a copy" in Google Sheets.*
       `)
     )
@@ -191,7 +200,7 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandBuilder> = {
           "The shift type to be reported on. If not specified, the report will encompass all types of shifts."
         )
         .setMinLength(3)
-        .setMaxLength(20)
+        .setMaxLength(40)
         .setRequired(false)
         .setAutocomplete(true)
     )
