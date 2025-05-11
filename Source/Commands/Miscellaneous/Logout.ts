@@ -152,7 +152,7 @@ const CommandObject: SlashCommandObject = {
 
   callback: Callback,
   options: {
-    cooldown: 30,
+    cooldown: 10,
   },
 };
 

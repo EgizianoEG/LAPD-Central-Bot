@@ -96,13 +96,19 @@ async function Autocomplete(Interaction: AutocompleteInteraction<"cached">) {
 }
 
 // ---------------------------------------------------------------------------------------
-// Command structure:
+// Command Structure:
 // ------------------
 const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
   callback: Callback,
   autocomplete: Autocomplete,
   options: {
-    cooldown: 2.5,
+    cooldown: {
+      $all_other: 2.5,
+      import: {
+        $user: { cooldown: 60, timeframe: 30 * 60, max_executions: 2 },
+        $guild: { cooldown: 15, timeframe: 60 * 60, max_executions: 6 },
+      },
+    },
     user_perms: {
       types: { management: true },
       admin: { management: true },
