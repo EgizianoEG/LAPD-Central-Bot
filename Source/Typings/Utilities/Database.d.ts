@@ -256,7 +256,20 @@ export namespace Shifts {
   }
 
   interface ShiftDocumentOverrides {
-    durations: Types.Subdocument<undefined> & ShiftDurations;
+    durations: Types.Subdocument<undefined> &
+      ShiftDurations & {
+        /**
+         * @virtual - Not stored in the database.
+         * The on-duty time of this shift in a human-readable format.
+         */
+        on_duty_time: string;
+
+        /**
+         * @virtual - Not stored in the database.
+         * The on-break time of this shift in a human-readable format.
+         */
+        on_break_time: string;
+      };
 
     /**
      * Returns `true` if there is an active break; otherwise, `false`.
