@@ -962,6 +962,11 @@ export const InfoMessages = {
     Description: "There are no active shifts at the moment to end.",
   },
 
+  NoShiftsEndedEndAll: {
+    Title: "No Shifts Ended",
+    Description: "There were no active shifts to end, and therefore no change has been made.",
+  },
+
   /**
    * No shifts wiped for specified user
    */
