@@ -19,6 +19,7 @@ export default async function AutocompleteShiftType(
   IncludeDefault = true
 ): Promise<Array<ApplicationCommandOptionChoiceData>> {
   let Suggestions: (string | { name: string; value: string })[];
+  const LowerCaseTyped = TypedValue.toLowerCase();
   const ShiftTypes = await GuildModel.findById(GuildId)
     .select("settings.shift_management.shift_types")
     .then((GuildData) => {
@@ -34,7 +35,8 @@ export default async function AutocompleteShiftType(
     Suggestions = ShiftTypes;
   } else {
     Suggestions = ShiftTypes.filter((Element) => {
-      return Element.toLowerCase().includes(TypedValue.toLowerCase());
+      const LowerCaseElement = Element.toLowerCase();
+      return LowerCaseElement.includes(LowerCaseTyped) || LowerCaseTyped.includes(LowerCaseElement);
     });
   }
 
