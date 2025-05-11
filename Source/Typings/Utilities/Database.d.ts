@@ -229,9 +229,12 @@ export namespace Shifts {
 
     /**
      * On-duty shift duration in milliseconds.
-     * This property is automatically calculated and cannot be set or modified.
+     * This property is automatically calculated and cannot be set or modified
+     * unless done explicitly using atomic database operations.
      * Attempting to modify it will not do any change unless setting it to `-1`
      * which will set it to the automatically calculated value.
+     *
+     * @remarks This property also takes into account the `on_duty_mod`.
      */
     on_duty: number;
 
