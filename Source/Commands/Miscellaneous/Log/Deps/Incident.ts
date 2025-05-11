@@ -30,6 +30,7 @@ import { TitleCase } from "@Utilities/Strings/Converters.js";
 import { ReporterInfo } from "../Log.js";
 import { milliseconds } from "date-fns";
 import { ArraysAreEqual } from "@Utilities/Other/ArraysAreEqual.js";
+import { ListSplitRegex } from "@Resources/RegularExpressions.js";
 import { SendGuildMessages } from "@Utilities/Other/GuildMessages.js";
 import { GuildIncidents, Guilds } from "@Typings/Utilities/Database.js";
 import { FormatSortRDInputNames } from "@Utilities/Strings/Formatters.js";
@@ -49,7 +50,6 @@ import Dedent from "dedent";
 
 const CmdFileLabel = "Commands:Miscellaneous:Log:Incident";
 const ListFormatter = new Intl.ListFormat("en");
-export const SplitRegexForInputs = /\s*,\s*|\s+/;
 
 // ---------------------------------------------------------------------------------------
 // Helpers:
@@ -293,17 +293,17 @@ async function PrepareIncidentData(
     witnesses: [],
     suspects: ModalSubmission.fields
       .getTextInputValue("suspects")
-      .split(SplitRegexForInputs)
+      .split(ListSplitRegex)
       .filter(Boolean),
 
     victims: ModalSubmission.fields
       .getTextInputValue("victims")
-      .split(SplitRegexForInputs)
+      .split(ListSplitRegex)
       .filter(Boolean),
 
     attachments: ModalSubmission.fields
       .getTextInputValue("attachments")
-      .split(SplitRegexForInputs)
+      .split(ListSplitRegex)
       .filter(Boolean),
 
     reported_on: ModalSubmission.createdAt,
@@ -456,7 +456,7 @@ async function OnReportInvolvedOfficersOrWitnessesAddition(
   let InputText = ModalSubmission.components[0].components[0].value;
 
   if (!InputText?.trim()) InputText = "N/A";
-  CopiedTargetField = FormatSortRDInputNames(InputText.split(SplitRegexForInputs), false);
+  CopiedTargetField = FormatSortRDInputNames(InputText.split(ListSplitRegex), false);
 
   if (!ArraysAreEqual(CopiedTargetField, ReportData[AdditionFor.toLowerCase()])) {
     ReportData[AdditionFor.toLowerCase()] = CopiedTargetField;

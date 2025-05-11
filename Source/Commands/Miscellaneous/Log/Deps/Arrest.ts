@@ -41,7 +41,7 @@ import { UserHasPermsV2 } from "@Utilities/Database/UserHasPermissions.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import { ArraysAreEqual } from "@Utilities/Other/ArraysAreEqual.js";
-import { SplitRegexForInputs } from "./Incident.js";
+import { ListSplitRegex } from "@Resources/RegularExpressions.js";
 import { FilterUserInput, FilterUserInputOptions } from "@Utilities/Strings/Redactor.js";
 import { IsValidPersonHeight, IsValidRobloxUsername } from "@Utilities/Other/Validators.js";
 
@@ -238,7 +238,7 @@ async function HandleAddAssistingOfficersUsernames(
   const UsernamesInput = ModalSubmitInteract.fields
     .getTextInputValue("input-usernames")
     .trim()
-    .split(SplitRegexForInputs)
+    .split(ListSplitRegex)
     .filter(IsValidRobloxUsername);
 
   return { ModalSubmitInteract, UsernamesInput };

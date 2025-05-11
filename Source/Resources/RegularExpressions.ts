@@ -12,6 +12,17 @@ const UnsafeSynonyms = /(?:Unsafe|Not? Safe|Dangerous|Reckless|Risky)/i.source;
 const FActionRegex = /(?:Not Using|Fail(?:ing|ure|ed) (?:to )Use|Did(?: not|n['’]?t Use))/i.source;
 
 /**
+ * A regular expression used to match and split a list of items.
+ * It can handle various delimiters such as commas, ampersands, and the word "and".
+ * @remarks This regex is case-insensitive.
+ * @example
+ * const list = "Item 1, Item 2 and Item 3";
+ * const items = list.split(ListSplitRegex);
+ * console.log(items); // ["Item 1", "Item 2", "Item 3"]
+ */
+export const ListSplitRegex = /\s*[,&]\s*(?:and\s|&)?\s*|\s+/i;
+
+/**
  * A regular expression used to parse and extract information from duty leaderboard entries.
  *
  * This regex supports two formats:
