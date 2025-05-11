@@ -47,7 +47,7 @@ export function ListCharges<ReturnType extends boolean = true>(
     return !Charge.match(/^\s*[-+=#*] Statute/i);
   })
     .map((Charge, Index) => {
-      const Modified = Charge.trim().match(/^(?:\d+\W|\*|-|#\d+:?)?\s?(.+)$/)?.[1];
+      const Modified = Charge.trim().match(/^(?:\d{1,4}\W|\*|-|#\d{1,4}:?)?\s?(.+)$/)?.[1];
       return Ordered ? `${Index + 1}. ${Modified}` : Modified;
     })
     .filter((Charge): Charge is string => Charge !== undefined);

@@ -166,8 +166,8 @@ export async function HandleUserPermissions(
   // Handle '$all_other', '$other_cmds', '$all', as well as '$other' as special cases where
   // these keys specify the permissions needed for all other subcommands not mentioned
   // above in the user perms object structure.
-  const MatchingKeyFA = Object.keys(CommandObject.options.user_perms).find(
-    (key) => !!key.match(AllOtherCmdNamesPattern)
+  const MatchingKeyFA = Object.keys(CommandObject.options.user_perms).find((key) =>
+    AllOtherCmdNamesPattern.test(key)
   );
 
   if (MatchingKeyFA) {

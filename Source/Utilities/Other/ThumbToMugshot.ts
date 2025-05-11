@@ -271,19 +271,21 @@ function ParseHeight(HeightStr: string | number): number {
   if (typeof HeightStr === "number") return HeightStr;
 
   // Extract feet and inches using regex:
-  const FeetInchesMatch = HeightStr.match(/(\d+)'(\d+)/);
+  const FeetInchesMatch = HeightStr.match(/(\d{1,3})'(\d{1,3})/);
   if (FeetInchesMatch) {
     return parseInt(FeetInchesMatch[1]) * 12 + parseInt(FeetInchesMatch[2]);
   }
 
   // Try ft/in format:
-  const FtInMatch = HeightStr.match(/(\d+)(?:\s*ft|\s*feet)(?:\s+|-)(\d+)(?:\s*in|\s*inches)?/i);
+  const FtInMatch = HeightStr.match(
+    /(\d{1,3})(?:\s*ft|\s*feet)(?:\s+|-)(\d{1,3})(?:\s*in|\s*inches)?/i
+  );
   if (FtInMatch) {
     return parseInt(FtInMatch[1]) * 12 + parseInt(FtInMatch[2]);
   }
 
   // Try cm format and convert to inches:
-  const CmMatch = HeightStr.match(/(\d+)(?:\s*cm|\s*centimeters)/i);
+  const CmMatch = HeightStr.match(/(\d{1,3})(?:\s*cm|\s*centimeters)/i);
   if (CmMatch) {
     return Math.round(parseInt(CmMatch[1]) / 2.54);
   }

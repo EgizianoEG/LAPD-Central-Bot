@@ -80,7 +80,7 @@ export function TitleCase(Str: string, Strict: boolean = true): string {
     }
   }
 
-  if (!Modified.match(/^x\d+/i)) {
+  if (!Modified.match(/^x\d{1,9}/i)) {
     return UpperFirst(Modified, false);
   }
 
