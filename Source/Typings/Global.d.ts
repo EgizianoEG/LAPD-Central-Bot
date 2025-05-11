@@ -95,10 +95,13 @@ export namespace CommandCooldowns {
    */
   export type CooldownRecord =
     | ({
-        /** Top-level user cooldown (flat only — nesting is invalid) */
+        /** Fallback cooldown value for other commands (simply a number or full config). */
+        [K in CommandOptsFallbackKeys]?: CooldownValue | null;
+      } & {
+        /** Top-level user cooldown (flat only — nesting is invalid). */
         $user?: CooldownValue | null;
 
-        /** Top-level guild cooldown (flat only — nesting is invalid) */
+        /** Top-level guild cooldown (flat only — nesting is invalid). */
         $guild?: CooldownValue | null;
       } & SubcommandCooldownMap)
     | number;
