@@ -10,24 +10,17 @@ import {
 } from "discord.js";
 
 import { differenceInMilliseconds, isAfter, milliseconds } from "date-fns";
+import { Dedent, ListFormatter, ReadableDuration } from "@Utilities/Strings/Formatters.js";
 import { IsValidShiftTypeName } from "@Utilities/Other/Validators.js";
 import { ShiftTypeExists } from "@Utilities/Database/ShiftTypeValidators.js";
 import { InfoContainer } from "@Utilities/Classes/ExtraContainers.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import { Dedent } from "@Utilities/Strings/Formatters.js";
 
 import * as Chrono from "chrono-node";
-import DHumanize from "humanize-duration";
 import ShiftModel from "@Models/Shift.js";
 import ParseDuration from "parse-duration";
 import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
 import CreateShiftReport from "@Utilities/Other/CreateShiftReport.js";
-
-const HumanizeDuration = DHumanize.humanizer({
-  conjunction: " and ",
-  largest: 3,
-  round: true,
-});
 
 // ---------------------------------------------------------------------------------------
 async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
@@ -135,9 +128,9 @@ async function Callback(CmdInteraction: SlashCommandInteraction<"cached">) {
   );
 
   const ShiftTimeReqText = QuotaDur
-    ? HumanizeDuration(QuotaDur)
+    ? ReadableDuration(QuotaDur)
     : ServerDefaultQuota
-      ? `${HumanizeDuration(ServerDefaultQuota)} (Server Default)`
+      ? `${ReadableDuration(ServerDefaultQuota)} (Server Default)`
       : "Disabled (No Quota)";
 
   const ResponseContainer = new InfoContainer()

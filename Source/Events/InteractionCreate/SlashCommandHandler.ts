@@ -1,8 +1,8 @@
 import AppError from "@Utilities/Classes/AppError.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
-import DHumanizer from "humanize-duration";
 import { MessageFlags, ChatInputCommandInteraction } from "discord.js";
 import { InfoEmbed, ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
+import { ReadableDuration } from "@Utilities/Strings/Formatters.js";
 import { GetErrorId } from "@Utilities/Strings/Random.js";
 import {
   HandleCommandCooldowns,
@@ -12,12 +12,6 @@ import {
 } from "@Utilities/Other/CommandExecutionGuards.js";
 
 const FileLogLabel = "Events:InteractionCreate:SlashCommandHandler";
-const ReadableDuration = DHumanizer.humanizer({
-  conjunction: " and ",
-  largest: 4,
-  round: true,
-});
-
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 /**
  * Handles the user execution of slash commands.

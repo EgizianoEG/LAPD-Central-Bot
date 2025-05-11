@@ -1,16 +1,10 @@
 import { Collection, Guild, GuildMember } from "discord.js";
 import { differenceInHours, isAfter } from "date-fns";
 import { AggregateResults } from "@Typings/Utilities/Database.js";
+import { ReadableDuration } from "@Utilities/Strings/Formatters.js";
 import GetGuildSettings from "./GetGuildSettings.js";
 import ProfileModel from "@Models/GuildProfile.js";
-import DHumanize from "humanize-duration";
 import AppError from "@Utilities/Classes/AppError.js";
-
-const DurationFormatter = DHumanize.humanizer({
-  conjunction: " and ",
-  largest: 4,
-  round: true,
-});
 
 interface GetActivityReportDataOpts {
   /** The guild to get the activity report data for. */
@@ -130,7 +124,7 @@ export default async function GetActivityReportData(
   }
 
   const ReportStatistics: AggregateResults.ActivityReportStatistics<string> = {
-    total_time: DurationFormatter(RecordsBaseData.reduce((Acc, Curr) => Acc + Curr.total_time, 0)),
+    total_time: ReadableDuration(RecordsBaseData.reduce((Acc, Curr) => Acc + Curr.total_time, 0)),
     total_shifts: RecordsBaseData.reduce((Acc, Curr) => Acc + Curr.total_shifts, 0),
   };
 
@@ -178,7 +172,7 @@ export default async function GetActivityReportData(
               ? `\nQuota Reduction: ~${Math.round((1 - (RecentUAN.quota_scale || 0)) * 100)}%`
               : "";
 
-          const RelativeDuration = DHumanize(
+          const RelativeDuration = ReadableDuration(
             RetrieveDate.getTime() - RecentUAN.review_date.getTime(),
             {
               conjunction: " and ",
@@ -195,11 +189,14 @@ export default async function GetActivityReportData(
         const EndCurrentDatesDifferenceInDays = differenceInHours(RetrieveDate, NoticeEndDate) / 24;
 
         if (EndCurrentDatesDifferenceInDays <= 2.5) {
-          const RelativeDuration = DHumanize(RetrieveDate.getTime() - NoticeEndDate.getTime(), {
-            conjunction: " and ",
-            largest: 2,
-            round: true,
-          });
+          const RelativeDuration = ReadableDuration(
+            RetrieveDate.getTime() - NoticeEndDate.getTime(),
+            {
+              conjunction: " and ",
+              largest: 2,
+              round: true,
+            }
+          );
 
           NoticeNotes[TypeAbbr] = `${NoticeTypeDesc} ended around ${RelativeDuration} ago.`;
         }
@@ -209,7 +206,7 @@ export default async function GetActivityReportData(
         differenceInHours(RetrieveDate, RecentUAN.request_date) / 24;
 
       if (RequestCurrentDatesDifferenceInDays <= 3) {
-        const RelativeDuration = DHumanize(
+        const RelativeDuration = ReadableDuration(
           RetrieveDate.getTime() - RecentUAN.request_date.getTime(),
           {
             conjunction: " and ",
@@ -232,7 +229,7 @@ export default async function GetActivityReportData(
           },
         },
         { userEnteredValue: { stringValue: HighestHoistedRoleName(Member, ShiftStatusRoles) } },
-        { userEnteredValue: { stringValue: DurationFormatter(Record.total_time) } },
+        { userEnteredValue: { stringValue: ReadableDuration(Record.total_time) } },
         { userEnteredValue: { numberValue: Record.arrests } },
         { userEnteredValue: { numberValue: Record.arrests_assisted } },
         { userEnteredValue: { numberValue: Record.citations } },
@@ -258,7 +255,7 @@ export default async function GetActivityReportData(
           { userEnteredValue: { numberValue: Records.length + 1 } },
           { userEnteredValue: { stringValue: FormatName(Member, Opts.include_member_nicknames) } },
           { userEnteredValue: { stringValue: HighestHoistedRoleName(Member, ShiftStatusRoles) } },
-          { userEnteredValue: { stringValue: DurationFormatter(0) } },
+          { userEnteredValue: { stringValue: ReadableDuration(0) } },
           { userEnteredValue: { numberValue: 0 } },
           { userEnteredValue: { numberValue: 0 } },
           { userEnteredValue: { numberValue: 0 } },
@@ -272,7 +269,7 @@ export default async function GetActivityReportData(
   return {
     statistics: ReportStatistics,
     records: Records,
-    quota: Opts.quota_duration ? DurationFormatter(Opts.quota_duration) : "None",
+    quota: Opts.quota_duration ? ReadableDuration(Opts.quota_duration) : "None",
   };
 }
 

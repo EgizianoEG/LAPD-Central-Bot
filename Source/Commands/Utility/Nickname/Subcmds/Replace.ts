@@ -17,11 +17,11 @@ import {
 
 import Dedent from "dedent";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
-import DHumanize from "humanize-duration";
 import SafeRegex from "safe-regex";
 import { GetErrorId } from "@Utilities/Strings/Random.js";
 import { Emojis, Colors } from "@Config/Shared.js";
 import { FilterUserInput } from "@Utilities/Strings/Redactor.js";
+import { ReadableDuration } from "@Utilities/Strings/Formatters.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed, WarnEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import {
   GuildMembersCache,
@@ -29,12 +29,6 @@ import {
 } from "@Utilities/Other/Cache.js";
 
 const RegexFlags = ["i", "g", "gi"];
-const HumanizeDuration = DHumanize.humanizer({
-  conjunction: " and ",
-  largest: 3,
-  round: true,
-});
-
 // ---------------------------------------------------------------------------------------
 // Helpers & Handlers:
 // -------------------
@@ -484,7 +478,7 @@ async function HandleReplacementConfirmation(
           > - Nicknames Replaced: \`${TotalReplaced}\`
           > - Nicknames Failed: \`${TotalFailed}\`
           
-          -# The process took approximately ${HumanizeDuration(Date.now() - ButtonInteract.createdTimestamp)}.
+          -# The process took approximately ${ReadableDuration(Date.now() - ButtonInteract.createdTimestamp, { largest: 3 })}.
         `)
       );
 

@@ -19,24 +19,10 @@ import {
 } from "discord.js";
 
 import { Colors, Emojis, Images, Thumbs } from "@Config/Shared.js";
+import { ReadableDuration, Dedent } from "@Utilities/Strings/Formatters.js";
 import { UserActivityNotice } from "@Typings/Utilities/Database.js";
 import { addMilliseconds } from "date-fns";
-
-import RegularDedent from "dedent";
 import GuildModel from "@Models/Guild.js";
-import DHumanize from "humanize-duration";
-
-const DurationFormatter = DHumanize.humanizer({
-  conjunction: " and ",
-  largest: 4,
-  round: true,
-});
-
-const Dedent = (Str: string) => {
-  return RegularDedent(Str)
-    .replace(/\.\s{2,}(\w)/g, ". $1")
-    .replace(/(\w)\s{2,}(\w)/g, "$1 $2");
-};
 
 type UserActivityNoticeDoc = UserActivityNotice.ActivityNoticeHydratedDocument;
 type ManagementInteraction = ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">;
@@ -200,7 +186,7 @@ export class BaseUserActivityNoticeLogger {
         Dedent(`
           **Requester:** ${userMention(RequesterId)}
           **Requested Extension:** ${Opts.NoticeDocument.extended_duration_hr}
-          **Total Duration:** ${DurationFormatter(Opts.NoticeDocument.duration + Opts.NoticeDocument.extension_request!.duration)}
+          **Total Duration:** ${ReadableDuration(Opts.NoticeDocument.duration + Opts.NoticeDocument.extension_request!.duration)}
           **LOA Started On:** ${FormatTime(Opts.NoticeDocument.review_date!, "F")}
           **LOA Ends On:** after extension, around ${FormatTime(addMilliseconds(Opts.NoticeDocument.end_date, Opts.NoticeDocument.extension_request!.duration), "D")}
           **Extension Reason:** ${Opts.NoticeDocument.extension_request?.reason || "[Unspecified]"}

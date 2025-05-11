@@ -23,20 +23,14 @@ import {
 
 import { Shifts } from "@Typings/Utilities/Database.js";
 import { Colors } from "@Config/Shared.js";
+import { ReadableDuration } from "@Utilities/Strings/Formatters.js";
 import { App as DiscordApp } from "@DiscordApp";
 import GuildModel from "@Models/Guild.js";
-import HDuration from "humanize-duration";
 import Dedent from "dedent";
 
 const BluewishText = (Text: string | number, ChannelId: string) => {
   return `[${Text}](${channelLink(ChannelId)})`;
 };
-
-const ReadableDuration = HDuration.humanizer({
-  conjunction: " and ",
-  largest: 4,
-  round: true,
-});
 
 // ------------------------------------------------------------------------------------
 // Typings:
