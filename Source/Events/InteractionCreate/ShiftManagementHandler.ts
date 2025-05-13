@@ -40,6 +40,8 @@ import Dedent from "dedent";
 
 type ShiftDocument = Shifts.HydratedShiftDocument;
 const FileLabel = "Events:InteractionCreate:ShiftManagementHandler";
+const SMActionFeedbackFailureErrMsg =
+  "Encountered an error while performing shift action logging and role assignment.";
 // ---------------------------------------------------------------------------------------
 // Initial Handling:
 // -----------------
@@ -138,7 +140,7 @@ async function HandleShiftOnAction(
       start_timestamp: Interaction.createdAt,
     });
 
-    await Promise.all([
+    const ShiftActionFeedbacks = await Promise.allSettled([
       ShiftActionLogger.LogShiftStart(StartedShift, Interaction),
       HandleRoleAssignment("on-duty", Interaction.client, Interaction.guild, Interaction.user.id),
       UpdateManagementPrompt(
@@ -149,6 +151,16 @@ async function HandleShiftOnAction(
         RecentShiftAction.Start
       ),
     ]);
+
+    ShiftActionFeedbacks.forEach((Result) => {
+      if (Result.status === "fulfilled") return;
+      AppLogger.error({
+        message: SMActionFeedbackFailureErrMsg,
+        label: FileLabel,
+        error: { ...Result.reason },
+        stack: Result.reason instanceof Error ? Result.reason.stack : null,
+      });
+    });
   } catch (Err: any) {
     const ErrorId = GetErrorId();
     if (Err instanceof AppError && Err.is_showable) {
@@ -210,7 +222,7 @@ async function HandleShiftBreakToggleAction(
       Interaction.createdTimestamp
     )) as ShiftDocument;
 
-    return Promise.all([
+    const ShiftActionFeedbacks = await Promise.allSettled([
       ShiftActionLogger[`LogShiftBreak${BreakActionType}`](UpdatedShift, Interaction),
       HandleRoleAssignment(
         BreakActionType === "End" ? "on-duty" : "on-break",
@@ -226,6 +238,16 @@ async function HandleShiftBreakToggleAction(
         RecentShiftAction[`Break${BreakActionType}`]
       ),
     ]);
+
+    ShiftActionFeedbacks.forEach((Result) => {
+      if (Result.status === "fulfilled") return;
+      AppLogger.error({
+        message: SMActionFeedbackFailureErrMsg,
+        label: FileLabel,
+        error: { ...Result.reason },
+        stack: Result.reason instanceof Error ? Result.reason.stack : null,
+      });
+    });
   } catch (Err: any) {
     if (Err instanceof AppError && Err.is_showable) {
       await Interaction.deferUpdate().catch(() => null);
@@ -255,7 +277,7 @@ async function HandleShiftOffAction(
 
   try {
     UpdatedShift = await ActiveShift.end(Interaction.createdTimestamp);
-    return Promise.all([
+    const ShiftActionFeedbacks = await Promise.allSettled([
       ShiftActionLogger.LogShiftEnd(UpdatedShift, Interaction),
       HandleRoleAssignment("off-duty", Interaction.client, Interaction.guild, Interaction.user.id),
       UpdateManagementPrompt(
@@ -266,6 +288,16 @@ async function HandleShiftOffAction(
         RecentShiftAction.End
       ),
     ]);
+
+    ShiftActionFeedbacks.forEach((Result) => {
+      if (Result.status === "fulfilled") return;
+      AppLogger.error({
+        message: SMActionFeedbackFailureErrMsg,
+        label: FileLabel,
+        error: { ...Result.reason },
+        stack: Result.reason instanceof Error ? Result.reason.stack : null,
+      });
+    });
   } catch (Err: any) {
     if (Err instanceof AppError && Err.is_showable) {
       const ShiftExists = await ShiftModel.exists({ _id: ActiveShift._id });
