@@ -112,8 +112,15 @@ async function HandleSingleUserRoleAssignment(
  * @param TargetRole - The role being assigned.
  * @returns `true` if the app and member have the required permissions and conditions are met; otherwise, `false`.
  */
-function HasSufficientPermissions(AppMember: GuildMember, Member: GuildMember, TargetRole?: Role) {
+export function HasSufficientPermissions(
+  AppMember: GuildMember,
+  Member: GuildMember,
+  TargetRole?: Role | string
+) {
+  TargetRole =
+    typeof TargetRole === "string" ? AppMember.guild.roles.cache.get(TargetRole) : TargetRole;
   if (!TargetRole || TargetRole.managed) return false;
+
   const AppHasRoleMgmt = AppMember.permissions.has(PermissionFlagsBits.ManageRoles);
   if (!AppHasRoleMgmt) return false;
 
