@@ -28,13 +28,14 @@ import {
   InteractionContextType,
   StringSelectMenuBuilder,
   ChannelSelectMenuBuilder,
+  InteractionUpdateOptions,
+  RoleSelectMenuInteraction,
   ApplicationIntegrationType,
+  MessageComponentInteraction,
   StringSelectMenuInteraction,
   ChannelSelectMenuInteraction,
   StringSelectMenuOptionBuilder,
   ModalActionRowComponentBuilder,
-  InteractionUpdateOptions,
-  MessageComponentInteraction,
 } from "discord.js";
 
 import {
@@ -74,6 +75,7 @@ type GuildSettings = NonNullable<Awaited<ReturnType<typeof GetGuildSettings>>>;
 type CmdSelectOrButtonInteract<Cached extends CacheType = CacheType> =
   | SlashCommandInteraction<Cached>
   | StringSelectMenuInteraction<Cached>
+  | RoleSelectMenuInteraction<Cached>
   | ButtonInteraction<Cached>;
 
 enum ConfigTopics {
@@ -886,11 +888,13 @@ function GetBasicConfigContainer(
 
 function GetShiftModuleConfigContainer(
   SelectInteract: CmdSelectOrButtonInteract<"cached">,
-  GuildSettings: GuildSettings
+  GuildSettings: GuildSettings["shift_management"]
 ): ContainerBuilder {
   const ShiftModuleInteractComponents = GetShiftModuleConfigComponents(
     SelectInteract,
-    GuildSettings.shift_management
+    "shift_management" in GuildSettings
+      ? (GuildSettings.shift_management as GuildSettings["shift_management"])
+      : GuildSettings
   );
 
   return new ContainerBuilder()
@@ -1410,6 +1414,24 @@ async function HandleBasicConfigPageInteracts(
     time: 10 * 60 * 1000,
   });
 
+  const UpdateBasicConfigPrompt = async (
+    Interact: ButtonInteraction<"cached"> | RoleSelectMenuInteraction<"cached">
+  ) => {
+    const BasicConfig: GuildSettings = {
+      ...CurrConfiguration,
+      require_authorization: RobloxAuthorizationRequired,
+      role_perms: {
+        staff: StaffRoles,
+        management: ManagementRoles,
+      },
+    };
+
+    const ShiftConfigContainer = GetBasicConfigContainer(Interact, BasicConfig);
+    return Interact.update({
+      components: [ShiftConfigContainer],
+    });
+  };
+
   const HandleSettingsSave = async (ButtonInteract: ButtonInteraction<"cached">) => {
     if (
       CurrConfiguration.require_authorization === RobloxAuthorizationRequired &&
@@ -1468,7 +1490,6 @@ async function HandleBasicConfigPageInteracts(
 
   BCCompActionCollector.on("collect", async (RecInteract) => {
     try {
-      if (!RecInteract.isButton()) RecInteract.deferUpdate().catch(() => null);
       if (RecInteract.isButton()) {
         if (RecInteract.customId.startsWith(`${ConfigTopics.BasicConfiguration}-cfm`)) {
           await HandleSettingsSave(RecInteract);
@@ -1479,16 +1500,22 @@ async function HandleBasicConfigPageInteracts(
         }
       } else if (RecInteract.isRoleSelectMenu()) {
         if (RecInteract.customId.startsWith(CTAIds[ConfigTopics.BasicConfiguration].StaffRoles)) {
-          StaffRoles = RecInteract.values;
+          StaffRoles = RecInteract.values.filter(
+            (Id) => !RecInteract.guild.roles.cache.get(Id)?.managed
+          );
         } else if (
           RecInteract.customId.startsWith(CTAIds[ConfigTopics.BasicConfiguration].MgmtRoles)
         ) {
-          ManagementRoles = RecInteract.values;
+          ManagementRoles = RecInteract.values.filter(
+            (Id) => !RecInteract.guild.roles.cache.get(Id)?.managed
+          );
         }
+        return UpdateBasicConfigPrompt(RecInteract).catch(() => null);
       } else if (
         RecInteract.customId.startsWith(CTAIds[ConfigTopics.BasicConfiguration].RobloxAuthRequired)
       ) {
         RobloxAuthorizationRequired = RecInteract.values[0] === "true";
+        return RecInteract.deferUpdate().catch(() => null);
       }
     } catch (Err: any) {
       const ErrorId = GetErrorId();
@@ -1513,7 +1540,7 @@ async function HandleBasicConfigPageInteracts(
       await new InfoContainer()
         .useInfoTemplate("TimedOutConfigPrompt")
         .setTitle("Timed Out - Basic Configuration")
-        .replyToInteract(LastInteract);
+        .replyToInteract(LastInteract, true, true, "editReply");
     }
   });
 }
@@ -1652,7 +1679,7 @@ async function HandleAdditionalConfigPageInteracts(
       await new InfoContainer()
         .useInfoTemplate("TimedOutConfigPrompt")
         .setTitle("Timed Out - Additional Configuration")
-        .replyToInteract(LastInteract);
+        .replyToInteract(LastInteract, true, true, "editReply");
     }
   });
 }
@@ -1676,6 +1703,25 @@ async function HandleShiftConfigPageInteracts(
     filter: (Interact) => Interact.user.id === SelectInteract.user.id,
     time: 10 * 60 * 1000,
   });
+
+  const UpdateShiftConfigPrompt = async (
+    Interact: ButtonInteraction<"cached"> | RoleSelectMenuInteraction<"cached">
+  ) => {
+    const ShiftModuleConfig: GuildSettings["shift_management"] = {
+      ...SMCurrConfiguration,
+      enabled: ModuleEnabled,
+      log_channel: LogChannel,
+      role_assignment: {
+        on_duty: OnDutyRoles,
+        on_break: OnBreakRoles,
+      },
+    };
+
+    const ShiftConfigContainer = GetShiftModuleConfigContainer(Interact, ShiftModuleConfig);
+    return Interact.update({
+      components: [ShiftConfigContainer],
+    });
+  };
 
   const HandleSettingsSave = async (ButtonInteract: ButtonInteraction<"cached">) => {
     if (
@@ -1743,7 +1789,6 @@ async function HandleShiftConfigPageInteracts(
   SCCompActionCollector.on("collect", async (RecInteract) => {
     const ActionId = RecInteract.customId;
     try {
-      if (!RecInteract.isButton()) RecInteract.deferUpdate().catch(() => null);
       if (RecInteract.isButton() && ActionId.startsWith(`${ConfigTopics.ShiftConfiguration}-cfm`)) {
         await HandleSettingsSave(RecInteract);
       } else if (
@@ -1765,10 +1810,15 @@ async function HandleShiftConfigPageInteracts(
         LogChannel = RecInteract.values[0] || null;
       } else if (RecInteract.isRoleSelectMenu()) {
         if (ActionId.startsWith(CTAIds[ConfigTopics.ShiftConfiguration].OnDutyRoles)) {
-          OnDutyRoles = RecInteract.values;
+          OnDutyRoles = RecInteract.values.filter(
+            (Id) => !RecInteract.guild.roles.cache.get(Id)?.managed
+          );
         } else if (ActionId.startsWith(CTAIds[ConfigTopics.ShiftConfiguration].OnBreakRoles)) {
-          OnBreakRoles = RecInteract.values;
+          OnBreakRoles = RecInteract.values.filter(
+            (Id) => !RecInteract.guild.roles.cache.get(Id)?.managed
+          );
         }
+        return UpdateShiftConfigPrompt(RecInteract).catch(() => null);
       }
     } catch (Err: any) {
       const ErrorId = GetErrorId();
@@ -1793,7 +1843,7 @@ async function HandleShiftConfigPageInteracts(
       return new InfoContainer()
         .useInfoTemplate("TimedOutConfigPrompt")
         .setTitle("Timed Out - Shift Module Configuration")
-        .replyToInteract(LastInteract);
+        .replyToInteract(LastInteract, true, true, "editReply");
     }
   });
 }
@@ -1933,8 +1983,8 @@ async function HandleLeaveConfigPageInteracts(
       if (!(await ConfigPrompt.fetch(true).catch(() => null))) return;
       return new InfoContainer()
         .useInfoTemplate("TimedOutConfigPrompt")
-        .setTitle("Timed Out - Shift Module Configuration")
-        .replyToInteract(LastInteract);
+        .setTitle("Timed Out - Leave Module Configuration")
+        .replyToInteract(LastInteract, true, true, "editReply");
     }
   });
 }
@@ -2143,8 +2193,8 @@ async function HandleDutyActivitiesConfigPageInteracts(
       if (!(await ConfigPrompt.fetch(true).catch(() => null))) return;
       return new InfoContainer()
         .useInfoTemplate("TimedOutConfigPrompt")
-        .setTitle("Timed Out - Activities Module Configuration")
-        .replyToInteract(LastInteract, false, true, "editReply");
+        .setTitle("Timed Out - Duty Activities Module Configuration")
+        .replyToInteract(LastInteract, true, true, "editReply");
     }
   });
 }
@@ -2290,7 +2340,7 @@ async function HandleReducedActivityConfigPageInteracts(
       return new InfoContainer()
         .useInfoTemplate("TimedOutConfigPrompt")
         .setTitle("Timed Out - Reduced Activity Module Configuration")
-        .replyToInteract(LastInteract);
+        .replyToInteract(LastInteract, true, true, "editReply");
     }
   });
 }
@@ -2332,7 +2382,10 @@ async function HandleAdditionalConfigSelection(
 async function HandleShiftModuleSelection(SelectInteract: StringSelectMenuInteraction<"cached">) {
   const GuildConfig = await GetGuildSettings(SelectInteract.guildId);
   if (GuildConfig) {
-    const ModuleContainer = GetShiftModuleConfigContainer(SelectInteract, GuildConfig);
+    const ModuleContainer = GetShiftModuleConfigContainer(
+      SelectInteract,
+      GuildConfig.shift_management
+    );
     const ConfigPrompt = await UpdatePromptReturnMessage(SelectInteract, {
       components: [ModuleContainer],
     });
