@@ -19,6 +19,7 @@ import {
   time as FormatTime,
   SeparatorSpacingSize,
   APIContainerComponent,
+  PermissionFlagsBits,
 } from "discord.js";
 
 import { Shifts } from "@Typings/Utilities/Database.js";
@@ -82,7 +83,10 @@ export default class ShiftActionLogger {
     const AbleToSendMsgs =
       ChannelExists?.isSendable() &&
       ChannelExists.isTextBased() &&
-      ChannelExists.permissionsFor(await Guild.members.fetchMe()).has("SendMessages");
+      ChannelExists.permissionsFor(await Guild.members.fetchMe()).has(
+        [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages],
+        true
+      );
 
     return AbleToSendMsgs === true ? ChannelExists : null;
   }

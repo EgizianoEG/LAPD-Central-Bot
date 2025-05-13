@@ -15,6 +15,7 @@ import {
   ButtonInteraction,
   GuildBasedChannel,
   time as FormatTime,
+  PermissionFlagsBits,
   ModalSubmitInteraction,
 } from "discord.js";
 
@@ -66,14 +67,14 @@ export class BaseUserActivityNoticeLogger {
       });
 
     if (!LoggingChannelId) return null;
-    const LoggingChannel =
-      Guild.channels.cache.get(LoggingChannelId) ??
-      (await Guild.channels.fetch(LoggingChannelId).catch(() => null));
-
+    const LoggingChannel = await Guild.channels.fetch(LoggingChannelId).catch(() => null);
     const AbleToSendMsgs =
-      LoggingChannel?.viewable &&
+      LoggingChannel?.isSendable() &&
       LoggingChannel.isTextBased() &&
-      LoggingChannel.permissionsFor(await Guild.members.fetchMe())?.has("SendMessages");
+      LoggingChannel.permissionsFor(await Guild.members.fetchMe()).has(
+        [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages],
+        true
+      );
 
     return AbleToSendMsgs === true
       ? (LoggingChannel as GuildBasedChannel & TextBasedChannel)
