@@ -319,6 +319,37 @@ async function UpdatePromptReturnMessage(
   );
 }
 
+/**
+ * Handles the update of a timeout prompt for a specific configuration module.
+ * This function updates the interaction with a message indicating that the
+ * configuration prompt has timed out.
+ * @param Interact - Any prompt-related interaction which webhook hasn't expired yet.
+ * @param CurrModule - The name of the current module for which the configuration prompt has timed out.
+ * @param PromptMsg - The prompt message Id if available; to not edit an incorrect message.
+ * @returns A promise that resolves to the result of the interaction update or edit operation,
+ *          or `null` if the operation fails.
+ */
+async function HandleConfigTimeoutResponse(
+  Interact: MessageComponentInteraction<"cached">,
+  CurrModule: string,
+  PromptMsg?: string
+) {
+  const MsgContainer = new InfoContainer()
+    .useInfoTemplate("TimedOutConfigPrompt")
+    .setTitle(`Timed Out - ${CurrModule} Configuration`);
+
+  if (Interact.deferred || Interact.replied) {
+    return Interact.editReply({
+      message: PromptMsg,
+      components: [MsgContainer],
+    }).catch(() => null);
+  }
+
+  return Interact.update({
+    components: [MsgContainer],
+  }).catch(() => null);
+}
+
 // ---------------------------------------------------------------------------------------
 // Component Getters:
 // ------------------
@@ -1399,7 +1430,7 @@ async function HandleDefaultShiftQuotaBtnInteract(
 }
 
 async function HandleBasicConfigPageInteracts(
-  SelectInteract: CmdSelectOrButtonInteract<"cached">,
+  SelectInteract: StringSelectMenuInteraction<"cached">,
   BasicConfigPrompt: Message<true> | InteractionResponse<true>,
   CurrConfiguration: GuildSettings
 ) {
@@ -1536,17 +1567,13 @@ async function HandleBasicConfigPageInteracts(
   BCCompActionCollector.on("end", async (Collected, EndReason) => {
     if (EndReason.includes("time") || EndReason.includes("idle")) {
       const LastInteract = Collected.last() ?? SelectInteract;
-      if (!(await BasicConfigPrompt.fetch(true).catch(() => null))) return;
-      await new InfoContainer()
-        .useInfoTemplate("TimedOutConfigPrompt")
-        .setTitle("Timed Out - Basic Configuration")
-        .replyToInteract(LastInteract, true, true, "editReply");
+      return HandleConfigTimeoutResponse(LastInteract, "Basic", SelectInteract.message.id);
     }
   });
 }
 
 async function HandleAdditionalConfigPageInteracts(
-  SelectInteract: CmdSelectOrButtonInteract<"cached">,
+  SelectInteract: StringSelectMenuInteraction<"cached">,
   AddConfigPrompt: Message<true> | InteractionResponse<true>,
   CurrConfiguration: GuildSettings
 ) {
@@ -1675,17 +1702,13 @@ async function HandleAdditionalConfigPageInteracts(
   BCCompActionCollector.on("end", async (Collected, EndReason) => {
     if (EndReason.includes("time") || EndReason.includes("idle")) {
       const LastInteract = Collected.last() ?? SelectInteract;
-      if (!(await AddConfigPrompt.fetch(true).catch(() => null))) return;
-      await new InfoContainer()
-        .useInfoTemplate("TimedOutConfigPrompt")
-        .setTitle("Timed Out - Additional Configuration")
-        .replyToInteract(LastInteract, true, true, "editReply");
+      return HandleConfigTimeoutResponse(LastInteract, "Additional", SelectInteract.message.id);
     }
   });
 }
 
 async function HandleShiftConfigPageInteracts(
-  SelectInteract: CmdSelectOrButtonInteract<"cached">,
+  SelectInteract: StringSelectMenuInteraction<"cached">,
   ConfigPrompt: Message<true> | InteractionResponse<true>,
   SMCurrConfiguration: GuildSettings["shift_management"]
 ) {
@@ -1839,17 +1862,13 @@ async function HandleShiftConfigPageInteracts(
   SCCompActionCollector.on("end", async (Collected, EndReason) => {
     if (EndReason.includes("time") || EndReason.includes("idle")) {
       const LastInteract = Collected.last() ?? SelectInteract;
-      if (!(await ConfigPrompt.fetch(true).catch(() => null))) return;
-      return new InfoContainer()
-        .useInfoTemplate("TimedOutConfigPrompt")
-        .setTitle("Timed Out - Shift Module Configuration")
-        .replyToInteract(LastInteract, true, true, "editReply");
+      return HandleConfigTimeoutResponse(LastInteract, "Shift Module", SelectInteract.message.id);
     }
   });
 }
 
 async function HandleLeaveConfigPageInteracts(
-  SelectInteract: CmdSelectOrButtonInteract<"cached">,
+  SelectInteract: StringSelectMenuInteraction<"cached">,
   ConfigPrompt: Message<true> | InteractionResponse<true>,
   LNCurrConfiguration: GuildSettings["leave_notices"]
 ) {
@@ -1980,17 +1999,13 @@ async function HandleLeaveConfigPageInteracts(
   SCCompActionCollector.on("end", async (Collected, EndReason) => {
     if (EndReason.includes("time") || EndReason.includes("idle")) {
       const LastInteract = Collected.last() ?? SelectInteract;
-      if (!(await ConfigPrompt.fetch(true).catch(() => null))) return;
-      return new InfoContainer()
-        .useInfoTemplate("TimedOutConfigPrompt")
-        .setTitle("Timed Out - Leave Module Configuration")
-        .replyToInteract(LastInteract, true, true, "editReply");
+      return HandleConfigTimeoutResponse(LastInteract, "Leave Module", SelectInteract.message.id);
     }
   });
 }
 
 async function HandleDutyActivitiesConfigPageInteracts(
-  SelectInteract: CmdSelectOrButtonInteract<"cached">,
+  SelectInteract: StringSelectMenuInteraction<"cached">,
   ConfigPrompt: Message<true> | InteractionResponse<true>,
   DACurrentConfig: GuildSettings["duty_activities"]
 ) {
@@ -2190,17 +2205,17 @@ async function HandleDutyActivitiesConfigPageInteracts(
   LCCompActionCollector.on("end", async (Collected, EndReason) => {
     if (EndReason.includes("time") || EndReason.includes("idle")) {
       const LastInteract = Collected.last() ?? SelectInteract;
-      if (!(await ConfigPrompt.fetch(true).catch(() => null))) return;
-      return new InfoContainer()
-        .useInfoTemplate("TimedOutConfigPrompt")
-        .setTitle("Timed Out - Duty Activities Module Configuration")
-        .replyToInteract(LastInteract, true, true, "editReply");
+      return HandleConfigTimeoutResponse(
+        LastInteract,
+        "Duty Activities Module",
+        SelectInteract.message.id
+      );
     }
   });
 }
 
 async function HandleReducedActivityConfigPageInteracts(
-  SelectInteract: CmdSelectOrButtonInteract<"cached">,
+  SelectInteract: StringSelectMenuInteraction<"cached">,
   ConfigPrompt: Message<true> | InteractionResponse<true>,
   RACurrConfiguration: GuildSettings["reduced_activity"]
 ) {
@@ -2336,11 +2351,11 @@ async function HandleReducedActivityConfigPageInteracts(
   RACompActionCollector.on("end", async (Collected, EndReason) => {
     if (EndReason.includes("time") || EndReason.includes("idle")) {
       const LastInteract = Collected.last() ?? SelectInteract;
-      if (!(await ConfigPrompt.fetch(true).catch(() => null))) return;
-      return new InfoContainer()
-        .useInfoTemplate("TimedOutConfigPrompt")
-        .setTitle("Timed Out - Reduced Activity Module Configuration")
-        .replyToInteract(LastInteract, true, true, "editReply");
+      return HandleConfigTimeoutResponse(
+        LastInteract,
+        "Reduced Activity Module",
+        SelectInteract.message.id
+      );
     }
   });
 }
