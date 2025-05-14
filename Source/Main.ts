@@ -62,8 +62,13 @@ App.buttonListeners = new Collection();
       });
     })
     .catch((Err) => {
+      setTimeout(() => {
+        process.exit(1);
+      }, 3000);
+
       AppLogger.fatal({
-        message: "Failed to initialize and login to the Discord application.",
+        message:
+          "Failed to initialize and login to the Discord application. Terminating the current process...",
         label: "Main.ts",
         stack: Err.stack,
       });
