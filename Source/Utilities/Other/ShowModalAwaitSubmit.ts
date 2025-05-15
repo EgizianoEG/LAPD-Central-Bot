@@ -24,5 +24,5 @@ export default async function ShowModalAndAwaitSubmission<Cached extends CacheTy
   return Interaction.awaitModalSubmit({
     filter: (MS) => MS.user.id === Interaction.user.id && MS.customId === Modal.data.custom_id,
     time: Timeout,
-  }).catch((Err: unknown) => (ThrowOnError ? Promise.reject(Err) : null));
+  }).catch((Err: unknown) => (ThrowOnError ? Promise.reject(Err as Error) : null));
 }
