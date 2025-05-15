@@ -25,6 +25,7 @@ import { ErrorEmbed, UnauthorizedEmbed } from "@Utilities/Classes/ExtraEmbeds.js
 import { UserActivityNoticeMgmtCustomIdRegex } from "@Resources/RegularExpressions.js";
 
 import HandleUserActivityNoticeRoleAssignment from "@Utilities/Other/HandleUANRoleAssignment.js";
+import ShowModalAndAwaitSubmission from "@Utilities/Other/ShowModalAwaitSubmit.js";
 import DisableMessageComponents from "@Utilities/Other/DisableMsgComps.js";
 import LeaveOfAbsenceModel from "@Models/UserActivityNotice.js";
 import GetMainShiftsData from "@Utilities/Database/GetShiftsData.js";
@@ -275,14 +276,9 @@ async function HandleUANApproval(
   const NoticeType = IsLOA ? "Leave" : "Reduced Activity";
 
   const NotesModal = GetNotesModal(Interaction, "Approval", false, IsLOA);
-  await Interaction.showModal(NotesModal);
-
-  const NotesSubmission = await Interaction.awaitModalSubmit({
-    filter: (ModalSubmission) => ModalSubmission.customId === NotesModal.data.custom_id,
-    time: 8 * 60_000,
-  }).catch(() => null);
-
+  const NotesSubmission = await ShowModalAndAwaitSubmission(Interaction, NotesModal, 8 * 60_000);
   if (!NotesSubmission) return;
+
   const UpdatedDocument = await NoticeDocument.getUpToDate();
   if (
     (await HandleNoticeReviewValidation(NotesSubmission, UpdatedDocument, Interaction)) ||
@@ -334,14 +330,9 @@ async function HandleUANDenial(
   const NoticeType = IsLOA ? "Leave" : "Reduced Activity";
 
   const NotesModal = GetNotesModal(Interaction, "Denial", true, IsLOA);
-  await Interaction.showModal(NotesModal);
-
-  const NotesSubmission = await Interaction.awaitModalSubmit({
-    filter: (ModalSubmission) => ModalSubmission.customId === NotesModal.data.custom_id,
-    time: 8 * 60_000,
-  }).catch(() => null);
-
+  const NotesSubmission = await ShowModalAndAwaitSubmission(Interaction, NotesModal, 8 * 60_000);
   if (!NotesSubmission) return;
+
   const UpdatedDocument = await NoticeDocument.getUpToDate();
   if (
     (await HandleNoticeReviewValidation(NotesSubmission, UpdatedDocument, Interaction)) ||
@@ -389,14 +380,9 @@ async function HandleExtApproval(
   }
 
   const NotesModal = GetNotesModal(Interaction, "Extension Approval", false, true);
-  await Interaction.showModal(NotesModal);
-
-  const NotesSubmission = await Interaction.awaitModalSubmit({
-    filter: (ModalSubmission) => ModalSubmission.customId === NotesModal.data.custom_id,
-    time: 8 * 60_000,
-  }).catch(() => null);
-
+  const NotesSubmission = await ShowModalAndAwaitSubmission(Interaction, NotesModal, 8 * 60_000);
   if (!NotesSubmission) return;
+
   const UpdatedDocument = await LeaveDocument.getUpToDate();
   if (
     (await HandleNoticeReviewValidation(NotesSubmission, UpdatedDocument, Interaction)) ||
@@ -445,14 +431,9 @@ async function HandleExtDenial(
   }
 
   const NotesModal = GetNotesModal(Interaction, "Extension Denial", true, true);
-  await Interaction.showModal(NotesModal);
-
-  const NotesSubmission = await Interaction.awaitModalSubmit({
-    filter: (ModalSubmission) => ModalSubmission.customId === NotesModal.data.custom_id,
-    time: 8 * 60_000,
-  }).catch(() => null);
-
+  const NotesSubmission = await ShowModalAndAwaitSubmission(Interaction, NotesModal, 8 * 60_000);
   if (!NotesSubmission) return;
+
   const UpdatedDocument = await LeaveDocument.getUpToDate();
   if (
     (await HandleNoticeReviewValidation(NotesSubmission, UpdatedDocument, Interaction)) ||

@@ -51,6 +51,7 @@ import { milliseconds } from "date-fns/milliseconds";
 import { ArraysAreEqual } from "@Utilities/Other/ArraysAreEqual.js";
 
 import HandleActionCollectorExceptions from "@Utilities/Other/HandleCompCollectorExceptions.js";
+import ShowModalAndAwaitSubmission from "@Utilities/Other/ShowModalAwaitSubmit.js";
 import DisableMessageComponents from "@Utilities/Other/DisableMsgComps.js";
 import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
 import ParseDuration from "parse-duration";
@@ -1331,61 +1332,54 @@ async function HandleOutsideLogChannelBtnInteracts(
     );
 
   if (CurrLogChannel) InputModal.components[0].components[0].setValue(CurrLogChannel);
-  await BtnInteract.showModal(InputModal);
-  const ModalSubmission = await BtnInteract.awaitModalSubmit({
-    filter: (MS) => InputModal.data.custom_id === MS.customId,
-    time: 5 * 60 * 1000,
-  }).catch(() => null);
+  const ModalSubmission = await ShowModalAndAwaitSubmission(BtnInteract, InputModal, 5 * 60 * 1000);
+  if (!ModalSubmission) return CurrLogChannel;
 
-  if (ModalSubmission) {
-    const TypedChannel = ModalSubmission.fields.getTextInputValue("channel_id").trim();
+  const TypedChannel = ModalSubmission.fields.getTextInputValue("channel_id").trim();
+  if (!TypedChannel) return null;
 
-    if (!TypedChannel) return null;
-    if (TypedChannel.match(/^\d{15,22}:\d{15,22}$/)) {
-      if (TypedChannel === CurrLogChannel) {
-        ModalSubmission.deferUpdate().catch(() => null);
-        return CurrLogChannel;
-      }
-
-      const [GuildId, ChannelId] = TypedChannel.split(":");
-      const GuildFound = await ModalSubmission.client.guilds.fetch(GuildId).catch(() => null);
-      const ChannelFound = await GuildFound?.channels.fetch(ChannelId).catch(() => null);
-
-      if (!GuildFound) {
-        new ErrorContainer()
-          .useErrTemplate("DiscordGuildNotFound", GuildId)
-          .replyToInteract(ModalSubmission, true);
-        return CurrLogChannel;
-      } else if (!ChannelFound) {
-        new ErrorContainer()
-          .useErrTemplate("DiscordChannelNotFound", ChannelId)
-          .replyToInteract(ModalSubmission, true);
-        return CurrLogChannel;
-      } else {
-        const GuildMember = await GuildFound.members.fetch(ModalSubmission.user).catch(() => null);
-        if (!GuildMember) {
-          new ErrorContainer()
-            .useErrTemplate("NotJoinedInGuild")
-            .replyToInteract(ModalSubmission, true);
-          return CurrLogChannel;
-        } else if (!GuildMember.permissions.has(PermissionFlagsBits.Administrator)) {
-          new ErrorContainer()
-            .useErrTemplate("InsufficientAdminPerms")
-            .replyToInteract(ModalSubmission, true);
-          return CurrLogChannel;
-        }
-      }
-
+  if (TypedChannel.match(/^\d{15,22}:\d{15,22}$/)) {
+    if (TypedChannel === CurrLogChannel) {
       ModalSubmission.deferUpdate().catch(() => null);
-      return TypedChannel;
-    } else {
-      new ErrorContainer()
-        .useErrTemplate("InvalidGuildChannelFormat")
-        .replyToInteract(ModalSubmission, true);
-
       return CurrLogChannel;
     }
+
+    const [GuildId, ChannelId] = TypedChannel.split(":");
+    const GuildFound = await ModalSubmission.client.guilds.fetch(GuildId).catch(() => null);
+    const ChannelFound = await GuildFound?.channels.fetch(ChannelId).catch(() => null);
+
+    if (!GuildFound) {
+      new ErrorContainer()
+        .useErrTemplate("DiscordGuildNotFound", GuildId)
+        .replyToInteract(ModalSubmission, true);
+      return CurrLogChannel;
+    } else if (ChannelFound) {
+      const GuildMember = await GuildFound.members.fetch(ModalSubmission.user).catch(() => null);
+      if (!GuildMember) {
+        new ErrorContainer()
+          .useErrTemplate("NotJoinedInGuild")
+          .replyToInteract(ModalSubmission, true);
+        return CurrLogChannel;
+      } else if (!GuildMember.permissions.has(PermissionFlagsBits.Administrator)) {
+        new ErrorContainer()
+          .useErrTemplate("InsufficientAdminPerms")
+          .replyToInteract(ModalSubmission, true);
+        return CurrLogChannel;
+      }
+    } else {
+      new ErrorContainer()
+        .useErrTemplate("DiscordChannelNotFound", ChannelId)
+        .replyToInteract(ModalSubmission, true);
+      return CurrLogChannel;
+    }
+
+    ModalSubmission.deferUpdate().catch(() => null);
+    return TypedChannel;
   } else {
+    new ErrorContainer()
+      .useErrTemplate("InvalidGuildChannelFormat")
+      .replyToInteract(ModalSubmission, true);
+
     return CurrLogChannel;
   }
 }
@@ -1415,18 +1409,22 @@ async function HandleDefaultShiftQuotaBtnInteract(
     InputModal.components[0].components[0].setValue(FormattedDuration);
   }
 
-  await BtnInteract.showModal(InputModal);
-  const ModalSubmission = await BtnInteract.awaitModalSubmit({
-    filter: (MS) => InputModal.data.custom_id === MS.customId,
-    time: 8 * 60 * 1000,
-  }).catch(() => null);
-
+  const ModalSubmission = await ShowModalAndAwaitSubmission(BtnInteract, InputModal, 8 * 60 * 1000);
   if (!ModalSubmission) return CurrentQuota;
-  else ModalSubmission.deferUpdate().catch(() => null);
 
   const InputDuration = ModalSubmission.fields.getTextInputValue("default_quota").trim();
   const ParsedDuration = ParseDuration(InputDuration, "millisecond");
-  return Math.round(ParsedDuration ?? 0);
+
+  if (ParsedDuration) {
+    ModalSubmission.deferUpdate().catch(() => null);
+    return Math.round(ParsedDuration);
+  } else {
+    new ErrorContainer()
+      .useErrTemplate("UnknownDurationExp")
+      .replyToInteract(ModalSubmission, true, true);
+
+    return CurrentQuota;
+  }
 }
 
 async function HandleBasicConfigPageInteracts(

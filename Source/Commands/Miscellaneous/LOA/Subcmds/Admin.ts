@@ -29,6 +29,7 @@ import { ValidateExtendedDuration } from "./Manage.js";
 import { LeaveOfAbsenceEventLogger } from "@Utilities/Classes/UANEventLogger.js";
 
 import HandleUserActivityNoticeRoleAssignment from "@Utilities/Other/HandleUANRoleAssignment.js";
+import ShowModalAndAwaitSubmission from "@Utilities/Other/ShowModalAwaitSubmit.js";
 import UserActivityNoticeModel from "@Models/UserActivityNotice.js";
 import GetDiscordAPITime from "@Utilities/Other/GetDiscordAPITime.js";
 import ParseDuration from "parse-duration";
@@ -452,11 +453,11 @@ async function HandleLeaveStart(
       )
     );
 
-  await ButtonInteract.showModal(LeaveOptsModal);
-  const ModalSubmission = await ButtonInteract.awaitModalSubmit({
-    filter: (Modal) => Modal.customId === LeaveOptsModal.data.custom_id,
-    time: 8 * 60_000,
-  }).catch(() => null);
+  const ModalSubmission = await ShowModalAndAwaitSubmission(
+    ButtonInteract,
+    LeaveOptsModal,
+    8 * 60_000
+  );
 
   if (!ModalSubmission) return;
   await ModalSubmission.deferReply({ flags: MessageFlags.Ephemeral });
@@ -567,11 +568,11 @@ async function HandleLeaveExtend(
       )
     );
 
-  await ButtonInteract.showModal(ExtensionOptsModal);
-  const Submission = await ButtonInteract.awaitModalSubmit({
-    filter: (s) => s.customId === ExtensionOptsModal.data.custom_id,
-    time: 8 * 60_000,
-  }).catch(() => null);
+  const Submission = await ShowModalAndAwaitSubmission(
+    ButtonInteract,
+    ExtensionOptsModal,
+    8 * 60_000
+  );
 
   if (!Submission) return;
   const Duration = Submission.fields.getTextInputValue("ext-duration");
@@ -657,14 +658,14 @@ async function HandleLeaveEnd(
       )
     );
 
-  await ButtonInteract.showModal(ReasonModal);
-  const ModalSubmission = await ButtonInteract.awaitModalSubmit({
-    filter: (Modal) => Modal.customId === ReasonModal.data.custom_id,
-    time: 8 * 60_000,
-  }).catch(() => null);
+  const ModalSubmission = await ShowModalAndAwaitSubmission(
+    ButtonInteract,
+    ReasonModal,
+    8 * 60_000
+  );
 
-  ActiveLeave = await ActiveLeave.getUpToDate();
   if (!ModalSubmission) return;
+  ActiveLeave = await ActiveLeave.getUpToDate();
   if (!ActiveLeave?.is_active) {
     return PromiseAllThenTrue([
       Callback(InitialCmdInteract),
@@ -705,12 +706,7 @@ async function HandleLeaveApprovalOrDenial(
   ActionType: "Approval" | "Denial"
 ) {
   const NotesModal = GetNotesModal(ButtonInteract, ActionType, false);
-  await ButtonInteract.showModal(NotesModal);
-
-  const NotesSubmission = await ButtonInteract.awaitModalSubmit({
-    filter: (s) => s.customId === NotesModal.data.custom_id,
-    time: 8 * 60_000,
-  }).catch(() => null);
+  const NotesSubmission = await ShowModalAndAwaitSubmission(ButtonInteract, NotesModal, 8 * 60_000);
 
   if (!NotesSubmission) return;
   await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
@@ -756,12 +752,7 @@ async function HandleExtensionApprovalOrDenial(
   ActionType: "Extension Approval" | "Extension Denial"
 ) {
   const NotesModal = GetNotesModal(ButtonInteract, ActionType, false);
-  await ButtonInteract.showModal(NotesModal);
-
-  const NotesSubmission = await ButtonInteract.awaitModalSubmit({
-    filter: (s) => s.customId === NotesModal.data.custom_id,
-    time: 8 * 60_000,
-  }).catch(() => null);
+  const NotesSubmission = await ShowModalAndAwaitSubmission(ButtonInteract, NotesModal, 8 * 60_000);
 
   if (!NotesSubmission) return;
   await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });

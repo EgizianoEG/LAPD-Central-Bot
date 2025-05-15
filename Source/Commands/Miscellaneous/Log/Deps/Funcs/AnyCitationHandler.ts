@@ -51,6 +51,7 @@ import AppError from "@Utilities/Classes/AppError.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
 import GetAllCitationNums from "@Utilities/Database/GetCitationNumbers.js";
+import ShowModalAndAwaitSubmission from "@Utilities/Other/ShowModalAwaitSubmit.js";
 
 const CmdFileLabel = "Commands:Miscellaneous:Log:CitWarn";
 const ColorNames = BrickColors.map((BC) => BC.name);
@@ -99,7 +100,7 @@ export default async function AnyCitationCallback(
   // If the validation failed and a feedback was given, return early.
   if (ValidationVars === true) return;
   try {
-    const [RespMsgButtons, Modal, ModalFilter] = GetAdditionalInputsModal(Interaction);
+    const [RespMsgButtons, Modal] = GetAdditionalInputsModal(Interaction);
     const ResponseMsg = await Interaction.editReply({
       embeds: [GetModalInputsPromptEmbed(CitationDetailsPart1, ValidationVars.vehicle)],
       components: [RespMsgButtons],
@@ -113,27 +114,25 @@ export default async function AnyCitationCallback(
 
     ActionCollector.on("collect", async (BInteract) => {
       try {
-        await BInteract.showModal(Modal);
-        await BInteract.awaitModalSubmit({ time: 10 * 60_000, filter: ModalFilter }).then(
-          async (Submission) => {
-            ActionCollector.stop("ModalSubmitted");
-            CitationDetailsPart1.violator.id = ValidationVars.violator_id;
-            CitationDetailsPart1.vehicle = {
-              color: CitationDetailsPart1.vehicle.color,
-              year: ValidationVars.vehicle.model_year.org,
-              make: ValidationVars.vehicle.brand,
-              model: ValidationVars.vehicle.name,
-              body_style: ValidationVars.vehicle.style,
-              lic_num: CitationDetailsPart1.vehicle.lic_num.toUpperCase(),
-            };
+        const ModalSubmission = await ShowModalAndAwaitSubmission(BInteract, Modal, 10 * 60_000);
+        if (!ModalSubmission) return;
 
-            await OnModalSubmission(
-              Interaction,
-              CitationDetailsPart1 as GuildCitations.AnyCitationData,
-              CitingOfficer,
-              Submission
-            );
-          }
+        CitationDetailsPart1.violator.id = ValidationVars.violator_id;
+        CitationDetailsPart1.vehicle = {
+          color: CitationDetailsPart1.vehicle.color,
+          year: ValidationVars.vehicle.model_year.org,
+          make: ValidationVars.vehicle.brand,
+          model: ValidationVars.vehicle.name,
+          body_style: ValidationVars.vehicle.style,
+          lic_num: CitationDetailsPart1.vehicle.lic_num.toUpperCase(),
+        };
+
+        ActionCollector.stop("ModalSubmitted");
+        await OnModalSubmission(
+          Interaction,
+          CitationDetailsPart1 as GuildCitations.AnyCitationData,
+          CitingOfficer,
+          ModalSubmission
         );
       } catch (Err: any) {
         AppLogger.error({
@@ -246,11 +245,7 @@ function GetAdditionalInputsModal(CmdInteract: SlashCommandInteraction<"cached">
       )
     );
 
-  const ModalFilter = (MS: ModalSubmitInteraction) => {
-    return MS.customId === Modal.data.custom_id;
-  };
-
-  return [ModalShowButtonAR, Modal, ModalFilter] as const;
+  return [ModalShowButtonAR, Modal] as const;
 }
 
 function GetModalInputsPromptEmbed(
