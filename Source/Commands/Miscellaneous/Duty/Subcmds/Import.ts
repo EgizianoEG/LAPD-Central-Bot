@@ -166,7 +166,10 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
 
     const ResolvedUserIds = await ResolveUsernamesToIds(
       Interaction.guild,
-      FileEntries.filter((Entry) => !Entry.user_id && Entry.username).map((Entry) => Entry.username)
+      FileEntries.filter((Entry) => !Entry.user_id && Entry.username).map(
+        (Entry) => Entry.username
+      ),
+      30_000
     );
 
     FileEntries.forEach((Entry) => {
