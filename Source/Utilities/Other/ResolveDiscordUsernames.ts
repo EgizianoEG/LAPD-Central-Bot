@@ -39,6 +39,28 @@ export default async function ResolveUsernamesToIds(
   const StartTime = Date.now();
 
   try {
+    if (Usernames.length === 0) {
+      return UsernameToUserIdMap;
+    } else if (Usernames.length === 1) {
+      const SingleMember = MembersCached?.get(Usernames[0]);
+
+      if (SingleMember) {
+        UsernameToUserIdMap.set(SingleMember.user.username, SingleMember.user.id);
+        return UsernameToUserIdMap;
+      }
+
+      const QueryResult = await GuildInstance.members.search({
+        query: Usernames[0],
+        limit: 1,
+      });
+
+      if (!QueryResult.first()) return UsernameToUserIdMap;
+      return UsernameToUserIdMap.set(
+        QueryResult.first()!.user.username,
+        QueryResult.first()!.user.id
+      );
+    }
+
     const GuildMembers = MembersCached || (await GuildInstance.members.fetch({ time: MaxTimeMs }));
     if (!MembersCached) GuildMembersCache.set(GuildInstance.id, GuildMembers);
 
