@@ -242,7 +242,7 @@ async function ProcessBatchedReplacements(
         if (Batches.length > 5 && BatchIndex < Batches.length - 1) {
           const RemainingMembers = Batches.slice(BatchIndex + 1).flat();
           const FilteredRemainingMembers = RemainingMembers.filter(
-            ({ member }) => AppMember.roles.highest.comparePositionTo(member.roles.highest) > 0
+            ({ member }) => member.manageable
           );
 
           if (FilteredRemainingMembers.length < RemainingMembers.length) {
@@ -426,9 +426,9 @@ async function HandleReplacementConfirmation(
   }
 
   OngoingServerMemberNicknamesReplaceCache.set(ButtonInteract.guildId, true);
-  const Replacements = EligibleMembers.filter(
-    (Member) => AppMember.roles.highest.comparePositionTo(Member.roles.highest) > 0
-  ).map((Member) => NicknameReplaceMapper(Member, MatchRegex, ReplacementExp));
+  const Replacements = EligibleMembers.filter((Member) => Member.manageable).map((Member) =>
+    NicknameReplaceMapper(Member, MatchRegex, ReplacementExp)
+  );
 
   await ButtonInteract.update({
     components: [],
@@ -603,7 +603,7 @@ async function Callback(CmdInteract: SlashCommandInteraction<"cached">) {
     });
 
     const EligibleMembers = MembersMatching.filter((Member) => {
-      return AppMember.roles.highest.comparePositionTo(Member.roles.highest) > 0;
+      return Member.manageable;
     });
 
     if (MembersMatching.size === 0) {

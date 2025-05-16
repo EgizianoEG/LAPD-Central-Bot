@@ -45,9 +45,9 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
       replace: {
         $user: 60,
         $guild: {
-          max_executions: 3,
+          max_executions: 4,
           timeframe: secondsInDay,
-          cooldown: 60,
+          cooldown: 2 * 60,
         },
       },
     },
