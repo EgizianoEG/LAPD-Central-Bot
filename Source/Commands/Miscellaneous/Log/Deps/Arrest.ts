@@ -315,7 +315,7 @@ async function OnChargesModalSubmission(
     return_url: true,
     head_position: 25,
     height: CmdOptions.Height,
-    user_thumb_url: ThumbUrl,
+    thumb_img: ThumbUrl,
     booking_num: BookingNumber,
     user_gender: CmdOptions.Gender,
     booking_date: CmdInteract.createdAt,
