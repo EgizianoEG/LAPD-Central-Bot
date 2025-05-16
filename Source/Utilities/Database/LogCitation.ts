@@ -84,7 +84,7 @@ export default async function LogTrafficCitation(
   if (GuildSettings?.duty_activities.log_channels.citations) {
     return SendGuildMessages(CachedInteract, GuildSettings.duty_activities.log_channels.citations, {
       embeds: [CitationEmbed],
-    });
+    }).then((SentMessage) => SentMessage?.url ?? null);
   }
 
   return null;

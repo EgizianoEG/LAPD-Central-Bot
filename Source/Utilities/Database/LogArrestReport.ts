@@ -101,7 +101,7 @@ export default async function LogArrestReport(
     CachedInteract,
     GuildSettings.duty_activities.log_channels.arrests,
     { embeds: [FormattedReport] }
-  );
+  ).then((SentMessage) => SentMessage?.url ?? null);
 
   if (MainMsgLink) {
     ArrestRecord.report_msg = MainMsgLink.split(/[/\\]/).slice(-2).join(":");

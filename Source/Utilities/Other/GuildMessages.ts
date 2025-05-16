@@ -1,5 +1,6 @@
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import {
+  type Message,
   type MessagePayload,
   type ButtonInteraction,
   type MessageCreateOptions,
@@ -17,7 +18,7 @@ import {
  *   - "GuildId:ChannelId:ThreadId"
  *   - "ChannelId" (uses the guild ID from the interaction)
  * @param MessagePayload - The message payload to send, which can be a MessagePayload or MessageCreateOptions object.
- * @returns A promise that resolves to the URL of the main sent message (if any was sent in the interaction's guild), or null if no message was sent.
+ * @returns A promise that resolves to the main sent message (if any was sent in the interaction's guild), or null if no message was sent.
  * @remarks
  * - The function sanitizes and normalizes the list of IDs before processing.
  * - For each ID, it attempts to fetch the corresponding guild, channel, and optionally thread.
@@ -34,7 +35,7 @@ export async function SendGuildMessages(
     | ModalSubmitInteraction<"cached">,
   FormattedIds: string | string[],
   MessagePayload: MessagePayload | MessageCreateOptions
-): Promise<string | null> {
+): Promise<Message<true> | null> {
   FormattedIds = SanitizeList(Array.isArray(FormattedIds) ? FormattedIds : [FormattedIds]);
 
   // Prepare all send attempts as promises
@@ -80,7 +81,7 @@ export async function SendGuildMessages(
       ) {
         const SentMsg = await Thread.send(MessagePayload);
         if (SentMsg && SentMsg.guildId === Interact.guildId) {
-          return SentMsg.url;
+          return SentMsg;
         }
         return null;
       }
@@ -97,7 +98,7 @@ export async function SendGuildMessages(
       if (IsAbleToSendMsgs) {
         const SentMsg = await Channel.send(MessagePayload);
         if (SentMsg && SentMsg.guildId === Interact.guildId) {
-          return SentMsg.url;
+          return SentMsg;
         }
       }
       return null;
