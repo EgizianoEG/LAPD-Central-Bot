@@ -199,7 +199,7 @@ export function IsValidDiscordAttachmentLink(
   }
 
   const AttachmentUrlRegex = new RegExp(
-    `^https?://(?:media|cdn)\\.discordapp\\.(?:com|net)/attachments/(\\d{15,22})/(\\d{15,22})/(.+)\\.${FileExtensionRegex}`
+    `^https?://(?:media|cdn)\\.discordapp\\.(?:com|net)/(?:ephemeral-)?attachments/(\\d{15,22})/(\\d{15,22})/(.+)\\.${FileExtensionRegex}`
   );
 
   const Matches = URLString.match(AttachmentUrlRegex);
