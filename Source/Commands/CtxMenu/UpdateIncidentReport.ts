@@ -310,6 +310,7 @@ async function EditIncidentReportLogMessageBasedOnRecordAndInteraction(
 
   return Message.edit({
     embeds: IncidentReportEmbeds,
+    files: [],
   });
 }
 

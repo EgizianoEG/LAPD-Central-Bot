@@ -730,13 +730,9 @@ export const ErrorMessages = {
 
   LogIncidentInvalidAttachments: {
     Title: "Invalid Attachment(s)",
-    Description: Dedent(`
-      One or more of the provided attachments are invalid. Please provide valid image or screenshot links (discord hosted).
-
-      A valid image link hosted on Discord may begin with
-      - \`https://cdn.discordapp.com/attachments/\` or,
-      - \`https://media.discordapp.net/attachments/\`  
-    `),
+    Description:
+      "One or more of the provided attachments are invalid. Please provide valid static image attachments. " +
+      "You can provide up to 10 attachments with the extensions `.png`, `.jpg`, and `.jpeg`.",
   },
 
   LogIncidentDatabaseInsertFailed: {

@@ -50,7 +50,7 @@ export const DutyLeaderboardEntryRegex =
  * Captures the number itself.
  */
 export const IncidentReportNumberLineRegex =
-  /\bInc(?:ident|\.)\s(?:Num|Number|#)\*{0,3}:?\*{0,3}\s(?:`)?(?:INC-)?(\d{1,2}-\d{5,6})(?:`)?\b/i;
+  /\bInc(?:ident|\.)\s(?:Num|Number|#)\*{0,3}:?\*{0,3}\s(?:\[?`)?(?:INC-)?(\d{1,2}-\d{5,6})(?:`\]?)?\b/i;
 
 export const UserActivityNoticeMgmtCustomIdRegex = /^(?:loa|ra)-(?:ext-)?(?:app|den|inf)[\w-]*:/;
 export const DutyManagementBtnCustomIdRegex = /^dm-(?:start|end|break):\d{15,22}:[\w\-. ]{3,20}/;
