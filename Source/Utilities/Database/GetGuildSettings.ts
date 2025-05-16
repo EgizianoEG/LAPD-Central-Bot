@@ -13,7 +13,7 @@ type HydratedGuildSettings = Mongoose.HydratedSingleSubdocument<Guilds.GuildSett
  */
 export default async function GetGuildSettings<ReturnLeaned extends boolean | undefined = true>(
   GuildId: string,
-  Lean?: ReturnLeaned,
+  Lean: ReturnLeaned = true as ReturnLeaned,
   UseCache: boolean = true
 ): Promise<ReturnLeaned extends true ? HydratedGuildSettings | null : Guilds.GuildSettings | null> {
   if (UseCache) {

@@ -25,6 +25,7 @@ import {
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import HandleCollectorFiltering from "./HandleCollectorFilter.js";
 import GetPredefinedNavButtons, { type NavButtonsActionRow } from "./GetNavButtons.js";
+import ShowModalAndAwaitSubmission from "./ShowModalAwaitSubmit.js";
 import HandleActionCollectorExceptions from "./HandleCompCollectorExceptions.js";
 
 // ---------------------------------------------------------------------------------------
@@ -255,13 +256,11 @@ async function HandleModalPageSelection(
   BtnInteract: ButtonInteraction
 ): Promise<number | null> {
   const PageSelectModal = GetPageSelectModal(BtnInteract, Pages.length, CurrentIndex);
-  BtnInteract.showModal(PageSelectModal);
-
-  const ModalSubmission = await BtnInteract.awaitModalSubmit({
-    time: 5 * 60 * 1000,
-    filter: (MS) =>
-      MS.user.id === BtnInteract.user.id && MS.customId === PageSelectModal.data.custom_id,
-  }).catch(() => null);
+  const ModalSubmission = await ShowModalAndAwaitSubmission(
+    BtnInteract,
+    PageSelectModal,
+    5 * 60 * 1000
+  );
 
   if (!ModalSubmission) return null;
   const InputPageNum = ModalSubmission.fields.getTextInputValue("page-num");

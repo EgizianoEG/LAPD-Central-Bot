@@ -62,7 +62,7 @@ export async function GetFilledCitation<AsURL extends boolean | undefined = unde
   // Day of Week
   CitCTX.beginPath();
   const DOWCircleY = Height / 4.902;
-  switch (Number(CitData.dow)) {
+  switch (CitData.dow) {
     case 1:
       CitCTX.arc(Width / 1.7565, DOWCircleY, 10, 0, 2 * Math.PI);
       break;

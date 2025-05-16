@@ -229,9 +229,12 @@ export namespace Shifts {
 
     /**
      * On-duty shift duration in milliseconds.
-     * This property is automatically calculated and cannot be set or modified.
+     * This property is automatically calculated and cannot be set or modified
+     * unless done explicitly using atomic database operations.
      * Attempting to modify it will not do any change unless setting it to `-1`
      * which will set it to the automatically calculated value.
+     *
+     * @remarks This property also takes into account the `on_duty_mod`.
      */
     on_duty: number;
 
@@ -253,7 +256,20 @@ export namespace Shifts {
   }
 
   interface ShiftDocumentOverrides {
-    durations: Types.Subdocument<undefined> & ShiftDurations;
+    durations: Types.Subdocument<undefined> &
+      ShiftDurations & {
+        /**
+         * @virtual - Not stored in the database.
+         * The on-duty time of this shift in a human-readable format.
+         */
+        on_duty_time: string;
+
+        /**
+         * @virtual - Not stored in the database.
+         * The on-break time of this shift in a human-readable format.
+         */
+        on_break_time: string;
+      };
 
     /**
      * Returns `true` if there is an active break; otherwise, `false`.
@@ -894,6 +910,9 @@ export namespace GuildArrests {
 
     /** The booking number. */
     booking_num: number;
+
+    /** The arrest report message link as [ChannelId]:[MessageId] */
+    report_msg?: string | null;
 
     /** The date when the arrest report was made. */
     made_on: Date;

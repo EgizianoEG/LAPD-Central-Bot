@@ -526,6 +526,16 @@ export const ErrorMessages = {
     `),
   },
 
+  ProvidedUnsafeRegex: {
+    Title: "Potentially Unsafe Regex",
+    Description:
+      "The regular expression you provided may be unsafe for execution.\n" +
+      "To improve its safety, please consider the following recommendations:\n" +
+      "- Simplify overly complex patterns.\n" +
+      "- Avoid using nested repetition quantifiers, such as `(a+)+`.\n" +
+      "- Prefer bounded repetition, like `a{1,10}`, instead of unbounded repetition, such as `a+`.\n",
+  },
+
   NicknameReplacementAlreadyInProgress: {
     Title: "Replacement Cooldown",
     Description:
@@ -720,13 +730,9 @@ export const ErrorMessages = {
 
   LogIncidentInvalidAttachments: {
     Title: "Invalid Attachment(s)",
-    Description: Dedent(`
-      One or more of the provided attachments are invalid. Please provide valid image or screenshot links (discord hosted).
-
-      A valid image link hosted on Discord may begin with
-      - \`https://cdn.discordapp.com/attachments/\` or,
-      - \`https://media.discordapp.net/attachments/\`  
-    `),
+    Description:
+      "One or more of the provided attachments are invalid. Please provide valid static image attachments. " +
+      "You can provide up to 10 attachments with the extensions `.png`, `.jpg`, and `.jpeg`.",
   },
 
   LogIncidentDatabaseInsertFailed: {
@@ -950,6 +956,11 @@ export const InfoMessages = {
   NoShiftsFoundEndAll: {
     Title: "No Active Shifts",
     Description: "There are no active shifts at the moment to end.",
+  },
+
+  NoShiftsEndedEndAll: {
+    Title: "No Shifts Ended",
+    Description: "There were no active shifts to end, and therefore no change has been made.",
   },
 
   /**

@@ -64,8 +64,11 @@ const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
   autocomplete: Autocomplete,
   callback: Callback,
   options: {
-    cooldown: 2.5,
     user_perms: { staff: true },
+    cooldown: {
+      $all: 2.5,
+      lookup: 8,
+    },
   },
 
   data: new SlashCommandBuilder()

@@ -56,8 +56,11 @@ async function Autocomplete(Interaction: AutocompleteInteraction<"cached">) {
 // ------------------
 const CommandObject: SlashCommandObject<SlashCommandSubcommandsOnlyBuilder> = {
   options: {
-    cooldown: { load: 10, backup: 10 },
-    bot_perms: { load: [PermissionFlagsBits.ManageRoles] },
+    app_perms: { load: [PermissionFlagsBits.ManageRoles] },
+    cooldown: {
+      backup: 5,
+      load: { $user: { max_executions: 5, timeframe: 5 * 60, cooldown: 5 } },
+    },
     user_perms: {
       $all_other: { management: true },
       load: [PermissionFlagsBits.ManageGuild, PermissionFlagsBits.ManageRoles],

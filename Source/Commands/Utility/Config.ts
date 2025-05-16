@@ -28,13 +28,14 @@ import {
   InteractionContextType,
   StringSelectMenuBuilder,
   ChannelSelectMenuBuilder,
+  InteractionUpdateOptions,
+  RoleSelectMenuInteraction,
   ApplicationIntegrationType,
+  MessageComponentInteraction,
   StringSelectMenuInteraction,
   ChannelSelectMenuInteraction,
   StringSelectMenuOptionBuilder,
   ModalActionRowComponentBuilder,
-  InteractionUpdateOptions,
-  MessageComponentInteraction,
 } from "discord.js";
 
 import {
@@ -50,6 +51,7 @@ import { milliseconds } from "date-fns/milliseconds";
 import { ArraysAreEqual } from "@Utilities/Other/ArraysAreEqual.js";
 
 import HandleActionCollectorExceptions from "@Utilities/Other/HandleCompCollectorExceptions.js";
+import ShowModalAndAwaitSubmission from "@Utilities/Other/ShowModalAwaitSubmit.js";
 import DisableMessageComponents from "@Utilities/Other/DisableMsgComps.js";
 import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
 import ParseDuration from "parse-duration";
@@ -74,6 +76,7 @@ type GuildSettings = NonNullable<Awaited<ReturnType<typeof GetGuildSettings>>>;
 type CmdSelectOrButtonInteract<Cached extends CacheType = CacheType> =
   | SlashCommandInteraction<Cached>
   | StringSelectMenuInteraction<Cached>
+  | RoleSelectMenuInteraction<Cached>
   | ButtonInteraction<Cached>;
 
 enum ConfigTopics {
@@ -315,6 +318,37 @@ async function UpdatePromptReturnMessage(
   return Interact.update({ ...Opts, withResponse: true }).then(
     (resp) => resp.resource!.message! as Message<true>
   );
+}
+
+/**
+ * Handles the update of a timeout prompt for a specific configuration module.
+ * This function updates the interaction with a message indicating that the
+ * configuration prompt has timed out.
+ * @param Interact - Any prompt-related interaction which webhook hasn't expired yet.
+ * @param CurrModule - The name of the current module for which the configuration prompt has timed out.
+ * @param PromptMsg - The prompt message Id if available; to not edit an incorrect message.
+ * @returns A promise that resolves to the result of the interaction update or edit operation,
+ *          or `null` if the operation fails.
+ */
+async function HandleConfigTimeoutResponse(
+  Interact: MessageComponentInteraction<"cached">,
+  CurrModule: string,
+  PromptMsg?: string
+) {
+  const MsgContainer = new InfoContainer()
+    .useInfoTemplate("TimedOutConfigPrompt")
+    .setTitle(`Timed Out - ${CurrModule} Configuration`);
+
+  if (Interact.deferred || Interact.replied) {
+    return Interact.editReply({
+      message: PromptMsg,
+      components: [MsgContainer],
+    }).catch(() => null);
+  }
+
+  return Interact.update({
+    components: [MsgContainer],
+  }).catch(() => null);
 }
 
 // ---------------------------------------------------------------------------------------
@@ -886,11 +920,13 @@ function GetBasicConfigContainer(
 
 function GetShiftModuleConfigContainer(
   SelectInteract: CmdSelectOrButtonInteract<"cached">,
-  GuildSettings: GuildSettings
+  GuildSettings: GuildSettings["shift_management"]
 ): ContainerBuilder {
   const ShiftModuleInteractComponents = GetShiftModuleConfigComponents(
     SelectInteract,
-    GuildSettings.shift_management
+    "shift_management" in GuildSettings
+      ? (GuildSettings.shift_management as GuildSettings["shift_management"])
+      : GuildSettings
   );
 
   return new ContainerBuilder()
@@ -1296,61 +1332,54 @@ async function HandleOutsideLogChannelBtnInteracts(
     );
 
   if (CurrLogChannel) InputModal.components[0].components[0].setValue(CurrLogChannel);
-  await BtnInteract.showModal(InputModal);
-  const ModalSubmission = await BtnInteract.awaitModalSubmit({
-    filter: (MS) => InputModal.data.custom_id === MS.customId,
-    time: 5 * 60 * 1000,
-  }).catch(() => null);
+  const ModalSubmission = await ShowModalAndAwaitSubmission(BtnInteract, InputModal, 5 * 60 * 1000);
+  if (!ModalSubmission) return CurrLogChannel;
 
-  if (ModalSubmission) {
-    const TypedChannel = ModalSubmission.fields.getTextInputValue("channel_id").trim();
+  const TypedChannel = ModalSubmission.fields.getTextInputValue("channel_id").trim();
+  if (!TypedChannel) return null;
 
-    if (!TypedChannel) return null;
-    if (TypedChannel.match(/^\d{15,22}:\d{15,22}$/)) {
-      if (TypedChannel === CurrLogChannel) {
-        ModalSubmission.deferUpdate().catch(() => null);
-        return CurrLogChannel;
-      }
-
-      const [GuildId, ChannelId] = TypedChannel.split(":");
-      const GuildFound = await ModalSubmission.client.guilds.fetch(GuildId).catch(() => null);
-      const ChannelFound = await GuildFound?.channels.fetch(ChannelId).catch(() => null);
-
-      if (!GuildFound) {
-        new ErrorContainer()
-          .useErrTemplate("DiscordGuildNotFound", GuildId)
-          .replyToInteract(ModalSubmission, true);
-        return CurrLogChannel;
-      } else if (!ChannelFound) {
-        new ErrorContainer()
-          .useErrTemplate("DiscordChannelNotFound", ChannelId)
-          .replyToInteract(ModalSubmission, true);
-        return CurrLogChannel;
-      } else {
-        const GuildMember = await GuildFound.members.fetch(ModalSubmission.user).catch(() => null);
-        if (!GuildMember) {
-          new ErrorContainer()
-            .useErrTemplate("NotJoinedInGuild")
-            .replyToInteract(ModalSubmission, true);
-          return CurrLogChannel;
-        } else if (!GuildMember.permissions.has(PermissionFlagsBits.Administrator)) {
-          new ErrorContainer()
-            .useErrTemplate("InsufficientAdminPerms")
-            .replyToInteract(ModalSubmission, true);
-          return CurrLogChannel;
-        }
-      }
-
+  if (TypedChannel.match(/^\d{15,22}:\d{15,22}$/)) {
+    if (TypedChannel === CurrLogChannel) {
       ModalSubmission.deferUpdate().catch(() => null);
-      return TypedChannel;
-    } else {
-      new ErrorContainer()
-        .useErrTemplate("InvalidGuildChannelFormat")
-        .replyToInteract(ModalSubmission, true);
-
       return CurrLogChannel;
     }
+
+    const [GuildId, ChannelId] = TypedChannel.split(":");
+    const GuildFound = await ModalSubmission.client.guilds.fetch(GuildId).catch(() => null);
+    const ChannelFound = await GuildFound?.channels.fetch(ChannelId).catch(() => null);
+
+    if (!GuildFound) {
+      new ErrorContainer()
+        .useErrTemplate("DiscordGuildNotFound", GuildId)
+        .replyToInteract(ModalSubmission, true);
+      return CurrLogChannel;
+    } else if (ChannelFound) {
+      const GuildMember = await GuildFound.members.fetch(ModalSubmission.user).catch(() => null);
+      if (!GuildMember) {
+        new ErrorContainer()
+          .useErrTemplate("NotJoinedInGuild")
+          .replyToInteract(ModalSubmission, true);
+        return CurrLogChannel;
+      } else if (!GuildMember.permissions.has(PermissionFlagsBits.Administrator)) {
+        new ErrorContainer()
+          .useErrTemplate("InsufficientAdminPerms")
+          .replyToInteract(ModalSubmission, true);
+        return CurrLogChannel;
+      }
+    } else {
+      new ErrorContainer()
+        .useErrTemplate("DiscordChannelNotFound", ChannelId)
+        .replyToInteract(ModalSubmission, true);
+      return CurrLogChannel;
+    }
+
+    ModalSubmission.deferUpdate().catch(() => null);
+    return TypedChannel;
   } else {
+    new ErrorContainer()
+      .useErrTemplate("InvalidGuildChannelFormat")
+      .replyToInteract(ModalSubmission, true);
+
     return CurrLogChannel;
   }
 }
@@ -1380,22 +1409,26 @@ async function HandleDefaultShiftQuotaBtnInteract(
     InputModal.components[0].components[0].setValue(FormattedDuration);
   }
 
-  await BtnInteract.showModal(InputModal);
-  const ModalSubmission = await BtnInteract.awaitModalSubmit({
-    filter: (MS) => InputModal.data.custom_id === MS.customId,
-    time: 8 * 60 * 1000,
-  }).catch(() => null);
-
+  const ModalSubmission = await ShowModalAndAwaitSubmission(BtnInteract, InputModal, 8 * 60 * 1000);
   if (!ModalSubmission) return CurrentQuota;
-  else ModalSubmission.deferUpdate().catch(() => null);
 
   const InputDuration = ModalSubmission.fields.getTextInputValue("default_quota").trim();
   const ParsedDuration = ParseDuration(InputDuration, "millisecond");
-  return Math.round(ParsedDuration ?? 0);
+
+  if (ParsedDuration) {
+    ModalSubmission.deferUpdate().catch(() => null);
+    return Math.round(ParsedDuration);
+  } else {
+    new ErrorContainer()
+      .useErrTemplate("UnknownDurationExp")
+      .replyToInteract(ModalSubmission, true, true);
+
+    return CurrentQuota;
+  }
 }
 
 async function HandleBasicConfigPageInteracts(
-  SelectInteract: CmdSelectOrButtonInteract<"cached">,
+  SelectInteract: StringSelectMenuInteraction<"cached">,
   BasicConfigPrompt: Message<true> | InteractionResponse<true>,
   CurrConfiguration: GuildSettings
 ) {
@@ -1409,6 +1442,24 @@ async function HandleBasicConfigPageInteracts(
     filter: (Interact) => Interact.user.id === SelectInteract.user.id,
     time: 10 * 60 * 1000,
   });
+
+  const UpdateBasicConfigPrompt = async (
+    Interact: ButtonInteraction<"cached"> | RoleSelectMenuInteraction<"cached">
+  ) => {
+    const BasicConfig: GuildSettings = {
+      ...CurrConfiguration,
+      require_authorization: RobloxAuthorizationRequired,
+      role_perms: {
+        staff: StaffRoles,
+        management: ManagementRoles,
+      },
+    };
+
+    const ShiftConfigContainer = GetBasicConfigContainer(Interact, BasicConfig);
+    return Interact.update({
+      components: [ShiftConfigContainer],
+    });
+  };
 
   const HandleSettingsSave = async (ButtonInteract: ButtonInteraction<"cached">) => {
     if (
@@ -1468,7 +1519,6 @@ async function HandleBasicConfigPageInteracts(
 
   BCCompActionCollector.on("collect", async (RecInteract) => {
     try {
-      if (!RecInteract.isButton()) RecInteract.deferUpdate().catch(() => null);
       if (RecInteract.isButton()) {
         if (RecInteract.customId.startsWith(`${ConfigTopics.BasicConfiguration}-cfm`)) {
           await HandleSettingsSave(RecInteract);
@@ -1479,16 +1529,22 @@ async function HandleBasicConfigPageInteracts(
         }
       } else if (RecInteract.isRoleSelectMenu()) {
         if (RecInteract.customId.startsWith(CTAIds[ConfigTopics.BasicConfiguration].StaffRoles)) {
-          StaffRoles = RecInteract.values;
+          StaffRoles = RecInteract.values.filter(
+            (Id) => !RecInteract.guild.roles.cache.get(Id)?.managed
+          );
         } else if (
           RecInteract.customId.startsWith(CTAIds[ConfigTopics.BasicConfiguration].MgmtRoles)
         ) {
-          ManagementRoles = RecInteract.values;
+          ManagementRoles = RecInteract.values.filter(
+            (Id) => !RecInteract.guild.roles.cache.get(Id)?.managed
+          );
         }
+        return UpdateBasicConfigPrompt(RecInteract).catch(() => null);
       } else if (
         RecInteract.customId.startsWith(CTAIds[ConfigTopics.BasicConfiguration].RobloxAuthRequired)
       ) {
         RobloxAuthorizationRequired = RecInteract.values[0] === "true";
+        return RecInteract.deferUpdate().catch(() => null);
       }
     } catch (Err: any) {
       const ErrorId = GetErrorId();
@@ -1509,17 +1565,13 @@ async function HandleBasicConfigPageInteracts(
   BCCompActionCollector.on("end", async (Collected, EndReason) => {
     if (EndReason.includes("time") || EndReason.includes("idle")) {
       const LastInteract = Collected.last() ?? SelectInteract;
-      if (!(await BasicConfigPrompt.fetch(true).catch(() => null))) return;
-      await new InfoContainer()
-        .useInfoTemplate("TimedOutConfigPrompt")
-        .setTitle("Timed Out - Basic Configuration")
-        .replyToInteract(LastInteract);
+      return HandleConfigTimeoutResponse(LastInteract, "Basic", SelectInteract.message.id);
     }
   });
 }
 
 async function HandleAdditionalConfigPageInteracts(
-  SelectInteract: CmdSelectOrButtonInteract<"cached">,
+  SelectInteract: StringSelectMenuInteraction<"cached">,
   AddConfigPrompt: Message<true> | InteractionResponse<true>,
   CurrConfiguration: GuildSettings
 ) {
@@ -1648,17 +1700,13 @@ async function HandleAdditionalConfigPageInteracts(
   BCCompActionCollector.on("end", async (Collected, EndReason) => {
     if (EndReason.includes("time") || EndReason.includes("idle")) {
       const LastInteract = Collected.last() ?? SelectInteract;
-      if (!(await AddConfigPrompt.fetch(true).catch(() => null))) return;
-      await new InfoContainer()
-        .useInfoTemplate("TimedOutConfigPrompt")
-        .setTitle("Timed Out - Additional Configuration")
-        .replyToInteract(LastInteract);
+      return HandleConfigTimeoutResponse(LastInteract, "Additional", SelectInteract.message.id);
     }
   });
 }
 
 async function HandleShiftConfigPageInteracts(
-  SelectInteract: CmdSelectOrButtonInteract<"cached">,
+  SelectInteract: StringSelectMenuInteraction<"cached">,
   ConfigPrompt: Message<true> | InteractionResponse<true>,
   SMCurrConfiguration: GuildSettings["shift_management"]
 ) {
@@ -1676,6 +1724,25 @@ async function HandleShiftConfigPageInteracts(
     filter: (Interact) => Interact.user.id === SelectInteract.user.id,
     time: 10 * 60 * 1000,
   });
+
+  const UpdateShiftConfigPrompt = async (
+    Interact: ButtonInteraction<"cached"> | RoleSelectMenuInteraction<"cached">
+  ) => {
+    const ShiftModuleConfig: GuildSettings["shift_management"] = {
+      ...SMCurrConfiguration,
+      enabled: ModuleEnabled,
+      log_channel: LogChannel,
+      role_assignment: {
+        on_duty: OnDutyRoles,
+        on_break: OnBreakRoles,
+      },
+    };
+
+    const ShiftConfigContainer = GetShiftModuleConfigContainer(Interact, ShiftModuleConfig);
+    return Interact.update({
+      components: [ShiftConfigContainer],
+    });
+  };
 
   const HandleSettingsSave = async (ButtonInteract: ButtonInteraction<"cached">) => {
     if (
@@ -1743,7 +1810,6 @@ async function HandleShiftConfigPageInteracts(
   SCCompActionCollector.on("collect", async (RecInteract) => {
     const ActionId = RecInteract.customId;
     try {
-      if (!RecInteract.isButton()) RecInteract.deferUpdate().catch(() => null);
       if (RecInteract.isButton() && ActionId.startsWith(`${ConfigTopics.ShiftConfiguration}-cfm`)) {
         await HandleSettingsSave(RecInteract);
       } else if (
@@ -1765,10 +1831,15 @@ async function HandleShiftConfigPageInteracts(
         LogChannel = RecInteract.values[0] || null;
       } else if (RecInteract.isRoleSelectMenu()) {
         if (ActionId.startsWith(CTAIds[ConfigTopics.ShiftConfiguration].OnDutyRoles)) {
-          OnDutyRoles = RecInteract.values;
+          OnDutyRoles = RecInteract.values.filter(
+            (Id) => !RecInteract.guild.roles.cache.get(Id)?.managed
+          );
         } else if (ActionId.startsWith(CTAIds[ConfigTopics.ShiftConfiguration].OnBreakRoles)) {
-          OnBreakRoles = RecInteract.values;
+          OnBreakRoles = RecInteract.values.filter(
+            (Id) => !RecInteract.guild.roles.cache.get(Id)?.managed
+          );
         }
+        return UpdateShiftConfigPrompt(RecInteract).catch(() => null);
       }
     } catch (Err: any) {
       const ErrorId = GetErrorId();
@@ -1789,17 +1860,13 @@ async function HandleShiftConfigPageInteracts(
   SCCompActionCollector.on("end", async (Collected, EndReason) => {
     if (EndReason.includes("time") || EndReason.includes("idle")) {
       const LastInteract = Collected.last() ?? SelectInteract;
-      if (!(await ConfigPrompt.fetch(true).catch(() => null))) return;
-      return new InfoContainer()
-        .useInfoTemplate("TimedOutConfigPrompt")
-        .setTitle("Timed Out - Shift Module Configuration")
-        .replyToInteract(LastInteract);
+      return HandleConfigTimeoutResponse(LastInteract, "Shift Module", SelectInteract.message.id);
     }
   });
 }
 
 async function HandleLeaveConfigPageInteracts(
-  SelectInteract: CmdSelectOrButtonInteract<"cached">,
+  SelectInteract: StringSelectMenuInteraction<"cached">,
   ConfigPrompt: Message<true> | InteractionResponse<true>,
   LNCurrConfiguration: GuildSettings["leave_notices"]
 ) {
@@ -1930,17 +1997,13 @@ async function HandleLeaveConfigPageInteracts(
   SCCompActionCollector.on("end", async (Collected, EndReason) => {
     if (EndReason.includes("time") || EndReason.includes("idle")) {
       const LastInteract = Collected.last() ?? SelectInteract;
-      if (!(await ConfigPrompt.fetch(true).catch(() => null))) return;
-      return new InfoContainer()
-        .useInfoTemplate("TimedOutConfigPrompt")
-        .setTitle("Timed Out - Shift Module Configuration")
-        .replyToInteract(LastInteract);
+      return HandleConfigTimeoutResponse(LastInteract, "Leave Module", SelectInteract.message.id);
     }
   });
 }
 
 async function HandleDutyActivitiesConfigPageInteracts(
-  SelectInteract: CmdSelectOrButtonInteract<"cached">,
+  SelectInteract: StringSelectMenuInteraction<"cached">,
   ConfigPrompt: Message<true> | InteractionResponse<true>,
   DACurrentConfig: GuildSettings["duty_activities"]
 ) {
@@ -2140,17 +2203,17 @@ async function HandleDutyActivitiesConfigPageInteracts(
   LCCompActionCollector.on("end", async (Collected, EndReason) => {
     if (EndReason.includes("time") || EndReason.includes("idle")) {
       const LastInteract = Collected.last() ?? SelectInteract;
-      if (!(await ConfigPrompt.fetch(true).catch(() => null))) return;
-      return new InfoContainer()
-        .useInfoTemplate("TimedOutConfigPrompt")
-        .setTitle("Timed Out - Activities Module Configuration")
-        .replyToInteract(LastInteract, false, true, "editReply");
+      return HandleConfigTimeoutResponse(
+        LastInteract,
+        "Duty Activities Module",
+        SelectInteract.message.id
+      );
     }
   });
 }
 
 async function HandleReducedActivityConfigPageInteracts(
-  SelectInteract: CmdSelectOrButtonInteract<"cached">,
+  SelectInteract: StringSelectMenuInteraction<"cached">,
   ConfigPrompt: Message<true> | InteractionResponse<true>,
   RACurrConfiguration: GuildSettings["reduced_activity"]
 ) {
@@ -2286,11 +2349,11 @@ async function HandleReducedActivityConfigPageInteracts(
   RACompActionCollector.on("end", async (Collected, EndReason) => {
     if (EndReason.includes("time") || EndReason.includes("idle")) {
       const LastInteract = Collected.last() ?? SelectInteract;
-      if (!(await ConfigPrompt.fetch(true).catch(() => null))) return;
-      return new InfoContainer()
-        .useInfoTemplate("TimedOutConfigPrompt")
-        .setTitle("Timed Out - Reduced Activity Module Configuration")
-        .replyToInteract(LastInteract);
+      return HandleConfigTimeoutResponse(
+        LastInteract,
+        "Reduced Activity Module",
+        SelectInteract.message.id
+      );
     }
   });
 }
@@ -2332,7 +2395,10 @@ async function HandleAdditionalConfigSelection(
 async function HandleShiftModuleSelection(SelectInteract: StringSelectMenuInteraction<"cached">) {
   const GuildConfig = await GetGuildSettings(SelectInteract.guildId);
   if (GuildConfig) {
-    const ModuleContainer = GetShiftModuleConfigContainer(SelectInteract, GuildConfig);
+    const ModuleContainer = GetShiftModuleConfigContainer(
+      SelectInteract,
+      GuildConfig.shift_management
+    );
     const ConfigPrompt = await UpdatePromptReturnMessage(SelectInteract, {
       components: [ModuleContainer],
     });

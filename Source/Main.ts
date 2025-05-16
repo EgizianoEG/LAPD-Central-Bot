@@ -27,7 +27,6 @@ export const App = new Client({
 });
 
 App.commands = new Collection();
-App.cooldowns = new Collection();
 App.ctx_commands = new Collection();
 App.modalListeners = new Collection();
 App.buttonListeners = new Collection();
@@ -63,8 +62,13 @@ App.buttonListeners = new Collection();
       });
     })
     .catch((Err) => {
+      setTimeout(() => {
+        process.exit(1);
+      }, 3000);
+
       AppLogger.fatal({
-        message: "Failed to initialize and login to the Discord application.",
+        message:
+          "Failed to initialize and login to the Discord application. Terminating the current process...",
         label: "Main.ts",
         stack: Err.stack,
       });
