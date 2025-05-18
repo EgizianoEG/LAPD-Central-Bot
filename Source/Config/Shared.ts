@@ -1,4 +1,15 @@
 import { type ColorResolvable, Colors as DiscordColors } from "discord.js";
+import { env as Env } from "node:process";
+
+let EnvAppEmojis: typeof SharedData.Emojis | null = null;
+try {
+  EnvAppEmojis =
+    Env.EMOJIS && Env.EMOJIS.length > 100
+      ? (JSON.parse(Env.EMOJIS.replace(/'+/g, '"')) as typeof SharedData.Emojis)
+      : null;
+} catch {
+  EnvAppEmojis = null;
+}
 
 const SharedData = {
   Images: {
@@ -63,7 +74,6 @@ const SharedData = {
     Fingerprint: "<:Fingerprint:1363577813063565604>",
     StatusChange: "<:Status:1363577818226626902>",
 
-    Warning: "<:Warn:1186171864343654513>",
     FileEdit: "<:FileEdit:1185790827809738803>",
     FileDelete: "<:FileDelete:1185785834058813480>",
     Trash: "<:Trash:1185785496757088286>",
@@ -189,6 +199,7 @@ interface SharedConfig extends Omit<typeof SharedData, "Colors"> {
   Colors: ColorsType;
 }
 
+SharedData.Emojis = EnvAppEmojis ?? SharedData.Emojis;
 export const Icons = SharedData.Icons;
 export const Emojis = SharedData.Emojis;
 export const Images = SharedData.Images;
