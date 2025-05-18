@@ -225,7 +225,9 @@ async function HandleNoticeAddInfo(
 
   const NoticeType = IsLOA ? "LOA" : "RA";
   const NoticeTypeMid = IsLOA ? "Leave" : "Reduced Activity";
-  const ReplyEmbed = new EmbedBuilder().setColor(Colors.Info).setTitle("Additional Officer Info");
+  const ReplyEmbed = new EmbedBuilder()
+    .setColor(Colors.Info)
+    .setTitle("Officer's Past Information");
 
   if (UANsData.recent_notice) {
     ReplyEmbed.addFields({
