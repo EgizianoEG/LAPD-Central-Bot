@@ -20,9 +20,9 @@ AppLogger.info(Chalk.grey("=========================== New Run =================
 export const App = new Client({
   allowedMentions: {},
   intents: [
-    //
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMessages,
   ],
 });
 
