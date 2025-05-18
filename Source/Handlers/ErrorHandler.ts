@@ -45,17 +45,21 @@ export default function ErrorHandler() {
           : "A non-fatal error has occurred. [%s]:",
         label: "Handlers:ErrorHandler",
         splat: [Err.constructor.name],
+        error: { ...Err },
         stack: Err.stack,
       });
     }
 
     AppLogger.fatal({
-      message: "An unrecoverable error has occurred. Terminating process. [%s]:",
+      message: "An unrecoverable error has occurred. Terminating process in 5 seconds. [%s]:",
       label: "Handlers:ErrorHandler",
       splat: [Err.constructor.name],
+      error: { ...Err },
       stack: Err.stack,
     });
 
-    process.exit(1);
+    setTimeout(() => {
+      process.exit(1);
+    }, 5000);
   });
 }
