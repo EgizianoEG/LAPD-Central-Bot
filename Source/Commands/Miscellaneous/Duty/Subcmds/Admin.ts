@@ -637,7 +637,7 @@ async function RetrieveShiftRecordsAsContainers(
       }
     });
 
-    const ShiftTypeAppend = ShiftType ? `type: ${ShiftType}` : "all types";
+    const ShiftTypeAppend = ShiftType ? `type: \`${ShiftType}\`` : "all types";
     const PageContainer = new ContainerBuilder()
       .setAccentColor(resolveColor(Colors.Info))
       .addTextDisplayComponents(
