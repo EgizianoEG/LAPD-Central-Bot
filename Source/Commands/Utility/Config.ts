@@ -61,6 +61,7 @@ import ParseDuration from "parse-duration";
 import GuildModel from "@Models/Guild.js";
 import DHumanize from "humanize-duration";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
+import AppError from "@Utilities/Classes/AppError.js";
 
 // ---------------------------------------------------------------------------------------
 // Constants, Types, & Enums:
@@ -1709,7 +1710,7 @@ async function HandleBasicConfigPageInteracts(
         flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
       });
 
-    CurrConfiguration = await GuildModel.findByIdAndUpdate(
+    const UpdatedConfig = await GuildModel.findByIdAndUpdate(
       ButtonInteract.guildId,
       {
         $set: {
@@ -1720,7 +1721,6 @@ async function HandleBasicConfigPageInteracts(
       },
       {
         new: true,
-        upsert: true,
         strict: true,
         runValidators: true,
         projection: {
@@ -1729,7 +1729,8 @@ async function HandleBasicConfigPageInteracts(
       }
     ).then((GuildDoc) => GuildDoc?.settings);
 
-    if (CurrConfiguration) {
+    if (UpdatedConfig) {
+      CurrConfiguration = UpdatedConfig;
       const SetStaffRoles = CurrConfiguration.role_perms.staff.map((R) => roleMention(R));
       const SetMgmtRoles = CurrConfiguration.role_perms.management.map((R) => roleMention(R));
       const FormattedDesc = Dedent(`
@@ -1832,7 +1833,7 @@ async function HandleAdditionalConfigPageInteracts(
     if (!ButtonInteract.deferred)
       await ButtonInteract.deferReply({ flags: MessageFlags.Ephemeral });
 
-    CurrConfiguration = await GuildModel.findByIdAndUpdate(
+    const UpdatedConfig = await GuildModel.findByIdAndUpdate(
       SelectInteract.guildId,
       {
         $set: {
@@ -1843,7 +1844,6 @@ async function HandleAdditionalConfigPageInteracts(
       },
       {
         new: true,
-        upsert: true,
         strict: true,
         runValidators: true,
         projection: {
@@ -1852,7 +1852,8 @@ async function HandleAdditionalConfigPageInteracts(
       }
     ).then((GuildDoc) => GuildDoc?.settings);
 
-    if (CurrConfiguration) {
+    if (UpdatedConfig) {
+      CurrConfiguration = UpdatedConfig;
       const DefaultQuota = CurrConfiguration.shift_management.default_quota;
       const LDIFormatted = GetHumanReadableLogDeletionInterval(
         CurrConfiguration.duty_activities.log_deletion_interval
@@ -1988,7 +1989,7 @@ async function HandleShiftConfigPageInteracts(
     if (!ButtonInteract.deferred)
       await ButtonInteract.deferReply({ flags: MessageFlags.Ephemeral });
 
-    SMCurrConfiguration = await GuildModel.findByIdAndUpdate(
+    const UpdatedConfig = await GuildModel.findByIdAndUpdate(
       SelectInteract.guildId,
       {
         $set: {
@@ -2000,7 +2001,6 @@ async function HandleShiftConfigPageInteracts(
       },
       {
         new: true,
-        upsert: true,
         strict: true,
         runValidators: true,
         projection: {
@@ -2009,7 +2009,8 @@ async function HandleShiftConfigPageInteracts(
       }
     ).then((GuildDoc) => GuildDoc?.settings.shift_management);
 
-    if (SMCurrConfiguration) {
+    if (UpdatedConfig) {
+      SMCurrConfiguration = UpdatedConfig;
       const SetLogChannel = SMCurrConfiguration.log_channel
         ? channelMention(SMCurrConfiguration.log_channel)
         : "`None`";
@@ -2151,7 +2152,7 @@ async function HandleLeaveConfigPageInteracts(
     if (!ButtonInteract.deferred)
       await ButtonInteract.deferReply({ flags: MessageFlags.Ephemeral });
 
-    LNCurrConfiguration = await GuildModel.findByIdAndUpdate(
+    const UpdatedConfig = await GuildModel.findByIdAndUpdate(
       SelectInteract.guildId,
       {
         $set: {
@@ -2163,7 +2164,6 @@ async function HandleLeaveConfigPageInteracts(
       },
       {
         new: true,
-        upsert: true,
         strict: true,
         runValidators: true,
         projection: {
@@ -2172,7 +2172,8 @@ async function HandleLeaveConfigPageInteracts(
       }
     ).then((GuildDoc) => GuildDoc?.settings.leave_notices);
 
-    if (LNCurrConfiguration) {
+    if (UpdatedConfig) {
+      LNCurrConfiguration = UpdatedConfig;
       const SetOnLeaveRole = LNCurrConfiguration.leave_role
         ? roleMention(LNCurrConfiguration.leave_role)
         : "`None`";
@@ -2322,7 +2323,7 @@ async function HandleDutyActivitiesConfigPageInteracts(
     if (!ButtonInteract.deferred)
       await ButtonInteract.deferReply({ flags: MessageFlags.Ephemeral });
 
-    DACurrentConfig = await GuildModel.findByIdAndUpdate(
+    const UpdatedConfig = await GuildModel.findByIdAndUpdate(
       SelectInteract.guildId,
       {
         $set: {
@@ -2334,7 +2335,6 @@ async function HandleDutyActivitiesConfigPageInteracts(
       },
       {
         new: true,
-        upsert: true,
         strict: true,
         runValidators: true,
         projection: {
@@ -2343,7 +2343,8 @@ async function HandleDutyActivitiesConfigPageInteracts(
       }
     ).then((GuildDoc) => GuildDoc?.settings.duty_activities);
 
-    if (DACurrentConfig) {
+    if (UpdatedConfig) {
+      DACurrentConfig = UpdatedConfig;
       const ARSetChannels = DACurrentConfig.log_channels.arrests.map((CI) =>
         channelMention(CI.match(/:?(\d+)$/)?.[1] || "0")
       );
@@ -2578,7 +2579,7 @@ async function HandleReducedActivityConfigPageInteracts(
     if (!ButtonInteract.deferred)
       await ButtonInteract.deferReply({ flags: MessageFlags.Ephemeral });
 
-    RACurrConfiguration = await GuildModel.findByIdAndUpdate(
+    const UpdatedConfig = await GuildModel.findByIdAndUpdate(
       SelectInteract.guildId,
       {
         $set: {
@@ -2590,7 +2591,6 @@ async function HandleReducedActivityConfigPageInteracts(
       },
       {
         new: true,
-        upsert: true,
         strict: true,
         runValidators: true,
         projection: {
@@ -2599,7 +2599,8 @@ async function HandleReducedActivityConfigPageInteracts(
       }
     ).then((GuildDoc) => GuildDoc?.settings.reduced_activity);
 
-    if (RACurrConfiguration) {
+    if (UpdatedConfig) {
+      RACurrConfiguration = UpdatedConfig;
       const SetRARole = RACurrConfiguration.ra_role
         ? roleMention(RACurrConfiguration.ra_role)
         : "`None`";
@@ -2717,9 +2718,7 @@ async function HandleBasicConfigSelection(SelectInteract: StringSelectMenuIntera
 
     return HandleBasicConfigPageInteracts(SelectInteract, ConfigPrompt, GuildConfig);
   } else {
-    return new ErrorContainer()
-      .useErrTemplate("GuildConfigNotFound")
-      .replyToInteract(SelectInteract, true);
+    throw new AppError("GuildConfigNotFound");
   }
 }
 
@@ -2735,9 +2734,7 @@ async function HandleAdditionalConfigSelection(
 
     return HandleAdditionalConfigPageInteracts(SelectInteract, ConfigPrompt, GuildConfig);
   } else {
-    return new ErrorContainer()
-      .useErrTemplate("GuildConfigNotFound")
-      .replyToInteract(SelectInteract, true);
+    throw new AppError("GuildConfigNotFound");
   }
 }
 
@@ -2759,9 +2756,7 @@ async function HandleShiftModuleSelection(SelectInteract: StringSelectMenuIntera
       GuildConfig.shift_management
     );
   } else {
-    return new ErrorContainer()
-      .useErrTemplate("GuildConfigNotFound")
-      .replyToInteract(SelectInteract, true);
+    throw new AppError("GuildConfigNotFound");
   }
 }
 
@@ -2785,9 +2780,7 @@ async function HandleDutyActivitiesModuleSelection(
       GuildConfig.duty_activities
     );
   } else {
-    return new ErrorContainer()
-      .useErrTemplate("GuildConfigNotFound")
-      .replyToInteract(SelectInteract, true);
+    throw new AppError("GuildConfigNotFound");
   }
 }
 
@@ -2805,9 +2798,7 @@ async function HandleLeaveModuleSelection(SelectInteract: StringSelectMenuIntera
 
     return HandleLeaveConfigPageInteracts(SelectInteract, ConfigPrompt, GuildConfig.leave_notices);
   } else {
-    return new ErrorContainer()
-      .useErrTemplate("GuildConfigNotFound")
-      .replyToInteract(SelectInteract, true);
+    throw new AppError("GuildConfigNotFound");
   }
 }
 
@@ -2831,9 +2822,7 @@ async function HandleReducedActivityModuleSelection(
       GuildConfig.reduced_activity
     );
   } else {
-    return new ErrorContainer()
-      .useErrTemplate("GuildConfigNotFound")
-      .replyToInteract(SelectInteract, true);
+    throw new AppError("GuildConfigNotFound");
   }
 }
 
@@ -2841,37 +2830,33 @@ async function HandleConfigShowSelection(
   SelectInteract: StringSelectMenuInteraction<"cached"> | ButtonInteraction<"cached">,
   PageIndex: number = 0
 ) {
-  const GuildSettings = await GetGuildSettings(SelectInteract.guildId);
-  if (!GuildSettings) {
-    return new ErrorContainer()
-      .useErrTemplate("GuildConfigNotFound")
-      .replyToInteract(SelectInteract, true);
-  }
+  const GuildConfig = await GetGuildSettings(SelectInteract.guildId);
+  if (!GuildConfig) throw new AppError("GuildConfigNotFound");
 
   const ConfigSections = [
     {
       Title: "Basic App Configuration",
-      Content: GetCSBasicSettingsContent(GuildSettings),
+      Content: GetCSBasicSettingsContent(GuildConfig),
     },
     {
       Title: "Shift Management Module",
-      Content: GetCSShiftModuleContent(GuildSettings),
+      Content: GetCSShiftModuleContent(GuildConfig),
     },
     {
       Title: "Leave Notices Module",
-      Content: GetCSLeaveNoticesContent(GuildSettings),
+      Content: GetCSLeaveNoticesContent(GuildConfig),
     },
     {
       Title: "Reduced Activity Module",
-      Content: GetCSReducedActivityContent(GuildSettings),
+      Content: GetCSReducedActivityContent(GuildConfig),
     },
     {
       Title: "Duty Activities Module",
-      Content: GetCSDutyActivitiesContent(GuildSettings),
+      Content: GetCSDutyActivitiesContent(GuildConfig),
     },
     {
       Title: "Additional Configuration",
-      Content: GetCSAdditionalConfigContent(GuildSettings),
+      Content: GetCSAdditionalConfigContent(GuildConfig),
     },
   ];
 
@@ -3000,6 +2985,10 @@ async function HandleInitialRespActions(
 
       ComponentCollector.stop("TopicSelected");
     } catch (Err) {
+      if (Err instanceof AppError && Err.is_showable) {
+        return new ErrorEmbed().useErrClass(Err).replyToInteract(TopicSelectInteract, true);
+      }
+
       const ErrorId = GetErrorId();
       new ErrorEmbed()
         .useErrTemplate("AppError")
