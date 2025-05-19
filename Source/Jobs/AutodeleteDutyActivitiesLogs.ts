@@ -1,5 +1,5 @@
-import { type CronJobFileDefReturn } from "@Typings/Global.js";
 import { milliseconds, subMilliseconds } from "date-fns";
+import { CronJobFileDefReturn } from "@Typings/Global.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
 import GuildModel from "@Models/Guild.js";
 import ArrestModel from "@Models/Arrest.js";
@@ -7,7 +7,7 @@ import CitationModel from "@Models/Citation.js";
 import IncidentModel from "@Models/Incident.js";
 
 const FileLabel = "Jobs:AutodeleteGuildLogs";
-const GuildCleanupInterval = milliseconds({ hours: 12 });
+const GuildCleanupInterval = milliseconds({ minutes: 15 });
 
 async function AutodeleteGuildLogs(Now: Date | "init" | "manual") {
   const CurrentDate = Now instanceof Date ? Now : new Date();
@@ -17,7 +17,7 @@ async function AutodeleteGuildLogs(Now: Date | "init" | "manual") {
       "settings.duty_activities.log_deletion_interval": { $gt: 0 },
       $or: [
         { last_logs_cleanup: { $eq: null } },
-        { last_logs_cleanup: { $lt: subMilliseconds(CurrentDate, GuildCleanupInterval) } },
+        { last_logs_cleanup: { $lte: subMilliseconds(CurrentDate, GuildCleanupInterval) } },
       ],
     },
     { "settings.duty_activities.log_deletion_interval": 1 }
