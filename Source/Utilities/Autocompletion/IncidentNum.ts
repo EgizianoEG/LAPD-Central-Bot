@@ -12,13 +12,17 @@ export default async function AutocompleteIncidentNum(
   GuildId: string
 ): Promise<Array<ApplicationCommandOptionChoiceData>> {
   const Incidents = await GetAllIncidentNums(GuildId, true);
+  const LowerCaseTyped = Typed.toLowerCase();
   let Suggestions: typeof Incidents;
 
   if (Typed.match(/^\s*$/)) {
     Suggestions = Incidents;
   } else {
     Suggestions = Incidents.filter((Incident) => {
-      return Incident.autocomplete_label.toLowerCase().includes(Typed.toLowerCase());
+      const LowerCasedIncident = Incident.autocomplete_label.toLowerCase();
+      return (
+        LowerCasedIncident.includes(LowerCaseTyped) || LowerCaseTyped.includes(LowerCasedIncident)
+      );
     });
   }
 
