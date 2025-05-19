@@ -187,6 +187,13 @@ export namespace Guilds {
     /** The guild's configuration. */
     settings: GuildSettings;
 
+    /**
+     * The date when the last logs cleanup (scheduled deletion) was performed.
+     * This is useful for tracking when the last cleanup occurred and can be used to skip
+     * unnecessary cleanups if the date is still within the configured interval.
+     */
+    last_logs_cleanup: Date | null;
+
     /** The date and time when the guild (the guild document) and it's associated data should be deleted from the database. */
     deletion_scheduled_on: Date | null;
   }
