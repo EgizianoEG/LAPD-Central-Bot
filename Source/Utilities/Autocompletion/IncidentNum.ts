@@ -2,7 +2,7 @@ import { type ApplicationCommandOptionChoiceData } from "discord.js";
 import GetAllIncidentNums from "@Utilities/Database/GetIncidentNumbers.js";
 
 /**
- * Autocompletes an input citation number.
+ * Autocompletes an input incident number.
  * @param Typed The input value from user.
  * @param GuildId The interaction guild id.
  * @returns An array of suggestions.

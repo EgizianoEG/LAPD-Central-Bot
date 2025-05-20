@@ -735,6 +735,12 @@ export const ErrorMessages = {
       "You can provide up to 10 attachments with the extensions `.png`, `.jpg`, and `.jpeg`.",
   },
 
+  LogIncidentInvalidType: {
+    Title: "Invalid Incident Type",
+    Description:
+      "The incident type you provided is invalid. Please choose a valid incident type from the autocomplete list.",
+  },
+
   LogIncidentDatabaseInsertFailed: {
     Title: "Database Insert Failed",
     Description:

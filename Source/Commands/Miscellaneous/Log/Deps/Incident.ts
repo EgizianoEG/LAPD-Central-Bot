@@ -22,6 +22,7 @@ import {
 
 import {
   IncidentTypes,
+  IncidentTypesType,
   IncidentNotesLength,
   IncidentStatusesFlattened,
   IncidentDescriptionLength,
@@ -211,6 +212,21 @@ function UpdateEmbedFieldDescription(
 async function GetCmdProvidedDetails(
   CmdInteract: SlashCommandInteraction<"cached">
 ): Promise<CmdProvidedDetailsType | null> {
+  let IncidentType = CmdInteract.options.getString("type", true);
+  const MatchedType = IncidentTypes.find((type) => {
+    const LCType = type.toLowerCase();
+    const LCProvidedType = IncidentType.toLowerCase();
+    return LCType === LCProvidedType || LCProvidedType.split(/[–-]/)[1]?.trim() === LCType;
+  });
+
+  if (!MatchedType) {
+    return new ErrorEmbed()
+      .useErrTemplate("LogIncidentInvalidType")
+      .replyToInteract(CmdInteract, true)
+      .then(() => null);
+  }
+
+  IncidentType = MatchedType;
   const ProvidedAttachments =
     CmdInteract.options.resolved?.attachments?.map((Attachment) => Attachment) || [];
 
@@ -228,7 +244,7 @@ async function GetCmdProvidedDetails(
   }
 
   return {
-    type: CmdInteract.options.getString("type", true),
+    type: IncidentType as IncidentTypesType,
     location: TitleCase(CmdInteract.options.getString("location", true), true),
     status: CmdInteract.options.getString("status", true),
     attachments: FilteredAttachments,
@@ -664,11 +680,11 @@ const CommandObject = {
     .setDescription("Creates and logs a traffic warning citation record for a person.")
     .addStringOption((Option) =>
       Option.setName("type")
-        .setDescription("The specific category of the incident.")
+        .setDescription("The type of incident being reported.")
+        .setAutocomplete(true)
         .setRequired(true)
         .setMaxLength(4)
         .setMaxLength(36)
-        .setChoices(IncidentTypes.map((Type) => ({ name: Type, value: Type })))
     )
     .addStringOption((Option) =>
       Option.setName("location")
