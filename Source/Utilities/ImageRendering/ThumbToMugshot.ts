@@ -71,20 +71,7 @@ export default async function GetBookingMugshot<AsURL extends boolean | undefine
   const LAPDDivision = Options.division?.length ? Options.division.toUpperCase() : "WILSHIRE";
   const ImgCanvas = createCanvas(ImgWidth, ImgHeight);
   const ImgCTX = ImgCanvas.getContext("2d");
-  const ThumbImage = await loadImage(Options.thumb_img).catch(() => {
-    if (Options.user_gender) {
-      if (typeof Options.user_gender === "string") {
-        Options.user_gender = Options.user_gender.match(/^M(?:ale)?$/) ? "Male" : "Female";
-      } else if (typeof Options.user_gender === "number") {
-        Options.user_gender = Options.user_gender === 1 ? "Male" : "Female";
-      }
-    } else {
-      Options.user_gender = "Male";
-    }
-
-    const FallbackImg = Thumbs[`RobloxAvatar${Options.user_gender}`];
-    return loadImage(FallbackImg);
-  });
+  const ThumbImage = await LoadThumbImageWithFallback(Options.thumb_img, Options.user_gender);
 
   // Calculate height positioning
   const HighestY = FindHighestNonTransparentPixelY(ThumbImage);
@@ -302,6 +289,26 @@ function CalculateBoardOffset(PersonHeight: number, HeadPosition: number): numbe
 // ---------------------------------------------------------------------------------------
 // Helper Functions:
 // -----------------
+export async function LoadThumbImageWithFallback(
+  Img: string | URL | Buffer,
+  Gender?: "Male" | "Female" | "M" | "F"
+) {
+  return loadImage(Img).catch(() => {
+    if (Gender) {
+      if (typeof Gender === "string") {
+        Gender = Gender.match(/^M(?:ale)?$/) ? "Male" : "Female";
+      } else if (typeof Gender === "number") {
+        Gender = Gender === 1 ? "Male" : "Female";
+      }
+    } else {
+      Gender = "Male";
+    }
+
+    const FallbackImg = Thumbs[`RobloxAvatar${Gender}`];
+    return loadImage(FallbackImg);
+  });
+}
+
 /**
  * Finds the highest (smallest Y-coordinate) non-transparent pixel in the given image.
  * @param Image - The image object to analyze. It should have `width` and `height` properties.
@@ -336,7 +343,7 @@ function FindHighestNonTransparentPixelY(Image: Image): number | null {
  * @param X Percentage value (0-100).
  * @returns Pixel value.
  */
-function RelX(X: number): number {
+export function RelX(X: number): number {
   return (X / 100) * ImgWidth;
 }
 
@@ -345,7 +352,7 @@ function RelX(X: number): number {
  * @param Y Percentage value (0-100).
  * @returns Pixel value.
  */
-function RelY(Y: number): number {
+export function RelY(Y: number): number {
   return (Y / 100) * ImgHeight;
 }
 
@@ -354,7 +361,7 @@ function RelY(Y: number): number {
  * @param Size Percentage value (0-100).
  * @returns Size in pixels.
  */
-function RelSize(Size: number): number {
+export function RelSize(Size: number): number {
   return (Size / 100) * Math.min(ImgWidth, ImgHeight);
 }
 
