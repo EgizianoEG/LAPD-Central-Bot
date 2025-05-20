@@ -45,7 +45,7 @@ import { IsValidPersonHeight, IsValidRobloxUsername } from "@Utilities/Other/Val
 
 import ShowModalAndAwaitSubmission from "@Utilities/Other/ShowModalAwaitSubmit.js";
 import HandleCollectorFiltering from "@Utilities/Other/HandleCollectorFilter.js";
-import GetBookingMugshot from "@Utilities/Other/ThumbToMugshot.js";
+import GetBookingMugshot from "@Utilities/ImageRendering/ThumbToMugshot.js";
 import GetAllBookingNums from "@Utilities/Database/GetBookingNums.js";
 import GetGuildSettings from "@Utilities/Database/GetGuildSettings.js";
 import GetUserThumbnail from "@Utilities/Roblox/GetUserThumb.js";

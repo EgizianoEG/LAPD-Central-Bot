@@ -1,4 +1,4 @@
-import { GetFilledCitation } from "@Utilities/Other/GetFilledCitation.js";
+import { GetFilledCitation } from "@Utilities/ImageRendering/GetFilledCitation.js";
 import { FormatUsername } from "@Utilities/Strings/Formatters.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 import {

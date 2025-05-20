@@ -7,7 +7,7 @@ import {
   time,
 } from "discord.js";
 
-import { CitationImgDimensions } from "../Other/GetFilledCitation.js";
+import { CitationImgDimensions } from "../ImageRendering/GetFilledCitation.js";
 import { SendGuildMessages } from "@Utilities/Other/GuildMessages.js";
 import { GuildCitations } from "@Typings/Utilities/Database.js";
 import { FormatUsername } from "@Utilities/Strings/Formatters.js";

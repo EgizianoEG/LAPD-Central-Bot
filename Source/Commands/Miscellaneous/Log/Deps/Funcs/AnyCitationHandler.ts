@@ -32,7 +32,7 @@ import {
 import { FilterUserInput, FilterUserInputOptions } from "@Utilities/Strings/Redactor.js";
 import { AllVehicleModelNames, AllVehicleModels } from "@Resources/ERLCVehicles.js";
 import { ErrorEmbed, InfoEmbed, SuccessEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
-import { GetFilledCitation } from "@Utilities/Other/GetFilledCitation.js";
+import { GetFilledCitation } from "@Utilities/ImageRendering/GetFilledCitation.js";
 import { GuildCitations } from "@Typings/Utilities/Database.js";
 import { ReporterInfo } from "../../Log.js";
 import { RandomString } from "@Utilities/Strings/Random.js";

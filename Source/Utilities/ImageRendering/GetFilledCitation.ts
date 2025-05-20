@@ -1,11 +1,11 @@
 import { createCanvas, loadImage } from "@napi-rs/canvas/index.js";
 import { GuildCitations } from "@Typings/Utilities/Database.js";
-import { GetDirName } from "./Paths.js";
+import { GetDirName } from "../Other/Paths.js";
 
 import Path from "node:path";
 import FileSystem from "node:fs/promises";
-import GetPlaceholderImgURL from "./GetPlaceholderImg.js";
-import UploadToImgBB from "./ImgBBUpload.js";
+import UploadToImgBB from "../Other/ImgBBUpload.js";
+import GetPlaceholderImgURL from "../Other/GetPlaceholderImg.js";
 
 export enum CitationImgDimensions {
   Height = 1120,
