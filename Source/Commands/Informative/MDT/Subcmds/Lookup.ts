@@ -130,7 +130,7 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
       .slice(0, 2)
       .map((V, I) => {
         if (typeof V === "string") return `${I + 1}. ${V}`;
-        return `${I + 1}. ${V.violation}`;
+        return `${I + 1}. ${V.violation} (${V.type})`;
       })
       .join(`\n${" ".repeat(10)}`);
 
@@ -142,10 +142,10 @@ async function Callback(Interaction: SlashCommandInteraction<"cached">) {
       inline: true,
       name: "Recent Citation",
       value: Dedent(`
-        - **Num:** [\`${RecentCit.num}\`](${RecentCit.img_url || channelLink(Interaction.channelId)})
-        - **Type:** \`${RecentCit.type}\`
+        - **Num:** [\`${RecentCit.num.toString().padStart(5, "0")}\`](${RecentCit.img_url ?? channelLink(Interaction.channelId)})
+        - **Type:** ${RecentCit.nta_type} ${RecentCit.cit_type}
         - **Issued:** ${time(RecentCit.issued_on, "R")}
-        - **Citing Officer:** ${userMention(RecentCit.citing_officer.discord_id)}
+        - **Issuing Officer:** ${userMention(RecentCit.citing_officer.discord_id)}
         - **Violations:** 
           ${Violations}
       `),
