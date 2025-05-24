@@ -8,6 +8,7 @@
   * [Application Commands](getting-started/quickstart/application-commands.md)
   * [App Configuration](getting-started/quickstart/app-configuration.md)
 * [Change Log](getting-started/change-log.md)
+* [App Permissions](getting-started/app-permissions.md)
 
 ## Application Modules
 
@@ -47,6 +48,6 @@
 
 ## Links
 
-* [App Invitation](https://discord.com/api/oauth2/authorize?client\_id=1097879611746029710\&scope=bot+applications.commands\&permissions=402950144)
+* [App Invitation](https://discord.com/api/oauth2/authorize?client_id=1097879611746029710\&scope=bot+applications.commands\&permissions=402950144)
 * [Support Server](https://discord.gg/B2qMTjqgPK)
 * [Github Repository](https://github.com/EgizianoEG/LAPD-Central-Bot)
