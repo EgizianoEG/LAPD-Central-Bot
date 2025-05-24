@@ -192,7 +192,7 @@ export const ErrorMessages = {
   RobloxUserVerificationFailed: {
     Title: "Verification Failed",
     Description:
-      "Login verification as `%s` failed. Ensure that you follow the appropriate instructions before trying again.\nAttempts left: %s",
+      "Login verification as `%s` failed.\nEnsure that you follow the appropriate instructions before trying again; attempts left: %s",
   },
 
   /**
