@@ -26,6 +26,7 @@ import { Colors, Emojis } from "@Config/Shared.js";
 import { ErrorEmbed } from "@Utilities/Classes/ExtraEmbeds.js";
 
 import HandleUserActivityNoticeRoleAssignment from "@Utilities/Other/HandleUANRoleAssignment.js";
+import ShowModalAndAwaitSubmission from "@Utilities/Other/ShowModalAwaitSubmit.js";
 import GetDiscordAPITime from "@Utilities/Other/GetDiscordAPITime.js";
 import GetUANData from "@Utilities/Database/GetUANData.js";
 import AppLogger from "@Utilities/Classes/AppLogger.js";
@@ -174,12 +175,7 @@ async function HandleApprovalOrDenial(
   ActionType: "Approval" | "Denial"
 ): Promise<boolean> {
   const NotesModal = GetNotesModal(Interaction, ActionType);
-  await Interaction.showModal(NotesModal);
-
-  const NotesSubmission = await Interaction.awaitModalSubmit({
-    filter: (i) => i.customId === NotesModal.data.custom_id,
-    time: 8 * 60_000,
-  }).catch(() => null);
+  const NotesSubmission = await ShowModalAndAwaitSubmission(Interaction, NotesModal, 8 * 60_000);
 
   if (!NotesSubmission) return false;
   await NotesSubmission.deferReply({ flags: MessageFlags.Ephemeral });
@@ -228,14 +224,9 @@ async function HandleEarlyTermination(
   ActiveRA: RADocument
 ) {
   const NotesModal = GetNotesModal(Interaction, "Termination");
-  await Interaction.showModal(NotesModal);
-
-  const NotesSubmission = await Interaction.awaitModalSubmit({
-    filter: (i) => i.customId === NotesModal.data.custom_id,
-    time: 8 * 60_000,
-  }).catch(() => null);
-
+  const NotesSubmission = await ShowModalAndAwaitSubmission(Interaction, NotesModal, 8 * 60_000);
   if (!NotesSubmission) return false;
+
   const RefreshedActiveRA = await ActiveRA.getUpToDate();
   if (!RefreshedActiveRA || !RefreshedActiveRA.is_active) {
     return NotesSubmission.reply({
